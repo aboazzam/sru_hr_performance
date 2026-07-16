@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      # Only what the app actually reads at build/runtime (grep-confirmed).
+      # DATABASE_URL is deliberately NOT wired here — nothing in src/ reads
+      # it; it's only ever used manually via psql for migrations, and this
+      # workflow does not run migrations (see note below).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+# Deliberately NOT included: running supabase/migrations/*.sql against the
+# live project. Per PROJECT_STRICT.md, every migration in this repo is
+# applied manually (BEGIN/COMMIT + hand-run verification queries) before
+# being trusted — auto-applying schema changes to the real database on
+# every push would bypass that review step entirely. Revisit only as an
+# explicit, separate decision (e.g. a manual-dispatch job gated behind
+# review), not as part of this CI workflow.
