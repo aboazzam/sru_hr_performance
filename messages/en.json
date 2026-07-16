@@ -10,6 +10,7 @@
   "NavBar": {
     "home": "Home",
     "employees": "Employees",
+    "careerPath": "Career Path",
     "evaluations": "Evaluations",
     "competencies": "Competencies",
     "calibration": "Calibration",
@@ -70,6 +71,15 @@
     "statusTerminated": "Terminated",
     "accountActive": "Active",
     "accountPending": "Invite pending"
+  },
+  "CareerPathPage": {
+    "title": "Career Path",
+    "subtitle": "Promotion paths between job titles and the requirements for each transition.",
+    "empty": "No career paths defined yet.",
+    "columnFrom": "From",
+    "columnTo": "To",
+    "columnRequirements": "Requirements",
+    "gradeLabel": "Grade {grade}"
   },
   "EmployeeInvitePage": {
     "title": "Add Employee",

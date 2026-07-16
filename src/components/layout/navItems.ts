@@ -8,6 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Home,
   Users,
+  Route,
   ClipboardList,
   Award,
   BarChart3,
@@ -24,6 +25,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { segment: "", labelKey: "home", icon: Home },
   { segment: "employees", labelKey: "employees", icon: Users },
+  { segment: "career-path", labelKey: "careerPath", icon: Route },
   { segment: "evaluations", labelKey: "evaluations", icon: ClipboardList },
   { segment: "competencies", labelKey: "competencies", icon: Award },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3 },

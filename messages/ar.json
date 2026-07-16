@@ -10,6 +10,7 @@
   "NavBar": {
     "home": "الرئيسية",
     "employees": "الموظفون",
+    "careerPath": "المسار الوظيفي",
     "evaluations": "التقييمات",
     "competencies": "الجدارات",
     "calibration": "المعايرة",
@@ -70,6 +71,15 @@
     "statusTerminated": "منتهي الخدمة",
     "accountActive": "مُفعَّل",
     "accountPending": "بانتظار قبول الدعوة"
+  },
+  "CareerPathPage": {
+    "title": "المسار الوظيفي",
+    "subtitle": "مسارات الترقي بين المسميات الوظيفية ومتطلبات كل انتقال.",
+    "empty": "لا توجد مسارات وظيفية مُعرَّفة بعد.",
+    "columnFrom": "من",
+    "columnTo": "إلى",
+    "columnRequirements": "المتطلبات",
+    "gradeLabel": "درجة {grade}"
   },
   "EmployeeInvitePage": {
     "title": "إضافة موظف",
