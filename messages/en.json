@@ -9,6 +9,7 @@
   },
   "NavBar": {
     "home": "Home",
+    "employees": "Employees",
     "evaluations": "Evaluations",
     "competencies": "Competencies",
     "calibration": "Calibration",
@@ -53,6 +54,22 @@
     "matrixHeading": "Evaluation Lifecycle Permission Matrix",
     "matrixCaption": "The six roles that participate directly in the evaluation lifecycle (including field supervisor, mirrored to supervisor since 2026-07-16) — other roles (super admin, CEO...) don't appear in this specific table.",
     "stateColumn": "State"
+  },
+  "EmployeesPage": {
+    "title": "Employees",
+    "subtitle": "Employees visible to you based on your employeeData permission and organizational scope.",
+    "addEmployee": "Add Employee",
+    "empty": "No employees yet.",
+    "columnEmployeeNumber": "Employee Number",
+    "columnName": "Name",
+    "columnOrgUnit": "Organizational Unit",
+    "columnStatus": "Status",
+    "columnAccount": "Login Account",
+    "statusActive": "Active",
+    "statusOnLeave": "On Leave",
+    "statusTerminated": "Terminated",
+    "accountActive": "Active",
+    "accountPending": "Invite pending"
   },
   "EmployeeInvitePage": {
     "title": "Add Employee",

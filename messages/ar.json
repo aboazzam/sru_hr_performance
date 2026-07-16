@@ -9,6 +9,7 @@
   },
   "NavBar": {
     "home": "الرئيسية",
+    "employees": "الموظفون",
     "evaluations": "التقييمات",
     "competencies": "الجدارات",
     "calibration": "المعايرة",
@@ -53,6 +54,22 @@
     "matrixHeading": "مصفوفة صلاحيات دورة حياة التقييم",
     "matrixCaption": "الأدوار الستة المشاركة مباشرة في دورة حياة التقييم (تشمل المشرف الميداني، المطابق لتعامل الرئيس المباشر منذ 2026-07-16) — بقية الأدوار (مدير النظام، الرئيس التنفيذي...) لا تظهر في هذا الجدول تحديداً.",
     "stateColumn": "الحالة"
+  },
+  "EmployeesPage": {
+    "title": "الموظفون",
+    "subtitle": "قائمة الموظفين المرئيين لك حسب صلاحيات employeeData ونطاقك التنظيمي.",
+    "addEmployee": "إضافة موظف",
+    "empty": "لا يوجد موظفون بعد.",
+    "columnEmployeeNumber": "الرقم الوظيفي",
+    "columnName": "الاسم",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnStatus": "الحالة",
+    "columnAccount": "حساب الدخول",
+    "statusActive": "نشط",
+    "statusOnLeave": "في إجازة",
+    "statusTerminated": "منتهي الخدمة",
+    "accountActive": "مُفعَّل",
+    "accountPending": "بانتظار قبول الدعوة"
   },
   "EmployeeInvitePage": {
     "title": "إضافة موظف",
