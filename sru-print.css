@@ -1,0 +1,17 @@
+/* ============================================================
+   SRU Print — لبنة التصدير والطباعة
+   جامعة سليمان الراجحي · إدارة التحول الرقمي · v1.0
+   الاستخدام: أرفق الملف لأداة الذكاء الاصطناعي، واطلب إضافة زر
+   طباعة يستدعي window.print(). العناصر ذات .no-print تُخفى عند الطباعة.
+   لبنة واجهة فقط — لا تتطلب backend.
+   ============================================================ */
+.sru-print-btn{font-family:"Cairo",Tahoma,Arial,sans-serif;font-weight:700;font-size:14px;
+  background:#501e8c;color:#fff;border:none;border-radius:4px;padding:9px 18px;cursor:pointer}
+.sru-print-btn:hover{background:#3a1464}
+@media print{
+  .no-print,.sru-print-btn{display:none!important}
+  body{background:#fff!important}
+  @page{size:A4;margin:16mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sru-card{break-inside:avoid}
+}

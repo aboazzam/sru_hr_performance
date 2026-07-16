@@ -1,0 +1,65 @@
+/* ============================================================
+   SRU UI Kit — عُدّة الهوية الرقمية
+   جامعة سليمان الراجحي · إدارة التحول الرقمي
+   الإصدار: 1.0  |  المصدر: SRU_IDENTITY.md
+   الاستخدام: <link rel="stylesheet" href="sru-ui.css"> ثم <body class="sru">
+   موديول واجهة فقط (frontend) — لا يتطلب backend.
+   ============================================================ */
+
+:root{
+  --sru-purple:#501e8c; --sru-purple-dark:#3a1464; --sru-purple-light:#f0ebf8;
+  --sru-blue:#0a6eaa;   --sru-blue-light:#e6f3fa;
+  --sru-bg:#f7f5fb;     --sru-border:rgba(80,30,140,.12);
+  --sru-ink:#241436;    --sru-muted:#6b5a80;   --sru-radius:4px;
+}
+
+*{box-sizing:border-box}
+body.sru{margin:0;font-family:"Cairo",Tahoma,Arial,sans-serif;background:var(--sru-bg);
+  color:var(--sru-ink);line-height:1.65;direction:rtl}
+
+/* أداة عزل المصطلح الإنجليزي داخل نص عربي (RTL سليم) */
+.sru-en{unicode-bidi:isolate;direction:ltr;display:inline-block}
+
+.sru-container{max-width:960px;margin:0 auto;padding:0 22px}
+
+/* ---------- الهيدر: topbar + navbar ---------- */
+.sru-topbar{background:var(--sru-purple-dark);color:#fff;padding:9px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px}
+.sru-topbar .sru-logo{background:#fff;border-radius:5px;padding:5px 10px;display:inline-flex}
+.sru-topbar .sru-logo img{height:28px;display:block}
+.sru-navbar{background:var(--sru-purple);padding:0 22px;display:flex;gap:2px;overflow-x:auto}
+.sru-nav-item{background:none;border:none;color:rgba(255,255,255,.85);font-family:inherit;
+  font-size:14px;font-weight:600;padding:12px 16px;cursor:pointer;white-space:nowrap;
+  border-bottom:3px solid transparent}
+.sru-nav-item:hover{color:#fff}
+.sru-nav-item.active{color:#fff;border-bottom-color:var(--sru-blue)}
+
+/* ---------- التوقيع البصري: الشريط القُطري ---------- */
+.sru-diag{width:92px;height:6px;background:var(--sru-blue);
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+
+/* ---------- العناوين ---------- */
+.sru-title{font-weight:800;color:var(--sru-purple);margin:0}
+
+/* ---------- الأزرار ---------- */
+.sru-btn{font-family:inherit;font-weight:700;font-size:14px;border-radius:var(--sru-radius);
+  padding:9px 18px;cursor:pointer;border:1px solid transparent}
+.sru-btn-primary{background:var(--sru-purple);color:#fff}
+.sru-btn-primary:hover{background:var(--sru-purple-dark)}
+.sru-btn-secondary{background:#fff;color:var(--sru-purple);border:1px solid var(--sru-purple)}
+.sru-btn-secondary:hover{background:var(--sru-purple-light)}
+
+/* ---------- البطاقة ---------- */
+.sru-card{background:#fff;border:1px solid var(--sru-border);border-radius:8px;padding:18px}
+
+/* ---------- الوسم (chip) ---------- */
+.sru-chip{display:inline-block;background:var(--sru-purple-light);color:var(--sru-purple);
+  padding:3px 12px;border-radius:20px;font-size:13px;font-weight:600}
+
+/* ---------- الحقول ---------- */
+.sru-field label{display:block;font-size:13px;font-weight:700;margin-bottom:5px}
+.sru-field input,.sru-field select,.sru-field textarea{width:100%;padding:9px 11px;
+  border:1px solid var(--sru-border);border-radius:var(--sru-radius);font-family:inherit;
+  font-size:14px;background:#fff;color:var(--sru-ink)}
+.sru-field input:focus,.sru-field select:focus,.sru-field textarea:focus{
+  outline:2px solid var(--sru-blue);border-color:var(--sru-blue)}

@@ -1,0 +1,249 @@
+@import "tailwindcss";
+@import "../styles/sru-ui.css";
+@import "../styles/sru-print.css";
+
+/* Single source of truth: SRU_IDENTITY.md / sru-ui.css.
+   These names are kept for existing components; values now alias the
+   official --sru-* tokens instead of ad hoc hex. Light only — no .dark
+   block, per the non-negotiable "Theme: Light only" rule (CLAUDE.md #7). */
+:root {
+  --background: var(--sru-bg);
+  --foreground: var(--sru-ink);
+  --surface:    #ffffff;
+  --border:     var(--sru-border);
+
+  --color-primary:       var(--sru-purple);
+  --color-primary-light: var(--sru-purple-light);
+  --color-secondary:     var(--sru-blue);
+  --color-accent:        var(--sru-blue);
+
+  --font-main-ar: var(--font-ar), Tahoma, Arial, sans-serif;
+  --font-main-en: var(--font-en), system-ui, Arial, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface:    var(--surface);
+  --color-border:     var(--border);
+  --color-primary:    var(--color-primary);
+  --color-secondary:  var(--color-secondary);
+  --color-accent:     var(--color-accent);
+}
+
+/* ===== Base Styles ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100%;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===== الخط حسب اللغة ===== */
+html[dir="rtl"] body {
+  font-family: var(--font-main-ar);
+}
+
+html[dir="ltr"] body {
+  font-family: var(--font-main-en);
+}
+
+/* ===== Chrome pieces not yet in sru-ui.css (additive, doesn't override the kit) ===== */
+.sru-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sru-topbar-meta .divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sru-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* .sru-ui.css's .sru-logo forces a white background box, meant for the
+   colored logo variant. logo-white.png is already white, so the topbar
+   brand mark uses its own wrapper instead of that class. */
+.sru-topbar-brand {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* sru-ui.css defines .sru-nav-item colors/spacing but not layout — add
+   the flex alignment needed for icon + label without touching the kit. */
+.sru-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+/* ===== Competency framework page ===== */
+.competency-card summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  list-style: none;
+}
+
+.competency-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.competency-card[open] summary {
+  margin-bottom: 14px;
+}
+
+.competency-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sru-border);
+}
+
+.competency-level h4 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sru-purple);
+  margin-bottom: 6px;
+}
+
+.competency-level ul {
+  padding-inline-start: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* ===== Org chart page ===== */
+.org-tree,
+.org-tree ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-tree ul {
+  margin-top: 6px;
+}
+
+.org-node summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  list-style: none;
+  padding: 4px 0;
+}
+
+.org-node summary::-webkit-details-marker {
+  display: none;
+}
+
+.org-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  background: rgba(107, 90, 128, 0.12);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.org-leaf {
+  font-size: 13px;
+  color: var(--sru-ink);
+  padding: 4px 0;
+}
+
+/* ===== Admin / roles & permissions page ===== */
+.admin-role-code {
+  margin-inline-start: 6px;
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table.admin-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.admin-matrix th {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  text-align: start;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid var(--sru-border);
+}
+
+.admin-matrix td {
+  padding: 10px;
+  border-bottom: 1px solid var(--sru-border);
+  vertical-align: middle;
+}
+
+.admin-matrix tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-matrix-state {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-matrix-chip {
+  font-size: 12px;
+  white-space: nowrap;
+}

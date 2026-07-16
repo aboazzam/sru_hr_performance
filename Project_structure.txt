@@ -1,0 +1,26 @@
+mkdir -p app/\(auth\)/login \
+  app/\(dashboard\)/performance \
+  app/\(dashboard\)/competencies \
+  app/\(dashboard\)/calibration \
+  app/\(dashboard\)/promotions \
+  app/\(dashboard\)/admin/permissions \
+  app/\(dashboard\)/admin/employees \
+  app/\(dashboard\)/admin/cycles \
+  app/api \
+  components/ui \
+  components/shared \
+  components/modules \
+  features/auth \
+  features/permissions \
+  features/evaluations \
+  features/competencies \
+  features/calibration \
+  features/promotions \
+  lib/supabase \
+  lib/auth \
+  lib/permissions \
+  lib/validation \
+  lib/utils \
+  db \
+  messages \
+  public

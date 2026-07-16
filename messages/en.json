@@ -1,0 +1,82 @@
+{
+  "Metadata": {
+    "title": "Performance Evaluation System | Sulaiman Alrajhi University",
+    "description": "HR Performance Evaluation System — Sulaiman Alrajhi University"
+  },
+  "TopBar": {
+    "notifications": "Notifications",
+    "login": "Log in"
+  },
+  "NavBar": {
+    "home": "Home",
+    "evaluations": "Evaluations",
+    "competencies": "Competencies",
+    "calibration": "Calibration",
+    "promotions": "Promotions",
+    "admin": "Admin"
+  },
+  "PrintButton": {
+    "print": "Print"
+  },
+  "HomePage": {
+    "title": "Performance Evaluation System",
+    "subtitle": "Sulaiman Alrajhi University"
+  },
+  "LoginPage": {
+    "title": "Performance Evaluation System",
+    "subtitle": "Sulaiman Alrajhi University",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Log in",
+    "submitting": "Logging in...",
+    "invalidInput": "Enter a valid email and password",
+    "invalidCredentials": "Incorrect email or password",
+    "rateLimited": "Too many attempts — please wait a moment before trying again"
+  },
+  "CompetenciesPage": {
+    "title": "Competency Framework",
+    "subtitle": "3 pillars × 3 domains × 3 competencies per domain — 27 competencies, each with four behavioral levels.",
+    "expectedImpactLabel": "Expected impact:"
+  },
+  "OrgUnitsPage": {
+    "title": "Organizational Structure",
+    "subtitle": "Sulaiman Alrajhi University — Version 2.0, dated 28/5/2025."
+  },
+  "AdminPage": {
+    "title": "Roles & Permissions",
+    "subtitle": "12 default roles, 12 permission areas, and the evaluation-lifecycle permission matrix — CLAUDE.md sections 4 and 4-A.",
+    "rolesHeading": "Default Roles",
+    "processAreasHeading": "Permission Areas",
+    "scaleHeading": "VPRA Levels",
+    "matrixHeading": "Evaluation Lifecycle Permission Matrix",
+    "matrixCaption": "The six roles that participate directly in the evaluation lifecycle (including field supervisor, mirrored to supervisor since 2026-07-16) — other roles (super admin, CEO...) don't appear in this specific table.",
+    "stateColumn": "State"
+  },
+  "EmployeeInvitePage": {
+    "title": "Add Employee",
+    "subtitle": "Creates an employee record and invites them to log in — requires employeeData at prepare level or above.",
+    "employeeNumberLabel": "Employee Number",
+    "employeeNumberPlaceholder": "e.g. EMP-1024",
+    "fullNameArLabel": "Full Name (Arabic)",
+    "fullNameArPlaceholder": "Enter full name in Arabic",
+    "fullNameEnLabel": "Full Name (English) — optional",
+    "fullNameEnPlaceholder": "Full name in English",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Used to send the login invite",
+    "orgUnitLabel": "Organizational Unit",
+    "orgUnitPlaceholder": "Select an organizational unit",
+    "hireDateLabel": "Hire Date — optional",
+    "submit": "Create & Invite",
+    "submitting": "Creating and inviting...",
+    "successMessage": "Record created and login invite sent to {email}.",
+    "errorInvalidInput": "Check the required fields — a valid email and organizational unit are needed.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to add employees.",
+    "errorDuplicate": "That employee number or email is already in use.",
+    "errorInviteFailed": "The employee record was created, but the login invite could not be sent — you can retry later.",
+    "errorRateLimited": "Too many attempts in a short period — please wait a moment before trying again.",
+    "errorUnknown": "An unexpected error occurred."
+  }
+}
