@@ -1,26 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "@/i18n/navigation";
-import { isLocale } from "@/i18n/config";
 import { PrintButton } from "@/components/PrintButton";
 
-export default async function CareerPathPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale: rawLocale } = await params;
-  const locale = isLocale(rawLocale) ? rawLocale : "ar";
+// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+export default async function CareerPathPage() {
   const t = await getTranslations("CareerPathPage");
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect({ href: "/login", locale });
-  }
 
   // RLS-scoped to the caller (career_path_select: check_vpra('careerPath','view')).
   // Two FKs to job_titles from the same table require explicit relationship
