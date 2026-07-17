@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { redirect, Link } from "@/i18n/navigation";
-import { isLocale } from "@/i18n/config";
+import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 
 const statusMessageKeys = {
@@ -10,23 +9,10 @@ const statusMessageKeys = {
   terminated: "statusTerminated",
 } as const;
 
-export default async function EmployeesPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale: rawLocale } = await params;
-  const locale = isLocale(rawLocale) ? rawLocale : "ar";
+// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+export default async function EmployeesPage() {
   const t = await getTranslations("EmployeesPage");
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect({ href: "/login", locale });
-  }
 
   // RLS-scoped to the caller (profiles_select: self-row OR
   // check_vpra('employeeData','view', org_unit_id)) — an unauthorized or

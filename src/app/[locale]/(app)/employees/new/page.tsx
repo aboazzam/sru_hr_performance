@@ -1,26 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "@/i18n/navigation";
-import { isLocale } from "@/i18n/config";
 import { EmployeeInviteForm } from "@/components/EmployeeInviteForm";
 
-export default async function EmployeeInvitePage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale: rawLocale } = await params;
-  const locale = isLocale(rawLocale) ? rawLocale : "ar";
+// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+export default async function EmployeeInvitePage() {
   const t = await getTranslations("EmployeeInvitePage");
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect({ href: "/login", locale });
-  }
 
   // RLS-scoped to the caller: org_units_select requires
   // check_vpra('employeeData','view', <unit id>) per unit, so this list is

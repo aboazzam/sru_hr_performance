@@ -1,9 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/config";
 import { PrintButton } from "@/components/PrintButton";
 
+// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function SalaryScalePage({
   params,
 }: {
@@ -12,15 +12,7 @@ export default async function SalaryScalePage({
   const { locale: rawLocale } = await params;
   const locale = isLocale(rawLocale) ? rawLocale : "ar";
   const t = await getTranslations("SalaryScalePage");
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect({ href: "/login", locale });
-  }
 
   // RLS-scoped to the caller (salary_scale_select: check_vpra('careerPath',
   // 'view') OR check_vpra('employeeData','view') — SRU_System_Design.md §A's
