@@ -11,6 +11,7 @@
     "home": "الرئيسية",
     "employees": "الموظفون",
     "careerPath": "المسار الوظيفي",
+    "salaryScale": "سلم الرواتب",
     "evaluations": "التقييمات",
     "competencies": "الجدارات",
     "calibration": "المعايرة",
@@ -36,6 +37,22 @@
     "invalidInput": "أدخل بريدًا إلكترونيًا صحيحًا وكلمة المرور",
     "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
     "rateLimited": "محاولات كثيرة جدًا — يرجى الانتظار قليلًا قبل إعادة المحاولة"
+  },
+  "ResetPasswordPage": {
+    "title": "إعادة تعيين كلمة المرور",
+    "subtitle": "اختر كلمة مرور جديدة لحسابك.",
+    "checking": "جارٍ التحقق من الرابط...",
+    "passwordLabel": "كلمة المرور الجديدة",
+    "passwordPlaceholder": "٨ أحرف على الأقل",
+    "confirmPasswordLabel": "تأكيد كلمة المرور",
+    "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+    "submit": "حفظ كلمة المرور",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم تغيير كلمة المرور بنجاح — جارٍ تحويلك للنظام...",
+    "errorInvalidLink": "الرابط غير صالح أو منتهي الصلاحية — يرجى طلب رابط جديد.",
+    "errorTooShort": "كلمة المرور يجب ألا تقل عن 8 أحرف.",
+    "errorMismatch": "كلمتا المرور غير متطابقتين.",
+    "errorUnknown": "تعذّر تغيير كلمة المرور — حاول مرة أخرى."
   },
   "CompetenciesPage": {
     "title": "إطار الجدارات",
@@ -79,6 +96,15 @@
     "columnFrom": "من",
     "columnTo": "إلى",
     "columnRequirements": "المتطلبات",
+    "gradeLabel": "درجة {grade}"
+  },
+  "SalaryScalePage": {
+    "title": "سلم الرواتب",
+    "subtitle": "درجات الرواتب (أ–ز) لكل مسمى وظيفي، سارية اعتبارًا من تاريخ التطبيق.",
+    "empty": "لا توجد بيانات سلم رواتب بعد.",
+    "columnJobTitle": "المسمى الوظيفي",
+    "columnAnnualCap": "الحد الأقصى للعلاوة السنوية",
+    "columnEffectiveDate": "تاريخ السريان",
     "gradeLabel": "درجة {grade}"
   },
   "EmployeeInvitePage": {
