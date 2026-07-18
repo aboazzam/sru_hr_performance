@@ -80,6 +80,7 @@
     "title": "الموظفون",
     "subtitle": "قائمة الموظفين المرئيين لك حسب صلاحيات employeeData ونطاقك التنظيمي.",
     "addEmployee": "إضافة موظف",
+    "assignSupervisor": "تعيين مشرف مباشر",
     "empty": "لا يوجد موظفون بعد.",
     "columnEmployeeNumber": "الرقم الوظيفي",
     "columnName": "الاسم",
@@ -133,6 +134,22 @@
     "errorDuplicate": "الرقم الوظيفي أو البريد الإلكتروني مستخدم مسبقًا.",
     "errorInviteFailed": "أُنشئ سجل الموظف لكن تعذّر إرسال دعوة الدخول — يمكن إعادة المحاولة لاحقًا.",
     "errorRateLimited": "محاولات كثيرة جدًا خلال فترة قصيرة — يرجى الانتظار قليلًا قبل إعادة المحاولة.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "AssignSupervisorPage": {
+    "title": "تعيين مشرف مباشر",
+    "subtitle": "تحديد المشرف المباشر لموظف — يُستخدم لإظهار تقييمات/أهداف/مهام المرؤوسين للمشرف.",
+    "employeeLabel": "الموظف",
+    "employeePlaceholder": "اختر الموظف",
+    "supervisorLabel": "المشرف المباشر",
+    "supervisorPlaceholder": "اختر المشرف المباشر",
+    "selfSupervisionHint": "لا يمكن أن يكون الموظف مشرفًا على نفسه.",
+    "submit": "حفظ",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم تعيين المشرف المباشر بنجاح.",
+    "errorInvalidInput": "تحقق من الحقول — لا يمكن اختيار نفس الموظف كمشرف على نفسه.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية تعديل بيانات هذا الموظف.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
   "GoalLibraryPage": {
