@@ -45,7 +45,12 @@ export default async function EvaluationCyclesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <PrintButton />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Link href="/evaluations/mine" className="sru-btn sru-btn-primary">
+            {t("myEvaluations")}
+          </Link>
+          <PrintButton />
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

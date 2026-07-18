@@ -198,7 +198,17 @@
     "columnStartDate": "Start Date",
     "columnEndDate": "End Date",
     "columnActions": "",
-    "createEvaluation": "Create Evaluation"
+    "createEvaluation": "Create Evaluation",
+    "myEvaluations": "My Evaluations"
+  },
+  "MyEvaluationsPage": {
+    "title": "My Evaluations",
+    "subtitle": "My own performance evaluations across all evaluation cycles.",
+    "empty": "You have no evaluations yet.",
+    "columnCycle": "Cycle",
+    "columnState": "State",
+    "columnActions": "",
+    "view": "View"
   },
   "CreateEvaluationPage": {
     "title": "Create Evaluation",

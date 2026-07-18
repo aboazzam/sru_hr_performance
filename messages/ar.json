@@ -198,7 +198,17 @@
     "columnStartDate": "تاريخ البداية",
     "columnEndDate": "تاريخ النهاية",
     "columnActions": "",
-    "createEvaluation": "إنشاء تقييم"
+    "createEvaluation": "إنشاء تقييم",
+    "myEvaluations": "تقييماتي"
+  },
+  "MyEvaluationsPage": {
+    "title": "تقييماتي",
+    "subtitle": "تقييمات الأداء الخاصة بي عبر جميع دورات التقييم.",
+    "empty": "لا توجد تقييمات لك بعد.",
+    "columnCycle": "الدورة",
+    "columnState": "الحالة",
+    "columnActions": "",
+    "view": "عرض"
   },
   "CreateEvaluationPage": {
     "title": "إنشاء تقييم",
