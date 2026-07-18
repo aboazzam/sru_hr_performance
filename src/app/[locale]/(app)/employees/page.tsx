@@ -68,6 +68,9 @@ export default async function EmployeesPage() {
           <Link href="/employees/new" className="sru-btn sru-btn-primary">
             {t("addEmployee")}
           </Link>
+          <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
+            {t("assignSupervisor")}
+          </Link>
           <PrintButton />
         </div>
       </div>

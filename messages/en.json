@@ -80,6 +80,7 @@
     "title": "Employees",
     "subtitle": "Employees visible to you based on your employeeData permission and organizational scope.",
     "addEmployee": "Add Employee",
+    "assignSupervisor": "Assign Supervisor",
     "empty": "No employees yet.",
     "columnEmployeeNumber": "Employee Number",
     "columnName": "Name",
@@ -133,6 +134,22 @@
     "errorDuplicate": "That employee number or email is already in use.",
     "errorInviteFailed": "The employee record was created, but the login invite could not be sent — you can retry later.",
     "errorRateLimited": "Too many attempts in a short period — please wait a moment before trying again.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "AssignSupervisorPage": {
+    "title": "Assign Supervisor",
+    "subtitle": "Set an employee's direct supervisor — used to show reports' evaluations/goals/tasks to their supervisor.",
+    "employeeLabel": "Employee",
+    "employeePlaceholder": "Select the employee",
+    "supervisorLabel": "Direct Supervisor",
+    "supervisorPlaceholder": "Select the direct supervisor",
+    "selfSupervisionHint": "An employee cannot be their own supervisor.",
+    "submit": "Save",
+    "submitting": "Saving...",
+    "successMessage": "Direct supervisor assigned successfully.",
+    "errorInvalidInput": "Check the fields — an employee cannot be selected as their own supervisor.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to edit this employee's record.",
     "errorUnknown": "An unexpected error occurred."
   },
   "GoalLibraryPage": {
