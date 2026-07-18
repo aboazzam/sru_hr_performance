@@ -14,6 +14,7 @@
     "careerPath": "Career Path",
     "salaryScale": "Salary Scale",
     "goalLibrary": "Goal Library",
+    "bauTasks": "BAU Tasks",
     "evaluations": "Evaluations",
     "competencies": "Competencies",
     "calibration": "Calibration",
@@ -166,6 +167,27 @@
     "errorInvalidInput": "Check the fields — the employee and cycle are required, and exactly one goal source (library or custom).",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to assign goals.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "BauTasksPage": {
+    "title": "BAU Tasks",
+    "subtitle": "Assign a routine business-as-usual task to an employee within an evaluation cycle.",
+    "employeeLabel": "Employee",
+    "employeePlaceholder": "Select the employee",
+    "cycleLabel": "Evaluation Cycle",
+    "cyclePlaceholder": "Select the evaluation cycle",
+    "titleArLabel": "Task Title (Arabic)",
+    "titleArPlaceholder": "Enter the task title",
+    "titleEnLabel": "Task Title (English) — optional",
+    "titleEnPlaceholder": "Task title in English",
+    "weightLabel": "Weight (%) — optional",
+    "weightPlaceholder": "e.g. 10",
+    "submit": "Assign Task",
+    "submitting": "Assigning...",
+    "successMessage": "Task assigned successfully.",
+    "errorInvalidInput": "Check the fields — the employee, cycle, and task title are required.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to assign BAU tasks to this employee.",
     "errorUnknown": "An unexpected error occurred."
   }
 }
