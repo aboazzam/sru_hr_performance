@@ -199,12 +199,23 @@
     "columnEndDate": "تاريخ النهاية",
     "columnActions": "",
     "createEvaluation": "إنشاء تقييم",
-    "myEvaluations": "تقييماتي"
+    "myEvaluations": "تقييماتي",
+    "myTeamEvaluations": "تقييمات فريقي"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",
     "subtitle": "تقييمات الأداء الخاصة بي عبر جميع دورات التقييم.",
     "empty": "لا توجد تقييمات لك بعد.",
+    "columnCycle": "الدورة",
+    "columnState": "الحالة",
+    "columnActions": "",
+    "view": "عرض"
+  },
+  "MyTeamEvaluationsPage": {
+    "title": "تقييمات فريقي",
+    "subtitle": "تقييمات الموظفين الذين يرفعون تقاريرهم لك مباشرة (المرؤوسون المباشرون).",
+    "empty": "لا توجد تقييمات لمرؤوسيك المباشرين بعد.",
+    "columnEmployee": "الموظف",
     "columnCycle": "الدورة",
     "columnState": "الحالة",
     "columnActions": "",

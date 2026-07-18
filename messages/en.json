@@ -199,12 +199,23 @@
     "columnEndDate": "End Date",
     "columnActions": "",
     "createEvaluation": "Create Evaluation",
-    "myEvaluations": "My Evaluations"
+    "myEvaluations": "My Evaluations",
+    "myTeamEvaluations": "My Team's Evaluations"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
     "subtitle": "My own performance evaluations across all evaluation cycles.",
     "empty": "You have no evaluations yet.",
+    "columnCycle": "Cycle",
+    "columnState": "State",
+    "columnActions": "",
+    "view": "View"
+  },
+  "MyTeamEvaluationsPage": {
+    "title": "My Team's Evaluations",
+    "subtitle": "Evaluations of employees who report directly to you (direct reports).",
+    "empty": "Your direct reports have no evaluations yet.",
+    "columnEmployee": "Employee",
     "columnCycle": "Cycle",
     "columnState": "State",
     "columnActions": "",
