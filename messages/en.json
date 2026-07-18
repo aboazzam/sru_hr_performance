@@ -197,5 +197,24 @@
     "columnName": "Cycle Name",
     "columnStartDate": "Start Date",
     "columnEndDate": "End Date"
+  },
+  "EvaluationDetailPage": {
+    "stateLabel": "State:",
+    "advanceTo": "Advance to: {state}",
+    "advancing": "Advancing...",
+    "advanceSuccess": "Advanced to the next state successfully.",
+    "noFurtherTransition": "No further transition is available for this evaluation.",
+    "goalsHeading": "Goals",
+    "goalsEmpty": "No goals assigned to this employee in this cycle.",
+    "bauTasksHeading": "BAU Tasks",
+    "bauTasksEmpty": "No BAU tasks assigned to this employee in this cycle.",
+    "columnTitle": "Title",
+    "columnWeight": "Weight",
+    "columnStatus": "Status",
+    "errorInvalidInput": "Invalid evaluation ID.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorNotFound": "This evaluation doesn't exist or you don't have permission to view it.",
+    "errorForbidden": "You don't have permission to advance this evaluation in its current state.",
+    "errorUnknown": "An unexpected error occurred."
   }
 }
