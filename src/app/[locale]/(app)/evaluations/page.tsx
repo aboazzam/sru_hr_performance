@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -59,6 +60,7 @@ export default async function EvaluationCyclesPage() {
                   <th>{t("columnName")}</th>
                   <th>{t("columnStartDate")}</th>
                   <th>{t("columnEndDate")}</th>
+                  <th className="no-print">{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -67,6 +69,15 @@ export default async function EvaluationCyclesPage() {
                     <td>{cycle.name_ar}</td>
                     <td>{cycle.start_date}</td>
                     <td>{cycle.end_date}</td>
+                    <td className="no-print">
+                      <Link
+                        href={`/evaluations/new?cycleId=${cycle.id}`}
+                        className="sru-btn sru-btn-primary"
+                        style={{ fontSize: 13, padding: "6px 12px" }}
+                      >
+                        {t("createEvaluation")}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
