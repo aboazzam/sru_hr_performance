@@ -13,6 +13,7 @@
     "employees": "Employees",
     "careerPath": "Career Path",
     "salaryScale": "Salary Scale",
+    "goalLibrary": "Goal Library",
     "evaluations": "Evaluations",
     "competencies": "Competencies",
     "calibration": "Calibration",
@@ -132,5 +133,14 @@
     "errorInviteFailed": "The employee record was created, but the login invite could not be sent — you can retry later.",
     "errorRateLimited": "Too many attempts in a short period — please wait a moment before trying again.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "GoalLibraryPage": {
+    "title": "Goal Library",
+    "subtitle": "Reusable goal templates for assigning evaluation goals to employees.",
+    "empty": "No goals in the library yet.",
+    "columnTitle": "Goal",
+    "columnJobFamily": "Job Family",
+    "columnDefaultWeight": "Default Weight",
+    "allJobFamilies": "General (all families)"
   }
 }
