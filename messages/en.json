@@ -141,6 +141,31 @@
     "columnTitle": "Goal",
     "columnJobFamily": "Job Family",
     "columnDefaultWeight": "Default Weight",
-    "allJobFamilies": "General (all families)"
+    "allJobFamilies": "General (all families)",
+    "assignGoal": "Assign Goal"
+  },
+  "AssignGoalPage": {
+    "title": "Assign Goal",
+    "subtitle": "Assign an evaluation goal to an employee within an evaluation cycle — from the goal library or a custom goal.",
+    "employeeLabel": "Employee",
+    "employeePlaceholder": "Select the employee",
+    "cycleLabel": "Evaluation Cycle",
+    "cyclePlaceholder": "Select the evaluation cycle",
+    "goalLibraryLabel": "From Goal Library — optional",
+    "goalLibraryPlaceholder": "-- None, a custom title below will be used --",
+    "goalSourceHint": "Pick a goal from the library or enter a custom title below, not both.",
+    "customTitleLabel": "Or a Custom Title",
+    "customTitlePlaceholder": "Enter the goal title",
+    "weightLabel": "Weight (%) — optional",
+    "weightPlaceholder": "e.g. 20",
+    "targetLabel": "Target — optional",
+    "targetPlaceholder": "Describe the expected target for this goal",
+    "submit": "Assign Goal",
+    "submitting": "Assigning...",
+    "successMessage": "Goal assigned successfully.",
+    "errorInvalidInput": "Check the fields — the employee and cycle are required, and exactly one goal source (library or custom).",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to assign goals.",
+    "errorUnknown": "An unexpected error occurred."
   }
 }
