@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Bell, ChevronDown, LogOut } from "lucide-react";
 import { locales, type Locale } from "@/i18n/config";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const localeLabels: Record<Locale, string> = {
   ar: "عربي",
@@ -20,7 +21,15 @@ export function TopBar({
 }) {
   const t = useTranslations("TopBar");
   const pathname = usePathname();
+  const router = useRouter();
   const otherLocale = locales.find((l) => l !== locale) ?? locale;
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <header className="sru-topbar">
@@ -45,8 +54,8 @@ export function TopBar({
           <ChevronDown size={13} aria-hidden />
         </Link>
         <span className="divider" aria-hidden />
-        <button type="button" className="sru-icon-btn">
-          {userName ?? t("login")}
+        <button type="button" className="sru-icon-btn" onClick={handleSignOut}>
+          {userName ?? t("logout")}
           <LogOut size={16} aria-hidden />
         </button>
       </div>
