@@ -196,7 +196,24 @@
     "empty": "لا توجد دورات تقييم بعد.",
     "columnName": "اسم الدورة",
     "columnStartDate": "تاريخ البداية",
-    "columnEndDate": "تاريخ النهاية"
+    "columnEndDate": "تاريخ النهاية",
+    "columnActions": "",
+    "createEvaluation": "إنشاء تقييم"
+  },
+  "CreateEvaluationPage": {
+    "title": "إنشاء تقييم",
+    "subtitle": "بدء تقييم جديد لموظف ضمن دورة تقييم محدَّدة.",
+    "employeeLabel": "الموظف",
+    "employeePlaceholder": "اختر الموظف",
+    "cycleLabel": "دورة التقييم",
+    "cyclePlaceholder": "اختر دورة التقييم",
+    "submit": "إنشاء التقييم",
+    "submitting": "جارٍ الإنشاء...",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إنشاء تقييم لهذا الموظف.",
+    "errorDuplicate": "يوجد تقييم بالفعل لهذا الموظف في هذه الدورة.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   },
   "EvaluationDetailPage": {
     "stateLabel": "الحالة:",
