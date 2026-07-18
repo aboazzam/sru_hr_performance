@@ -14,6 +14,7 @@
     "careerPath": "المسار الوظيفي",
     "salaryScale": "سلم الرواتب",
     "goalLibrary": "بنك الأهداف",
+    "bauTasks": "المهام التشغيلية",
     "evaluations": "التقييمات",
     "competencies": "الجدارات",
     "calibration": "المعايرة",
@@ -166,6 +167,27 @@
     "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة، وهدف واحد فقط (من البنك أو مخصص).",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إسناد الأهداف.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "BauTasksPage": {
+    "title": "المهام التشغيلية",
+    "subtitle": "إسناد مهمة تشغيلية روتينية لموظف ضمن دورة تقييم.",
+    "employeeLabel": "الموظف",
+    "employeePlaceholder": "اختر الموظف",
+    "cycleLabel": "دورة التقييم",
+    "cyclePlaceholder": "اختر دورة التقييم",
+    "titleArLabel": "عنوان المهمة (عربي)",
+    "titleArPlaceholder": "اكتب عنوان المهمة",
+    "titleEnLabel": "عنوان المهمة (إنجليزي) — اختياري",
+    "titleEnPlaceholder": "Task title in English",
+    "weightLabel": "الوزن (%) — اختياري",
+    "weightPlaceholder": "مثال: 10",
+    "submit": "إسناد المهمة",
+    "submitting": "جارٍ الإسناد...",
+    "successMessage": "تم إسناد المهمة بنجاح.",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة وإدخال عنوان المهمة.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إسناد مهام تشغيلية لهذا الموظف.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
