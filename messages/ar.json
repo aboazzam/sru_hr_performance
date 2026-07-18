@@ -197,5 +197,24 @@
     "columnName": "اسم الدورة",
     "columnStartDate": "تاريخ البداية",
     "columnEndDate": "تاريخ النهاية"
+  },
+  "EvaluationDetailPage": {
+    "stateLabel": "الحالة:",
+    "advanceTo": "الانتقال إلى: {state}",
+    "advancing": "جارٍ الانتقال...",
+    "advanceSuccess": "تم الانتقال إلى الحالة التالية بنجاح.",
+    "noFurtherTransition": "لا يوجد انتقال تالٍ متاح لهذا التقييم.",
+    "goalsHeading": "الأهداف",
+    "goalsEmpty": "لا توجد أهداف مُسنَدة لهذا الموظف في هذه الدورة.",
+    "bauTasksHeading": "المهام التشغيلية",
+    "bauTasksEmpty": "لا توجد مهام تشغيلية مُسنَدة لهذا الموظف في هذه الدورة.",
+    "columnTitle": "العنوان",
+    "columnWeight": "الوزن",
+    "columnStatus": "الحالة",
+    "errorInvalidInput": "معرّف تقييم غير صالح.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorNotFound": "هذا التقييم غير موجود أو ليست لديك صلاحية الوصول إليه.",
+    "errorForbidden": "ليست لديك صلاحية الانتقال بهذا التقييم في حالته الحالية.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
