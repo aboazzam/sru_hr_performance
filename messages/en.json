@@ -189,5 +189,13 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to assign BAU tasks to this employee.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "EvaluationCyclesPage": {
+    "title": "Evaluation Cycles",
+    "subtitle": "Performance evaluation cycles — the time periods goals, BAU tasks, and evaluations are built around.",
+    "empty": "No evaluation cycles yet.",
+    "columnName": "Cycle Name",
+    "columnStartDate": "Start Date",
+    "columnEndDate": "End Date"
   }
 }
