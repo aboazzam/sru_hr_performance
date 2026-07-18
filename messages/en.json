@@ -5,7 +5,8 @@
   },
   "TopBar": {
     "notifications": "Notifications",
-    "login": "Log in"
+    "login": "Log in",
+    "logout": "Log out"
   },
   "NavBar": {
     "home": "Home",

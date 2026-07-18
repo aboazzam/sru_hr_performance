@@ -30,11 +30,22 @@ export default async function AppShellLayout({
 
   if (!user) {
     redirect({ href: "/login", locale: safeLocale });
+    return null;
   }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name_ar, full_name_en")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  const userName =
+    (safeLocale === "ar" ? profile?.full_name_ar : profile?.full_name_en ?? profile?.full_name_ar) ??
+    undefined;
 
   return (
     <>
-      <TopBar locale={safeLocale} />
+      <TopBar locale={safeLocale} userName={userName} />
       <NavBar />
       <main className="flex-1">{children}</main>
     </>
