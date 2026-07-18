@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -48,7 +49,12 @@ export default async function GoalLibraryPage() {
             {t("subtitle")}
           </p>
         </div>
-        <PrintButton />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Link href="/goals/assign" className="sru-btn sru-btn-primary">
+            {t("assignGoal")}
+          </Link>
+          <PrintButton />
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

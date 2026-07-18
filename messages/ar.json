@@ -141,6 +141,31 @@
     "columnTitle": "الهدف",
     "columnJobFamily": "القطاع الوظيفي",
     "columnDefaultWeight": "الوزن الافتراضي",
-    "allJobFamilies": "عام (كل القطاعات)"
+    "allJobFamilies": "عام (كل القطاعات)",
+    "assignGoal": "إسناد هدف"
+  },
+  "AssignGoalPage": {
+    "title": "إسناد هدف",
+    "subtitle": "إسناد هدف تقييم لموظف ضمن دورة تقييم — من بنك الأهداف أو هدف مخصص.",
+    "employeeLabel": "الموظف",
+    "employeePlaceholder": "اختر الموظف",
+    "cycleLabel": "دورة التقييم",
+    "cyclePlaceholder": "اختر دورة التقييم",
+    "goalLibraryLabel": "من بنك الأهداف — اختياري",
+    "goalLibraryPlaceholder": "-- بلا، سيُستخدم عنوان مخصص أدناه --",
+    "goalSourceHint": "اختر هدفًا من البنك أو أدخل عنوانًا مخصصًا أدناه، وليس كلاهما.",
+    "customTitleLabel": "أو عنوان مخصص",
+    "customTitlePlaceholder": "اكتب عنوان الهدف",
+    "weightLabel": "الوزن (%) — اختياري",
+    "weightPlaceholder": "مثال: 20",
+    "targetLabel": "المستهدف — اختياري",
+    "targetPlaceholder": "صِف المستهدف المتوقَّع من هذا الهدف",
+    "submit": "إسناد الهدف",
+    "submitting": "جارٍ الإسناد...",
+    "successMessage": "تم إسناد الهدف بنجاح.",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة، وهدف واحد فقط (من البنك أو مخصص).",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إسناد الأهداف.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
