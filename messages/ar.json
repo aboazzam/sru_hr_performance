@@ -327,7 +327,25 @@
     "columnCycle": "الدورة",
     "columnOrgUnit": "الوحدة التنظيمية",
     "columnStatus": "الحالة",
-    "columnNotes": "ملاحظات"
+    "columnNotes": "ملاحظات",
+    "columnActions": "إجراءات",
+    "enterRatings": "إدخال الدرجات"
+  },
+  "CalibrationSessionDetailPage": {
+    "title": "درجات المعايرة",
+    "employeesEmpty": "لا يوجد موظفون في هذه الوحدة التنظيمية.",
+    "columnEmployee": "الموظف",
+    "columnOriginalRating": "الدرجة الأصلية (0-100)",
+    "columnCalibratedRating": "الدرجة بعد المعايرة (0-100)",
+    "columnJustification": "المبرر",
+    "submit": "حفظ الدرجات",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم حفظ درجات المعايرة بنجاح.",
+    "errorInvalidInput": "أحد الحقول غير صالح — يجب أن تكون الدرجة رقمًا بين 0 و100.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorNotFound": "هذه الجلسة غير موجودة أو ليست لديك صلاحية الوصول إليها.",
+    "errorForbidden": "ليست لديك صلاحية إدخال درجات المعايرة لهذه الجلسة.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   },
   "CreateCalibrationSessionPage": {
     "title": "جلسة معايرة جديدة",

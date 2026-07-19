@@ -327,7 +327,25 @@
     "columnCycle": "Cycle",
     "columnOrgUnit": "Org Unit",
     "columnStatus": "Status",
-    "columnNotes": "Notes"
+    "columnNotes": "Notes",
+    "columnActions": "Actions",
+    "enterRatings": "Enter Ratings"
+  },
+  "CalibrationSessionDetailPage": {
+    "title": "Calibration Ratings",
+    "employeesEmpty": "No employees in this org unit.",
+    "columnEmployee": "Employee",
+    "columnOriginalRating": "Original Rating (0-100)",
+    "columnCalibratedRating": "Calibrated Rating (0-100)",
+    "columnJustification": "Justification",
+    "submit": "Save Ratings",
+    "submitting": "Saving...",
+    "successMessage": "Calibration ratings saved successfully.",
+    "errorInvalidInput": "One of the fields is invalid — rating must be a number between 0 and 100.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorNotFound": "This session doesn't exist or you don't have permission to view it.",
+    "errorForbidden": "You don't have permission to enter ratings for this session.",
+    "errorUnknown": "An unexpected error occurred."
   },
   "CreateCalibrationSessionPage": {
     "title": "New Calibration Session",
