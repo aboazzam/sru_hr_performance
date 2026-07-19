@@ -21,6 +21,7 @@
     "calibration": "Calibration",
     "promotions": "Promotions",
     "rewards": "Rewards",
+    "vacancies": "Vacancies",
     "admin": "Admin"
   },
   "PrintButton": {
@@ -438,6 +439,34 @@
     "errorInvalidInput": "Check the fields — employee, cycle, and reward type are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to enter rewards.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "VacanciesPage": {
+    "title": "Vacancies",
+    "subtitle": "Open job vacancies by job title and org unit.",
+    "newVacancy": "New Vacancy",
+    "empty": "No vacancies yet.",
+    "columnJobTitle": "Job Title",
+    "columnOrgUnit": "Org Unit",
+    "columnStatus": "Status",
+    "columnRequirements": "Requirements",
+    "gradeLabel": "Grade {grade}"
+  },
+  "CreateVacancyPage": {
+    "title": "New Vacancy",
+    "subtitle": "Add a new job vacancy for a specific job title and org unit.",
+    "jobTitleLabel": "Job Title",
+    "jobTitlePlaceholder": "Select job title",
+    "orgUnitLabel": "Org Unit",
+    "orgUnitPlaceholder": "Select org unit",
+    "requirementsLabel": "Requirements — optional",
+    "requirementsPlaceholder": "Write this vacancy's requirements",
+    "gradeLabel": "Grade {grade}",
+    "submit": "Add Vacancy",
+    "submitting": "Adding...",
+    "errorInvalidInput": "Check the fields — job title and org unit are required.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to add vacancies.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

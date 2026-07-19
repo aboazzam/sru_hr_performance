@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   MessagesSquare,
   Gift,
+  Briefcase,
 } from "lucide-react";
 
 export interface NavItem {
@@ -40,6 +41,7 @@ export const navItems: NavItem[] = [
   { segment: "calibration", labelKey: "calibration", icon: BarChart3 },
   { segment: "promotions", labelKey: "promotions", icon: TrendingUp },
   { segment: "rewards", labelKey: "rewards", icon: Gift },
+  { segment: "vacancies", labelKey: "vacancies", icon: Briefcase },
   { segment: "admin", labelKey: "admin", icon: ShieldCheck },
 ];
 
