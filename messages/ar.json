@@ -224,6 +224,7 @@
     "subtitle": "تقييمات الأداء الخاصة بي عبر جميع دورات التقييم.",
     "empty": "لا توجد تقييمات لك بعد.",
     "columnCycle": "الدورة",
+    "columnEvalType": "نوع التقييم",
     "columnState": "الحالة",
     "columnActions": "",
     "view": "عرض"
@@ -234,6 +235,7 @@
     "empty": "لا توجد تقييمات لمرؤوسيك المباشرين بعد.",
     "columnEmployee": "الموظف",
     "columnCycle": "الدورة",
+    "columnEvalType": "نوع التقييم",
     "columnState": "الحالة",
     "columnActions": "",
     "view": "عرض"
@@ -245,12 +247,14 @@
     "employeePlaceholder": "اختر الموظف",
     "cycleLabel": "دورة التقييم",
     "cyclePlaceholder": "اختر دورة التقييم",
+    "evalTypeLabel": "نوع التقييم",
+    "evalTypePlaceholder": "اختر نوع التقييم (ذاتي/رئيس مباشر/زملاء/مستفيدين)",
     "submit": "إنشاء التقييم",
     "submitting": "جارٍ الإنشاء...",
-    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة.",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة ونوع التقييم.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إنشاء تقييم لهذا الموظف.",
-    "errorDuplicate": "يوجد تقييم بالفعل لهذا الموظف في هذه الدورة.",
+    "errorDuplicate": "يوجد بالفعل تقييم من هذا النوع لهذا الموظف في هذه الدورة.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
   "EvaluationDetailPage": {

@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { evaluationStateLabels, type EvaluationState } from "@/lib/vpra";
+import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function MyTeamEvaluationsPage() {
@@ -42,7 +42,7 @@ export default async function MyTeamEvaluationsPage() {
     reportIds.length > 0
       ? await supabase
           .from("evaluations")
-          .select("id, state, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar)")
+          .select("id, state, eval_type, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar)")
           .in("employee_id", reportIds)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
@@ -51,6 +51,7 @@ export default async function MyTeamEvaluationsPage() {
   const evaluations = data as unknown as Array<{
     id: string;
     state: EvaluationState;
+    eval_type: EvalType;
     profiles: { full_name_ar: string; employee_number: string } | null;
     evaluation_cycles: { name_ar: string } | null;
   }> | null;
@@ -75,6 +76,7 @@ export default async function MyTeamEvaluationsPage() {
                 <tr>
                   <th>{t("columnEmployee")}</th>
                   <th>{t("columnCycle")}</th>
+                  <th>{t("columnEvalType")}</th>
                   <th>{t("columnState")}</th>
                   <th>{t("columnActions")}</th>
                 </tr>
@@ -86,6 +88,7 @@ export default async function MyTeamEvaluationsPage() {
                       {evaluation.profiles?.employee_number} — {evaluation.profiles?.full_name_ar}
                     </td>
                     <td>{evaluation.evaluation_cycles?.name_ar ?? "—"}</td>
+                    <td>{evalTypeLabels[evaluation.eval_type]}</td>
                     <td>{evaluationStateLabels[evaluation.state]}</td>
                     <td>
                       <Link

@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { evaluationStateLabels, type EvaluationState } from "@/lib/vpra";
+import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function MyEvaluationsPage() {
@@ -30,7 +30,7 @@ export default async function MyEvaluationsPage() {
   const { data } = profile
     ? await supabase
         .from("evaluations")
-        .select("id, state, evaluation_cycles(name_ar)")
+        .select("id, state, eval_type, evaluation_cycles(name_ar)")
         .eq("employee_id", profile.id)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -39,6 +39,7 @@ export default async function MyEvaluationsPage() {
   const evaluations = data as unknown as Array<{
     id: string;
     state: EvaluationState;
+    eval_type: EvalType;
     evaluation_cycles: { name_ar: string } | null;
   }> | null;
 
@@ -61,6 +62,7 @@ export default async function MyEvaluationsPage() {
               <thead>
                 <tr>
                   <th>{t("columnCycle")}</th>
+                  <th>{t("columnEvalType")}</th>
                   <th>{t("columnState")}</th>
                   <th>{t("columnActions")}</th>
                 </tr>
@@ -69,6 +71,7 @@ export default async function MyEvaluationsPage() {
                 {evaluations.map((evaluation) => (
                   <tr key={evaluation.id}>
                     <td>{evaluation.evaluation_cycles?.name_ar ?? "—"}</td>
+                    <td>{evalTypeLabels[evaluation.eval_type]}</td>
                     <td>{evaluationStateLabels[evaluation.state]}</td>
                     <td>
                       <Link

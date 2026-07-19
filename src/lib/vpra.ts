@@ -123,6 +123,27 @@ export const evaluationStateLabels: Record<EvaluationState, string> = {
 };
 
 /**
+ * `evaluations.eval_type` (20260718000012) — SRU_System_Design.md's own
+ * sketch, resolved with the project owner: this allows MULTIPLE
+ * evaluation rows per employee per cycle, one per perspective, not a
+ * single-row classification (the DB's UNIQUE index is
+ * (employee_id, cycle_id, eval_type), not just (employee_id, cycle_id)).
+ * Domain vocabulary, not translatable UI chrome — same convention as
+ * `evaluationStateLabels` (used directly regardless of locale, e.g. in
+ * AdminPage/the evaluation detail page).
+ */
+export type EvalType = "self" | "supervisor" | "peer" | "customer";
+
+export const evalTypes: EvalType[] = ["self", "supervisor", "peer", "customer"];
+
+export const evalTypeLabels: Record<EvalType, string> = {
+  self: "تقييم ذاتي",
+  supervisor: "تقييم الرئيس المباشر",
+  peer: "تقييم الزملاء",
+  customer: "تقييم المستفيدين",
+};
+
+/**
  * The roles that participate directly in the evaluation lifecycle table
  * (section 4-A). CLAUDE.md 4-A itself only names five (employee, supervisor,
  * manager, committee, hr_admin) — `field_supervisor` was added here

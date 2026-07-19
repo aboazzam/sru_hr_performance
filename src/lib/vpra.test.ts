@@ -10,9 +10,12 @@ import {
   canAdvanceEvaluationState,
   nextEvaluationState,
   transitionEvaluationState,
+  evalTypes,
+  evalTypeLabels,
   type VpraLevel,
   type EvaluationState,
   type EvaluationActorRole,
+  type EvalType,
 } from "./vpra";
 
 describe("hasVpraAccess", () => {
@@ -63,6 +66,14 @@ describe("static reference lists", () => {
       "approved",
       "finalized",
     ]);
+  });
+
+  it("has exactly the 4 eval_type perspectives, each with an Arabic label", () => {
+    const expected: EvalType[] = ["self", "supervisor", "peer", "customer"];
+    expect(evalTypes).toEqual(expected);
+    for (const type of evalTypes) {
+      expect(evalTypeLabels[type].length).toBeGreaterThan(0);
+    }
   });
 });
 

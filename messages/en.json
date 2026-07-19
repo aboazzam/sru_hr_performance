@@ -224,6 +224,7 @@
     "subtitle": "My own performance evaluations across all evaluation cycles.",
     "empty": "You have no evaluations yet.",
     "columnCycle": "Cycle",
+    "columnEvalType": "Evaluation Type",
     "columnState": "State",
     "columnActions": "",
     "view": "View"
@@ -234,6 +235,7 @@
     "empty": "Your direct reports have no evaluations yet.",
     "columnEmployee": "Employee",
     "columnCycle": "Cycle",
+    "columnEvalType": "Evaluation Type",
     "columnState": "State",
     "columnActions": "",
     "view": "View"
@@ -245,12 +247,14 @@
     "employeePlaceholder": "Select the employee",
     "cycleLabel": "Evaluation Cycle",
     "cyclePlaceholder": "Select the evaluation cycle",
+    "evalTypeLabel": "Evaluation Type",
+    "evalTypePlaceholder": "Select the evaluation type (self/supervisor/peer/customer)",
     "submit": "Create Evaluation",
     "submitting": "Creating...",
-    "errorInvalidInput": "Check the fields — the employee and cycle are required.",
+    "errorInvalidInput": "Check the fields — the employee, cycle, and evaluation type are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to create an evaluation for this employee.",
-    "errorDuplicate": "An evaluation already exists for this employee in this cycle.",
+    "errorDuplicate": "An evaluation of this type already exists for this employee in this cycle.",
     "errorUnknown": "An unexpected error occurred."
   },
   "EvaluationDetailPage": {

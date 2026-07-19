@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { evaluationStateLabels, type EvaluationState } from "@/lib/vpra";
+import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -14,15 +14,18 @@ export default async function EvaluationDetailPage({
   const supabase = await createClient();
 
   // RLS-scoped to the caller (evaluations_select: self-row OR
-  // check_vpra('evaluation','approve', org_unit_id)) — a missing row and
-  // an RLS-blocked row look identical here on purpose, same reasoning as
-  // the transitionEvaluation action itself. profiles/evaluation_cycles are
-  // single, non-nullable FKs -> verified single-object embed shape
-  // directly against the REST API with a real temporary row before
-  // writing this.
+  // check_vpra('evaluation','recommend', org_unit_id) [manager/committee
+  // org-unit oversight] OR is_my_direct_report() [direct supervisor]) — a
+  // missing row and an RLS-blocked row look identical here on purpose,
+  // same reasoning as the transitionEvaluation action itself.
+  // profiles/evaluation_cycles are single, non-nullable FKs -> verified
+  // single-object embed shape directly against the REST API with a real
+  // temporary row before writing this.
   const { data: evaluation } = await supabase
     .from("evaluations")
-    .select("id, employee_id, cycle_id, state, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar)")
+    .select(
+      "id, employee_id, cycle_id, state, eval_type, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar)"
+    )
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -41,11 +44,12 @@ export default async function EvaluationDetailPage({
   };
   const cycle = evaluation.evaluation_cycles as unknown as { name_ar: string };
   const state = evaluation.state as EvaluationState;
+  const evalType = evaluation.eval_type as EvalType;
 
   // goals/bau_tasks are scoped by employee_id + cycle_id (not
   // evaluation_id — those tables have no FK to evaluations); their own RLS
   // (goalAssignment/bauTasks) is independent of evaluations' RLS, so a
-  // caller who can see this evaluation header (e.g. hr_admin, 'approve' on
+  // caller who can see this evaluation header (e.g. hr_admin/manager via
   // 'evaluation') may still see zero rows here if they don't separately
   // clear goalAssignment/bauTasks' own bar — not a bug, each table's RLS
   // is evaluated on its own terms.
@@ -84,7 +88,7 @@ export default async function EvaluationDetailPage({
         {employee.full_name_ar}
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
-        {employee.employee_number} — {cycle.name_ar}
+        {employee.employee_number} — {cycle.name_ar} — {evalTypeLabels[evalType]}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
