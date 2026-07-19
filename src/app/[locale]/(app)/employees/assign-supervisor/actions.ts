@@ -4,16 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const assignSupervisorSchema = z
-  .object({
-    employeeId: z.string().uuid(),
-    supervisorId: z.string().uuid(),
-  })
-  .refine((data) => data.employeeId !== data.supervisorId, {
-    message: "employee cannot be their own supervisor",
-  });
-
-export type AssignSupervisorState =
+export type SaveSupervisorAssignmentsState =
   | { status: "success" }
   | {
       status: "error";
@@ -21,29 +12,38 @@ export type AssignSupervisorState =
     }
   | null;
 
+const supervisorFieldSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v === undefined || v === "" ? null : v))
+  .pipe(z.string().uuid().nullable());
+
 /**
- * Sets `profiles.supervisor_id` (20260718000008) for an employee, through
- * the caller's own RLS-respecting client — `profiles_update` requires
- * `check_vpra('employeeData','prepare', org_unit_id)`, which only
- * `hr_admin` reaches today (the sole role at 'approve', clearing
- * 'prepare') per the seeded matrix — same authorization level as the
- * existing employee-invite flow. The self-supervision CHECK
- * (`profiles_supervisor_not_self`) is validated in Zod too, not just
- * relied on at the DB layer.
+ * Manages `profiles.supervisor_id` (20260718000008) for every employee in
+ * one screen, replacing the earlier one-employee-at-a-time "assign"
+ * form -- that form had no visibility into existing assignments and
+ * couldn't clear one. The set of employees is re-derived here from
+ * `profiles` itself, never trusted from the client, and only matched
+ * against form fields named `supervisor_<id>` for each id it just
+ * fetched, same discipline as `saveEvaluationScores`/
+ * `saveCalibrationResults`.
+ *
+ * Each write goes through the caller's own RLS-respecting client --
+ * `profiles_update`'s `check_vpra('employeeData','prepare', org_unit_id)`
+ * is the real authorization boundary, `hr_admin`-only per the seeded
+ * matrix, same level the original single-employee form required. Only
+ * employees whose assignment actually changed are written, to avoid a
+ * flood of no-op UPDATEs and a noisy audit trail. An empty selection
+ * clears the assignment (`supervisor_id = NULL`); the
+ * `profiles_supervisor_not_self` CHECK is the final backstop against
+ * self-supervision (already screened out client-side by excluding each
+ * row's own id from its own options).
  */
-export async function assignSupervisor(
-  _prevState: AssignSupervisorState,
+export async function saveSupervisorAssignments(
+  _prevState: SaveSupervisorAssignmentsState,
   formData: FormData
-): Promise<AssignSupervisorState> {
-  const parsed = assignSupervisorSchema.safeParse({
-    employeeId: formData.get("employeeId"),
-    supervisorId: formData.get("supervisorId"),
-  });
-
-  if (!parsed.success) {
-    return { status: "error", message: "invalid_input" };
-  }
-
+): Promise<SaveSupervisorAssignmentsState> {
   const supabase = await createClient();
   const {
     data: { user: actor },
@@ -53,37 +53,56 @@ export async function assignSupervisor(
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { employeeId, supervisorId } = parsed.data;
-
-  const { data: updated, error } = await supabase
+  const { data: employees } = await supabase
     .from("profiles")
-    .update({ supervisor_id: supervisorId })
-    .eq("id", employeeId)
-    .select("id")
-    .maybeSingle();
+    .select("id, supervisor_id")
+    .is("deleted_at", null);
 
-  if (error) {
-    if (error.code === "23514") {
+  type Change = { employeeId: string; before: string | null; after: string | null };
+  const changes: Change[] = [];
+
+  for (const employee of employees ?? []) {
+    const parsed = supervisorFieldSchema.safeParse(
+      formData.get(`supervisor_${employee.id}`)?.toString()
+    );
+    if (!parsed.success) {
       return { status: "error", message: "invalid_input" };
     }
-    return { status: "error", message: "unknown" };
-  }
-
-  // A 0-row update (blocked by RLS, or the employee doesn't exist) looks
-  // like "forbidden" here — same generic-blocked-vs-missing convention
-  // already used across this project.
-  if (!updated) {
-    return { status: "error", message: "forbidden" };
+    if (parsed.data !== employee.supervisor_id) {
+      changes.push({ employeeId: employee.id, before: employee.supervisor_id, after: parsed.data });
+    }
   }
 
   const admin = createAdminClient();
-  await admin.from("audit_log").insert({
-    actor_id: actor.id,
-    action: "supervisor_assigned",
-    entity: "profiles",
-    entity_id: employeeId,
-    after_data: { supervisor_id: supervisorId },
-  });
+
+  for (const change of changes) {
+    const { data: updated, error } = await supabase
+      .from("profiles")
+      .update({ supervisor_id: change.after })
+      .eq("id", change.employeeId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === "23514") {
+        return { status: "error", message: "invalid_input" };
+      }
+      return { status: "error", message: "unknown" };
+    }
+
+    if (!updated) {
+      return { status: "error", message: "forbidden" };
+    }
+
+    await admin.from("audit_log").insert({
+      actor_id: actor.id,
+      action: "supervisor_assigned",
+      entity: "profiles",
+      entity_id: change.employeeId,
+      before_data: { supervisor_id: change.before },
+      after_data: { supervisor_id: change.after },
+    });
+  }
 
   return { status: "success" };
 }
