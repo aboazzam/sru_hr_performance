@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { createEvaluation, type CreateEvaluationState } from "@/app/[locale]/(app)/evaluations/new/actions";
 import type { Locale } from "@/i18n/config";
+import { evalTypes, evalTypeLabels } from "@/lib/vpra";
 
 interface EmployeeOption {
   id: string;
@@ -73,6 +74,20 @@ export function CreateEvaluationForm({
           {cycles.map((cycle) => (
             <option key={cycle.id} value={cycle.id}>
               {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("evalTypeLabel")}</label>
+        <select name="evalType" required className={inputClass} defaultValue="">
+          <option value="" disabled>
+            {t("evalTypePlaceholder")}
+          </option>
+          {evalTypes.map((type) => (
+            <option key={type} value={type}>
+              {evalTypeLabels[type]}
             </option>
           ))}
         </select>
