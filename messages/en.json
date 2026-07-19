@@ -20,6 +20,7 @@
     "competencies": "Competencies",
     "calibration": "Calibration",
     "promotions": "Promotions",
+    "rewards": "Rewards",
     "admin": "Admin"
   },
   "PrintButton": {
@@ -400,6 +401,35 @@
     "errorInvalidInput": "Check the fields — the current and proposed job titles must differ.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to propose promotions.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "RewardsPage": {
+    "title": "Rewards",
+    "subtitle": "Employee rewards for the annual promotions & rewards cycle.",
+    "newReward": "Enter Reward",
+    "empty": "No rewards yet.",
+    "columnEmployee": "Employee",
+    "columnCycle": "Cycle",
+    "columnType": "Reward Type",
+    "columnAmount": "Amount",
+    "columnStatus": "Status"
+  },
+  "EnterRewardPage": {
+    "title": "Enter Reward",
+    "subtitle": "Enter a reward for an employee within a given cycle.",
+    "employeeLabel": "Employee",
+    "employeePlaceholder": "Select employee",
+    "cycleLabel": "Cycle",
+    "cyclePlaceholder": "Select cycle",
+    "rewardTypeLabel": "Reward Type",
+    "rewardTypePlaceholder": "e.g. cash bonus, certificate of appreciation",
+    "amountLabel": "Amount — optional",
+    "amountPlaceholder": "e.g. 1500",
+    "submit": "Enter Reward",
+    "submitting": "Submitting...",
+    "errorInvalidInput": "Check the fields — employee, cycle, and reward type are required.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to enter rewards.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

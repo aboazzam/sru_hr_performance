@@ -20,6 +20,7 @@
     "competencies": "الجدارات",
     "calibration": "المعايرة",
     "promotions": "الترقيات",
+    "rewards": "المكافآت",
     "admin": "الإدارة"
   },
   "PrintButton": {
@@ -400,6 +401,35 @@
     "errorInvalidInput": "تحقق من الحقول — يجب أن يختلف المسمى الحالي عن المقترح.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية اقتراح ترقيات.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "RewardsPage": {
+    "title": "المكافآت",
+    "subtitle": "مكافآت الموظفين حسب دورة الترقيات والمكافآت السنوية.",
+    "newReward": "إدخال مكافأة",
+    "empty": "لا توجد مكافآت بعد.",
+    "columnEmployee": "الموظف",
+    "columnCycle": "الدورة",
+    "columnType": "نوع المكافأة",
+    "columnAmount": "المبلغ",
+    "columnStatus": "الحالة"
+  },
+  "EnterRewardPage": {
+    "title": "إدخال مكافأة",
+    "subtitle": "إدخال مكافأة لموظف ضمن دورة محددة.",
+    "employeeLabel": "الموظف",
+    "employeePlaceholder": "اختر الموظف",
+    "cycleLabel": "الدورة",
+    "cyclePlaceholder": "اختر الدورة",
+    "rewardTypeLabel": "نوع المكافأة",
+    "rewardTypePlaceholder": "مثال: مكافأة نقدية، شهادة تقدير",
+    "amountLabel": "المبلغ — اختياري",
+    "amountPlaceholder": "مثال: 1500",
+    "submit": "إدخال المكافأة",
+    "submitting": "جارٍ الإدخال...",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة وإدخال نوع المكافأة.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إدخال مكافآت.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ShieldCheck,
   MessagesSquare,
+  Gift,
 } from "lucide-react";
 
 export interface NavItem {
@@ -38,6 +39,7 @@ export const navItems: NavItem[] = [
   { segment: "competencies", labelKey: "competencies", icon: Award },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3 },
   { segment: "promotions", labelKey: "promotions", icon: TrendingUp },
+  { segment: "rewards", labelKey: "rewards", icon: Gift },
   { segment: "admin", labelKey: "admin", icon: ShieldCheck },
 ];
 
