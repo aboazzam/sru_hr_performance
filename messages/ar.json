@@ -412,7 +412,15 @@
     "columnCycle": "الدورة",
     "columnType": "نوع المكافأة",
     "columnAmount": "المبلغ",
-    "columnStatus": "الحالة"
+    "columnStatus": "الحالة",
+    "columnActions": "إجراءات",
+    "approve": "اعتماد",
+    "reject": "رفض",
+    "errorInvalidInput": "طلب غير صالح.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorNotFound": "هذه المكافأة غير موجودة أو ليست لديك صلاحية الوصول إليها.",
+    "errorForbidden": "ليست لديك صلاحية مراجعة هذه المكافأة.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   },
   "EnterRewardPage": {
     "title": "إدخال مكافأة",
