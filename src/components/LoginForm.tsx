@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { login, type LoginState } from "@/app/[locale]/login/actions";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
 
 type LoginError = NonNullable<LoginState>["error"];
@@ -63,6 +64,12 @@ export function LoginForm({ locale }: { locale: Locale }) {
       >
         {pending ? t("submitting") : t("submit")}
       </button>
+
+      <p className="text-sm text-center">
+        <Link href="/forgot-password" className="text-[var(--color-primary)] hover:underline">
+          {t("forgotPassword")}
+        </Link>
+      </p>
     </form>
   );
 }
