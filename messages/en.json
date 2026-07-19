@@ -270,10 +270,29 @@
     "columnTitle": "Title",
     "columnWeight": "Weight",
     "columnStatus": "Status",
+    "enterScores": "Enter Scores",
     "errorInvalidInput": "Invalid evaluation ID.",
     "errorUnauthenticated": "You must be logged in.",
     "errorNotFound": "This evaluation doesn't exist or you don't have permission to view it.",
     "errorForbidden": "You don't have permission to advance this evaluation in its current state.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "EvaluationScoresPage": {
+    "title": "Enter Scores",
+    "competenciesHeading": "Competencies",
+    "competenciesEmpty": "No competencies in the framework.",
+    "goalsHeading": "Goals",
+    "goalsEmpty": "No goals assigned to this employee in this cycle.",
+    "columnSubject": "Item",
+    "columnScore": "Score (0-100)",
+    "columnComment": "Comment",
+    "submit": "Save Scores",
+    "submitting": "Saving...",
+    "successMessage": "Scores saved successfully.",
+    "errorInvalidInput": "One of the fields is invalid — score must be a number between 0 and 100.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorNotFound": "This evaluation doesn't exist or you don't have permission to view it.",
+    "errorForbidden": "You don't have permission to enter scores for this evaluation.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

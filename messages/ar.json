@@ -270,10 +270,29 @@
     "columnTitle": "العنوان",
     "columnWeight": "الوزن",
     "columnStatus": "الحالة",
+    "enterScores": "إدخال الدرجات",
     "errorInvalidInput": "معرّف تقييم غير صالح.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorNotFound": "هذا التقييم غير موجود أو ليست لديك صلاحية الوصول إليه.",
     "errorForbidden": "ليست لديك صلاحية الانتقال بهذا التقييم في حالته الحالية.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "EvaluationScoresPage": {
+    "title": "إدخال الدرجات",
+    "competenciesHeading": "الجدارات",
+    "competenciesEmpty": "لا توجد جدارات في الإطار.",
+    "goalsHeading": "الأهداف",
+    "goalsEmpty": "لا توجد أهداف مُسنَدة لهذا الموظف في هذه الدورة.",
+    "columnSubject": "العنصر",
+    "columnScore": "الدرجة (0-100)",
+    "columnComment": "ملاحظة",
+    "submit": "حفظ الدرجات",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم حفظ الدرجات بنجاح.",
+    "errorInvalidInput": "أحد الحقول غير صالح — يجب أن تكون الدرجة رقمًا بين 0 و100.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorNotFound": "هذا التقييم غير موجود أو ليست لديك صلاحية الوصول إليه.",
+    "errorForbidden": "ليست لديك صلاحية إدخال الدرجات لهذا التقييم.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }

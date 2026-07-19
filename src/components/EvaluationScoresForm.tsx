@@ -1,0 +1,145 @@
+"use client";
+
+import { useActionState } from "react";
+import { useTranslations } from "next-intl";
+import {
+  saveEvaluationScores,
+  type SaveEvaluationScoresState,
+} from "@/app/[locale]/(app)/evaluations/[id]/scores/actions";
+
+interface ScoredSubject {
+  id: string;
+  titleAr?: string;
+  nameAr?: string;
+  initialScore: number | null;
+  initialComment: string | null;
+}
+
+type ErrorMessage = Extract<SaveEvaluationScoresState, { status: "error" }>["message"];
+
+const errorMessageKeys: Record<ErrorMessage, string> = {
+  invalid_input: "errorInvalidInput",
+  unauthenticated: "errorUnauthenticated",
+  not_found: "errorNotFound",
+  forbidden: "errorForbidden",
+  unknown: "errorUnknown",
+};
+
+export function EvaluationScoresForm({
+  evaluationId,
+  competencies,
+  goals,
+}: {
+  evaluationId: string;
+  competencies: ScoredSubject[];
+  goals: ScoredSubject[];
+}) {
+  const t = useTranslations("EvaluationScoresPage");
+  const [state, formAction, pending] = useActionState<SaveEvaluationScoresState, FormData>(
+    saveEvaluationScores.bind(null, evaluationId),
+    null
+  );
+
+  const scoreInputClass =
+    "w-24 px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  const commentInputClass =
+    "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+
+  function renderRows(prefix: "competency" | "goal", subjects: ScoredSubject[]) {
+    return subjects.map((subject) => (
+      <tr key={subject.id}>
+        <td>{subject.nameAr ?? subject.titleAr}</td>
+        <td>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step="0.1"
+            name={`score_${prefix}_${subject.id}`}
+            defaultValue={subject.initialScore ?? ""}
+            className={scoreInputClass}
+          />
+        </td>
+        <td>
+          <input
+            type="text"
+            name={`comment_${prefix}_${subject.id}`}
+            defaultValue={subject.initialComment ?? ""}
+            className={commentInputClass}
+          />
+        </td>
+      </tr>
+    ));
+  }
+
+  return (
+    <form action={formAction} className="space-y-8">
+      <div>
+        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+          {t("competenciesHeading")}
+        </h2>
+        {competencies.length === 0 ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("competenciesEmpty")}</p>
+        ) : (
+          <div className="sru-card">
+            <div className="table-scroll">
+              <table className="admin-matrix">
+                <thead>
+                  <tr>
+                    <th>{t("columnSubject")}</th>
+                    <th>{t("columnScore")}</th>
+                    <th>{t("columnComment")}</th>
+                  </tr>
+                </thead>
+                <tbody>{renderRows("competency", competencies)}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+          {t("goalsHeading")}
+        </h2>
+        {goals.length === 0 ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
+        ) : (
+          <div className="sru-card">
+            <div className="table-scroll">
+              <table className="admin-matrix">
+                <thead>
+                  <tr>
+                    <th>{t("columnSubject")}</th>
+                    <th>{t("columnScore")}</th>
+                    <th>{t("columnComment")}</th>
+                  </tr>
+                </thead>
+                <tbody>{renderRows("goal", goals)}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {state?.status === "error" && (
+        <p role="alert" className="text-sm text-red-600">
+          {t(errorMessageKeys[state.message])}
+        </p>
+      )}
+      {state?.status === "success" && (
+        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+          {t("successMessage")}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="sru-btn sru-btn-primary"
+      >
+        {pending ? t("submitting") : t("submit")}
+      </button>
+    </form>
+  );
+}

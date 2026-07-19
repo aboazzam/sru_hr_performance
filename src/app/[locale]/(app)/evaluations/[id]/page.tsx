@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
 
@@ -97,6 +98,11 @@ export default async function EvaluationDetailPage({
           <strong>{t("stateLabel")}</strong> {evaluationStateLabels[state]}
         </p>
         <EvaluationStateAction evaluationId={evaluation.id} currentState={state} />
+        <div style={{ marginTop: 12 }}>
+          <Link href={`/evaluations/${evaluation.id}/scores`} className="sru-btn sru-btn-primary">
+            {t("enterScores")}
+          </Link>
+        </div>
       </div>
 
       <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
