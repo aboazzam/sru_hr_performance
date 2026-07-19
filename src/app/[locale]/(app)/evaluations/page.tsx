@@ -52,6 +52,9 @@ export default async function EvaluationCyclesPage() {
           <Link href="/evaluations/team" className="sru-btn sru-btn-primary">
             {t("myTeamEvaluations")}
           </Link>
+          <Link href="/evaluations/review" className="sru-btn sru-btn-primary">
+            {t("needsMyReview")}
+          </Link>
           <PrintButton />
         </div>
       </div>

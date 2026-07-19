@@ -218,7 +218,8 @@
     "columnActions": "",
     "createEvaluation": "إنشاء تقييم",
     "myEvaluations": "تقييماتي",
-    "myTeamEvaluations": "تقييمات فريقي"
+    "myTeamEvaluations": "تقييمات فريقي",
+    "needsMyReview": "بانتظار مراجعتي"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",
@@ -240,6 +241,17 @@
     "columnState": "الحالة",
     "columnActions": "",
     "view": "عرض"
+  },
+  "EvaluationsReviewPage": {
+    "title": "بانتظار مراجعتي",
+    "subtitle": "تقييمات موظفين آخرين تحتاج إجراءً منك الآن (ترشيح أو اعتماد) حسب دورك الحالي.",
+    "empty": "لا توجد تقييمات بانتظار مراجعتك حاليًا.",
+    "columnEmployee": "الموظف",
+    "columnCycle": "الدورة",
+    "columnEvalType": "نوع التقييم",
+    "columnState": "الحالة",
+    "columnActions": "",
+    "review": "مراجعة"
   },
   "CreateEvaluationPage": {
     "title": "إنشاء تقييم",

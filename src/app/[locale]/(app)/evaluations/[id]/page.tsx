@@ -42,8 +42,17 @@ export default async function EvaluationDetailPage({
   const employee = evaluation.profiles as unknown as {
     full_name_ar: string;
     employee_number: string;
-  };
-  const cycle = evaluation.evaluation_cycles as unknown as { name_ar: string };
+  } | null;
+  // `evaluation_cycles` can be null here even though evaluations_select
+  // already let this row through -- evaluation_cycles_select is gated
+  // independently (check_vpra('evaluation','view') with no org-unit
+  // argument, a known pre-existing gap: an org_unit-scoped role can never
+  // see ANY row there, only scope_type='all' roles can, documented since
+  // migration 20260719000004). Found live via the new "needs my review"
+  // queue crashing here for an org_unit-scoped manager -- null-safety
+  // fixed here (not the underlying evaluation_cycles RLS gap, which stays
+  // a separate, already-flagged follow-up).
+  const cycle = evaluation.evaluation_cycles as unknown as { name_ar: string } | null;
   const state = evaluation.state as EvaluationState;
   const evalType = evaluation.eval_type as EvalType;
 
@@ -86,10 +95,10 @@ export default async function EvaluationDetailPage({
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
-        {employee.full_name_ar}
+        {employee?.full_name_ar ?? "—"}
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
-        {employee.employee_number} — {cycle.name_ar} — {evalTypeLabels[evalType]}
+        {employee?.employee_number ?? "—"} — {cycle?.name_ar ?? "—"} — {evalTypeLabels[evalType]}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 

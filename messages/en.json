@@ -218,7 +218,8 @@
     "columnActions": "",
     "createEvaluation": "Create Evaluation",
     "myEvaluations": "My Evaluations",
-    "myTeamEvaluations": "My Team's Evaluations"
+    "myTeamEvaluations": "My Team's Evaluations",
+    "needsMyReview": "Needs My Review"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
@@ -240,6 +241,17 @@
     "columnState": "State",
     "columnActions": "",
     "view": "View"
+  },
+  "EvaluationsReviewPage": {
+    "title": "Needs My Review",
+    "subtitle": "Other employees' evaluations that need action from you now (recommend or approve), based on your current role.",
+    "empty": "No evaluations currently need your review.",
+    "columnEmployee": "Employee",
+    "columnCycle": "Cycle",
+    "columnEvalType": "Evaluation Type",
+    "columnState": "State",
+    "columnActions": "",
+    "review": "Review"
   },
   "CreateEvaluationPage": {
     "title": "Create Evaluation",
