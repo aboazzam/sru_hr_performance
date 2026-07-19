@@ -318,5 +318,31 @@
     "errorForbidden": "You don't have permission to submit this feedback.",
     "errorDuplicate": "You've already submitted this type of feedback for this employee in this cycle.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "CalibrationSessionsPage": {
+    "title": "Calibration Sessions",
+    "subtitle": "Guided calibration sessions for performance evaluations, by cycle and org unit.",
+    "newSession": "New Session",
+    "empty": "No calibration sessions yet.",
+    "columnCycle": "Cycle",
+    "columnOrgUnit": "Org Unit",
+    "columnStatus": "Status",
+    "columnNotes": "Notes"
+  },
+  "CreateCalibrationSessionPage": {
+    "title": "New Calibration Session",
+    "subtitle": "Create a guided calibration session for a specific evaluation cycle and org unit.",
+    "cycleLabel": "Evaluation Cycle",
+    "cyclePlaceholder": "Select cycle",
+    "orgUnitLabel": "Org Unit",
+    "orgUnitPlaceholder": "Select org unit",
+    "notesLabel": "Notes — optional",
+    "notesPlaceholder": "Write any notes about this session",
+    "submit": "Create Session",
+    "submitting": "Creating...",
+    "errorInvalidInput": "Check the fields — cycle and org unit are required.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to create calibration sessions.",
+    "errorUnknown": "An unexpected error occurred."
   }
 }

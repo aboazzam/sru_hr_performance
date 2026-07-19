@@ -318,5 +318,31 @@
     "errorForbidden": "ليست لديك صلاحية إرسال هذا التقييم.",
     "errorDuplicate": "لقد أرسلت بالفعل تقييمًا من هذا النوع لهذا الموظف في هذه الدورة.",
     "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "CalibrationSessionsPage": {
+    "title": "جلسات المعايرة",
+    "subtitle": "جلسات معايرة تقييمات الأداء (guided) حسب الدورة والوحدة التنظيمية.",
+    "newSession": "جلسة جديدة",
+    "empty": "لا توجد جلسات معايرة بعد.",
+    "columnCycle": "الدورة",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnStatus": "الحالة",
+    "columnNotes": "ملاحظات"
+  },
+  "CreateCalibrationSessionPage": {
+    "title": "جلسة معايرة جديدة",
+    "subtitle": "إنشاء جلسة معايرة (guided) لدورة تقييم ووحدة تنظيمية محددة.",
+    "cycleLabel": "دورة التقييم",
+    "cyclePlaceholder": "اختر دورة التقييم",
+    "orgUnitLabel": "الوحدة التنظيمية",
+    "orgUnitPlaceholder": "اختر الوحدة التنظيمية",
+    "notesLabel": "ملاحظات — اختياري",
+    "notesPlaceholder": "اكتب أي ملاحظات حول هذه الجلسة",
+    "submit": "إنشاء الجلسة",
+    "submitting": "جارٍ الإنشاء...",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار دورة تقييم ووحدة تنظيمية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إنشاء جلسات معايرة.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
