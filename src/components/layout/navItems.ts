@@ -17,6 +17,7 @@ import {
   BarChart3,
   TrendingUp,
   ShieldCheck,
+  MessagesSquare,
 } from "lucide-react";
 
 export interface NavItem {
@@ -33,6 +34,7 @@ export const navItems: NavItem[] = [
   { segment: "goals/library", labelKey: "goalLibrary", icon: Target },
   { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks },
   { segment: "evaluations", labelKey: "evaluations", icon: ClipboardList },
+  { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare },
   { segment: "competencies", labelKey: "competencies", icon: Award },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3 },
   { segment: "promotions", labelKey: "promotions", icon: TrendingUp },

@@ -16,6 +16,7 @@
     "goalLibrary": "بنك الأهداف",
     "bauTasks": "المهام التشغيلية",
     "evaluations": "التقييمات",
+    "feedback360": "تقييم 360",
     "competencies": "الجدارات",
     "calibration": "المعايرة",
     "promotions": "الترقيات",
@@ -293,6 +294,29 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorNotFound": "هذا التقييم غير موجود أو ليست لديك صلاحية الوصول إليه.",
     "errorForbidden": "ليست لديك صلاحية إدخال الدرجات لهذا التقييم.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "Feedback360Page": {
+    "title": "تقييم 360",
+    "subtitle": "إرسال ملاحظة تقييم 360 حول موظف — ذاتي، زميل، رئيس مباشر، أو مستفيد.",
+    "relationLabel": "نوع التقييم",
+    "relationPlaceholder": "اختر نوع التقييم",
+    "targetLabel": "الموظف المُقيَّم",
+    "targetPlaceholder": "اختر الموظف",
+    "cycleLabel": "دورة التقييم",
+    "cyclePlaceholder": "اختر دورة التقييم",
+    "overallScoreLabel": "الدرجة الإجمالية (0-100) — اختياري",
+    "overallScorePlaceholder": "مثال: 85",
+    "commentsLabel": "ملاحظات — اختياري",
+    "commentsPlaceholder": "اكتب ملاحظاتك",
+    "isAnonymousLabel": "إرسال هذا التقييم بشكل مجهول",
+    "submit": "إرسال التقييم",
+    "submitting": "جارٍ الإرسال...",
+    "successMessage": "تم إرسال التقييم بنجاح.",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار نوع التقييم والموظف والدورة، والدرجة إن وُجدت بين 0 و100.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إرسال هذا التقييم.",
+    "errorDuplicate": "لقد أرسلت بالفعل تقييمًا من هذا النوع لهذا الموظف في هذه الدورة.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
