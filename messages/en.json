@@ -16,6 +16,7 @@
     "goalLibrary": "Goal Library",
     "bauTasks": "BAU Tasks",
     "evaluations": "Evaluations",
+    "feedback360": "360 Feedback",
     "competencies": "Competencies",
     "calibration": "Calibration",
     "promotions": "Promotions",
@@ -293,6 +294,29 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorNotFound": "This evaluation doesn't exist or you don't have permission to view it.",
     "errorForbidden": "You don't have permission to enter scores for this evaluation.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "Feedback360Page": {
+    "title": "360 Feedback",
+    "subtitle": "Submit 360 feedback about an employee — self, peer, supervisor, or customer.",
+    "relationLabel": "Feedback Type",
+    "relationPlaceholder": "Select feedback type",
+    "targetLabel": "Employee Being Rated",
+    "targetPlaceholder": "Select employee",
+    "cycleLabel": "Evaluation Cycle",
+    "cyclePlaceholder": "Select cycle",
+    "overallScoreLabel": "Overall Score (0-100) — optional",
+    "overallScorePlaceholder": "e.g. 85",
+    "commentsLabel": "Comments — optional",
+    "commentsPlaceholder": "Write your comments",
+    "isAnonymousLabel": "Submit this feedback anonymously",
+    "submit": "Submit Feedback",
+    "submitting": "Submitting...",
+    "successMessage": "Feedback submitted successfully.",
+    "errorInvalidInput": "Check the fields — feedback type, employee, and cycle are required, and the score (if any) must be between 0 and 100.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You don't have permission to submit this feedback.",
+    "errorDuplicate": "You've already submitted this type of feedback for this employee in this cycle.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

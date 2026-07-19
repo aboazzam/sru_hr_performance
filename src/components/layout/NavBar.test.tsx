@@ -10,9 +10,9 @@ import { describe, it, expect } from "vitest";
 import { navItems, navItemHref, isNavItemActive } from "./navItems";
 
 describe("NavBar route table", () => {
-  it("has exactly 11 items with unique segments", () => {
-    expect(navItems).toHaveLength(11);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(11);
+  it("has exactly 12 items with unique segments", () => {
+    expect(navItems).toHaveLength(12);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(12);
   });
 
   it("has exactly one home item (empty segment)", () => {
