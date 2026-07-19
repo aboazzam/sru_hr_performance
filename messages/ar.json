@@ -21,6 +21,7 @@
     "calibration": "المعايرة",
     "promotions": "الترقيات",
     "rewards": "المكافآت",
+    "vacancies": "الشواغر",
     "admin": "الإدارة"
   },
   "PrintButton": {
@@ -438,6 +439,34 @@
     "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة وإدخال نوع المكافأة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إدخال مكافآت.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "VacanciesPage": {
+    "title": "الشواغر",
+    "subtitle": "الشواغر الوظيفية المتاحة حسب المسمى الوظيفي والوحدة التنظيمية.",
+    "newVacancy": "شاغر جديد",
+    "empty": "لا توجد شواغر بعد.",
+    "columnJobTitle": "المسمى الوظيفي",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnStatus": "الحالة",
+    "columnRequirements": "المتطلبات",
+    "gradeLabel": "درجة {grade}"
+  },
+  "CreateVacancyPage": {
+    "title": "شاغر جديد",
+    "subtitle": "إضافة شاغر وظيفي جديد لمسمى وظيفي ووحدة تنظيمية محددة.",
+    "jobTitleLabel": "المسمى الوظيفي",
+    "jobTitlePlaceholder": "اختر المسمى الوظيفي",
+    "orgUnitLabel": "الوحدة التنظيمية",
+    "orgUnitPlaceholder": "اختر الوحدة التنظيمية",
+    "requirementsLabel": "المتطلبات — اختياري",
+    "requirementsPlaceholder": "اكتب متطلبات هذا الشاغر",
+    "gradeLabel": "درجة {grade}",
+    "submit": "إضافة الشاغر",
+    "submitting": "جارٍ الإضافة...",
+    "errorInvalidInput": "تحقق من الحقول — يجب اختيار المسمى الوظيفي والوحدة التنظيمية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إضافة شواغر.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
