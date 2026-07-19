@@ -378,6 +378,7 @@
   "PromotionsPage": {
     "title": "الترقيات",
     "subtitle": "مراجعة واعتماد ترقيات الموظفين حسب دورة الترقيات السنوية.",
+    "approvalHistory": "سجل الاعتماد",
     "newPromotion": "اقتراح ترقية",
     "empty": "لا توجد ترقيات بعد.",
     "columnEmployee": "الموظف",
@@ -417,6 +418,7 @@
   "RewardsPage": {
     "title": "المكافآت",
     "subtitle": "مكافآت الموظفين حسب دورة الترقيات والمكافآت السنوية.",
+    "approvalHistory": "سجل الاعتماد",
     "newReward": "إدخال مكافأة",
     "empty": "لا توجد مكافآت بعد.",
     "columnEmployee": "الموظف",
@@ -432,6 +434,20 @@
     "errorNotFound": "هذه المكافأة غير موجودة أو ليست لديك صلاحية الوصول إليها.",
     "errorForbidden": "ليست لديك صلاحية مراجعة هذه المكافأة.",
     "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "PromotionsRewardsHistoryPage": {
+    "title": "سجل اعتماد الترقيات والمكافآت",
+    "subtitle": "سجل قرارات الاعتماد والرفض لجميع الترقيات والمكافآت، مع اسم من راجع كل قرار وتاريخه.",
+    "empty": "لا توجد قرارات اعتماد أو رفض بعد.",
+    "columnDate": "التاريخ",
+    "columnType": "النوع",
+    "columnEmployee": "الموظف",
+    "columnDetails": "التفاصيل",
+    "columnDecision": "القرار (قبل ← بعد)",
+    "arrow": "←",
+    "columnReviewer": "راجعه",
+    "typePromotion": "ترقية",
+    "typeReward": "مكافأة"
   },
   "EnterRewardPage": {
     "title": "إدخال مكافأة",

@@ -378,6 +378,7 @@
   "PromotionsPage": {
     "title": "Promotions",
     "subtitle": "Review and approve employee promotions for the annual promotions cycle.",
+    "approvalHistory": "Approval History",
     "newPromotion": "Propose Promotion",
     "empty": "No promotions yet.",
     "columnEmployee": "Employee",
@@ -417,6 +418,7 @@
   "RewardsPage": {
     "title": "Rewards",
     "subtitle": "Employee rewards for the annual promotions & rewards cycle.",
+    "approvalHistory": "Approval History",
     "newReward": "Enter Reward",
     "empty": "No rewards yet.",
     "columnEmployee": "Employee",
@@ -432,6 +434,20 @@
     "errorNotFound": "This reward doesn't exist or you don't have permission to view it.",
     "errorForbidden": "You don't have permission to review this reward.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "PromotionsRewardsHistoryPage": {
+    "title": "Promotions & Rewards Approval History",
+    "subtitle": "History of approve/reject decisions for every promotion and reward, with who reviewed each decision and when.",
+    "empty": "No approval or rejection decisions yet.",
+    "columnDate": "Date",
+    "columnType": "Type",
+    "columnEmployee": "Employee",
+    "columnDetails": "Details",
+    "columnDecision": "Decision (before → after)",
+    "arrow": "→",
+    "columnReviewer": "Reviewed By",
+    "typePromotion": "Promotion",
+    "typeReward": "Reward"
   },
   "EnterRewardPage": {
     "title": "Enter Reward",
