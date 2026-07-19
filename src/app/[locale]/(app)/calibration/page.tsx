@@ -68,6 +68,7 @@ export default async function CalibrationSessionsPage() {
                   <th>{t("columnOrgUnit")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("columnNotes")}</th>
+                  <th>{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,6 +78,15 @@ export default async function CalibrationSessionsPage() {
                     <td>{session.org_units?.name_ar ?? "—"}</td>
                     <td>{session.status}</td>
                     <td>{session.notes ?? "—"}</td>
+                    <td>
+                      <Link
+                        href={`/calibration/${session.id}`}
+                        className="sru-btn sru-btn-primary"
+                        style={{ fontSize: 13, padding: "6px 12px" }}
+                      >
+                        {t("enterRatings")}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
