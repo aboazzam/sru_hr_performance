@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { RewardReviewActions } from "@/components/RewardReviewActions";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // This route existed in NavBar already (pointing at /rewards, added
@@ -72,6 +73,7 @@ export default async function RewardsPage() {
                   <th>{t("columnType")}</th>
                   <th>{t("columnAmount")}</th>
                   <th>{t("columnStatus")}</th>
+                  <th>{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -84,6 +86,11 @@ export default async function RewardsPage() {
                     <td>{reward.reward_type}</td>
                     <td>{reward.amount != null ? reward.amount : "—"}</td>
                     <td>{reward.status}</td>
+                    <td>
+                      {reward.status === "pending" && (
+                        <RewardReviewActions rewardId={reward.id} />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

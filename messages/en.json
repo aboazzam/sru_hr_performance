@@ -412,7 +412,15 @@
     "columnCycle": "Cycle",
     "columnType": "Reward Type",
     "columnAmount": "Amount",
-    "columnStatus": "Status"
+    "columnStatus": "Status",
+    "columnActions": "Actions",
+    "approve": "Approve",
+    "reject": "Reject",
+    "errorInvalidInput": "Invalid request.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorNotFound": "This reward doesn't exist or you don't have permission to view it.",
+    "errorForbidden": "You don't have permission to review this reward.",
+    "errorUnknown": "An unexpected error occurred."
   },
   "EnterRewardPage": {
     "title": "Enter Reward",
