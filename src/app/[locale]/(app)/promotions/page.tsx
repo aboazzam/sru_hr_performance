@@ -54,9 +54,14 @@ export default async function PromotionsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Link href="/promotions/new" className="sru-btn sru-btn-primary">
-          {t("newPromotion")}
-        </Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Link href="/promotions/history" className="sru-btn sru-btn-primary">
+            {t("approvalHistory")}
+          </Link>
+          <Link href="/promotions/new" className="sru-btn sru-btn-primary">
+            {t("newPromotion")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

@@ -54,9 +54,14 @@ export default async function RewardsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Link href="/rewards/new" className="sru-btn sru-btn-primary">
-          {t("newReward")}
-        </Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Link href="/promotions/history" className="sru-btn sru-btn-primary">
+            {t("approvalHistory")}
+          </Link>
+          <Link href="/rewards/new" className="sru-btn sru-btn-primary">
+            {t("newReward")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
