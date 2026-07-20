@@ -5,6 +5,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getDir, isLocale } from "@/i18n/config";
 import { AppThemeProvider } from "@/components/theme-provider";
+import { RecoveryHashRedirect } from "@/components/RecoveryHashRedirect";
 import "../globals.css";
 
 const cairo = Cairo({
@@ -53,6 +54,7 @@ export default async function LocaleLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
+          <RecoveryHashRedirect locale={locale} />
           <AppThemeProvider>{children}</AppThemeProvider>
         </NextIntlClientProvider>
       </body>
