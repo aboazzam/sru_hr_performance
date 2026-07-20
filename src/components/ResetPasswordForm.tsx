@@ -10,11 +10,27 @@ type Status = "checking" | "ready" | "invalid" | "submitting" | "success";
 /**
  * Consumes the recovery/invite access_token that Supabase Auth puts in the
  * URL hash fragment (never sent to the server, so this must run client-side).
- * @supabase/ssr's browser client has `detectSessionInUrl: true` by default —
- * it parses the hash on load and fires `onAuthStateChange` once a session
- * is established. This page previously didn't exist at all, so that token
- * had nowhere to be consumed (CLAUDE.md/HANDOVER.md's long-standing "no
- * password-reset UI" gap).
+ * This page previously didn't exist at all, so that token had nowhere to be
+ * consumed (CLAUDE.md/HANDOVER.md's long-standing "no password-reset UI" gap).
+ *
+ * Deliberately does NOT rely on `@supabase/ssr`'s automatic
+ * `detectSessionInUrl` hash-parsing (the original approach here, and the
+ * SDK's own documented recommendation) -- found via `auth: { debug: true }`
+ * that it always throws `AuthPKCEGrantCodeExchangeError: Not a valid PKCE
+ * flow url.` before ever calling `/auth/v1/user`, for every recovery link
+ * without exception. Root cause, confirmed by reading
+ * node_modules/@supabase/ssr/dist/main/createBrowserClient.js directly:
+ * `createBrowserClient` spreads `options.auth` and THEN hardcodes
+ * `flowType: "pkce"` unconditionally afterward in the same object literal --
+ * silently discarding any `flowType: "implicit"` override, so there is no
+ * way to fix this by passing client options; a recovery link's
+ * `access_token`/`refresh_token`-in-hash shape is the implicit-grant format,
+ * permanently mismatched against the client's hardcoded PKCE flow.
+ *
+ * The fix: parse the hash ourselves and call `setSession()` directly --
+ * `setSession()` has no flow-type dependency at all (verified by reading
+ * `GoTrueClient.js`'s `_setSession`), it just needs the two tokens. This
+ * sidesteps the SDK's broken auto-detection entirely rather than fighting it.
  */
 export function ResetPasswordForm() {
   const t = useTranslations("ResetPasswordPage");
@@ -25,27 +41,20 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const type = hashParams.get("type");
+
+    if (type !== "recovery" || !accessToken || !refreshToken) {
+      Promise.resolve().then(() => setStatus("invalid"));
+      return;
+    }
+
     const supabase = createClient();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || session) {
-        setStatus((current) => (current === "checking" ? "ready" : current));
-      }
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error }) => {
+      setStatus(error ? "invalid" : "ready");
     });
-
-    // If the hash was already processed before this listener attached.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setStatus((current) => (current === "checking" ? "ready" : current));
-    });
-
-    const timeout = setTimeout(() => {
-      setStatus((current) => (current === "checking" ? "invalid" : current));
-    }, 5000);
-
-    return () => {
-      listener.subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
   }, []);
 
   async function handleSubmit(event: FormEvent) {
