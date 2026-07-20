@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { Locale } from "@/i18n/config";
 
@@ -36,6 +36,27 @@ export type ForgotPasswordState =
  * Rate limited by email (3/15min — stricter than login's 5, since this
  * triggers an actual email send) and by IP (10/15min), same
  * `x-forwarded-for`-trusting, fail-open-on-RPC-error posture as `login`.
+ *
+ * Deliberately does NOT use `@/lib/supabase/server`'s `createClient()` here
+ * — that goes through `@supabase/ssr`'s `createServerClient`, which (like
+ * its `createBrowserClient` sibling) unconditionally hardcodes
+ * `flowType: "pkce"`, discarding any override. A real production incident
+ * traced this exactly: `resetPasswordForEmail` called through that client
+ * generates a `pkce_`-prefixed recovery token, whose completion requires a
+ * `code_verifier` stored as a cookie on OUR OWN domain — but the resulting
+ * email link points at `supabase.co/auth/v1/verify`, a completely
+ * different domain that can never receive that cookie. The link fails with
+ * `otp_expired` even on a genuine, immediate first click, with no email
+ * scanner or timing issue involved at all — confirmed by curl-testing a
+ * freshly generated real link the moment it was issued. Using a plain
+ * `@supabase/supabase-js` client instead (bypassing `@supabase/ssr`
+ * entirely) is the fix: its own default `flowType` is `"implicit"`, which
+ * is what recovery-by-email fundamentally needs (no code_verifier/cookie
+ * pairing at all -- the session tokens travel in the URL hash instead,
+ * exactly what `ResetPasswordForm`'s `setSession()`-based handling already
+ * expects). No session/cookie handling is needed for this one-shot,
+ * unauthenticated call anyway, so bypassing `@supabase/ssr` here costs
+ * nothing.
  */
 export async function requestPasswordReset(
   locale: Locale,
@@ -69,7 +90,11 @@ export async function requestPasswordReset(
     requestHeaders.get("x-forwarded-proto") ?? (forwardedHost?.startsWith("localhost") ? "http" : "https");
   const origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : "";
 
-  const supabase = await createClient();
+  const supabase = createSupabaseJsClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false } }
+  );
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${origin}/${locale}/reset-password`,
   });
