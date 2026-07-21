@@ -31,6 +31,16 @@ type Status = "checking" | "ready" | "invalid" | "submitting" | "success";
  * `setSession()` has no flow-type dependency at all (verified by reading
  * `GoTrueClient.js`'s `_setSession`), it just needs the two tokens. This
  * sidesteps the SDK's broken auto-detection entirely rather than fighting it.
+ *
+ * The `type !== "recovery"` guard originally rejected `type=invite` outright
+ * despite this comment already claiming to handle it -- found live testing a
+ * real invite link end-to-end (2026-07-22): a freshly-generated, unexpired
+ * link verified correctly at Supabase and produced a valid access_token/
+ * refresh_token hash, but nothing in the app recognized `type=invite`, so
+ * the invited user was silently stranded with no way to set an initial
+ * password. `setSession()` doesn't care which flow produced the tokens, so
+ * accepting both types here (and in `RecoveryHashRedirect`) was the entire
+ * fix.
  */
 export function ResetPasswordForm() {
   const t = useTranslations("ResetPasswordPage");
@@ -46,7 +56,7 @@ export function ResetPasswordForm() {
     const refreshToken = hashParams.get("refresh_token");
     const type = hashParams.get("type");
 
-    if (type !== "recovery" || !accessToken || !refreshToken) {
+    if ((type !== "recovery" && type !== "invite") || !accessToken || !refreshToken) {
       Promise.resolve().then(() => setStatus("invalid"));
       return;
     }
