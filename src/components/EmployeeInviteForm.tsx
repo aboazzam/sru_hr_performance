@@ -101,7 +101,7 @@ export function EmployeeInviteForm({ orgUnits }: { orgUnits: OrgUnitOption[] }) 
 
       <div>
         <label className="block text-sm font-medium mb-1">{t("hireDateLabel")}</label>
-        <input type="date" name="hireDate" className={inputClass} />
+        <input type="date" name="hireDate" dir="ltr" className={inputClass} />
       </div>
 
       {state?.status === "error" && (
