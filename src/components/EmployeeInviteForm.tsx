@@ -9,6 +9,11 @@ interface OrgUnitOption {
   name_ar: string;
 }
 
+interface RoleOption {
+  id: string;
+  name_ar: string;
+}
+
 type ErrorMessage = Extract<InviteEmployeeState, { status: "error" }>["message"];
 
 const errorMessageKeys: Record<ErrorMessage, string> = {
@@ -17,17 +22,25 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   forbidden: "errorForbidden",
   duplicate: "errorDuplicate",
   invite_failed: "errorInviteFailed",
+  role_assignment_failed: "errorRoleAssignmentFailed",
   rate_limited: "errorRateLimited",
   unknown: "errorUnknown",
 };
 
-export function EmployeeInviteForm({ orgUnits }: { orgUnits: OrgUnitOption[] }) {
+export function EmployeeInviteForm({
+  orgUnits,
+  roles,
+}: {
+  orgUnits: OrgUnitOption[];
+  roles: RoleOption[];
+}) {
   const t = useTranslations("EmployeeInvitePage");
   const [state, formAction, pending] = useActionState<InviteEmployeeState, FormData>(
     inviteEmployee,
     null
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const orgUnitsChecklistRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (state?.status === "success") {
@@ -102,6 +115,61 @@ export function EmployeeInviteForm({ orgUnits }: { orgUnits: OrgUnitOption[] }) 
       <div>
         <label className="block text-sm font-medium mb-1">{t("hireDateLabel")}</label>
         <input type="date" name="hireDate" dir="ltr" className={inputClass} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("roleLabel")}</label>
+        <select name="roleId" required className={inputClass} defaultValue="">
+          <option value="" disabled>
+            {t("rolePlaceholder")}
+          </option>
+          {roles.map((role) => (
+            <option key={role.id} value={role.id}>
+              {role.name_ar}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("scopeLabel")}</label>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="scopeType"
+              value="all"
+              defaultChecked
+              onChange={() => {
+                if (orgUnitsChecklistRef.current) orgUnitsChecklistRef.current.style.display = "none";
+              }}
+            />
+            {t("scopeAllOption")}
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="scopeType"
+              value="org_unit"
+              onChange={() => {
+                if (orgUnitsChecklistRef.current) orgUnitsChecklistRef.current.style.display = "block";
+              }}
+            />
+            {t("scopeOrgUnitOption")}
+          </label>
+        </div>
+        <div
+          ref={orgUnitsChecklistRef}
+          style={{ display: "none" }}
+          className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-[var(--border)] p-3 space-y-1"
+        >
+          {orgUnits.map((unit) => (
+            <label key={unit.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="scopeOrgUnitIds" value={unit.id} />
+              {unit.name_ar}
+            </label>
+          ))}
+        </div>
       </div>
 
       {state?.status === "error" && (
