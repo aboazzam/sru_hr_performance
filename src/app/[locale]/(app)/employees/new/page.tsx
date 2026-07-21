@@ -16,6 +16,12 @@ export default async function EmployeeInvitePage() {
     .select("id, name_ar")
     .order("name_ar");
 
+  // roles_select requires userManagement view/approve (migration 6) — the same two
+  // roles that can reach this page's employeeData=approve bar (super_admin, hr_admin)
+  // both hold userManagement=approve too, so this list is never empty for whoever
+  // can actually submit the form.
+  const { data: roles } = await supabase.from("roles").select("id, name_ar").order("name_ar");
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -27,7 +33,7 @@ export default async function EmployeeInvitePage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {orgUnits && orgUnits.length > 0 ? (
-        <EmployeeInviteForm orgUnits={orgUnits} />
+        <EmployeeInviteForm orgUnits={orgUnits} roles={roles ?? []} />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}

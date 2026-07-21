@@ -5,23 +5,39 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-const inviteSchema = z.object({
-  employeeNumber: z.string().trim().min(1),
-  fullNameAr: z.string().trim().min(1),
-  fullNameEn: z.string().trim().optional(),
-  email: z.string().trim().toLowerCase().email(),
-  orgUnitId: z.string().uuid(),
-  hireDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-});
+const inviteSchema = z
+  .object({
+    employeeNumber: z.string().trim().min(1),
+    fullNameAr: z.string().trim().min(1),
+    fullNameEn: z.string().trim().optional(),
+    email: z.string().trim().toLowerCase().email(),
+    orgUnitId: z.string().uuid(),
+    hireDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    roleId: z.string().uuid(),
+    scopeType: z.enum(["all", "org_unit"]),
+    scopeOrgUnitIds: z.array(z.string().uuid()).optional(),
+  })
+  .refine(
+    (data) => data.scopeType === "all" || (data.scopeOrgUnitIds?.length ?? 0) > 0,
+    { message: "org units required for org_unit scope", path: ["scopeOrgUnitIds"] }
+  );
 
 export type InviteEmployeeState =
   | { status: "success"; email: string }
   | {
       status: "error";
-      message: "invalid_input" | "unauthenticated" | "forbidden" | "duplicate" | "invite_failed" | "rate_limited" | "unknown";
+      message:
+        | "invalid_input"
+        | "unauthenticated"
+        | "forbidden"
+        | "duplicate"
+        | "invite_failed"
+        | "role_assignment_failed"
+        | "rate_limited"
+        | "unknown";
     }
   | null;
 
@@ -51,6 +67,9 @@ export async function inviteEmployee(
     email: formData.get("email"),
     orgUnitId: formData.get("orgUnitId"),
     hireDate: formData.get("hireDate") || undefined,
+    roleId: formData.get("roleId"),
+    scopeType: formData.get("scopeType"),
+    scopeOrgUnitIds: formData.getAll("scopeOrgUnitIds"),
   });
 
   if (!parsed.success) {
@@ -74,7 +93,8 @@ export async function inviteEmployee(
     return { status: "error", message: "rate_limited" };
   }
 
-  const { employeeNumber, fullNameAr, fullNameEn, email, orgUnitId, hireDate } = parsed.data;
+  const { employeeNumber, fullNameAr, fullNameEn, email, orgUnitId, hireDate, roleId, scopeType, scopeOrgUnitIds } =
+    parsed.data;
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -100,6 +120,32 @@ export async function inviteEmployee(
   }
 
   const admin = createAdminClient();
+
+  // Role assignment can't go directly into user_roles yet -- the invited employee has no
+  // auth.users row until they accept the invite, and user_roles.user_id references it.
+  // pending_role_assignments (keyed by profile_id) holds the intent instead;
+  // link_profile_to_auth_user() promotes it into real user_roles rows the moment the
+  // auth user links up (20260721000001). A role scoped to several org units is just
+  // several pending rows, same as user_roles' own scope_type='org_unit' pattern.
+  const pendingRows: {
+    profile_id: string;
+    role_id: string;
+    scope_type: "all" | "org_unit";
+    org_unit_id: string | null;
+    assigned_by: string;
+  }[] =
+    scopeType === "all"
+      ? [{ profile_id: profile.id, role_id: roleId, scope_type: "all", org_unit_id: null, assigned_by: actor.id }]
+      : (scopeOrgUnitIds ?? []).map((unitId) => ({
+          profile_id: profile.id,
+          role_id: roleId,
+          scope_type: "org_unit",
+          org_unit_id: unitId,
+          assigned_by: actor.id,
+        }));
+
+  const { error: roleError } = await supabase.from("pending_role_assignments").insert(pendingRows);
+
   const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email);
 
   await admin.from("audit_log").insert({
@@ -107,8 +153,19 @@ export async function inviteEmployee(
     action: inviteError ? "employee_invite_failed" : "employee_invited",
     entity: "profiles",
     entity_id: profile.id,
-    after_data: { employee_number: employeeNumber, email, org_unit_id: orgUnitId },
+    after_data: {
+      employee_number: employeeNumber,
+      email,
+      org_unit_id: orgUnitId,
+      role_id: roleId,
+      scope_type: scopeType,
+      scope_org_unit_ids: scopeType === "org_unit" ? scopeOrgUnitIds : null,
+    },
   });
+
+  if (roleError) {
+    return { status: "error", message: "role_assignment_failed" };
+  }
 
   if (inviteError) {
     return { status: "error", message: "invite_failed" };
