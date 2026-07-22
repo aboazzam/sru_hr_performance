@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
 import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // Read-only for now, per the project owner's explicit "not editable yet"
@@ -169,24 +170,13 @@ export default async function MyProfilePage() {
     calibration_sessions: { evaluation_cycles: { name_ar: string } | null } | null;
   }> | null;
 
-  return (
-    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
-        {t("title")}
-      </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
-        {t("subtitle")}
-      </p>
-      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
-
-      {!p ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noProfile")}</p>
-      ) : (
-        <>
-          <section id="my-data" style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("infoTitle")}
-            </h2>
+  const tabs: ProfileTab[] = !p
+    ? []
+    : [
+        {
+          id: "my-data",
+          label: t("infoTitle"),
+          content: (
             <div className="sru-card" style={{ padding: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
               <div>
                 <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("employeeNumberLabel")}</div>
@@ -241,48 +231,50 @@ export default async function MyProfilePage() {
                 <div style={{ fontSize: 14, color: "var(--sru-muted)" }}>{t("comingSoon")}</div>
               </div>
             </div>
-          </section>
-
-          <section id="my-kpis" style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("kpisTitle")}
-            </h2>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("kpisNote")}</p>
-            {!goals || goals.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
-            ) : (
-              <div className="sru-card">
-                <div className="table-scroll">
-                  <table className="admin-matrix">
-                    <thead>
-                      <tr>
-                        <th>{t("goalsColumnTitle")}</th>
-                        <th>{t("goalsColumnCycle")}</th>
-                        <th>{t("goalsColumnWeight")}</th>
-                        <th>{t("goalsColumnStatus")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {goals.map((goal) => (
-                        <tr key={goal.id}>
-                          <td>{goal.goal_library?.title_ar ?? goal.custom_title_ar ?? "—"}</td>
-                          <td>{goal.evaluation_cycles?.name_ar ?? "—"}</td>
-                          <td>{goal.weight != null ? `${goal.weight}%` : "—"}</td>
-                          <td>{goal.status}</td>
+          ),
+        },
+        {
+          id: "my-kpis",
+          label: t("kpisTitle"),
+          content: (
+            <>
+              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("kpisNote")}</p>
+              {!goals || goals.length === 0 ? (
+                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
+              ) : (
+                <div className="sru-card">
+                  <div className="table-scroll">
+                    <table className="admin-matrix">
+                      <thead>
+                        <tr>
+                          <th>{t("goalsColumnTitle")}</th>
+                          <th>{t("goalsColumnCycle")}</th>
+                          <th>{t("goalsColumnWeight")}</th>
+                          <th>{t("goalsColumnStatus")}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {goals.map((goal) => (
+                          <tr key={goal.id}>
+                            <td>{goal.goal_library?.title_ar ?? goal.custom_title_ar ?? "—"}</td>
+                            <td>{goal.evaluation_cycles?.name_ar ?? "—"}</td>
+                            <td>{goal.weight != null ? `${goal.weight}%` : "—"}</td>
+                            <td>{goal.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
-          </section>
-
-          <section id="my-tasks" style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("tasksTitle")}
-            </h2>
-            {!tasks || tasks.length === 0 ? (
+              )}
+            </>
+          ),
+        },
+        {
+          id: "my-tasks",
+          label: t("tasksTitle"),
+          content:
+            !tasks || tasks.length === 0 ? (
               <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("tasksEmpty")}</p>
             ) : (
               <div className="sru-card">
@@ -309,158 +301,171 @@ export default async function MyProfilePage() {
                   </table>
                 </div>
               </div>
-            )}
-          </section>
-
-          <section id="my-competencies" style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("competenciesTitle")}
-            </h2>
-            {/* [استنتاج] The real `competencies` table has job_family_id populated on 0
-                of 27 rows today, so there is no actual per-job-family data to cascade --
-                this shows the full institutional framework (same source as /competencies)
-                rather than a personalized subset, flagged to the project owner as a data
-                gap rather than building a filter with nothing to filter by. */}
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>
-              {t("competenciesNote")}
-            </p>
-            {pillars.map((pillar) => {
-              const items = getCompetenciesByPillar(pillar);
-              return (
-                <div key={pillar} style={{ marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--sru-blue)", marginBottom: 8 }}>
-                    {pillar}
-                  </h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {items.map((c) => (
-                      <span key={c.id} className="sru-chip">
-                        {c.name}
-                      </span>
+            ),
+        },
+        {
+          id: "my-competencies",
+          label: t("competenciesTitle"),
+          content: (
+            <>
+              {/* [استنتاج] The real `competencies` table has job_family_id populated on 0
+                  of 27 rows today, so there is no actual per-job-family data to cascade --
+                  this shows the full institutional framework (same source as /competencies)
+                  rather than a personalized subset, flagged to the project owner as a data
+                  gap rather than building a filter with nothing to filter by. */}
+              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>
+                {t("competenciesNote")}
+              </p>
+              {pillars.map((pillar) => {
+                const items = getCompetenciesByPillar(pillar);
+                return (
+                  <div key={pillar} style={{ marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--sru-blue)", marginBottom: 8 }}>
+                      {pillar}
+                    </h3>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {items.map((c) => (
+                        <span key={c.id} className="sru-chip">
+                          {c.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          ),
+        },
+        {
+          id: "career-path",
+          label: t("careerPathTitle"),
+          content: !p.job_title_id ? (
+            <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathNoJobTitle")}</p>
+          ) : !careerPaths || careerPaths.length === 0 ? (
+            <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathEmpty")}</p>
+          ) : (
+            <div className="sru-card">
+              <div className="table-scroll">
+                <table className="admin-matrix">
+                  <thead>
+                    <tr>
+                      <th>{t("careerPathColumnFrom")}</th>
+                      <th>{t("careerPathColumnTo")}</th>
+                      <th>{t("careerPathColumnRequirements")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {careerPaths.map((path) => (
+                      <tr key={path.id}>
+                        <td>
+                          {path.from_job_title?.name_ar ?? "—"}
+                          {path.from_job_title && (
+                            <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
+                              {t("gradeLabel", { grade: path.from_job_title.grade_level })}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {path.to_job_title?.name_ar ?? "—"}
+                          {path.to_job_title && (
+                            <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
+                              {t("gradeLabel", { grade: path.to_job_title.grade_level })}
+                            </span>
+                          )}
+                        </td>
+                        <td>{path.requirements_ar ?? "—"}</td>
+                      </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: "my-performance",
+          label: t("performanceTitle"),
+          content: (
+            <>
+              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("performanceNote")}</p>
+              {!evaluationsList || evaluationsList.length === 0 ? (
+                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("performanceEvaluationsEmpty")}</p>
+              ) : (
+                <div className="sru-card" style={{ marginBottom: 20 }}>
+                  <div className="table-scroll">
+                    <table className="admin-matrix">
+                      <thead>
+                        <tr>
+                          <th>{t("performanceColumnCycle")}</th>
+                          <th>{t("performanceColumnType")}</th>
+                          <th>{t("performanceColumnState")}</th>
+                          <th>{t("performanceColumnAvgScore")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evaluationsList.map((evaluation) => {
+                          const scores = scoresByEvaluation.get(evaluation.id) ?? [];
+                          const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+                          return (
+                            <tr key={evaluation.id}>
+                              <td>{evaluation.evaluation_cycles?.name_ar ?? "—"}</td>
+                              <td>{evalTypeLabels[evaluation.eval_type as EvalType] ?? evaluation.eval_type}</td>
+                              <td>{evaluationStateLabels[evaluation.state as EvaluationState] ?? evaluation.state}</td>
+                              <td>{avg != null ? `${avg.toFixed(1)}%` : "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              );
-            })}
-          </section>
+              )}
 
-          <section id="career-path" style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("careerPathTitle")}
-            </h2>
-            {!p.job_title_id ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathNoJobTitle")}</p>
-            ) : !careerPaths || careerPaths.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathEmpty")}</p>
-            ) : (
-              <div className="sru-card">
-                <div className="table-scroll">
-                  <table className="admin-matrix">
-                    <thead>
-                      <tr>
-                        <th>{t("careerPathColumnFrom")}</th>
-                        <th>{t("careerPathColumnTo")}</th>
-                        <th>{t("careerPathColumnRequirements")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {careerPaths.map((path) => (
-                        <tr key={path.id}>
-                          <td>
-                            {path.from_job_title?.name_ar ?? "—"}
-                            {path.from_job_title && (
-                              <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                                {t("gradeLabel", { grade: path.from_job_title.grade_level })}
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {path.to_job_title?.name_ar ?? "—"}
-                            {path.to_job_title && (
-                              <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                                {t("gradeLabel", { grade: path.to_job_title.grade_level })}
-                              </span>
-                            )}
-                          </td>
-                          <td>{path.requirements_ar ?? "—"}</td>
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("calibrationTitle")}</h3>
+              {!calibrationResults || calibrationResults.length === 0 ? (
+                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("calibrationEmpty")}</p>
+              ) : (
+                <div className="sru-card">
+                  <div className="table-scroll">
+                    <table className="admin-matrix">
+                      <thead>
+                        <tr>
+                          <th>{t("calibrationColumnCycle")}</th>
+                          <th>{t("calibrationColumnOriginal")}</th>
+                          <th>{t("calibrationColumnCalibrated")}</th>
+                          <th>{t("calibrationColumnJustification")}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section id="my-performance">
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("performanceTitle")}
-            </h2>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("performanceNote")}</p>
-            {!evaluationsList || evaluationsList.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("performanceEvaluationsEmpty")}</p>
-            ) : (
-              <div className="sru-card" style={{ marginBottom: 20 }}>
-                <div className="table-scroll">
-                  <table className="admin-matrix">
-                    <thead>
-                      <tr>
-                        <th>{t("performanceColumnCycle")}</th>
-                        <th>{t("performanceColumnType")}</th>
-                        <th>{t("performanceColumnState")}</th>
-                        <th>{t("performanceColumnAvgScore")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {evaluationsList.map((evaluation) => {
-                        const scores = scoresByEvaluation.get(evaluation.id) ?? [];
-                        const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-                        return (
-                          <tr key={evaluation.id}>
-                            <td>{evaluation.evaluation_cycles?.name_ar ?? "—"}</td>
-                            <td>{evalTypeLabels[evaluation.eval_type as EvalType] ?? evaluation.eval_type}</td>
-                            <td>{evaluationStateLabels[evaluation.state as EvaluationState] ?? evaluation.state}</td>
-                            <td>{avg != null ? `${avg.toFixed(1)}%` : "—"}</td>
+                      </thead>
+                      <tbody>
+                        {calibrationResults.map((result) => (
+                          <tr key={result.id}>
+                            <td>{result.calibration_sessions?.evaluation_cycles?.name_ar ?? "—"}</td>
+                            <td>{result.original_rating != null ? `${result.original_rating}%` : "—"}</td>
+                            <td>{result.calibrated_rating != null ? `${result.calibrated_rating}%` : "—"}</td>
+                            <td>{result.justification ?? "—"}</td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </>
+          ),
+        },
+      ];
 
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("calibrationTitle")}</h3>
-            {!calibrationResults || calibrationResults.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("calibrationEmpty")}</p>
-            ) : (
-              <div className="sru-card">
-                <div className="table-scroll">
-                  <table className="admin-matrix">
-                    <thead>
-                      <tr>
-                        <th>{t("calibrationColumnCycle")}</th>
-                        <th>{t("calibrationColumnOriginal")}</th>
-                        <th>{t("calibrationColumnCalibrated")}</th>
-                        <th>{t("calibrationColumnJustification")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {calibrationResults.map((result) => (
-                        <tr key={result.id}>
-                          <td>{result.calibration_sessions?.evaluation_cycles?.name_ar ?? "—"}</td>
-                          <td>{result.original_rating != null ? `${result.original_rating}%` : "—"}</td>
-                          <td>{result.calibrated_rating != null ? `${result.calibrated_rating}%` : "—"}</td>
-                          <td>{result.justification ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
-        </>
-      )}
+  return (
+    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <h1 className="sru-title" style={{ fontSize: 24 }}>
+        {t("title")}
+      </h1>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
+        {t("subtitle")}
+      </p>
+      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {!p ? <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noProfile")}</p> : <ProfileTabs tabs={tabs} />}
     </div>
   );
 }

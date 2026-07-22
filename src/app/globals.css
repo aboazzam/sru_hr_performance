@@ -170,6 +170,37 @@ html[dir="ltr"] body {
   background: var(--sru-bg);
 }
 
+/* ===== My Profile tabs ===== */
+.sru-profile-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--sru-border);
+  margin-bottom: 24px;
+}
+
+.sru-profile-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--sru-muted);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 4px;
+  margin-inline-end: 22px;
+  cursor: pointer;
+}
+
+.sru-profile-tab:hover {
+  color: var(--sru-ink);
+}
+
+.sru-profile-tab.active {
+  color: var(--sru-purple);
+  border-bottom-color: var(--sru-purple);
+}
+
 /* ===== Competency framework page ===== */
 .competency-card summary {
   cursor: pointer;
