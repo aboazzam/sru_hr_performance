@@ -115,6 +115,61 @@ html[dir="ltr"] body {
   text-decoration: none;
 }
 
+/* ===== TopBar user menu (avatar + dropdown) ===== */
+.sru-user-menu {
+  position: relative;
+}
+
+.sru-avatar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sru-user-menu-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 10px);
+  min-width: 220px;
+  background: var(--surface);
+  color: var(--sru-ink);
+  border: 1px solid var(--sru-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  padding: 6px;
+  z-index: 40;
+}
+
+.sru-user-menu-name {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sru-ink);
+  border-bottom: 1px solid var(--sru-border);
+  margin-bottom: 6px;
+}
+
+.sru-user-menu-item {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--sru-ink);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.sru-user-menu-item:hover {
+  background: var(--sru-bg);
+}
+
 /* ===== Competency framework page ===== */
 .competency-card summary {
   cursor: pointer;
