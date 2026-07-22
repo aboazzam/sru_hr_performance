@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { AddOrgStructureLevelForm } from "@/components/AddOrgStructureLevelForm";
 import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
+import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
+import { OrgStructurePositionMiniRow } from "@/components/OrgStructurePositionMiniRow";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -66,31 +68,31 @@ export default async function OrgStructurePage() {
           levels.map((level) => {
             const levelPositions = positions.filter((p) => p.level_id === level.id);
             return (
-              <div key={level.id} className="sru-card" style={{ padding: 16, marginBottom: 16 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
-                  {level.level_order}. {level.name_ar}
-                  {level.name_en && (
-                    <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }} dir="ltr">
-                      {level.name_en}
-                    </span>
-                  )}
-                </h3>
+              <OrgStructureLevelCard
+                key={level.id}
+                levelId={level.id}
+                levelOrder={level.level_order}
+                initialNameAr={level.name_ar}
+                initialNameEn={level.name_en}
+              >
                 {levelPositions.length === 0 ? (
                   <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
                 ) : (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div>
                     {levelPositions.map((position) => (
-                      <span key={position.id} className="sru-chip">
-                        {position.name_ar}
-                        <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>
-                          {" — "}
-                          {position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")}
-                        </span>
-                      </span>
+                      <OrgStructurePositionMiniRow
+                        key={position.id}
+                        positionId={position.id}
+                        initialNameAr={position.name_ar}
+                        initialNameEn={position.name_en}
+                        parentLabel={
+                          position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
+                        }
+                      />
                     ))}
                   </div>
                 )}
-              </div>
+              </OrgStructureLevelCard>
             );
           })
         )}

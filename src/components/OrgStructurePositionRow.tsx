@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { updatePosition, unassignEmployee } from "@/app/[locale]/(app)/admin/org-structure/actions";
+import { updatePosition, unassignEmployee, deletePosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
   "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
@@ -31,6 +31,7 @@ export function OrgStructurePositionRow({
   const t = useTranslations("OrgStructureStaffingPage");
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
+  const [isDeleting, startDeleting] = useTransition();
   const [isUnassigning, startUnassigning] = useTransition();
   const [nameAr, setNameAr] = useState(initialNameAr);
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
@@ -41,6 +42,7 @@ export function OrgStructurePositionRow({
     invalid_input: "errorInvalid",
     unauthenticated: "errorForbidden",
     forbidden: "errorForbidden",
+    has_dependents: "errorHasDependents",
     unknown: "errorUnknown",
   };
 
@@ -48,6 +50,19 @@ export function OrgStructurePositionRow({
     setError(null);
     startSaving(async () => {
       const res = await updatePosition(positionId, nameAr, nameEn);
+      if (res.status === "success") {
+        router.refresh();
+      } else {
+        setError(res.message);
+      }
+    });
+  }
+
+  function handleDelete() {
+    if (!window.confirm(t("deletePositionConfirm"))) return;
+    setError(null);
+    startDeleting(async () => {
+      const res = await deletePosition(positionId);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -100,9 +115,14 @@ export function OrgStructurePositionRow({
         )}
       </td>
       <td>
-        <button type="button" disabled={isSaving} onClick={handleSave} className="sru-btn sru-btn-primary" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-          {t("saveButton")}
-        </button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-btn sru-btn-primary" style={{ fontSize: 12.5, padding: "5px 10px" }}>
+            {t("saveButton")}
+          </button>
+          <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-btn" style={{ fontSize: 12.5, padding: "5px 10px" }}>
+            {t("deleteButton")}
+          </button>
+        </div>
         {error && (
           <p role="alert" className="text-sm text-red-600" style={{ marginTop: 4 }}>
             {t(errorMessageKeys[error] ?? "errorUnknown")}
