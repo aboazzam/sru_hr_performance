@@ -201,6 +201,22 @@ html[dir="ltr"] body {
   border-bottom-color: var(--sru-purple);
 }
 
+/* ===== Admin page action cards ===== */
+.sru-admin-action {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: var(--sru-ink);
+  max-width: 320px;
+}
+
+.sru-admin-action strong {
+  color: var(--sru-purple);
+  font-size: 14px;
+}
+
 /* ===== Competency framework page ===== */
 .competency-card summary {
   cursor: pointer;

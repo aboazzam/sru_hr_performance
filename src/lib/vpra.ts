@@ -40,7 +40,8 @@ export type ProcessArea =
   | "vacancies"
   | "careerPath"
   | "employeeData"
-  | "userManagement";
+  | "userManagement"
+  | "orgStructure";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -55,6 +56,7 @@ export const processAreas: ProcessArea[] = [
   "careerPath",
   "employeeData",
   "userManagement",
+  "orgStructure",
 ];
 
 export type RoleCode =

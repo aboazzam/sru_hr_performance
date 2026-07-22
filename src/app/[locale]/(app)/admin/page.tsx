@@ -6,10 +6,14 @@ import {
   evaluationStateLabels,
   getEvaluationStatePermission,
   vpraLevelLabels,
+  hasVpraAccess,
   type VpraLevel,
+  type ProcessArea,
   type EvaluationActorRole,
 } from "@/lib/vpra";
 import { PrintButton } from "@/components/PrintButton";
+import { Link } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 const vpraLevelStyle: Record<VpraLevel, { background: string; color: string }> = {
   none: { background: "rgba(107, 90, 128, 0.12)", color: "var(--sru-muted)" },
@@ -35,6 +39,20 @@ function roleLabel(roleCode: string) {
 export default async function AdminPage() {
   const t = await getTranslations("AdminPage");
 
+  // First-ever "actions" section on this page (previously read-only) — the
+  // Organizational Structure builder link is only shown to callers who hold
+  // at least `view` on the new `orgStructure` process area (2026-07-22),
+  // same self-lookup RPC used by (app)/layout.tsx for NavBar filtering. This
+  // is a display-only gate: the real authorization is each write action's
+  // own RLS (`check_vpra_global('orgStructure','approve')`).
+  const supabase = await createClient();
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const orgStructureLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "orgStructure"
+    )?.vpra_level ?? "none";
+  const canSeeOrgStructure = hasVpraAccess(orgStructureLevel, "view");
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -58,6 +76,18 @@ export default async function AdminPage() {
         <PrintButton />
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {canSeeOrgStructure && (
+        <section className="no-print" style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+            {t("actionsHeading")}
+          </h2>
+          <Link href="/admin/org-structure" className="sru-card sru-admin-action">
+            <strong>{t("orgStructureAction")}</strong>
+            <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("orgStructureActionDesc")}</span>
+          </Link>
+        </section>
+      )}
 
       <section style={{ marginBottom: 36 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
