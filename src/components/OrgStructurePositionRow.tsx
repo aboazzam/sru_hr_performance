@@ -15,12 +15,14 @@ interface Assignment {
 
 export function OrgStructurePositionRow({
   levelName,
+  parentName,
   positionId,
   initialNameAr,
   initialNameEn,
   assignments,
 }: {
   levelName: string;
+  parentName: string;
   positionId: string;
   initialNameAr: string;
   initialNameEn: string | null;
@@ -70,6 +72,7 @@ export function OrgStructurePositionRow({
   return (
     <tr>
       <td style={{ verticalAlign: "top", fontSize: 13 }}>{levelName}</td>
+      <td style={{ verticalAlign: "top", fontSize: 13 }}>{parentName}</td>
       <td>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ marginBottom: 4 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />

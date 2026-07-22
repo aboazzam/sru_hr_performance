@@ -23,11 +23,18 @@ export default async function OrgStructurePage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, name_ar, name_en")
+    .select("id, level_id, parent_id, name_ar, name_en")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
-  const positions = (positionsData ?? []) as Array<{ id: string; level_id: string; name_ar: string; name_en: string | null }>;
+  const positions = (positionsData ?? []) as Array<{
+    id: string;
+    level_id: string;
+    parent_id: string | null;
+    name_ar: string;
+    name_en: string | null;
+  }>;
+  const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -46,7 +53,7 @@ export default async function OrgStructurePage() {
 
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AddOrgStructureLevelForm />
-        <AddOrgStructurePositionForm levels={levels} />
+        <AddOrgStructurePositionForm levels={levels} positions={positions} />
       </section>
 
       <section>
@@ -75,6 +82,10 @@ export default async function OrgStructurePage() {
                     {levelPositions.map((position) => (
                       <span key={position.id} className="sru-chip">
                         {position.name_ar}
+                        <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>
+                          {" — "}
+                          {position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")}
+                        </span>
                       </span>
                     ))}
                   </div>

@@ -17,6 +17,12 @@ function mapError(error: { code?: string; message: string }): OrgStructureAction
   if (error.code === "42501" || error.message.includes("row-level security")) {
     return { status: "error", message: "forbidden" };
   }
+  // validate_org_structure_position_parent() (20260723000001) RAISEs a plain
+  // exception (no custom SQLSTATE) for every tree-invariant violation —
+  // treat those as a validation error, not an opaque "unknown" failure.
+  if (error.message.includes("org_structure_positions:")) {
+    return { status: "error", message: "invalid_input" };
+  }
   return { status: "error", message: "unknown" };
 }
 
@@ -74,13 +80,21 @@ export async function addLevel(nameAr: string, nameEn: string): Promise<OrgStruc
 
 const addPositionSchema = z.object({
   levelId: z.string().uuid(),
+  parentId: z.string().uuid().optional(),
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
 });
 
 /**
- * Creates a new `org_structure_positions` row under an existing level.
- * Real authorization is `org_structure_positions_insert`'s RLS
+ * Creates a new `org_structure_positions` row under an existing level, and
+ * — per the project owner's 2026-07-23 clarification that this is a real
+ * tree ("كل مستوى له عدة عقد وكل عقد له أب من المستوى السابق") — attached
+ * to a parent position at the immediately preceding level. `parentId` is
+ * omitted only for a position at the structure's first (root) level; the
+ * real invariant is enforced by `validate_org_structure_position_parent()`
+ * (20260723000001), not this action's Zod schema, which only requires a
+ * syntactically valid UUID when present. Real authorization is
+ * `org_structure_positions_insert`'s RLS
  * (`check_vpra_global('orgStructure','approve')`), through the caller's own
  * RLS-respecting client. Also used by the staffing screen's own
  * "add position" form (same underlying action, per the project owner's
@@ -89,9 +103,15 @@ const addPositionSchema = z.object({
 export async function addPosition(
   levelId: string,
   nameAr: string,
-  nameEn: string
+  nameEn: string,
+  parentId?: string
 ): Promise<OrgStructureActionState> {
-  const parsed = addPositionSchema.safeParse({ levelId, nameAr, nameEn: nameEn || undefined });
+  const parsed = addPositionSchema.safeParse({
+    levelId,
+    parentId: parentId || undefined,
+    nameAr,
+    nameEn: nameEn || undefined,
+  });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
   }
@@ -108,6 +128,7 @@ export async function addPosition(
     .from("org_structure_positions")
     .insert({
       level_id: parsed.data.levelId,
+      parent_id: parsed.data.parentId ?? null,
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn ?? null,
     })
@@ -122,7 +143,12 @@ export async function addPosition(
     action: "org_structure_position_added",
     entity: "org_structure_positions",
     entity_id: position.id,
-    after_data: { level_id: parsed.data.levelId, name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null },
+    after_data: {
+      level_id: parsed.data.levelId,
+      parent_id: parsed.data.parentId ?? null,
+      name_ar: parsed.data.nameAr,
+      name_en: parsed.data.nameEn ?? null,
+    },
   });
 
   return { status: "success" };

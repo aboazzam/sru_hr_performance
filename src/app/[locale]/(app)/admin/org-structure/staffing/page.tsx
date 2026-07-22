@@ -23,10 +23,17 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, name_ar, name_en")
+    .select("id, level_id, parent_id, name_ar, name_en")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
-  const positions = (positionsData ?? []) as Array<{ id: string; level_id: string; name_ar: string; name_en: string | null }>;
+  const positions = (positionsData ?? []) as Array<{
+    id: string;
+    level_id: string;
+    parent_id: string | null;
+    name_ar: string;
+    name_en: string | null;
+  }>;
+  const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -71,7 +78,7 @@ export default async function OrgStructureStaffingPage() {
 
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AssignEmployeeForm positions={positionOptions} employees={employeeOptions} />
-        <AddOrgStructurePositionForm levels={levels} headingKey="addPositionHeading" />
+        <AddOrgStructurePositionForm levels={levels} positions={positions} headingKey="addPositionHeading" />
       </section>
 
       <section>
@@ -84,6 +91,7 @@ export default async function OrgStructureStaffingPage() {
                 <thead>
                   <tr>
                     <th>{t("positionColumnLevel")}</th>
+                    <th>{t("positionColumnParent")}</th>
                     <th>{t("positionColumnName")}</th>
                     <th>{t("positionColumnAssigned")}</th>
                     <th></th>
@@ -101,6 +109,7 @@ export default async function OrgStructureStaffingPage() {
                       <OrgStructurePositionRow
                         key={position.id}
                         levelName={levelNameById.get(position.level_id) ?? "—"}
+                        parentName={position.parent_id ? positionNameById.get(position.parent_id) ?? "—" : t("rootChip")}
                         positionId={position.id}
                         initialNameAr={position.name_ar}
                         initialNameEn={position.name_en}
