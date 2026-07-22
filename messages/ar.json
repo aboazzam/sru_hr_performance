@@ -6,7 +6,8 @@
   "TopBar": {
     "notifications": "الإشعارات",
     "login": "تسجيل الدخول",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "myProfile": "الملف الشخصي"
   },
   "NavBar": {
     "home": "الرئيسية",
@@ -239,6 +240,40 @@
     "myEvaluations": "تقييماتي",
     "myTeamEvaluations": "تقييمات فريقي",
     "needsMyReview": "بانتظار مراجعتي"
+  },
+  "MyProfilePage": {
+    "title": "الملف الشخصي",
+    "subtitle": "بياناتك، أهدافك، ومسارك الوظيفي — للاطلاع فقط حاليًا.",
+    "noProfile": "تعذّر العثور على ملفك الشخصي.",
+    "infoTitle": "معلوماتي",
+    "employeeNumberLabel": "الرقم الوظيفي",
+    "fullNameArLabel": "الاسم الكامل (عربي)",
+    "fullNameEnLabel": "الاسم الكامل (إنجليزي)",
+    "emailLabel": "البريد الإلكتروني",
+    "orgUnitLabel": "الوحدة التنظيمية",
+    "jobTitleLabel": "المسمى الوظيفي",
+    "hireDateLabel": "تاريخ التعيين",
+    "gradeLabel": "درجة {grade}",
+    "goalsTitle": "أهدافي",
+    "goalsEmpty": "لا توجد أهداف مُسندة إليك بعد.",
+    "goalsColumnTitle": "الهدف",
+    "goalsColumnCycle": "الدورة",
+    "goalsColumnWeight": "الوزن",
+    "goalsColumnStatus": "الحالة",
+    "careerPathTitle": "مساري الوظيفي",
+    "careerPathNoJobTitle": "لا يوجد مسمى وظيفي مُسجَّل لك بعد لعرض مسار وظيفي.",
+    "careerPathEmpty": "لا يوجد مسار وظيفي مُعرَّف لمسماك الوظيفي بعد.",
+    "careerPathColumnFrom": "من",
+    "careerPathColumnTo": "إلى",
+    "careerPathColumnRequirements": "المتطلبات",
+    "tasksTitle": "مهامي التشغيلية",
+    "tasksEmpty": "لا توجد مهام تشغيلية مُسندة إليك بعد.",
+    "tasksColumnTitle": "المهمة",
+    "tasksColumnCycle": "الدورة",
+    "tasksColumnWeight": "الوزن",
+    "tasksColumnStatus": "الحالة",
+    "competenciesTitle": "جداراتي",
+    "competenciesNote": "إطار الجدارات المؤسسي الكامل — لا يتوفر حاليًا ربط فعلي بين الجدارات التخصصية وعائلتك الوظيفية في البيانات، لذا تُعرض الجدارات كاملة."
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",

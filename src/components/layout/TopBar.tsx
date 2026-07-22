@@ -54,8 +54,13 @@ export function TopBar({
           <ChevronDown size={13} aria-hidden />
         </Link>
         <span className="divider" aria-hidden />
-        <button type="button" className="sru-icon-btn" onClick={handleSignOut}>
-          {userName ?? t("logout")}
+        {userName && (
+          <Link href="/profile" className="pill" title={t("myProfile")}>
+            {userName}
+          </Link>
+        )}
+        <button type="button" className="sru-icon-btn" onClick={handleSignOut} aria-label={t("logout")}>
+          {!userName && t("logout")}
           <LogOut size={16} aria-hidden />
         </button>
       </div>
