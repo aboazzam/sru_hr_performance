@@ -6,7 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type OrgStructureActionState =
   | { status: "success" }
-  | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "unknown" };
+  | {
+      status: "error";
+      message: "invalid_input" | "unauthenticated" | "forbidden" | "has_dependents" | "unknown";
+    };
 
 const addLevelSchema = z.object({
   nameAr: z.string().trim().min(1),
@@ -73,6 +76,95 @@ export async function addLevel(nameAr: string, nameEn: string): Promise<OrgStruc
     entity: "org_structure_levels",
     entity_id: level.id,
     after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, level_order: nextOrder },
+  });
+
+  return { status: "success" };
+}
+
+const updateLevelSchema = z.object({
+  levelId: z.string().uuid(),
+  nameAr: z.string().trim().min(1),
+  nameEn: z.string().trim().optional(),
+});
+
+/** Edits an existing level's name. Real authorization is `org_structure_levels_update`'s RLS. */
+export async function updateLevel(levelId: string, nameAr: string, nameEn: string): Promise<OrgStructureActionState> {
+  const parsed = updateLevelSchema.safeParse({ levelId, nameAr, nameEn: nameEn || undefined });
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { error } = await supabase
+    .from("org_structure_levels")
+    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null })
+    .eq("id", parsed.data.levelId);
+
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_level_updated",
+    entity: "org_structure_levels",
+    entity_id: parsed.data.levelId,
+    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null },
+  });
+
+  return { status: "success" };
+}
+
+/**
+ * Soft-deletes a level. Blocked (not just left to the DB) whenever it still
+ * has active positions — deleting the level out from under them would
+ * leave those positions pointing at a hidden level, an inconsistent state
+ * this action refuses to create rather than relying on the RESTRICT FK
+ * (which only guards a hard DELETE, not this soft-delete UPDATE).
+ */
+export async function deleteLevel(levelId: string): Promise<OrgStructureActionState> {
+  const parsed = z.string().uuid().safeParse(levelId);
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { count } = await supabase
+    .from("org_structure_positions")
+    .select("id", { count: "exact", head: true })
+    .eq("level_id", parsed.data)
+    .is("deleted_at", null);
+
+  if (count && count > 0) {
+    return { status: "error", message: "has_dependents" };
+  }
+
+  const { error } = await supabase
+    .from("org_structure_levels")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data);
+
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_level_deleted",
+    entity: "org_structure_levels",
+    entity_id: parsed.data,
   });
 
   return { status: "success" };
@@ -198,6 +290,63 @@ export async function updatePosition(
     entity: "org_structure_positions",
     entity_id: parsed.data.positionId,
     after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null },
+  });
+
+  return { status: "success" };
+}
+
+/**
+ * Soft-deletes a position. Blocked whenever it still has active employee
+ * assignments (unassign first) or active child positions in the tree
+ * (parent_id pointing at it) — deleting a middle node would either strand
+ * assignments on a hidden position or break `validate_org_structure_position_parent()`'s
+ * invariant for its children, so both are checked explicitly rather than
+ * relying on the RESTRICT FKs (which only guard a hard DELETE, not this
+ * soft-delete UPDATE).
+ */
+export async function deletePosition(positionId: string): Promise<OrgStructureActionState> {
+  const parsed = z.string().uuid().safeParse(positionId);
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { count: assignmentCount } = await supabase
+    .from("org_structure_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("position_id", parsed.data)
+    .is("deleted_at", null);
+
+  const { count: childCount } = await supabase
+    .from("org_structure_positions")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_id", parsed.data)
+    .is("deleted_at", null);
+
+  if ((assignmentCount && assignmentCount > 0) || (childCount && childCount > 0)) {
+    return { status: "error", message: "has_dependents" };
+  }
+
+  const { error } = await supabase
+    .from("org_structure_positions")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data);
+
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_position_deleted",
+    entity: "org_structure_positions",
+    entity_id: parsed.data,
   });
 
   return { status: "success" };
