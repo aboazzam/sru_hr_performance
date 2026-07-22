@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { NavBar } from "@/components/layout/NavBar";
+import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 
 /**
  * Single, centralized auth gate for every page under (app)/ — added after
@@ -43,10 +44,22 @@ export default async function AppShellLayout({
     (safeLocale === "ar" ? profile?.full_name_ar : profile?.full_name_en ?? profile?.full_name_ar) ??
     undefined;
 
+  // get_my_permissions() (20260722000001) — same SECURITY DEFINER pattern as
+  // get_my_role_codes(), since role_permissions/roles both require a
+  // userManagement grant to read directly, which most roles (including
+  // plain employee) don't hold.
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const permissions = Object.fromEntries(
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).map((row) => [
+      row.process_area,
+      row.vpra_level,
+    ])
+  ) as Partial<Record<ProcessArea, VpraLevel>>;
+
   return (
     <>
       <TopBar locale={safeLocale} userName={userName} />
-      <NavBar />
+      <NavBar permissions={permissions} />
       <main className="flex-1">{children}</main>
     </>
   );
