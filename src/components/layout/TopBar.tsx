@@ -6,6 +6,7 @@ import { Bell, ChevronDown, LogOut } from "lucide-react";
 import { locales, type Locale } from "@/i18n/config";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { UserMenu } from "./UserMenu";
 
 const localeLabels: Record<Locale, string> = {
   ar: "عربي",
@@ -54,11 +55,7 @@ export function TopBar({
           <ChevronDown size={13} aria-hidden />
         </Link>
         <span className="divider" aria-hidden />
-        {userName && (
-          <Link href="/profile" className="pill" title={t("myProfile")}>
-            {userName}
-          </Link>
-        )}
+        <UserMenu userName={userName} />
         <button type="button" className="sru-icon-btn" onClick={handleSignOut} aria-label={t("logout")}>
           {!userName && t("logout")}
           <LogOut size={16} aria-hidden />

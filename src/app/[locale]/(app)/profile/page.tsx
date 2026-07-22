@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
+import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // Read-only for now, per the project owner's explicit "not editable yet"
@@ -20,7 +21,7 @@ export default async function MyProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, org_units(name_ar), job_titles(name_ar, grade_level)"
+      "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, org_units(name_ar), job_titles(name_ar, grade_level)"
     )
     .eq("auth_user_id", user!.id)
     .maybeSingle();
@@ -35,10 +36,20 @@ export default async function MyProfilePage() {
         hire_date: string | null;
         status: string;
         job_title_id: string | null;
+        supervisor_id: string | null;
         org_units: { name_ar: string } | null;
         job_titles: { name_ar: string; grade_level: number } | null;
       }
     | null;
+
+  // get_my_supervisor() (20260722000002) — profiles_select's RLS has no
+  // branch letting a plain employee (no employeeData grant) read an
+  // arbitrary colleague's row, including their own supervisor's; confirmed
+  // this returns null via a direct query before adding the RPC. Same
+  // SECURITY DEFINER self-lookup pattern as get_my_role_codes()/
+  // get_my_permissions().
+  const { data: supervisorRows } = p?.supervisor_id ? await supabase.rpc("get_my_supervisor") : { data: null };
+  const supervisor = (supervisorRows?.[0] as { full_name_ar: string; full_name_en: string | null } | undefined) ?? null;
 
   // Deliberately filtered to `employee_id = my own profile id`, same
   // discipline as /evaluations/mine — goals_select's RLS would also let
@@ -105,6 +116,59 @@ export default async function MyProfilePage() {
     to_job_title: { name_ar: string; grade_level: number } | null;
   }> | null;
 
+  // "My Performance Level" — an early, explicitly-flagged-as-interim
+  // dashboard (2026-07-22): the project owner asked for a performance
+  // level view but hadn't specified its exact shape yet, so this combines
+  // two tables that already grant a self-row SELECT bypass — evaluations'
+  // own scores (evaluation_scores) and any calibration_results — rather
+  // than inventing new schema for it.
+  const { data: evaluationsData } = p
+    ? await supabase
+        .from("evaluations")
+        .select("id, eval_type, state, evaluation_cycles(name_ar)")
+        .eq("employee_id", p.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+    : { data: null };
+
+  const evaluationsList = evaluationsData as unknown as Array<{
+    id: string;
+    eval_type: string;
+    state: string;
+    evaluation_cycles: { name_ar: string } | null;
+  }> | null;
+
+  const evaluationIds = evaluationsList?.map((e) => e.id) ?? [];
+  const { data: scoresData } =
+    evaluationIds.length > 0
+      ? await supabase.from("evaluation_scores").select("evaluation_id, score").in("evaluation_id", evaluationIds).is("deleted_at", null)
+      : { data: null };
+
+  const scoresByEvaluation = new Map<string, number[]>();
+  for (const row of (scoresData ?? []) as Array<{ evaluation_id: string; score: number | null }>) {
+    if (row.score == null) continue;
+    const list = scoresByEvaluation.get(row.evaluation_id) ?? [];
+    list.push(row.score);
+    scoresByEvaluation.set(row.evaluation_id, list);
+  }
+
+  const { data: calibrationData } = p
+    ? await supabase
+        .from("calibration_results")
+        .select("id, original_rating, calibrated_rating, justification, calibration_sessions(evaluation_cycles(name_ar))")
+        .eq("employee_id", p.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+    : { data: null };
+
+  const calibrationResults = calibrationData as unknown as Array<{
+    id: string;
+    original_rating: number | null;
+    calibrated_rating: number | null;
+    justification: string | null;
+    calibration_sessions: { evaluation_cycles: { name_ar: string } | null } | null;
+  }> | null;
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -119,7 +183,7 @@ export default async function MyProfilePage() {
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noProfile")}</p>
       ) : (
         <>
-          <section style={{ marginBottom: 36 }}>
+          <section id="my-data" style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
               {t("infoTitle")}
             </h2>
@@ -161,13 +225,29 @@ export default async function MyProfilePage() {
                 <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("hireDateLabel")}</div>
                 <div style={{ fontSize: 14 }} dir="ltr">{p.hire_date ?? "—"}</div>
               </div>
+              <div>
+                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("supervisorLabel")}</div>
+                <div style={{ fontSize: 14 }}>{supervisor?.full_name_ar ?? t("supervisorNone")}</div>
+              </div>
+              {/* [استنتاج] No `qualification`/`certificates` columns exist in `profiles`
+                  yet — flagged to the project owner as an open schema decision rather
+                  than inventing free-text/multi-value fields without confirming shape. */}
+              <div>
+                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("qualificationLabel")}</div>
+                <div style={{ fontSize: 14, color: "var(--sru-muted)" }}>{t("comingSoon")}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("certificatesLabel")}</div>
+                <div style={{ fontSize: 14, color: "var(--sru-muted)" }}>{t("comingSoon")}</div>
+              </div>
             </div>
           </section>
 
-          <section style={{ marginBottom: 36 }}>
+          <section id="my-kpis" style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("goalsTitle")}
+              {t("kpisTitle")}
             </h2>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("kpisNote")}</p>
             {!goals || goals.length === 0 ? (
               <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
             ) : (
@@ -198,7 +278,7 @@ export default async function MyProfilePage() {
             )}
           </section>
 
-          <section style={{ marginBottom: 36 }}>
+          <section id="my-tasks" style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
               {t("tasksTitle")}
             </h2>
@@ -232,7 +312,7 @@ export default async function MyProfilePage() {
             )}
           </section>
 
-          <section style={{ marginBottom: 36 }}>
+          <section id="my-competencies" style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
               {t("competenciesTitle")}
             </h2>
@@ -263,7 +343,7 @@ export default async function MyProfilePage() {
             })}
           </section>
 
-          <section>
+          <section id="career-path" style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
               {t("careerPathTitle")}
             </h2>
@@ -302,6 +382,75 @@ export default async function MyProfilePage() {
                             )}
                           </td>
                           <td>{path.requirements_ar ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section id="my-performance">
+            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
+              {t("performanceTitle")}
+            </h2>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("performanceNote")}</p>
+            {!evaluationsList || evaluationsList.length === 0 ? (
+              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("performanceEvaluationsEmpty")}</p>
+            ) : (
+              <div className="sru-card" style={{ marginBottom: 20 }}>
+                <div className="table-scroll">
+                  <table className="admin-matrix">
+                    <thead>
+                      <tr>
+                        <th>{t("performanceColumnCycle")}</th>
+                        <th>{t("performanceColumnType")}</th>
+                        <th>{t("performanceColumnState")}</th>
+                        <th>{t("performanceColumnAvgScore")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evaluationsList.map((evaluation) => {
+                        const scores = scoresByEvaluation.get(evaluation.id) ?? [];
+                        const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+                        return (
+                          <tr key={evaluation.id}>
+                            <td>{evaluation.evaluation_cycles?.name_ar ?? "—"}</td>
+                            <td>{evalTypeLabels[evaluation.eval_type as EvalType] ?? evaluation.eval_type}</td>
+                            <td>{evaluationStateLabels[evaluation.state as EvaluationState] ?? evaluation.state}</td>
+                            <td>{avg != null ? `${avg.toFixed(1)}%` : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("calibrationTitle")}</h3>
+            {!calibrationResults || calibrationResults.length === 0 ? (
+              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("calibrationEmpty")}</p>
+            ) : (
+              <div className="sru-card">
+                <div className="table-scroll">
+                  <table className="admin-matrix">
+                    <thead>
+                      <tr>
+                        <th>{t("calibrationColumnCycle")}</th>
+                        <th>{t("calibrationColumnOriginal")}</th>
+                        <th>{t("calibrationColumnCalibrated")}</th>
+                        <th>{t("calibrationColumnJustification")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {calibrationResults.map((result) => (
+                        <tr key={result.id}>
+                          <td>{result.calibration_sessions?.evaluation_cycles?.name_ar ?? "—"}</td>
+                          <td>{result.original_rating != null ? `${result.original_rating}%` : "—"}</td>
+                          <td>{result.calibrated_rating != null ? `${result.calibrated_rating}%` : "—"}</td>
+                          <td>{result.justification ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
