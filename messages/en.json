@@ -6,7 +6,8 @@
   "TopBar": {
     "notifications": "Notifications",
     "login": "Log in",
-    "logout": "Log out"
+    "logout": "Log out",
+    "myProfile": "My Profile"
   },
   "NavBar": {
     "home": "Home",
@@ -239,6 +240,40 @@
     "myEvaluations": "My Evaluations",
     "myTeamEvaluations": "My Team's Evaluations",
     "needsMyReview": "Needs My Review"
+  },
+  "MyProfilePage": {
+    "title": "My Profile",
+    "subtitle": "Your data, goals, and career path — view-only for now.",
+    "noProfile": "Your profile could not be found.",
+    "infoTitle": "My Info",
+    "employeeNumberLabel": "Employee Number",
+    "fullNameArLabel": "Full Name (Arabic)",
+    "fullNameEnLabel": "Full Name (English)",
+    "emailLabel": "Email",
+    "orgUnitLabel": "Organizational Unit",
+    "jobTitleLabel": "Job Title",
+    "hireDateLabel": "Hire Date",
+    "gradeLabel": "Grade {grade}",
+    "goalsTitle": "My Goals",
+    "goalsEmpty": "No goals assigned to you yet.",
+    "goalsColumnTitle": "Goal",
+    "goalsColumnCycle": "Cycle",
+    "goalsColumnWeight": "Weight",
+    "goalsColumnStatus": "Status",
+    "careerPathTitle": "My Career Path",
+    "careerPathNoJobTitle": "No job title is set for you yet to show a career path.",
+    "careerPathEmpty": "No career path is defined for your job title yet.",
+    "careerPathColumnFrom": "From",
+    "careerPathColumnTo": "To",
+    "careerPathColumnRequirements": "Requirements",
+    "tasksTitle": "My Routine Tasks",
+    "tasksEmpty": "No routine tasks assigned to you yet.",
+    "tasksColumnTitle": "Task",
+    "tasksColumnCycle": "Cycle",
+    "tasksColumnWeight": "Weight",
+    "tasksColumnStatus": "Status",
+    "competenciesTitle": "My Competencies",
+    "competenciesNote": "The full institutional competency framework — there is currently no real data linking specialized competencies to your specific job family, so the full framework is shown."
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
