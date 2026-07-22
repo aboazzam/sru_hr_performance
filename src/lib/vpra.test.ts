@@ -37,9 +37,10 @@ describe("hasVpraAccess", () => {
 });
 
 describe("static reference lists", () => {
-  it("has exactly the 12 process areas from CLAUDE.md section 4", () => {
-    expect(processAreas).toHaveLength(12);
-    expect(new Set(processAreas).size).toBe(12);
+  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure (added 2026-07-22)", () => {
+    expect(processAreas).toHaveLength(13);
+    expect(new Set(processAreas).size).toBe(13);
+    expect(processAreas).toContain("orgStructure");
   });
 
   it("has exactly the 12 default roles from CLAUDE.md section 4, each with an Arabic label", () => {
