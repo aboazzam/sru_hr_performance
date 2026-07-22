@@ -7,7 +7,7 @@
 // browser verification already run against /ar and /ar/admin in this
 // session, not by this file.
 import { describe, it, expect } from "vitest";
-import { navItems, navItemHref, isNavItemActive } from "./navItems";
+import { navItems, navItemHref, isNavItemActive, visibleNavItems } from "./navItems";
 
 describe("NavBar route table", () => {
   it("has exactly 14 items with unique segments", () => {
@@ -17,6 +17,67 @@ describe("NavBar route table", () => {
 
   it("has exactly one home item (empty segment)", () => {
     expect(navItems.filter((i) => i.segment === "")).toHaveLength(1);
+  });
+
+  it("every item except home declares an access requirement", () => {
+    for (const item of navItems) {
+      if (item.segment === "") {
+        expect(item.access).toBeUndefined();
+      } else {
+        expect(item.access).toBeDefined();
+      }
+    }
+  });
+});
+
+describe("visibleNavItems", () => {
+  it("always shows home, even with zero permissions", () => {
+    const visible = visibleNavItems(navItems, {});
+    expect(visible.map((i) => i.segment)).toContain("");
+  });
+
+  it("hides admin/reference tabs for the real employee permission set", () => {
+    // The actual seeded `employee` role grants (2026-07-22): goalsLibrary=view,
+    // competencyFramework=view, goalAssignment=view, bauTasks=prepare,
+    // evaluation=prepare, vacancies=view, careerPath=view — everything else
+    // (employeeData, calibration, promotions, userManagement) is absent (none).
+    const employeePermissions = {
+      goalsLibrary: "view",
+      competencyFramework: "view",
+      goalAssignment: "view",
+      bauTasks: "prepare",
+      evaluation: "prepare",
+      vacancies: "view",
+      careerPath: "view",
+    } as const;
+
+    const segments = visibleNavItems(navItems, employeePermissions).map((i) => i.segment);
+
+    // Explicitly reported as tabs that should NOT show for a plain employee.
+    expect(segments).not.toContain("employees");
+    expect(segments).not.toContain("salary-scale");
+    expect(segments).not.toContain("goals/library");
+    expect(segments).not.toContain("calibration");
+    expect(segments).not.toContain("promotions");
+    expect(segments).not.toContain("rewards");
+    expect(segments).not.toContain("admin");
+
+    // Still meaningful for a plain employee.
+    expect(segments).toContain("");
+    expect(segments).toContain("career-path");
+    expect(segments).toContain("bau-tasks");
+    expect(segments).toContain("evaluations");
+    expect(segments).toContain("feedback-360");
+    expect(segments).toContain("competencies");
+    expect(segments).toContain("vacancies");
+  });
+
+  it("shows every tab for a full-access permission set", () => {
+    const allApprove = Object.fromEntries(
+      navItems.filter((i) => i.access).map((i) => [i.access!.processArea, "approve"])
+    );
+    const segments = visibleNavItems(navItems, allApprove).map((i) => i.segment);
+    expect(segments).toHaveLength(navItems.length);
   });
 });
 
