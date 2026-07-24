@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Feedback360Form } from "@/components/Feedback360Form";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function Feedback360Page() {
@@ -37,6 +38,7 @@ export default async function Feedback360Page() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="evaluationMethods" current="feedback-360" />
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>

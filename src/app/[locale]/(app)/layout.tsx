@@ -2,7 +2,7 @@ import { isLocale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import { TopBar } from "@/components/layout/TopBar";
-import { NavBar } from "@/components/layout/NavBar";
+import { Sidebar } from "@/components/layout/Sidebar";
 import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 
 /**
@@ -59,8 +59,10 @@ export default async function AppShellLayout({
   return (
     <>
       <TopBar locale={safeLocale} userName={userName} />
-      <NavBar permissions={permissions} />
-      <main className="flex-1">{children}</main>
+      <div className="sru-app-body">
+        <Sidebar permissions={permissions} />
+        <main className="flex-1">{children}</main>
+      </div>
     </>
   );
 }

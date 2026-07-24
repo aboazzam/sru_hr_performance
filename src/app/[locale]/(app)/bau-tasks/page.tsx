@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { BauTaskForm } from "@/components/BauTaskForm";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function BauTasksPage() {
@@ -26,6 +27,7 @@ export default async function BauTasksPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="evaluationMethods" current="bau-tasks" />
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>

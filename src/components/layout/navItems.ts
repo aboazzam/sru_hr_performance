@@ -1,4 +1,4 @@
-// Deliberately has zero dependency on next-intl/next-navigation. NavBar.tsx
+// Deliberately has zero dependency on next-intl/next-navigation. Sidebar.tsx
 // imports from here (not the other way around) so this stays importable
 // from Vitest without pulling in `next/navigation`, which fails to resolve
 // under Vitest in this Next.js version (confirmed: fails even on a bare,
@@ -15,11 +15,15 @@ import {
   ClipboardList,
   Award,
   BarChart3,
-  TrendingUp,
   ShieldCheck,
   MessagesSquare,
-  Gift,
   Briefcase,
+  Network,
+  UserCog,
+  KeyRound,
+  Palette,
+  FileBarChart,
+  Sparkles,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -40,6 +44,12 @@ export interface NavItem {
 // and `career-path` are left at "view" deliberately: vacancies are
 // documented as visible to all staff, and career-path is a reasonable thing
 // for anyone to browse for their own progression.
+//
+// 2026-07-24: converted from one flat 14-item list to this shorter flat list
+// (top-level, ungrouped items) plus `navGroups` below for the three explicit
+// groups the project owner requested (الإدارة / طرق التقييم / نتائج
+// التقييم). Segments that moved into a group (admin, evaluations,
+// competencies, bau-tasks, feedback-360) are no longer here.
 export const navItems: NavItem[] = [
   { segment: "", labelKey: "home", icon: Home },
   { segment: "employees", labelKey: "employees", icon: Users, access: { processArea: "employeeData", minLevel: "view" } },
@@ -50,18 +60,57 @@ export const navItems: NavItem[] = [
   // careerPath=view (like `employee`) isn't enough to surface this as a top-level tab.
   { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: { processArea: "employeeData", minLevel: "view" } },
   { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: { processArea: "goalsLibrary", minLevel: "prepare" } },
-  { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: { processArea: "bauTasks", minLevel: "prepare" } },
-  { segment: "evaluations", labelKey: "evaluations", icon: ClipboardList, access: { processArea: "evaluation", minLevel: "view" } },
-  { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: { processArea: "evaluation", minLevel: "prepare" } },
-  { segment: "competencies", labelKey: "competencies", icon: Award, access: { processArea: "competencyFramework", minLevel: "view" } },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: { processArea: "calibration", minLevel: "view" } },
-  { segment: "promotions", labelKey: "promotions", icon: TrendingUp, access: { processArea: "promotions", minLevel: "view" } },
-  { segment: "rewards", labelKey: "rewards", icon: Gift, access: { processArea: "promotions", minLevel: "view" } },
   { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: { processArea: "vacancies", minLevel: "view" } },
-  { segment: "admin", labelKey: "admin", icon: ShieldCheck, access: { processArea: "userManagement", minLevel: "view" } },
 ];
 
-/** Pure filter, kept here (not NavBar.tsx) so it stays importable from Vitest without next/navigation. */
+export interface NavGroup {
+  groupKey: string;
+  labelKey: string;
+  icon: LucideIcon;
+  children: NavItem[];
+}
+
+// Three groups requested 2026-07-24, each rendered as ONE sidebar entry
+// (linking to its first visible child) with its children appearing as a tab
+// bar at the top of every page inside the group (GroupTabs.tsx) -- not
+// nested inside the sidebar itself, per the explicit "العناوين الفرعية تكون
+// على شكل تابات في أعلى الصفحة" instruction.
+export const navGroups: NavGroup[] = [
+  {
+    groupKey: "administration",
+    labelKey: "administration",
+    icon: ShieldCheck,
+    children: [
+      { segment: "admin/org-structure", labelKey: "orgStructure", icon: Network, access: { processArea: "orgStructure", minLevel: "view" } },
+      { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "orgStructure", minLevel: "view" } },
+      { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
+      { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "orgStructure", minLevel: "view" } },
+    ],
+  },
+  {
+    groupKey: "evaluationMethods",
+    labelKey: "evaluationMethods",
+    icon: ClipboardList,
+    children: [
+      { segment: "evaluations", labelKey: "performance", icon: ClipboardList, access: { processArea: "evaluation", minLevel: "view" } },
+      { segment: "competencies", labelKey: "competencies", icon: Award, access: { processArea: "competencyFramework", minLevel: "view" } },
+      { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: { processArea: "bauTasks", minLevel: "prepare" } },
+      { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: { processArea: "evaluation", minLevel: "prepare" } },
+    ],
+  },
+  {
+    groupKey: "evaluationResults",
+    labelKey: "evaluationResults",
+    icon: FileBarChart,
+    children: [
+      { segment: "reports", labelKey: "reports", icon: FileBarChart, access: { processArea: "evaluation", minLevel: "view" } },
+      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: { processArea: "promotions", minLevel: "view" } },
+    ],
+  },
+];
+
+/** Pure filter, kept here (not Sidebar.tsx) so it stays importable from Vitest without next/navigation. */
 export function visibleNavItems(
   items: NavItem[],
   permissions: Partial<Record<ProcessArea, VpraLevel>>
@@ -73,17 +122,54 @@ export function visibleNavItems(
   });
 }
 
+/** A group is visible if at least one child is visible for this permission set. */
+export function visibleNavGroups(
+  groups: NavGroup[],
+  permissions: Partial<Record<ProcessArea, VpraLevel>>
+): Array<NavGroup & { children: NavItem[] }> {
+  return groups
+    .map((group) => ({ ...group, children: visibleNavItems(group.children, permissions) }))
+    .filter((group) => group.children.length > 0);
+}
+
 /** `/` for the home item, `/${segment}` for everything else — the locale prefix is added by <Link>. */
 export function navItemHref(segment: string): string {
   return segment ? `/${segment}` : "/";
 }
 
+// Flattened list of every real segment in the app (top-level items + every
+// group's children), used only to disambiguate overlapping prefixes below —
+// e.g. "admin" and "admin/org-structure" are now separate, sibling nav
+// entries (not a page-and-its-sub-route relationship), so a naive
+// `pathname.startsWith("/admin")` would wrongly mark "الصلاحيات" active
+// while actually on "الهيكل التنظيمي".
+const allKnownSegments: string[] = [
+  ...navItems.map((i) => i.segment),
+  ...navGroups.flatMap((g) => g.children.map((c) => c.segment)),
+].filter((s) => s !== "");
+
 /**
  * Home is only active on the exact root; every other item is active on its
- * own path and any nested path under it (`startsWith`), matching how the
- * admin/competencies/etc. sub-routes should keep their parent tab lit.
+ * own path and any nested sub-route under it (`startsWith`) — UNLESS a more
+ * specific known segment also matches, in which case that longer segment
+ * wins (longest-prefix-wins), so sibling entries sharing a URL prefix (the
+ * "الإدارة" group's four children all live under /admin/*) never both
+ * appear active at once.
  */
 export function isNavItemActive(segment: string, pathname: string): boolean {
+  if (segment === "") return pathname === "/";
   const href = navItemHref(segment);
-  return segment ? pathname.startsWith(href) : pathname === "/";
+  if (pathname !== href && !pathname.startsWith(href + "/")) return false;
+
+  const moreSpecificMatchExists = allKnownSegments.some((other) => {
+    if (other === segment || other.length <= segment.length) return false;
+    const otherHref = navItemHref(other);
+    return pathname === otherHref || pathname.startsWith(otherHref + "/");
+  });
+  return !moreSpecificMatchExists;
+}
+
+/** A group is active if the current path matches any of its (unfiltered) children. */
+export function isNavGroupActive(group: NavGroup, pathname: string): boolean {
+  return group.children.some((child) => isNavItemActive(child.segment, pathname));
 }

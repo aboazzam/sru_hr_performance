@@ -7,6 +7,7 @@ import {
   type BehavioralLevel,
 } from "@/lib/data/competencies";
 import { PrintButton } from "@/components/PrintButton";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 const levelOrder: BehavioralLevel[] = [
   "basic",
@@ -20,6 +21,7 @@ export default async function CompetenciesPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="evaluationMethods" current="competencies" />
       <div
         className="no-print"
         style={{
