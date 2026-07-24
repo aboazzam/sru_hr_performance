@@ -22,6 +22,16 @@ export default async function EmployeeInvitePage() {
   // can actually submit the form.
   const { data: roles } = await supabase.from("roles").select("id, name_ar").order("name_ar");
 
+  // job_titles_select accepts careerPath OR employeeData view — hr_admin
+  // holds both, so this list is populated once the Excel import
+  // (2026-07-24) has run; empty until then, which the form already
+  // tolerates (job title is optional).
+  const { data: jobTitles } = await supabase
+    .from("job_titles")
+    .select("id, name_ar, grade_level")
+    .is("deleted_at", null)
+    .order("name_ar");
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -33,7 +43,7 @@ export default async function EmployeeInvitePage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {orgUnits && orgUnits.length > 0 ? (
-        <EmployeeInviteForm orgUnits={orgUnits} roles={roles ?? []} />
+        <EmployeeInviteForm orgUnits={orgUnits} roles={roles ?? []} jobTitles={jobTitles ?? []} />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}

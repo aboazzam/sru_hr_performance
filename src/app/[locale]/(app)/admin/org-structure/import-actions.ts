@@ -1,0 +1,557 @@
+"use server";
+
+import ExcelJS from "exceljs";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export type ImportResult =
+  | {
+      status: "success";
+      summary: {
+        employeesUpserted: number;
+        employeeErrors: string[];
+        levelsCreated: number;
+        positionsUpserted: number;
+        positionErrors: string[];
+        assignmentsCreated: number;
+        assignmentErrors: string[];
+        unmatchedOrgUnits: string[];
+        corrections: string[];
+      };
+    }
+  | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "unknown" };
+
+// Known, project-owner-confirmed correction (2026-07-24): the source
+// sheet's row for "رئيس قسم القيادة والتنمية الطلابية" references parent
+// code 1132, which does not exist anywhere in the sheet — a typo for 1131
+// ("مدير إدارة الحياة الجامعية"), confirmed directly by the project owner.
+const KNOWN_PARENT_CODE_CORRECTIONS: Record<string, string> = {
+  "1132": "1131",
+};
+
+function cellText(value: ExcelJS.CellValue): string | null {
+  if (value == null) return null;
+  if (typeof value === "object" && "text" in (value as object)) {
+    // Rich text cells
+    return String((value as { text: string }).text).trim() || null;
+  }
+  const text = String(value).trim();
+  return text === "" ? null : text;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/**
+ * Parses a date cell that may arrive as a real Date (exceljs represents
+ * spreadsheet dates as UTC-midnight Date objects), an Excel serial number
+ * (some rows in the source sheet aren't actually formatted as dates), or a
+ * "DD-MMM-YYYY" string (other rows in the same column). Deliberately reads
+ * UTC components / uses an explicit regex rather than `new Date(str)` +
+ * `toISOString()` — the naive approach shifts the calendar day backward
+ * for any positive UTC offset (confirmed live: `new Date("14-Sep-2012")`
+ * .toISOString() yields "2012-09-13" in this environment).
+ */
+function parseDateCell(value: ExcelJS.CellValue): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    return `${value.getUTCFullYear()}-${pad2(value.getUTCMonth() + 1)}-${pad2(value.getUTCDate())}`;
+  }
+  if (typeof value === "number") {
+    const utcMillis = Math.round((value - 25569) * 86400 * 1000);
+    const d = new Date(utcMillis);
+    return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+  }
+  const text = cellText(value);
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const monthNames: Record<string, number> = {
+    jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+    jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+  };
+  const m = text.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if (m) {
+    const month = monthNames[m[2].toLowerCase()];
+    if (month) return `${m[3]}-${pad2(month)}-${pad2(parseInt(m[1], 10))}`;
+  }
+  return null;
+}
+
+function headerMap(sheet: ExcelJS.Worksheet): Map<string, number> {
+  const map = new Map<string, number>();
+  sheet.getRow(1).eachCell((cell, colNumber) => {
+    const text = cellText(cell.value);
+    if (text) map.set(text, colNumber);
+  });
+  return map;
+}
+
+function requireColumns(map: Map<string, number>, names: string[]): string | null {
+  for (const name of names) {
+    if (!map.has(name)) return name;
+  }
+  return null;
+}
+
+/**
+ * Imports the project owner's real org chart workbook (2026-07-24): sheet
+ * "Employees Data" (employee master data, upserted by employee_number) and
+ * sheet "الهيكل التنظيمي" (levels + positions + staffing, all three in one
+ * row per position). Both sheets are processed in one action since the
+ * structure sheet's staffing column references employees by number — the
+ * employees must exist first.
+ *
+ * Every write goes through the caller's own RLS-respecting client, exactly
+ * like every other Server Action in this app — real authorization is
+ * `profiles`/`org_structure_*`'s own RLS (`employeeData`/`orgStructure`
+ * approve level), not this action's code. The admin client is used only
+ * for `audit_log`, which has no INSERT policy for `authenticated`.
+ */
+export async function importOrgStructureExcel(
+  _prevState: ImportResult | null,
+  formData: FormData
+): Promise<ImportResult> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  let workbook: ExcelJS.Workbook;
+  try {
+    const buffer = await file.arrayBuffer();
+    workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+  } catch {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const employeesSheet =
+    workbook.worksheets.find((w) => w.name.trim() === "Employees Data") ??
+    workbook.worksheets.find((w) => /employee/i.test(w.name));
+  const structureSheet =
+    workbook.worksheets.find((w) => w.name.trim() === "الهيكل التنظيمي") ??
+    workbook.worksheets.find((w) => w.name.includes("هيكل"));
+
+  if (!employeesSheet || !structureSheet) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const empCols = headerMap(employeesSheet);
+  const missingEmpCol = requireColumns(empCols, [
+    "EMPLOYEE NUMBER",
+    "اسم الموظف",
+    "EMAIL ID",
+  ]);
+  if (missingEmpCol) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const structCols = headerMap(structureSheet);
+  const missingStructCol = requireColumns(structCols, [
+    "المستوى",
+    "الرمز",
+    "الوحدة التنظيمية",
+  ]);
+  if (missingStructCol) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const employeeErrors: string[] = [];
+  const positionErrors: string[] = [];
+  const assignmentErrors: string[] = [];
+  const corrections: string[] = [];
+  const unmatchedOrgUnitsSet = new Set<string>();
+
+  // ---------------------------------------------------------------------
+  // 1. Org units — fetch once for department-name matching (exact match on
+  //    trimmed name_ar only, per the project owner's "حاول المطابقة
+  //    ونصلحها فيما بعد" — best-effort now, manual correction later, not a
+  //    fuzzy/approximate matcher that could silently mismatch).
+  // ---------------------------------------------------------------------
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null);
+  const orgUnitByName = new Map((orgUnitsData ?? []).map((u) => [u.name_ar.trim(), u.id]));
+
+  // ---------------------------------------------------------------------
+  // 2. job_families — reuse the existing placeholder families rather than
+  //    inventing new ones (established precedent from the 2026-07-20
+  //    job_titles data import): "Academic" -> "الأكاديمي", everything else
+  //    -> "عام".
+  // ---------------------------------------------------------------------
+  const { data: familiesData } = await supabase.from("job_families").select("id, name_ar");
+  const academicFamilyId = familiesData?.find((f) => f.name_ar === "الأكاديمي")?.id ?? null;
+  const generalFamilyId = familiesData?.find((f) => f.name_ar === "عام")?.id ?? null;
+
+  // ---------------------------------------------------------------------
+  // 3. Parse "Employees Data" rows.
+  // ---------------------------------------------------------------------
+  interface EmployeeRow {
+    employeeNumber: string;
+    fullNameAr: string;
+    fullNameEn: string | null;
+    email: string | null;
+    hireDate: string | null;
+    qualification: string | null;
+    educationSpeciality: string | null;
+    dateOfBirth: string | null;
+    mobile: string | null;
+    maritalStatus: string | null;
+    gender: string | null;
+    nationality: string | null;
+    departmentAr: string | null;
+    positionAr: string | null;
+    positionEn: string | null;
+    gradeCode: number | null;
+    employeeCategory: string | null;
+    insuranceCategory: string | null;
+  }
+
+  const employeeRows: EmployeeRow[] = [];
+  const get = (row: ExcelJS.Row, col: string) => (empCols.has(col) ? row.getCell(empCols.get(col)!).value : null);
+
+  for (let r = 2; r <= employeesSheet.rowCount; r++) {
+    const row = employeesSheet.getRow(r);
+    const employeeNumber = cellText(get(row, "EMPLOYEE NUMBER"));
+    if (!employeeNumber) continue;
+
+    const fullNameAr = cellText(get(row, "اسم الموظف"));
+    const email = cellText(get(row, "EMAIL ID"))?.toLowerCase() ?? null;
+    if (!fullNameAr || !email) {
+      employeeErrors.push(`${employeeNumber}: missing required name or email — skipped`);
+      continue;
+    }
+
+    const gradeRaw = cellText(get(row, "GRADE CODE"));
+    const grade = gradeRaw ? parseInt(gradeRaw, 10) : null;
+
+    employeeRows.push({
+      employeeNumber,
+      fullNameAr,
+      fullNameEn: cellText(get(row, "Employee Name")),
+      email,
+      hireDate: parseDateCell(get(row, "Hire Date")),
+      qualification: cellText(get(row, "Qualification")),
+      educationSpeciality: cellText(get(row, "Education Speciality")),
+      dateOfBirth: parseDateCell(get(row, "DATE OF BIRTH (YYYY-MM-DD)")),
+      mobile: cellText(get(row, "Mobile")),
+      maritalStatus: cellText(get(row, "MARITIAL STATUS")),
+      gender: cellText(get(row, "GENDER")),
+      nationality: cellText(get(row, "NATIONALITY")),
+      departmentAr: cellText(get(row, "الادارة")),
+      positionAr: cellText(get(row, "اسم الوظيفة")),
+      positionEn: cellText(get(row, "POSITION")),
+      gradeCode: grade != null && !isNaN(grade) ? grade : null,
+      employeeCategory: cellText(get(row, "Category"))?.trim() ?? null,
+      insuranceCategory: cellText(get(row, "Insurance Category")),
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // 4. job_titles — find-or-create by (job_family_id, name_ar), the table's
+  //    own unique constraint. `ignoreDuplicates: true` means an existing
+  //    row's grade_level is never silently overwritten by a differently
+  //    graded row that happens to share the same title text.
+  // -----------------------------------------------------------------------
+  const distinctTitles = new Map<string, { name_ar: string; name_en: string | null; grade_level: number; job_family_id: string; category: "academic" | "admin" }>();
+  for (const emp of employeeRows) {
+    if (!emp.positionAr || emp.gradeCode == null) continue;
+    const isAcademic = emp.employeeCategory?.toLowerCase().startsWith("academic") ?? false;
+    const familyId = isAcademic ? academicFamilyId : generalFamilyId;
+    if (!familyId) continue;
+    const key = `${familyId}::${emp.positionAr}`;
+    if (!distinctTitles.has(key)) {
+      distinctTitles.set(key, {
+        name_ar: emp.positionAr,
+        name_en: emp.positionEn,
+        grade_level: emp.gradeCode,
+        job_family_id: familyId,
+        category: isAcademic ? "academic" : "admin",
+      });
+    }
+  }
+
+  if (distinctTitles.size > 0) {
+    const { error: titlesError } = await supabase
+      .from("job_titles")
+      .upsert([...distinctTitles.values()], { onConflict: "job_family_id,name_ar", ignoreDuplicates: true });
+    if (titlesError) {
+      positionErrors.push(`job_titles: ${titlesError.message}`);
+    }
+  }
+
+  const { data: allTitles } = await supabase.from("job_titles").select("id, job_family_id, name_ar").is("deleted_at", null);
+  const titleIdByKey = new Map((allTitles ?? []).map((t) => [`${t.job_family_id}::${t.name_ar}`, t.id]));
+
+  // -----------------------------------------------------------------------
+  // 5. Upsert profiles by employee_number — never sends an auth invite;
+  //    this is bulk historical data entry, not onboarding. auth_user_id
+  //    stays NULL (inviting each real person is a separate, deliberate
+  //    action, same as the existing single-employee "Add Employee" flow).
+  // -----------------------------------------------------------------------
+  const profileRows = employeeRows.map((emp) => {
+    const orgUnitId = emp.departmentAr ? orgUnitByName.get(emp.departmentAr) ?? null : null;
+    if (emp.departmentAr && !orgUnitId) unmatchedOrgUnitsSet.add(emp.departmentAr);
+
+    const isAcademic = emp.employeeCategory?.toLowerCase().startsWith("academic") ?? false;
+    const familyId = isAcademic ? academicFamilyId : generalFamilyId;
+    const titleKey = emp.positionAr && familyId ? `${familyId}::${emp.positionAr}` : null;
+    const jobTitleId = titleKey ? titleIdByKey.get(titleKey) ?? null : null;
+
+    return {
+      employee_number: emp.employeeNumber,
+      full_name_ar: emp.fullNameAr,
+      full_name_en: emp.fullNameEn,
+      email: emp.email,
+      org_unit_id: orgUnitId,
+      job_title_id: jobTitleId,
+      hire_date: emp.hireDate,
+      qualification: emp.qualification,
+      education_speciality: emp.educationSpeciality,
+      date_of_birth: emp.dateOfBirth,
+      mobile: emp.mobile,
+      marital_status: emp.maritalStatus,
+      gender: emp.gender,
+      nationality: emp.nationality,
+      employee_category: emp.employeeCategory,
+      insurance_category: emp.insuranceCategory,
+    };
+  });
+
+  let employeesUpserted = 0;
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < profileRows.length; i += BATCH_SIZE) {
+    const batch = profileRows.slice(i, i + BATCH_SIZE);
+    const { error, count } = await supabase
+      .from("profiles")
+      .upsert(batch, { onConflict: "employee_number", count: "exact" });
+    if (error) {
+      employeeErrors.push(`batch ${i / BATCH_SIZE + 1}: ${error.message}`);
+    } else {
+      employeesUpserted += count ?? batch.length;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. org_structure_levels — one row per distinct level number, named
+  //    "المستوى N" only when not already present (never overwrite a name
+  //    the project owner already gave a level through the UI).
+  // -----------------------------------------------------------------------
+  const structGet = (row: ExcelJS.Row, col: string) =>
+    structCols.has(col) ? row.getCell(structCols.get(col)!).value : null;
+
+  interface StructRow {
+    level: number;
+    code: string;
+    nameAr: string;
+    nameEn: string | null;
+    parentCode: string | null;
+    employeeNumber: string | null;
+  }
+
+  const structRows: StructRow[] = [];
+  for (let r = 2; r <= structureSheet.rowCount; r++) {
+    const row = structureSheet.getRow(r);
+    const code = cellText(structGet(row, "الرمز"));
+    const nameAr = cellText(structGet(row, "الوحدة التنظيمية"));
+    const levelText = cellText(structGet(row, "المستوى"));
+    if (!code || !nameAr || !levelText) continue;
+
+    let parentCode = cellText(structGet(row, "رمز التبعية"));
+    if (parentCode && KNOWN_PARENT_CODE_CORRECTIONS[parentCode]) {
+      corrections.push(`position ${code} ("${nameAr}"): parent code ${parentCode} corrected to ${KNOWN_PARENT_CODE_CORRECTIONS[parentCode]}`);
+      parentCode = KNOWN_PARENT_CODE_CORRECTIONS[parentCode];
+    }
+
+    structRows.push({
+      level: parseInt(levelText, 10),
+      code,
+      nameAr,
+      nameEn: cellText(structGet(row, "Organizational Unit")),
+      parentCode,
+      employeeNumber: cellText(structGet(row, "الرقم الوظيفي لمن يشغل المنصب")),
+    });
+  }
+
+  const { data: existingLevels } = await supabase
+    .from("org_structure_levels")
+    .select("id, level_order")
+    .is("deleted_at", null);
+  const levelIdByOrder = new Map((existingLevels ?? []).map((l) => [l.level_order, l.id]));
+
+  const distinctLevelOrders = [...new Set(structRows.map((s) => s.level))].sort((a, b) => a - b);
+  const newLevelOrders = distinctLevelOrders.filter((n) => !levelIdByOrder.has(n));
+  let levelsCreated = 0;
+  if (newLevelOrders.length > 0) {
+    const { data: inserted, error } = await supabase
+      .from("org_structure_levels")
+      .insert(newLevelOrders.map((n) => ({ name_ar: `المستوى ${n}`, level_order: n })))
+      .select("id, level_order");
+    if (error) {
+      positionErrors.push(`levels: ${error.message}`);
+    } else {
+      levelsCreated = inserted?.length ?? 0;
+      for (const l of inserted ?? []) levelIdByOrder.set(l.level_order, l.id);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 7. org_structure_positions — pass 1 creates/updates every position by
+  //    external_code WITHOUT parent_id (parent codes may not have a
+  //    matching row yet within this same import); pass 2 resolves and
+  //    writes parent_id once every position exists.
+  //
+  //    Deliberately NOT `.upsert()`: `external_code`'s uniqueness is a
+  //    PARTIAL index (`WHERE external_code IS NOT NULL AND deleted_at IS
+  //    NULL`), which PostgREST's `on_conflict` inference can't target —
+  //    confirmed live (`there is no unique or exclusion constraint
+  //    matching the ON CONFLICT specification`), the exact same limitation
+  //    already documented for `evaluation_scores`/`calibration_results`.
+  //    Select existing codes first, then INSERT the new ones in a batch
+  //    and UPDATE changed ones individually, same as those two tables.
+  // -----------------------------------------------------------------------
+  const { data: existingPositionsByCode } = await supabase
+    .from("org_structure_positions")
+    .select("id, external_code")
+    .is("deleted_at", null)
+    .not("external_code", "is", null);
+  const positionIdByCode = new Map((existingPositionsByCode ?? []).map((p) => [p.external_code as string, p.id]));
+
+  let positionsUpserted = 0;
+  const toInsert: { external_code: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
+  const toUpdate: { id: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
+  for (const s of structRows) {
+    if (!levelIdByOrder.has(s.level)) continue;
+    const levelId = levelIdByOrder.get(s.level)!;
+    const existingId = positionIdByCode.get(s.code);
+    if (existingId) {
+      toUpdate.push({ id: existingId, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
+    } else {
+      toInsert.push({ external_code: s.code, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
+    }
+  }
+
+  for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+    const batch = toInsert.slice(i, i + BATCH_SIZE);
+    const { data: inserted, error } = await supabase.from("org_structure_positions").insert(batch).select("id, external_code");
+    if (error) {
+      positionErrors.push(`positions insert batch ${i / BATCH_SIZE + 1}: ${error.message}`);
+    } else {
+      positionsUpserted += inserted?.length ?? 0;
+      for (const p of inserted ?? []) positionIdByCode.set(p.external_code as string, p.id);
+    }
+  }
+
+  for (const p of toUpdate) {
+    const { error } = await supabase
+      .from("org_structure_positions")
+      .update({ level_id: p.level_id, name_ar: p.name_ar, name_en: p.name_en })
+      .eq("id", p.id);
+    if (error) {
+      positionErrors.push(`position ${p.id}: ${error.message}`);
+    } else {
+      positionsUpserted += 1;
+    }
+  }
+
+  for (const s of structRows) {
+    if (!s.parentCode) continue;
+    const positionId = positionIdByCode.get(s.code);
+    const parentId = positionIdByCode.get(s.parentCode);
+    if (!positionId) continue;
+    if (!parentId) {
+      positionErrors.push(`position ${s.code} ("${s.nameAr}"): parent code ${s.parentCode} not found — left without a parent`);
+      continue;
+    }
+    const { error } = await supabase.from("org_structure_positions").update({ parent_id: parentId }).eq("id", positionId);
+    if (error) positionErrors.push(`position ${s.code}: ${error.message}`);
+  }
+
+  // -----------------------------------------------------------------------
+  // 8. org_structure_assignments — staffing embedded in the structure
+  //    sheet. Only ever ADDS a missing assignment (matching the project
+  //    owner's "اسمح بالإضافة والتعديل"); never removes an existing one on
+  //    re-import, since the sheet has no way to express "unassign" and
+  //    silently doing so on a re-run would be a real, surprising data loss.
+  //    Can't use .upsert() here — the uniqueness is a PARTIAL index
+  //    (WHERE deleted_at IS NULL), the same limitation already documented
+  //    for evaluation_scores/calibration_results — so this checks first.
+  // -----------------------------------------------------------------------
+  const { data: profilesByNumber } = await supabase
+    .from("profiles")
+    .select("id, employee_number")
+    .is("deleted_at", null);
+  const profileIdByNumber = new Map((profilesByNumber ?? []).map((p) => [p.employee_number, p.id]));
+
+  const { data: existingAssignments } = await supabase
+    .from("org_structure_assignments")
+    .select("position_id, employee_id")
+    .is("deleted_at", null);
+  const existingAssignmentKeys = new Set((existingAssignments ?? []).map((a) => `${a.position_id}::${a.employee_id}`));
+
+  let assignmentsCreated = 0;
+  const newAssignments: { position_id: string; employee_id: string }[] = [];
+  for (const s of structRows) {
+    if (!s.employeeNumber) continue;
+    const positionId = positionIdByCode.get(s.code);
+    const employeeId = profileIdByNumber.get(s.employeeNumber);
+    if (!positionId) continue;
+    if (!employeeId) {
+      assignmentErrors.push(`position ${s.code}: employee number ${s.employeeNumber} not found among imported employees`);
+      continue;
+    }
+    const key = `${positionId}::${employeeId}`;
+    if (existingAssignmentKeys.has(key)) continue;
+    existingAssignmentKeys.add(key);
+    newAssignments.push({ position_id: positionId, employee_id: employeeId });
+  }
+
+  if (newAssignments.length > 0) {
+    const { error, count } = await supabase
+      .from("org_structure_assignments")
+      .insert(newAssignments, { count: "exact" });
+    if (error) {
+      assignmentErrors.push(`assignments: ${error.message}`);
+    } else {
+      assignmentsCreated = count ?? newAssignments.length;
+    }
+  }
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_excel_imported",
+    entity: "org_structure_positions",
+    after_data: {
+      employeesUpserted,
+      levelsCreated,
+      positionsUpserted,
+      assignmentsCreated,
+      employeeErrorCount: employeeErrors.length,
+      positionErrorCount: positionErrors.length,
+      assignmentErrorCount: assignmentErrors.length,
+    },
+  });
+
+  return {
+    status: "success",
+    summary: {
+      employeesUpserted,
+      employeeErrors,
+      levelsCreated,
+      positionsUpserted,
+      positionErrors,
+      assignmentsCreated,
+      assignmentErrors,
+      unmatchedOrgUnits: [...unmatchedOrgUnitsSet],
+      corrections,
+    },
+  };
+}

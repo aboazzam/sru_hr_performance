@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
 import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
+import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -79,6 +80,7 @@ export default async function OrgStructureStaffingPage() {
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AssignEmployeeForm positions={positionOptions} employees={employeeOptions} />
         <AddOrgStructurePositionForm levels={levels} positions={positions} headingKey="addPositionHeading" />
+        <ImportOrgStructureExcelForm />
       </section>
 
       <section>
