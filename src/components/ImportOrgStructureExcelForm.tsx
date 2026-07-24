@@ -12,9 +12,13 @@ const errorMessageKeys: Record<string, string> = {
   unknown: "importErrorUnknown",
 };
 
+// Compact trigger button (sits alongside the page's other header actions,
+// per the 2026-07-24 request) that opens a native <dialog> modal explaining
+// the import, offering a template download, and hosting the actual form.
 export function ImportOrgStructureExcelForm() {
   const t = useTranslations("OrgStructurePage");
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, formAction, pending] = useActionState<ImportResult | null, FormData>(importOrgStructureExcel, null);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,98 +38,127 @@ export function ImportOrgStructureExcelForm() {
   }, [state, router]);
 
   return (
-    <div className="sru-card" style={{ padding: 16, maxWidth: 480 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{t("importHeading")}</h3>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 10 }}>{t("importNote")}</p>
-      <form ref={formRef} action={formAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          name="file"
-          accept=".xlsx"
-          required
-          style={{ display: "none" }}
-          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <>
+      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
+        {t("importTriggerButton")}
+      </button>
+
+      <dialog
+        ref={dialogRef}
+        className="sru-modal"
+        onClick={(e) => {
+          if (e.target === dialogRef.current) dialogRef.current?.close();
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{t("importHeading")}</h3>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="sru-btn"
+            onClick={() => dialogRef.current?.close()}
+            className="sru-modal-close"
+            aria-label={t("closeButton")}
           >
-            {t("chooseFileButton")}
+            ×
           </button>
-          <span style={{ fontSize: 12.5, color: fileName ? "var(--foreground)" : "var(--sru-muted)" }}>
-            {fileName ?? t("noFileChosen")}
-          </span>
         </div>
-        <button
-          type="submit"
-          disabled={pending || !fileName}
-          className="sru-btn sru-btn-primary"
-          style={{ alignSelf: "flex-start" }}
+        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("importNote")}</p>
+
+        <a
+          href="/templates/sru-org-structure-import-template.xlsx"
+          download
+          className="sru-btn sru-btn-secondary"
+          style={{ display: "inline-block", marginBottom: 16 }}
         >
-          {pending ? t("importing") : t("importButton")}
-        </button>
-      </form>
+          {t("downloadTemplate")}
+        </a>
 
-      {state?.status === "error" && (
-        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10 }}>
-          {t(errorMessageKeys[state.message] ?? "importErrorUnknown")}
-        </p>
-      )}
+        <form ref={formRef} action={formAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            name="file"
+            accept=".xlsx"
+            required
+            style={{ display: "none" }}
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="sru-btn">
+              {t("chooseFileButton")}
+            </button>
+            <span style={{ fontSize: 12.5, color: fileName ? "var(--foreground)" : "var(--sru-muted)" }}>
+              {fileName ?? t("noFileChosen")}
+            </span>
+          </div>
+          <button
+            type="submit"
+            disabled={pending || !fileName}
+            className="sru-btn sru-btn-primary"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {pending ? t("importing") : t("importButton")}
+          </button>
+        </form>
 
-      {state?.status === "success" && (
-        <div style={{ marginTop: 12, fontSize: 12.5 }}>
-          <p role="status" style={{ color: "var(--sru-success, #15803d)", marginBottom: 8 }}>
-            {t("importSuccess", {
-              employees: state.summary.employeesUpserted,
-              levels: state.summary.levelsCreated,
-              positions: state.summary.positionsUpserted,
-              assignments: state.summary.assignmentsCreated,
-            })}
+        {state?.status === "error" && (
+          <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10 }}>
+            {t(errorMessageKeys[state.message] ?? "importErrorUnknown")}
           </p>
-          {state.summary.corrections.length > 0 && (
-            <details style={{ marginBottom: 6 }}>
-              <summary>{t("importCorrections", { count: state.summary.corrections.length })}</summary>
-              <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
-                {state.summary.corrections.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-          {state.summary.unmatchedOrgUnits.length > 0 && (
-            <details style={{ marginBottom: 6 }}>
-              <summary>{t("importUnmatchedOrgUnits", { count: state.summary.unmatchedOrgUnits.length })}</summary>
-              <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
-                {state.summary.unmatchedOrgUnits.map((u, i) => (
-                  <li key={i}>{u}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-          {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].length > 0 && (
-            <details>
-              <summary className="text-red-600">
-                {t("importWarnings", {
-                  count:
-                    state.summary.employeeErrors.length +
-                    state.summary.positionErrors.length +
-                    state.summary.assignmentErrors.length,
-                })}
-              </summary>
-              <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
-                {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].map(
-                  (msg, i) => (
-                    <li key={i}>{msg}</li>
-                  )
-                )}
-              </ul>
-            </details>
-          )}
-        </div>
-      )}
-    </div>
+        )}
+
+        {state?.status === "success" && (
+          <div style={{ marginTop: 12, fontSize: 12.5 }}>
+            <p role="status" style={{ color: "var(--sru-success, #15803d)", marginBottom: 8 }}>
+              {t("importSuccess", {
+                employees: state.summary.employeesUpserted,
+                levels: state.summary.levelsCreated,
+                positions: state.summary.positionsUpserted,
+                assignments: state.summary.assignmentsCreated,
+              })}
+            </p>
+            {state.summary.corrections.length > 0 && (
+              <details style={{ marginBottom: 6 }}>
+                <summary>{t("importCorrections", { count: state.summary.corrections.length })}</summary>
+                <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
+                  {state.summary.corrections.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {state.summary.unmatchedOrgUnits.length > 0 && (
+              <details style={{ marginBottom: 6 }}>
+                <summary>{t("importUnmatchedOrgUnits", { count: state.summary.unmatchedOrgUnits.length })}</summary>
+                <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
+                  {state.summary.unmatchedOrgUnits.map((u, i) => (
+                    <li key={i}>{u}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].length >
+              0 && (
+              <details>
+                <summary className="text-red-600">
+                  {t("importWarnings", {
+                    count:
+                      state.summary.employeeErrors.length +
+                      state.summary.positionErrors.length +
+                      state.summary.assignmentErrors.length,
+                  })}
+                </summary>
+                <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
+                  {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].map(
+                    (msg, i) => (
+                      <li key={i}>{msg}</li>
+                    )
+                  )}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
+      </dialog>
+    </>
   );
 }

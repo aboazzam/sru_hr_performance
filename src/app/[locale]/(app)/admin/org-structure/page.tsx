@@ -48,16 +48,18 @@ export default async function OrgStructurePage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <Link href="/admin/org-structure/staffing" className="sru-btn">
-          {t("staffingLink")}
-        </Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ImportOrgStructureExcelForm />
+          <Link href="/admin/org-structure/staffing" className="sru-btn">
+            {t("staffingLink")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AddOrgStructureLevelForm />
         <AddOrgStructurePositionForm levels={levels} positions={positions} />
-        <ImportOrgStructureExcelForm />
       </section>
 
       <section>

@@ -109,21 +109,18 @@ export default async function EmployeesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/employees/new" className="sru-btn sru-btn-primary">
             {t("addEmployee")}
           </Link>
           <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
             {t("assignSupervisor")}
           </Link>
+          <ImportOrgStructureExcelForm />
           <PrintButton />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
-
-      <section className="no-print" style={{ marginBottom: 28 }}>
-        <ImportOrgStructureExcelForm />
-      </section>
 
       {!employees || employees.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>

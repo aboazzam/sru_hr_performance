@@ -349,3 +349,46 @@ table.admin-matrix {
   font-size: 12px;
   white-space: nowrap;
 }
+
+/* ===== Disabled buttons =====
+   sru-ui.css defines no :disabled state at all, so a disabled .sru-btn
+   looked visually identical to an active one (same solid color, only the
+   cursor differed) — confirmed as a real, project-wide source of confusion
+   during the 2026-07-24 import-button UX fix. Additive per this project's
+   "never edit sru-ui.css directly" rule. */
+.sru-btn:disabled,
+.sru-btn:disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--sru-purple);
+}
+
+/* ===== Simple modal dialog (native <dialog>) =====
+   First use of a modal in this project — the org-structure/employees Excel
+   import panel. Built on the native <dialog> element (Escape-to-close and
+   backdrop are free); only cosmetic styling is added here.
+*/
+dialog.sru-modal {
+  border: none;
+  border-radius: var(--sru-radius);
+  padding: 22px;
+  width: min(520px, calc(100vw - 32px));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+dialog.sru-modal::backdrop {
+  background: rgba(20, 10, 30, 0.45);
+}
+
+.sru-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--sru-muted);
+  padding: 2px 6px;
+}
+.sru-modal-close:hover {
+  color: var(--sru-ink);
+}
