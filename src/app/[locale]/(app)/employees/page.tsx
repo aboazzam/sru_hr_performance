@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
+import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 
 const statusMessageKeys = {
   active: "statusActive",
@@ -44,6 +45,50 @@ export default async function EmployeesPage() {
     org_units: { name_ar: string } | null;
   }> | null;
 
+  // Role display: a linked account's role lives in `user_roles` (keyed by
+  // auth_user_id); an invited-but-not-yet-accepted profile's role lives in
+  // `pending_role_assignments` (keyed by profile_id) until
+  // link_profile_to_auth_user() promotes it — see 20260721000001. Both are
+  // gated by userManagement>=view/approve respectively, so a caller without
+  // that grant simply gets empty results here, same as every other RLS
+  // boundary in this app (no separate "forbidden" branch needed).
+  const authUserIds = (employees ?? []).map((e) => e.auth_user_id).filter((id): id is string => !!id);
+  const pendingProfileIds = (employees ?? []).filter((e) => !e.auth_user_id).map((e) => e.id);
+
+  const [{ data: userRolesData }, { data: pendingRolesData }] = await Promise.all([
+    authUserIds.length > 0
+      ? supabase.from("user_roles").select("user_id, roles(name_ar)").in("user_id", authUserIds)
+      : Promise.resolve({ data: [] as { user_id: string; roles: { name_ar: string } | null }[] }),
+    pendingProfileIds.length > 0
+      ? supabase.from("pending_role_assignments").select("profile_id, roles(name_ar)").in("profile_id", pendingProfileIds)
+      : Promise.resolve({ data: [] as { profile_id: string; roles: { name_ar: string } | null }[] }),
+  ]);
+
+  const rolesByAuthUserId = new Map<string, string[]>();
+  for (const row of (userRolesData ?? []) as unknown as { user_id: string; roles: { name_ar: string } | null }[]) {
+    if (!row.roles) continue;
+    const list = rolesByAuthUserId.get(row.user_id) ?? [];
+    list.push(row.roles.name_ar);
+    rolesByAuthUserId.set(row.user_id, list);
+  }
+
+  const pendingRolesByProfileId = new Map<string, string[]>();
+  for (const row of (pendingRolesData ?? []) as unknown as { profile_id: string; roles: { name_ar: string } | null }[]) {
+    if (!row.roles) continue;
+    const list = pendingRolesByProfileId.get(row.profile_id) ?? [];
+    list.push(row.roles.name_ar);
+    pendingRolesByProfileId.set(row.profile_id, list);
+  }
+
+  function roleLabel(employee: { id: string; auth_user_id: string | null }): string {
+    if (employee.auth_user_id) {
+      const roles = rolesByAuthUserId.get(employee.auth_user_id);
+      return roles && roles.length > 0 ? roles.join("، ") : t("roleNone");
+    }
+    const pending = pendingRolesByProfileId.get(employee.id);
+    return pending && pending.length > 0 ? t("rolePending", { role: pending.join("، ") }) : t("roleNone");
+  }
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -76,6 +121,10 @@ export default async function EmployeesPage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
+      <section className="no-print" style={{ marginBottom: 28 }}>
+        <ImportOrgStructureExcelForm />
+      </section>
+
       {!employees || employees.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
@@ -87,6 +136,7 @@ export default async function EmployeesPage() {
                   <th>{t("columnEmployeeNumber")}</th>
                   <th>{t("columnName")}</th>
                   <th>{t("columnOrgUnit")}</th>
+                  <th>{t("columnRole")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("columnAccount")}</th>
                 </tr>
@@ -97,6 +147,7 @@ export default async function EmployeesPage() {
                     <td>{employee.employee_number}</td>
                     <td>{employee.full_name_ar}</td>
                     <td>{employee.org_units?.name_ar ?? "—"}</td>
+                    <td>{roleLabel(employee)}</td>
                     <td>{t(statusMessageKeys[employee.status as keyof typeof statusMessageKeys])}</td>
                     <td>{employee.auth_user_id ? t("accountActive") : t("accountPending")}</td>
                   </tr>
