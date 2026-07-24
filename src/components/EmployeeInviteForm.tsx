@@ -14,6 +14,12 @@ interface RoleOption {
   name_ar: string;
 }
 
+interface JobTitleOption {
+  id: string;
+  name_ar: string;
+  grade_level: number;
+}
+
 type ErrorMessage = Extract<InviteEmployeeState, { status: "error" }>["message"];
 
 const errorMessageKeys: Record<ErrorMessage, string> = {
@@ -30,9 +36,11 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
 export function EmployeeInviteForm({
   orgUnits,
   roles,
+  jobTitles,
 }: {
   orgUnits: OrgUnitOption[];
   roles: RoleOption[];
+  jobTitles: JobTitleOption[];
 }) {
   const t = useTranslations("EmployeeInvitePage");
   const [state, formAction, pending] = useActionState<InviteEmployeeState, FormData>(
@@ -113,8 +121,79 @@ export function EmployeeInviteForm({
       </div>
 
       <div>
+        <label className="block text-sm font-medium mb-1">{t("jobTitleLabel")}</label>
+        <select name="jobTitleId" className={inputClass} defaultValue="">
+          <option value="">{t("jobTitlePlaceholder")}</option>
+          {jobTitles.map((title) => (
+            <option key={title.id} value={title.id}>
+              {title.name_ar} ({t("gradeLabel", { grade: title.grade_level })})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium mb-1">{t("hireDateLabel")}</label>
         <input type="date" name="hireDate" dir="ltr" className={inputClass} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("dateOfBirthLabel")}</label>
+        <input type="date" name="dateOfBirth" dir="ltr" className={inputClass} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("qualificationLabel")}</label>
+        <input type="text" name="qualification" className={inputClass} placeholder={t("qualificationPlaceholder")} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("educationSpecialityLabel")}</label>
+        <input type="text" name="educationSpeciality" className={inputClass} placeholder={t("educationSpecialityPlaceholder")} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("mobileLabel")}</label>
+        <input type="text" name="mobile" dir="ltr" className={inputClass} placeholder={t("mobilePlaceholder")} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("genderLabel")}</label>
+        <select name="gender" className={inputClass} defaultValue="">
+          <option value="">{t("genderPlaceholder")}</option>
+          <option value="Male">{t("genderMale")}</option>
+          <option value="Female">{t("genderFemale")}</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("maritalStatusLabel")}</label>
+        <select name="maritalStatus" className={inputClass} defaultValue="">
+          <option value="">{t("maritalStatusPlaceholder")}</option>
+          <option value="Single">{t("maritalStatusSingle")}</option>
+          <option value="Married">{t("maritalStatusMarried")}</option>
+          <option value="Divorced">{t("maritalStatusDivorced")}</option>
+          <option value="Widowed">{t("maritalStatusWidowed")}</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("nationalityLabel")}</label>
+        <input type="text" name="nationality" className={inputClass} placeholder={t("nationalityPlaceholder")} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("employeeCategoryLabel")}</label>
+        <select name="employeeCategory" className={inputClass} defaultValue="">
+          <option value="">{t("employeeCategoryPlaceholder")}</option>
+          <option value="Academic">{t("employeeCategoryAcademic")}</option>
+          <option value="Administrative">{t("employeeCategoryAdministrative")}</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">{t("insuranceCategoryLabel")}</label>
+        <input type="text" name="insuranceCategory" dir="ltr" className={inputClass} placeholder={t("insuranceCategoryPlaceholder")} />
       </div>
 
       <div>

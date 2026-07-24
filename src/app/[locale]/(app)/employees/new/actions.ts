@@ -12,10 +12,27 @@ const inviteSchema = z
     fullNameEn: z.string().trim().optional(),
     email: z.string().trim().toLowerCase().email(),
     orgUnitId: z.string().uuid(),
+    jobTitleId: z.string().uuid().optional(),
     hireDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional(),
+    // The remaining fields mirror the project owner's real "Employees Data"
+    // sheet (2026-07-24) — plain optional strings/dates, no enum, matching
+    // the same TEXT-column-no-CHECK precedent as the DB migration that
+    // added them (20260724000002).
+    qualification: z.string().trim().optional(),
+    educationSpeciality: z.string().trim().optional(),
+    dateOfBirth: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    mobile: z.string().trim().optional(),
+    maritalStatus: z.string().trim().optional(),
+    gender: z.string().trim().optional(),
+    nationality: z.string().trim().optional(),
+    employeeCategory: z.string().trim().optional(),
+    insuranceCategory: z.string().trim().optional(),
     roleId: z.string().uuid(),
     scopeType: z.enum(["all", "org_unit"]),
     scopeOrgUnitIds: z.array(z.string().uuid()).optional(),
@@ -66,7 +83,17 @@ export async function inviteEmployee(
     fullNameEn: formData.get("fullNameEn") || undefined,
     email: formData.get("email"),
     orgUnitId: formData.get("orgUnitId"),
+    jobTitleId: formData.get("jobTitleId") || undefined,
     hireDate: formData.get("hireDate") || undefined,
+    qualification: formData.get("qualification") || undefined,
+    educationSpeciality: formData.get("educationSpeciality") || undefined,
+    dateOfBirth: formData.get("dateOfBirth") || undefined,
+    mobile: formData.get("mobile") || undefined,
+    maritalStatus: formData.get("maritalStatus") || undefined,
+    gender: formData.get("gender") || undefined,
+    nationality: formData.get("nationality") || undefined,
+    employeeCategory: formData.get("employeeCategory") || undefined,
+    insuranceCategory: formData.get("insuranceCategory") || undefined,
     roleId: formData.get("roleId"),
     scopeType: formData.get("scopeType"),
     scopeOrgUnitIds: formData.getAll("scopeOrgUnitIds"),
@@ -93,8 +120,27 @@ export async function inviteEmployee(
     return { status: "error", message: "rate_limited" };
   }
 
-  const { employeeNumber, fullNameAr, fullNameEn, email, orgUnitId, hireDate, roleId, scopeType, scopeOrgUnitIds } =
-    parsed.data;
+  const {
+    employeeNumber,
+    fullNameAr,
+    fullNameEn,
+    email,
+    orgUnitId,
+    jobTitleId,
+    hireDate,
+    qualification,
+    educationSpeciality,
+    dateOfBirth,
+    mobile,
+    maritalStatus,
+    gender,
+    nationality,
+    employeeCategory,
+    insuranceCategory,
+    roleId,
+    scopeType,
+    scopeOrgUnitIds,
+  } = parsed.data;
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -104,7 +150,17 @@ export async function inviteEmployee(
       full_name_en: fullNameEn ?? null,
       email,
       org_unit_id: orgUnitId,
+      job_title_id: jobTitleId ?? null,
       hire_date: hireDate ?? null,
+      qualification: qualification ?? null,
+      education_speciality: educationSpeciality ?? null,
+      date_of_birth: dateOfBirth ?? null,
+      mobile: mobile ?? null,
+      marital_status: maritalStatus ?? null,
+      gender: gender ?? null,
+      nationality: nationality ?? null,
+      employee_category: employeeCategory ?? null,
+      insurance_category: insuranceCategory ?? null,
     })
     .select("id")
     .single();

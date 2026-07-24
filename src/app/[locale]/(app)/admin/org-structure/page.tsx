@@ -5,6 +5,7 @@ import { AddOrgStructureLevelForm } from "@/components/AddOrgStructureLevelForm"
 import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
 import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
 import { OrgStructurePositionMiniRow } from "@/components/OrgStructurePositionMiniRow";
+import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -56,6 +57,7 @@ export default async function OrgStructurePage() {
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AddOrgStructureLevelForm />
         <AddOrgStructurePositionForm levels={levels} positions={positions} />
+        <ImportOrgStructureExcelForm />
       </section>
 
       <section>
