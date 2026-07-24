@@ -3,6 +3,7 @@ import {
   hasVpraAccess,
   vpraLevelLabels,
   processAreas,
+  processAreaLabels,
   defaultRoles,
   evaluationStates,
   getEvaluationStatePermission,
@@ -41,6 +42,12 @@ describe("static reference lists", () => {
     expect(processAreas).toHaveLength(13);
     expect(new Set(processAreas).size).toBe(13);
     expect(processAreas).toContain("orgStructure");
+  });
+
+  it("has an Arabic label for every process area", () => {
+    for (const area of processAreas) {
+      expect(processAreaLabels[area]?.length).toBeGreaterThan(0);
+    }
   });
 
   it("has exactly the 12 default roles from CLAUDE.md section 4, each with an Arabic label", () => {
