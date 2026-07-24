@@ -13,7 +13,12 @@ const statusMessageKeys = {
 } as const;
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
-export default async function EmployeesPage() {
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; orgUnitId?: string; status?: string }>;
+}) {
+  const { q, orgUnitId, status } = await searchParams;
   const t = await getTranslations("EmployeesPage");
   const supabase = await createClient();
 
@@ -31,13 +36,24 @@ export default async function EmployeesPage() {
   // the relationship's real cardinality. Cast to the actual runtime shape
   // (verified directly against the REST API) rather than indexing [0]
   // into something that was never actually an array.
-  const { data } = await supabase
+  //
+  // orgUnitId/status are applied server-side via `.eq()` (safe, parameterized).
+  // The free-text `q` search is deliberately applied in JS after fetching,
+  // not via a raw PostgREST `.or()` filter string — untrusted search input
+  // could contain commas/parentheses that are meaningful in that filter
+  // DSL, and this list is small enough that an in-memory filter is simpler
+  // and avoids the escaping question entirely.
+  let query = supabase
     .from("profiles")
     .select("id, employee_number, full_name_ar, full_name_en, status, auth_user_id, org_units(name_ar)")
     .is("deleted_at", null)
     .order("employee_number");
+  if (orgUnitId) query = query.eq("org_unit_id", orgUnitId);
+  if (status) query = query.eq("status", status);
 
-  const employees = data as unknown as Array<{
+  const { data } = await query;
+
+  let employees = data as unknown as Array<{
     id: string;
     employee_number: string;
     full_name_ar: string;
@@ -46,6 +62,19 @@ export default async function EmployeesPage() {
     auth_user_id: string | null;
     org_units: { name_ar: string } | null;
   }> | null;
+
+  if (q && q.trim() && employees) {
+    const needle = q.trim().toLowerCase();
+    employees = employees.filter(
+      (e) =>
+        e.full_name_ar.toLowerCase().includes(needle) ||
+        e.full_name_en?.toLowerCase().includes(needle) ||
+        e.employee_number.toLowerCase().includes(needle)
+    );
+  }
+
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").order("name_ar");
+  const orgUnits = orgUnitsData ?? [];
 
   // Role display: a linked account's role lives in `user_roles` (keyed by
   // auth_user_id); an invited-but-not-yet-accepted profile's role lives in
@@ -136,7 +165,56 @@ export default async function EmployeesPage() {
           <EmployeesExportMenu />
         </div>
       </div>
-      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+      <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
+
+      <form method="get" className="no-print" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap" }}>
+        <input
+          type="text"
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder={t("searchPlaceholder")}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "var(--sru-radius)",
+            border: "1px solid var(--sru-border)",
+            minWidth: 240,
+            fontFamily: "inherit",
+          }}
+        />
+        <details className="sru-filter-details">
+          <summary className="sru-btn">{t("filterButton")}</summary>
+          <div className="sru-filter-panel">
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+              {t("filterOrgUnitLabel")}
+            </label>
+            <select name="orgUnitId" defaultValue={orgUnitId ?? ""} style={{ width: "100%", padding: "6px 10px", marginBottom: 10 }}>
+              <option value="">{t("filterAllOrgUnits")}</option>
+              {orgUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name_ar}
+                </option>
+              ))}
+            </select>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+              {t("filterStatusLabel")}
+            </label>
+            <select name="status" defaultValue={status ?? ""} style={{ width: "100%", padding: "6px 10px" }}>
+              <option value="">{t("filterAllStatuses")}</option>
+              <option value="active">{t("statusActive")}</option>
+              <option value="on_leave">{t("statusOnLeave")}</option>
+              <option value="terminated">{t("statusTerminated")}</option>
+            </select>
+          </div>
+        </details>
+        <button type="submit" className="sru-btn sru-btn-primary">
+          {t("searchButton")}
+        </button>
+        {(q || orgUnitId || status) && (
+          <Link href="/employees" className="sru-btn">
+            {t("resetFiltersButton")}
+          </Link>
+        )}
+      </form>
 
       {!employees || employees.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>

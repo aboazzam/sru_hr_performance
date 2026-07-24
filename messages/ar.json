@@ -210,7 +210,15 @@
     "actionDelete": "حذف",
     "deleting": "جارٍ الحذف...",
     "deleteConfirm": "هل تريد حذف هذا الموظف؟ يمكن استرجاعه لاحقًا عبر قاعدة البيانات فقط.",
-    "actionDeleteError": "تعذّر الحذف — تحقق من صلاحيتك."
+    "actionDeleteError": "تعذّر الحذف — تحقق من صلاحيتك.",
+    "searchPlaceholder": "بحث بالاسم أو الرقم الوظيفي",
+    "filterButton": "تصفية",
+    "filterOrgUnitLabel": "الوحدة التنظيمية",
+    "filterAllOrgUnits": "كل الوحدات التنظيمية",
+    "filterStatusLabel": "الحالة",
+    "filterAllStatuses": "كل الحالات",
+    "searchButton": "بحث",
+    "resetFiltersButton": "إعادة تعيين"
   },
   "CareerPathPage": {
     "title": "المسار الوظيفي",

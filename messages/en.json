@@ -210,7 +210,15 @@
     "actionDelete": "Delete",
     "deleting": "Deleting...",
     "deleteConfirm": "Delete this employee? This can only be undone directly in the database.",
-    "actionDeleteError": "Could not delete — check your permission."
+    "actionDeleteError": "Could not delete — check your permission.",
+    "searchPlaceholder": "Search by name or employee number",
+    "filterButton": "Filter",
+    "filterOrgUnitLabel": "Organizational Unit",
+    "filterAllOrgUnits": "All organizational units",
+    "filterStatusLabel": "Status",
+    "filterAllStatuses": "All statuses",
+    "searchButton": "Search",
+    "resetFiltersButton": "Reset"
   },
   "CareerPathPage": {
     "title": "Career Path",

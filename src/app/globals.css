@@ -403,3 +403,30 @@ dialog.sru-modal::backdrop {
 .sru-modal-close:hover {
   color: var(--sru-ink);
 }
+
+/* ===== Filter dropdown (Employees list search/filter, 2026-07-24) =====
+   A <details>/<summary> pair needs no JS for open/close — the panel is
+   just an absolutely-positioned child, same positioning approach as
+   .sru-user-menu-panel. */
+.sru-filter-details {
+  position: relative;
+}
+.sru-filter-details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.sru-filter-details > summary::-webkit-details-marker {
+  display: none;
+}
+.sru-filter-panel {
+  position: absolute;
+  inset-inline-start: 0;
+  top: calc(100% + 8px);
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--sru-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  padding: 12px;
+  z-index: 10;
+}
