@@ -430,3 +430,78 @@ dialog.sru-modal::backdrop {
   padding: 12px;
   z-index: 10;
 }
+
+/* ===== Sidebar (2026-07-24) =====
+   Replaces the old horizontal .sru-navbar with a vertical sidebar —
+   right-side in RTL / left-side in LTR for free, since flex row direction
+   already follows the page's writing direction (no explicit left/right
+   needed). Additive next to sru-ui.css's .sru-nav-item, not a replacement
+   of it — kept .sru-nav-item's color/weight/hover language, just laid out
+   vertically instead of horizontally. */
+.sru-app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.sru-sidebar {
+  background: var(--sru-purple-dark);
+  width: 220px;
+  flex-shrink: 0;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.sru-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-inline-start: 3px solid transparent;
+  white-space: nowrap;
+}
+.sru-sidebar-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.sru-sidebar-item.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-inline-start-color: var(--sru-blue);
+}
+
+/* ===== Page-level group tabs (GroupTabs.tsx, 2026-07-24) =====
+   The sub-items of a sidebar group (e.g. الهيكل التنظيمي/التسكين/الصلاحيات/
+   الهوية under الإدارة) render here, at the top of each member page. */
+.sru-page-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--sru-border);
+  margin-bottom: 20px;
+}
+.sru-page-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+.sru-page-tab:hover {
+  color: var(--sru-purple);
+}
+.sru-page-tab.active {
+  color: var(--sru-purple);
+  border-bottom-color: var(--sru-purple);
+}
