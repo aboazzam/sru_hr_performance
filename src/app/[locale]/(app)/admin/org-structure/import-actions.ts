@@ -99,13 +99,15 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 /**
  * Imports the project owner's real org chart workbook (2026-07-24): sheet
  * "Employees Data" (employee master data, upserted by employee_number) and
- * OPTIONALLY sheet "الهيكل التنظيمي" (levels + positions + staffing, all
- * three in one row per position) — the org-structure sheet is not required
- * (2026-07-24 follow-up): the Employees page offers a dedicated
- * employees-only template with no such sheet at all, so this action must
- * work with just "Employees Data" present. When the structure sheet IS
- * present, both are processed together in one action since its staffing
- * column references employees by number — the employees must exist first.
+ * sheet "الهيكل التنظيمي" (levels + positions + staffing, all three in one
+ * row per position) — EITHER sheet alone is valid, at least one is required
+ * (2026-07-24 follow-up): the Employees page's template has no structure
+ * sheet, and the org-structure page's template has no "Employees Data"
+ * sheet (removed at the project owner's explicit request, since staffing
+ * there resolves against employees that already exist in the database by
+ * employee_number). When both sheets ARE present, they're processed
+ * together in one action since the structure sheet's staffing column
+ * references employees by number — the employees must exist first.
  *
  * Every write goes through the caller's own RLS-respecting client, exactly
  * like every other Server Action in this app — real authorization is
@@ -147,18 +149,27 @@ export async function importOrgStructureExcel(
     workbook.worksheets.find((w) => w.name.trim() === "الهيكل التنظيمي") ??
     workbook.worksheets.find((w) => w.name.includes("هيكل"));
 
-  if (!employeesSheet) {
+  // Neither sheet present at all — nothing to import. Either sheet ALONE is
+  // valid: the Employees page's template has only "Employees Data" (no
+  // structure sheet, already supported), and the org-structure page's
+  // template (2026-07-24 follow-up) now has only "الهيكل التنظيمي" — the
+  // project owner explicitly asked for the "Employees Data" sheet to be
+  // removed from that specific template, since staffing there resolves
+  // against employees that already exist in the database by employee_number.
+  if (!employeesSheet && !structureSheet) {
     return { status: "error", message: "invalid_input" };
   }
 
-  const empCols = headerMap(employeesSheet);
-  const missingEmpCol = requireColumns(empCols, [
-    "EMPLOYEE NUMBER",
-    "اسم الموظف",
-    "EMAIL ID",
-  ]);
-  if (missingEmpCol) {
-    return { status: "error", message: "invalid_input" };
+  const empCols = employeesSheet ? headerMap(employeesSheet) : null;
+  if (empCols) {
+    const missingEmpCol = requireColumns(empCols, [
+      "EMPLOYEE NUMBER",
+      "اسم الموظف",
+      "EMAIL ID",
+    ]);
+    if (missingEmpCol) {
+      return { status: "error", message: "invalid_input" };
+    }
   }
 
   const structCols = structureSheet ? headerMap(structureSheet) : null;
@@ -225,44 +236,48 @@ export async function importOrgStructureExcel(
   }
 
   const employeeRows: EmployeeRow[] = [];
-  const get = (row: ExcelJS.Row, col: string) => (empCols.has(col) ? row.getCell(empCols.get(col)!).value : null);
 
-  for (let r = 2; r <= employeesSheet.rowCount; r++) {
-    const row = employeesSheet.getRow(r);
-    const employeeNumber = cellText(get(row, "EMPLOYEE NUMBER"));
-    if (!employeeNumber) continue;
+  if (employeesSheet && empCols) {
+    const cols = empCols;
+    const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
 
-    const fullNameAr = cellText(get(row, "اسم الموظف"));
-    const email = cellText(get(row, "EMAIL ID"))?.toLowerCase() ?? null;
-    if (!fullNameAr || !email) {
-      employeeErrors.push(`${employeeNumber}: missing required name or email — skipped`);
-      continue;
+    for (let r = 2; r <= employeesSheet.rowCount; r++) {
+      const row = employeesSheet.getRow(r);
+      const employeeNumber = cellText(get(row, "EMPLOYEE NUMBER"));
+      if (!employeeNumber) continue;
+
+      const fullNameAr = cellText(get(row, "اسم الموظف"));
+      const email = cellText(get(row, "EMAIL ID"))?.toLowerCase() ?? null;
+      if (!fullNameAr || !email) {
+        employeeErrors.push(`${employeeNumber}: missing required name or email — skipped`);
+        continue;
+      }
+
+      const gradeRaw = cellText(get(row, "GRADE CODE"));
+      const grade = gradeRaw ? parseInt(gradeRaw, 10) : null;
+
+      employeeRows.push({
+        employeeNumber,
+        fullNameAr,
+        fullNameEn: cellText(get(row, "Employee Name")),
+        email,
+        hireDate: parseDateCell(get(row, "Hire Date")),
+        qualification: cellText(get(row, "Qualification")),
+        educationSpeciality: cellText(get(row, "Education Speciality")),
+        dateOfBirth: parseDateCell(get(row, "DATE OF BIRTH (YYYY-MM-DD)")),
+        mobile: cellText(get(row, "Mobile")),
+        maritalStatus: cellText(get(row, "MARITIAL STATUS")),
+        gender: cellText(get(row, "GENDER")),
+        nationality: cellText(get(row, "NATIONALITY")),
+        departmentAr: cellText(get(row, "الادارة")),
+        positionAr: cellText(get(row, "اسم الوظيفة")),
+        positionEn: cellText(get(row, "POSITION")),
+        gradeCode: grade != null && !isNaN(grade) ? grade : null,
+        employeeCategory: cellText(get(row, "Category"))?.trim() ?? null,
+        insuranceCategory: cellText(get(row, "Insurance Category")),
+        roleName: cellText(get(row, "الدور في النظام")),
+      });
     }
-
-    const gradeRaw = cellText(get(row, "GRADE CODE"));
-    const grade = gradeRaw ? parseInt(gradeRaw, 10) : null;
-
-    employeeRows.push({
-      employeeNumber,
-      fullNameAr,
-      fullNameEn: cellText(get(row, "Employee Name")),
-      email,
-      hireDate: parseDateCell(get(row, "Hire Date")),
-      qualification: cellText(get(row, "Qualification")),
-      educationSpeciality: cellText(get(row, "Education Speciality")),
-      dateOfBirth: parseDateCell(get(row, "DATE OF BIRTH (YYYY-MM-DD)")),
-      mobile: cellText(get(row, "Mobile")),
-      maritalStatus: cellText(get(row, "MARITIAL STATUS")),
-      gender: cellText(get(row, "GENDER")),
-      nationality: cellText(get(row, "NATIONALITY")),
-      departmentAr: cellText(get(row, "الادارة")),
-      positionAr: cellText(get(row, "اسم الوظيفة")),
-      positionEn: cellText(get(row, "POSITION")),
-      gradeCode: grade != null && !isNaN(grade) ? grade : null,
-      employeeCategory: cellText(get(row, "Category"))?.trim() ?? null,
-      insuranceCategory: cellText(get(row, "Insurance Category")),
-      roleName: cellText(get(row, "الدور في النظام")),
-    });
   }
 
   // -----------------------------------------------------------------------
