@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { PrintButton } from "@/components/PrintButton";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
+import { EmployeesExportMenu } from "@/components/EmployeesExportMenu";
+import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 const statusMessageKeys = {
   active: "statusActive",
@@ -11,7 +13,12 @@ const statusMessageKeys = {
 } as const;
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
-export default async function EmployeesPage() {
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; orgUnitId?: string; status?: string }>;
+}) {
+  const { q, orgUnitId, status } = await searchParams;
   const t = await getTranslations("EmployeesPage");
   const supabase = await createClient();
 
@@ -29,13 +36,24 @@ export default async function EmployeesPage() {
   // the relationship's real cardinality. Cast to the actual runtime shape
   // (verified directly against the REST API) rather than indexing [0]
   // into something that was never actually an array.
-  const { data } = await supabase
+  //
+  // orgUnitId/status are applied server-side via `.eq()` (safe, parameterized).
+  // The free-text `q` search is deliberately applied in JS after fetching,
+  // not via a raw PostgREST `.or()` filter string — untrusted search input
+  // could contain commas/parentheses that are meaningful in that filter
+  // DSL, and this list is small enough that an in-memory filter is simpler
+  // and avoids the escaping question entirely.
+  let query = supabase
     .from("profiles")
     .select("id, employee_number, full_name_ar, full_name_en, status, auth_user_id, org_units(name_ar)")
     .is("deleted_at", null)
     .order("employee_number");
+  if (orgUnitId) query = query.eq("org_unit_id", orgUnitId);
+  if (status) query = query.eq("status", status);
 
-  const employees = data as unknown as Array<{
+  const { data } = await query;
+
+  let employees = data as unknown as Array<{
     id: string;
     employee_number: string;
     full_name_ar: string;
@@ -44,6 +62,19 @@ export default async function EmployeesPage() {
     auth_user_id: string | null;
     org_units: { name_ar: string } | null;
   }> | null;
+
+  if (q && q.trim() && employees) {
+    const needle = q.trim().toLowerCase();
+    employees = employees.filter(
+      (e) =>
+        e.full_name_ar.toLowerCase().includes(needle) ||
+        e.full_name_en?.toLowerCase().includes(needle) ||
+        e.employee_number.toLowerCase().includes(needle)
+    );
+  }
+
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").order("name_ar");
+  const orgUnits = orgUnitsData ?? [];
 
   // Role display: a linked account's role lives in `user_roles` (keyed by
   // auth_user_id); an invited-but-not-yet-accepted profile's role lives in
@@ -89,6 +120,20 @@ export default async function EmployeesPage() {
     return pending && pending.length > 0 ? t("rolePending", { role: pending.join("، ") }) : t("roleNone");
   }
 
+  // View/Edit/Delete row actions (2026-07-24 request): gated by the
+  // caller's actual `employeeData` VPRA level, not hardcoded role names —
+  // "أضفها في جدول الصلاحيات بحيث يمكن اسنادها لمستخدم معين" means any role
+  // granted `employeeData=approve` in the permissions matrix gets Edit/
+  // Delete automatically, same mechanism NavBar filtering already uses.
+  // View has no extra gate — seeing this row at all already requires
+  // employeeData>=view via profiles_select's own RLS.
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const employeeDataLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "employeeData"
+    )?.vpra_level ?? "none";
+  const canEditDelete = hasVpraAccess(employeeDataLevel, "approve");
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -116,11 +161,60 @@ export default async function EmployeesPage() {
           <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
             {t("assignSupervisor")}
           </Link>
-          <ImportOrgStructureExcelForm />
-          <PrintButton />
+          <ImportOrgStructureExcelForm templateHref="/templates/sru-employees-import-template.xlsx" note={t("importNoteEmployeesOnly")} />
+          <EmployeesExportMenu />
         </div>
       </div>
-      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+      <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
+
+      <form method="get" className="no-print" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap" }}>
+        <input
+          type="text"
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder={t("searchPlaceholder")}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "var(--sru-radius)",
+            border: "1px solid var(--sru-border)",
+            minWidth: 240,
+            fontFamily: "inherit",
+          }}
+        />
+        <details className="sru-filter-details">
+          <summary className="sru-btn">{t("filterButton")}</summary>
+          <div className="sru-filter-panel">
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+              {t("filterOrgUnitLabel")}
+            </label>
+            <select name="orgUnitId" defaultValue={orgUnitId ?? ""} style={{ width: "100%", padding: "6px 10px", marginBottom: 10 }}>
+              <option value="">{t("filterAllOrgUnits")}</option>
+              {orgUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name_ar}
+                </option>
+              ))}
+            </select>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+              {t("filterStatusLabel")}
+            </label>
+            <select name="status" defaultValue={status ?? ""} style={{ width: "100%", padding: "6px 10px" }}>
+              <option value="">{t("filterAllStatuses")}</option>
+              <option value="active">{t("statusActive")}</option>
+              <option value="on_leave">{t("statusOnLeave")}</option>
+              <option value="terminated">{t("statusTerminated")}</option>
+            </select>
+          </div>
+        </details>
+        <button type="submit" className="sru-btn sru-btn-primary">
+          {t("searchButton")}
+        </button>
+        {(q || orgUnitId || status) && (
+          <Link href="/employees" className="sru-btn">
+            {t("resetFiltersButton")}
+          </Link>
+        )}
+      </form>
 
       {!employees || employees.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
@@ -136,6 +230,7 @@ export default async function EmployeesPage() {
                   <th>{t("columnRole")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("columnAccount")}</th>
+                  <th className="no-print">{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,6 +242,23 @@ export default async function EmployeesPage() {
                     <td>{roleLabel(employee)}</td>
                     <td>{t(statusMessageKeys[employee.status as keyof typeof statusMessageKeys])}</td>
                     <td>{employee.auth_user_id ? t("accountActive") : t("accountPending")}</td>
+                    <td className="no-print" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <Link href={`/employees/${employee.id}`} className="sru-btn" style={{ padding: "4px 10px", fontSize: 12 }}>
+                        {t("actionView")}
+                      </Link>
+                      {canEditDelete && (
+                        <>
+                          <Link
+                            href={`/employees/${employee.id}/edit`}
+                            className="sru-btn sru-btn-primary"
+                            style={{ padding: "4px 10px", fontSize: 12 }}
+                          >
+                            {t("actionEdit")}
+                          </Link>
+                          <DeleteEmployeeButton profileId={employee.id} />
+                        </>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

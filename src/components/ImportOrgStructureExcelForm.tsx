@@ -15,7 +15,20 @@ const errorMessageKeys: Record<string, string> = {
 // Compact trigger button (sits alongside the page's other header actions,
 // per the 2026-07-24 request) that opens a native <dialog> modal explaining
 // the import, offering a template download, and hosting the actual form.
-export function ImportOrgStructureExcelForm() {
+//
+// `templateHref`/`note` let each page point at its own template + wording:
+// the Employees page uses a dedicated employees-only template (no org
+// structure sheet at all — 2026-07-24 follow-up), while the org-structure
+// and staffing pages keep the combined template. The underlying Server
+// Action itself now tolerates either shape (the structure sheet is
+// optional), so no other prop is needed to change import behavior.
+export function ImportOrgStructureExcelForm({
+  templateHref = "/templates/sru-org-structure-import-template.xlsx",
+  note,
+}: {
+  templateHref?: string;
+  note?: string;
+} = {}) {
   const t = useTranslations("OrgStructurePage");
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -39,7 +52,7 @@ export function ImportOrgStructureExcelForm() {
 
   return (
     <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
+      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn sru-btn-primary">
         {t("importTriggerButton")}
       </button>
 
@@ -61,10 +74,10 @@ export function ImportOrgStructureExcelForm() {
             ×
           </button>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("importNote")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{note ?? t("importNote")}</p>
 
         <a
-          href="/templates/sru-org-structure-import-template.xlsx"
+          href={templateHref}
           download
           className="sru-btn sru-btn-secondary"
           style={{ display: "inline-block", marginBottom: 16 }}
@@ -111,6 +124,7 @@ export function ImportOrgStructureExcelForm() {
             <p role="status" style={{ color: "var(--sru-success, #15803d)", marginBottom: 8 }}>
               {t("importSuccess", {
                 employees: state.summary.employeesUpserted,
+                roles: state.summary.rolesAssigned,
                 levels: state.summary.levelsCreated,
                 positions: state.summary.positionsUpserted,
                 assignments: state.summary.assignmentsCreated,
@@ -136,23 +150,31 @@ export function ImportOrgStructureExcelForm() {
                 </ul>
               </details>
             )}
-            {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].length >
-              0 && (
+            {[
+              ...state.summary.employeeErrors,
+              ...state.summary.roleErrors,
+              ...state.summary.positionErrors,
+              ...state.summary.assignmentErrors,
+            ].length > 0 && (
               <details>
                 <summary className="text-red-600">
                   {t("importWarnings", {
                     count:
                       state.summary.employeeErrors.length +
+                      state.summary.roleErrors.length +
                       state.summary.positionErrors.length +
                       state.summary.assignmentErrors.length,
                   })}
                 </summary>
                 <ul style={{ paddingInlineStart: 18, color: "var(--sru-muted)" }}>
-                  {[...state.summary.employeeErrors, ...state.summary.positionErrors, ...state.summary.assignmentErrors].map(
-                    (msg, i) => (
-                      <li key={i}>{msg}</li>
-                    )
-                  )}
+                  {[
+                    ...state.summary.employeeErrors,
+                    ...state.summary.roleErrors,
+                    ...state.summary.positionErrors,
+                    ...state.summary.assignmentErrors,
+                  ].map((msg, i) => (
+                    <li key={i}>{msg}</li>
+                  ))}
                 </ul>
               </details>
             )}
