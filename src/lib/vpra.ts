@@ -59,6 +59,29 @@ export const processAreas: ProcessArea[] = [
   "orgStructure",
 ];
 
+/**
+ * Domain vocabulary, not translatable UI chrome — same fixed-Arabic
+ * convention as `evaluationStateLabels`/`evalTypeLabels` (used directly
+ * regardless of locale). Added 2026-07-24 for the /admin Positions/roles
+ * permission-matrix editor, which previously just rendered the bare English
+ * `ProcessArea` identifiers.
+ */
+export const processAreaLabels: Record<ProcessArea, string> = {
+  goalsLibrary: "بنك الأهداف",
+  competencyFramework: "إطار الجدارات",
+  defaultTemplates: "القوالب الافتراضية",
+  goalAssignment: "إسناد الأهداف",
+  bauTasks: "المهام التشغيلية",
+  evaluation: "التقييم",
+  calibration: "المعايرة",
+  promotions: "الترقيات والمكافآت",
+  vacancies: "الشواغر",
+  careerPath: "المسار الوظيفي",
+  employeeData: "بيانات الموظفين",
+  userManagement: "إدارة المستخدمين والصلاحيات",
+  orgStructure: "الهيكل التنظيمي",
+};
+
 export type RoleCode =
   | "super_admin"
   | "ceo"
