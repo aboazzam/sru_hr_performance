@@ -170,7 +170,10 @@
     "wizardNoPositionsAddedYet": "لم تتم إضافة أي منصب لهذا المستوى بعد — يمكنك المتابعة دون إضافة أو إضافة منصب أولًا.",
     "wizardNextLevelButton": "التالي: المستوى القادم",
     "wizardFinishButton": "إنهاء الإعداد وعرض الهيكل",
-    "wizardFinishing": "جارٍ الإنهاء..."
+    "wizardFinishing": "جارٍ الإنهاء...",
+    "orgChartHeading": "المخطط الهرمي للهيكل التنظيمي",
+    "orgChartSubtitle": "عرض شجري للمناصب وتبعيّتها والموظفين المسكَّنين عليها.",
+    "orgChartVacant": "شاغر"
   },
   "OrgStructureStaffingPage": {
     "title": "تسكين الموظفين على المناصب",

@@ -505,3 +505,92 @@ dialog.sru-modal::backdrop {
   color: var(--sru-purple);
   border-bottom-color: var(--sru-purple);
 }
+
+/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24) =====
+   Pure-CSS connector-line tree ("second output" of the org-structure setup
+   wizard: a colorful, professional org-chart view, alongside the existing
+   plain positions+staffing list). Classic <ul>/<li> ::before/::after
+   connector technique — symmetric by construction, so it reads correctly
+   under this app's RTL direction without needing separate mirrored rules. */
+.sru-orgchart-wrapper {
+  overflow-x: auto;
+  padding: 24px 12px 12px;
+}
+.sru-orgchart,
+.sru-orgchart ul {
+  display: flex;
+  justify-content: center;
+  padding-top: 28px;
+  position: relative;
+  margin: 0;
+}
+.sru-orgchart li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  list-style: none;
+  position: relative;
+  padding: 28px 14px 0;
+}
+.sru-orgchart li::before,
+.sru-orgchart li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 28px;
+  border-top: 2px solid var(--sru-border);
+}
+.sru-orgchart li::after {
+  right: auto;
+  left: 50%;
+  border-left: 2px solid var(--sru-border);
+}
+.sru-orgchart li:only-child {
+  padding-top: 0;
+}
+.sru-orgchart li:only-child::before,
+.sru-orgchart li:only-child::after {
+  display: none;
+}
+.sru-orgchart li:first-child::before,
+.sru-orgchart li:last-child::after {
+  border: 0 none;
+}
+.sru-orgchart li:last-child::before {
+  border-right: 2px solid var(--sru-border);
+  border-radius: 0 6px 0 0;
+}
+.sru-orgchart li:first-child::after {
+  border-radius: 6px 0 0 0;
+}
+.sru-orgchart > li {
+  padding-top: 0;
+}
+.sru-orgchart > li::before,
+.sru-orgchart > li::after {
+  display: none;
+}
+.sru-orgchart-node {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(80, 30, 140, 0.14);
+  white-space: nowrap;
+}
+.sru-orgchart-node-assignees {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.9;
+}

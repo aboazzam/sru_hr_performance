@@ -170,7 +170,10 @@
     "wizardNoPositionsAddedYet": "No position added at this level yet — you can continue without adding one, or add a position first.",
     "wizardNextLevelButton": "Next: next level",
     "wizardFinishButton": "Finish setup and view the structure",
-    "wizardFinishing": "Finishing..."
+    "wizardFinishing": "Finishing...",
+    "orgChartHeading": "Organizational Structure Chart",
+    "orgChartSubtitle": "A tree view of positions, their reporting lines, and the employees staffed on them.",
+    "orgChartVacant": "Vacant"
   },
   "OrgStructureStaffingPage": {
     "title": "Staff Employees onto Positions",

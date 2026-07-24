@@ -6,6 +6,7 @@ import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
 import { OrgStructurePositionMiniRow } from "@/components/OrgStructurePositionMiniRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { OrgStructureSetupWizard } from "@/components/OrgStructureSetupWizard";
+import { OrgChartTree } from "@/components/OrgChartTree";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
@@ -40,6 +41,20 @@ export default async function OrgStructurePage() {
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
 
+  const { data: assignmentsData } = await supabase
+    .from("org_structure_assignments")
+    .select("position_id, profiles(full_name_ar)")
+    .is("deleted_at", null);
+  const assignments = (assignmentsData ?? []) as unknown as Array<{
+    position_id: string;
+    profiles: { full_name_ar: string } | null;
+  }>;
+  const assigneesByPosition: Record<string, string[]> = {};
+  for (const a of assignments) {
+    if (!a.profiles) continue;
+    (assigneesByPosition[a.position_id] ??= []).push(a.profiles.full_name_ar);
+  }
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="administration" current="admin/org-structure" />
@@ -63,6 +78,21 @@ export default async function OrgStructurePage() {
           <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
             <AddOrgStructureLevelForm />
             <AddOrgStructurePositionForm levels={levels} positions={positions} />
+          </section>
+
+          <section style={{ marginBottom: 36 }}>
+            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 4 }}>
+              {t("orgChartHeading")}
+            </h2>
+            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 14 }}>{t("orgChartSubtitle")}</p>
+            <div className="sru-card">
+              <OrgChartTree
+                positions={positions}
+                assigneesByPosition={assigneesByPosition}
+                emptyLabel={t("noPositions")}
+                vacantLabel={t("orgChartVacant")}
+              />
+            </div>
           </section>
 
           <section>
