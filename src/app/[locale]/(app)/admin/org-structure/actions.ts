@@ -4,29 +4,32 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export type OrgStructureErrorMessage = "invalid_input" | "unauthenticated" | "forbidden" | "has_dependents" | "unknown";
+
 export type OrgStructureActionState =
   | { status: "success" }
-  | {
-      status: "error";
-      message: "invalid_input" | "unauthenticated" | "forbidden" | "has_dependents" | "unknown";
-    };
+  | { status: "error"; message: OrgStructureErrorMessage };
 
 const addLevelSchema = z.object({
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
 });
 
-function mapError(error: { code?: string; message: string }): OrgStructureActionState {
+function mapErrorMessage(error: { code?: string; message: string }): OrgStructureErrorMessage {
   if (error.code === "42501" || error.message.includes("row-level security")) {
-    return { status: "error", message: "forbidden" };
+    return "forbidden";
   }
   // validate_org_structure_position_parent() (20260723000001) RAISEs a plain
   // exception (no custom SQLSTATE) for every tree-invariant violation —
   // treat those as a validation error, not an opaque "unknown" failure.
   if (error.message.includes("org_structure_positions:")) {
-    return { status: "error", message: "invalid_input" };
+    return "invalid_input";
   }
-  return { status: "error", message: "unknown" };
+  return "unknown";
+}
+
+function mapError(error: { code?: string; message: string }): OrgStructureActionState {
+  return { status: "error", message: mapErrorMessage(error) };
 }
 
 /**
@@ -177,6 +180,10 @@ const addPositionSchema = z.object({
   nameEn: z.string().trim().optional(),
 });
 
+export type AddPositionResult =
+  | { status: "success"; positionId: string }
+  | { status: "error"; message: OrgStructureErrorMessage };
+
 /**
  * Creates a new `org_structure_positions` row under an existing level, and
  * — per the project owner's 2026-07-23 clarification that this is a real
@@ -189,15 +196,17 @@ const addPositionSchema = z.object({
  * `org_structure_positions_insert`'s RLS
  * (`check_vpra_global('orgStructure','approve')`), through the caller's own
  * RLS-respecting client. Also used by the staffing screen's own
- * "add position" form (same underlying action, per the project owner's
- * request that positions be addable/editable from there too).
+ * "add position" form, and by the first-time setup wizard (2026-07-24),
+ * both per the project owner's requests — the returned `positionId` lets
+ * the wizard offer this level's just-created positions as parent options
+ * for the next level without a full page reload between steps.
  */
 export async function addPosition(
   levelId: string,
   nameAr: string,
   nameEn: string,
   parentId?: string
-): Promise<OrgStructureActionState> {
+): Promise<AddPositionResult> {
   const parsed = addPositionSchema.safeParse({
     levelId,
     parentId: parentId || undefined,
@@ -227,7 +236,7 @@ export async function addPosition(
     .select("id")
     .single();
 
-  if (error) return mapError(error);
+  if (error) return { status: "error", message: mapErrorMessage(error) };
 
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
@@ -243,7 +252,72 @@ export async function addPosition(
     },
   });
 
-  return { status: "success" };
+  return { status: "success", positionId: position.id };
+}
+
+const createLevelsBatchSchema = z.object({ count: z.number().int().min(1).max(20) });
+
+export type CreateLevelsBatchResult =
+  | { status: "success"; levels: { id: string; name_ar: string; level_order: number }[] }
+  | { status: "error"; message: OrgStructureErrorMessage };
+
+/**
+ * First-time setup wizard only ("لا يوجد هيكل تنظيمي بإمكانك إنشاء هيكل
+ * تنظيمي" — 2026-07-24): creates `count` sequential levels in one insert,
+ * named "المستوى 1".."المستوى N" and appended after any existing levels
+ * (mirrors `addLevel`'s own level_order-appending behavior, batched instead
+ * of `count` separate round trips). Returns the created rows with real ids
+ * so the wizard can move straight into per-level position creation without
+ * a page reload. Real authorization is the same `org_structure_levels_insert`
+ * RLS as `addLevel` (`check_vpra_global('orgStructure','approve')`).
+ */
+export async function createLevelsBatch(count: number): Promise<CreateLevelsBatchResult> {
+  const parsed = createLevelsBatchSchema.safeParse({ count });
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { data: maxRow } = await supabase
+    .from("org_structure_levels")
+    .select("level_order")
+    .is("deleted_at", null)
+    .order("level_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const startOrder = (maxRow?.level_order ?? 0) + 1;
+
+  const rows = Array.from({ length: parsed.data.count }, (_, i) => ({
+    name_ar: `المستوى ${startOrder + i}`,
+    level_order: startOrder + i,
+  }));
+
+  const { data: levels, error } = await supabase
+    .from("org_structure_levels")
+    .insert(rows)
+    .select("id, name_ar, level_order");
+
+  if (error) return { status: "error", message: mapErrorMessage(error) };
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_levels_batch_created",
+    entity: "org_structure_levels",
+    after_data: { count: parsed.data.count, startOrder },
+  });
+
+  return {
+    status: "success",
+    levels: (levels ?? []).slice().sort((a, b) => a.level_order - b.level_order),
+  };
 }
 
 const updatePositionSchema = z.object({

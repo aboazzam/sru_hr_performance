@@ -5,6 +5,7 @@ import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositio
 import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
 import { OrgStructurePositionMiniRow } from "@/components/OrgStructurePositionMiniRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
+import { OrgStructureSetupWizard } from "@/components/OrgStructureSetupWizard";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
@@ -55,50 +56,52 @@ export default async function OrgStructurePage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <AddOrgStructureLevelForm />
-        <AddOrgStructurePositionForm levels={levels} positions={positions} />
-      </section>
+      {levels.length === 0 ? (
+        <OrgStructureSetupWizard />
+      ) : (
+        <>
+          <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
+            <AddOrgStructureLevelForm />
+            <AddOrgStructurePositionForm levels={levels} positions={positions} />
+          </section>
 
-      <section>
-        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-          {t("levelsHeading")}
-        </h2>
-        {levels.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noLevels")}</p>
-        ) : (
-          levels.map((level) => {
-            const levelPositions = positions.filter((p) => p.level_id === level.id);
-            return (
-              <OrgStructureLevelCard
-                key={level.id}
-                levelId={level.id}
-                levelOrder={level.level_order}
-                initialNameAr={level.name_ar}
-                initialNameEn={level.name_en}
-              >
-                {levelPositions.length === 0 ? (
-                  <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
-                ) : (
-                  <div>
-                    {levelPositions.map((position) => (
-                      <OrgStructurePositionMiniRow
-                        key={position.id}
-                        positionId={position.id}
-                        initialNameAr={position.name_ar}
-                        initialNameEn={position.name_en}
-                        parentLabel={
-                          position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </OrgStructureLevelCard>
-            );
-          })
-        )}
-      </section>
+          <section>
+            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
+              {t("levelsHeading")}
+            </h2>
+            {levels.map((level) => {
+              const levelPositions = positions.filter((p) => p.level_id === level.id);
+              return (
+                <OrgStructureLevelCard
+                  key={level.id}
+                  levelId={level.id}
+                  levelOrder={level.level_order}
+                  initialNameAr={level.name_ar}
+                  initialNameEn={level.name_en}
+                >
+                  {levelPositions.length === 0 ? (
+                    <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
+                  ) : (
+                    <div>
+                      {levelPositions.map((position) => (
+                        <OrgStructurePositionMiniRow
+                          key={position.id}
+                          positionId={position.id}
+                          initialNameAr={position.name_ar}
+                          initialNameEn={position.name_en}
+                          parentLabel={
+                            position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </OrgStructureLevelCard>
+              );
+            })}
+          </section>
+        </>
+      )}
     </div>
   );
 }
