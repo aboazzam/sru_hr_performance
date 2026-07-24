@@ -82,6 +82,33 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   orgStructure: "الهيكل التنظيمي",
 };
 
+export interface ProcessAreaSection {
+  titleAr: string;
+  areas: ProcessArea[];
+}
+
+/**
+ * Grouping of the 13 process areas into labeled sections for the /admin
+ * permission-matrix editor (2026-07-25 checkbox-grid redesign, "قسمها إلى
+ * سكاشن بحيث يكون عنوان السكشن بولد"). [استنتاج] — a presentational
+ * grouping invented for readability, not a documented CLAUDE.md taxonomy;
+ * every process area appears in exactly one section (enforced by a test).
+ */
+export const processAreaSections: ProcessAreaSection[] = [
+  {
+    titleAr: "طرق التقييم وإدارة الأداء",
+    areas: ["evaluation", "calibration", "goalsLibrary", "goalAssignment", "bauTasks", "competencyFramework", "defaultTemplates"],
+  },
+  {
+    titleAr: "الموارد البشرية والمسار الوظيفي",
+    areas: ["employeeData", "careerPath", "promotions", "vacancies"],
+  },
+  {
+    titleAr: "الإدارة والنظام",
+    areas: ["orgStructure", "userManagement"],
+  },
+];
+
 export type RoleCode =
   | "super_admin"
   | "ceo"

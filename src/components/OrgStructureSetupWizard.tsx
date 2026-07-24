@@ -59,8 +59,15 @@ export function OrgStructureSetupWizard() {
 
   const currentLevel = levels[levelIndex];
   const isRootLevel = levelIndex === 0;
-  const precedingLevel = !isRootLevel ? levels[levelIndex - 1] : undefined;
-  const parentOptions = precedingLevel ? positionsByLevel[precedingLevel.id] ?? [] : [];
+  // Any level ABOVE the current one, not just the immediately preceding
+  // one — matches the DB's own relaxed parent invariant (any ancestor,
+  // skipping levels is fine, since 20260724000001) and the manual
+  // AddOrgStructurePositionForm's equivalent fix. Closest level listed
+  // first for convenience.
+  const higherLevels = levels.slice(0, levelIndex).reverse();
+  const parentOptions = higherLevels.flatMap((lvl) =>
+    (positionsByLevel[lvl.id] ?? []).map((p) => ({ ...p, levelName: lvl.name_ar }))
+  );
   const parentId = selectedParentId ?? parentOptions[0]?.id ?? "";
   const currentLevelPositions = currentLevel ? positionsByLevel[currentLevel.id] ?? [] : [];
   const isLastLevel = levelIndex === levels.length - 1;
@@ -191,7 +198,7 @@ export function OrgStructureSetupWizard() {
               >
                 {parentOptions.map((position) => (
                   <option key={position.id} value={position.id}>
-                    {position.name_ar}
+                    {position.levelName} — {position.name_ar}
                   </option>
                 ))}
               </select>

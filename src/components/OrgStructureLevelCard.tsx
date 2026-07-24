@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { Check, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { updateLevel, deleteLevel } from "@/app/[locale]/(app)/admin/org-structure/actions";
@@ -68,12 +69,14 @@ export function OrgStructureLevelCard({
         <span style={{ fontSize: 15, fontWeight: 700 }}>{levelOrder}.</span>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 220 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 220 }} />
-        <button type="button" disabled={isSaving} onClick={handleSave} className="sru-btn sru-btn-primary" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-          {t("saveButton")}
-        </button>
-        <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-btn" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-          {t("deleteButton")}
-        </button>
+        <div className="sru-icon-action-group">
+          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+            <Check size={15} />
+          </button>
+          <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
+            <Trash2 size={15} />
+          </button>
+        </div>
       </div>
       {error && (
         <p role="alert" className="text-sm text-red-600" style={{ marginBottom: 10 }}>

@@ -554,6 +554,20 @@ dialog.sru-modal::backdrop {
 .sru-orgchart li:only-child::after {
   display: none;
 }
+/* Vertical stem connecting a parent node down into its children's shared
+   horizontal bar — the piece the li::before/after rules above don't cover
+   on their own, most visibly missing for a single child (where the
+   sibling-joining horizontal bar is correctly hidden by :only-child, but
+   nothing was left to draw the straight line down to it). */
+.sru-orgchart ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 28px;
+  border-left: 2px solid var(--sru-border);
+}
 .sru-orgchart li:first-child::before,
 .sru-orgchart li:last-child::after {
   border: 0 none;
@@ -593,4 +607,77 @@ dialog.sru-modal::backdrop {
   font-size: 11px;
   font-weight: 500;
   opacity: 0.9;
+}
+
+/* ===== Icon action buttons (2026-07-25) =====
+   Compact icon-only buttons for row-level actions (view/edit/delete/save),
+   replacing text buttons across the org-structure/admin/employees screens
+   per the project owner's request. Distinct from sru-ui.css's .sru-nav-item
+   and this file's own .sru-icon-btn (a text+icon header/topbar control) —
+   this one is a small square button meant for table cells and action rows. */
+.sru-icon-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sru-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--sru-border);
+  background: var(--surface);
+  color: var(--sru-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sru-icon-action:hover:not(:disabled) {
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+  border-color: var(--sru-purple);
+}
+.sru-icon-action.primary {
+  background: var(--sru-purple);
+  color: #fff;
+  border-color: var(--sru-purple);
+}
+.sru-icon-action.primary:hover:not(:disabled) {
+  background: var(--sru-purple-dark);
+  color: #fff;
+}
+.sru-icon-action.danger:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.sru-icon-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== Permission matrix checkbox grid (RolePermissionMatrixFields.tsx, 2026-07-25) ===== */
+.sru-permission-grid th,
+.sru-permission-grid td {
+  text-align: center;
+}
+.sru-permission-grid th:first-child,
+.sru-permission-grid td:first-child {
+  text-align: start;
+}
+.sru-permission-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sru-permission-section-row td {
+  background: var(--sru-purple-light);
+  color: var(--sru-purple-dark);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 12px;
 }
