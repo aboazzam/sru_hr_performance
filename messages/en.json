@@ -106,10 +106,7 @@
     "scaleHeading": "VPRA Levels",
     "matrixHeading": "Evaluation Lifecycle Permission Matrix",
     "matrixCaption": "The six roles that participate directly in the evaluation lifecycle (including field supervisor, mirrored to supervisor since 2026-07-16) — other roles (super admin, CEO...) don't appear in this specific table.",
-    "stateColumn": "State",
-    "actionsHeading": "Actions",
-    "orgStructureAction": "Organizational Structure",
-    "orgStructureActionDesc": "Build the organizational structure's levels and positions, and staff employees onto them"
+    "stateColumn": "State"
   },
   "OrgStructurePage": {
     "title": "Organizational Structure",
