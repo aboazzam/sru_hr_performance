@@ -135,6 +135,8 @@
     "success": "تم الحفظ بنجاح.",
     "importHeading": "استيراد من إكسل",
     "importNote": "ملف إكسل فيه ورقتا \"Employees Data\" و\"الهيكل التنظيمي\" — يستورد الموظفين والمستويات والمناصب والتسكين معًا.",
+    "chooseFileButton": "اختيار ملف",
+    "noFileChosen": "لم يتم اختيار ملف",
     "importButton": "استيراد الملف",
     "importing": "جارٍ الاستيراد...",
     "importSuccess": "تم الاستيراد: {employees} موظف، {levels} مستوى جديد، {positions} منصب، {assignments} تسكين جديد.",
@@ -184,13 +186,16 @@
     "columnEmployeeNumber": "الرقم الوظيفي",
     "columnName": "الاسم",
     "columnOrgUnit": "الوحدة التنظيمية",
+    "columnRole": "الدور في النظام",
     "columnStatus": "الحالة",
     "columnAccount": "حساب الدخول",
     "statusActive": "نشط",
     "statusOnLeave": "في إجازة",
     "statusTerminated": "منتهي الخدمة",
     "accountActive": "مُفعَّل",
-    "accountPending": "بانتظار قبول الدعوة"
+    "accountPending": "بانتظار قبول الدعوة",
+    "roleNone": "بلا دور",
+    "rolePending": "{role} (بانتظار قبول الدعوة)"
   },
   "CareerPathPage": {
     "title": "المسار الوظيفي",

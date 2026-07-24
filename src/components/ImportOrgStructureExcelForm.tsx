@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { importOrgStructureExcel, type ImportResult } from "@/app/[locale]/(app)/admin/org-structure/import-actions";
@@ -17,6 +17,14 @@ export function ImportOrgStructureExcelForm() {
   const router = useRouter();
   const [state, formAction, pending] = useActionState<ImportResult | null, FormData>(importOrgStructureExcel, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [handledState, setHandledState] = useState<ImportResult | null>(null);
+
+  if (state !== handledState) {
+    setHandledState(state);
+    if (state?.status === "success") setFileName(null);
+  }
 
   useEffect(() => {
     if (state?.status === "success") {
@@ -30,8 +38,33 @@ export function ImportOrgStructureExcelForm() {
       <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{t("importHeading")}</h3>
       <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 10 }}>{t("importNote")}</p>
       <form ref={formRef} action={formAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input type="file" name="file" accept=".xlsx" required className="text-sm" />
-        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary" style={{ alignSelf: "flex-start" }}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          name="file"
+          accept=".xlsx"
+          required
+          style={{ display: "none" }}
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="sru-btn"
+          >
+            {t("chooseFileButton")}
+          </button>
+          <span style={{ fontSize: 12.5, color: fileName ? "var(--foreground)" : "var(--sru-muted)" }}>
+            {fileName ?? t("noFileChosen")}
+          </span>
+        </div>
+        <button
+          type="submit"
+          disabled={pending || !fileName}
+          className="sru-btn sru-btn-primary"
+          style={{ alignSelf: "flex-start" }}
+        >
           {pending ? t("importing") : t("importButton")}
         </button>
       </form>

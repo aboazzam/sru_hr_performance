@@ -135,6 +135,8 @@
     "success": "Saved successfully.",
     "importHeading": "Import from Excel",
     "importNote": "An Excel file with \"Employees Data\" and \"الهيكل التنظيمي\" sheets — imports employees, levels, positions, and staffing together.",
+    "chooseFileButton": "Choose File",
+    "noFileChosen": "No file chosen",
     "importButton": "Import File",
     "importing": "Importing...",
     "importSuccess": "Imported: {employees} employees, {levels} new levels, {positions} positions, {assignments} new assignments.",
@@ -184,13 +186,16 @@
     "columnEmployeeNumber": "Employee Number",
     "columnName": "Name",
     "columnOrgUnit": "Organizational Unit",
+    "columnRole": "System Role",
     "columnStatus": "Status",
     "columnAccount": "Login Account",
     "statusActive": "Active",
     "statusOnLeave": "On Leave",
     "statusTerminated": "Terminated",
     "accountActive": "Active",
-    "accountPending": "Invite pending"
+    "accountPending": "Invite pending",
+    "roleNone": "No role",
+    "rolePending": "{role} (invite pending)"
   },
   "CareerPathPage": {
     "title": "Career Path",
