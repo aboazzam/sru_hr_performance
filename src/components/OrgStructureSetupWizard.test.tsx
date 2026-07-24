@@ -76,11 +76,15 @@ describe("OrgStructureSetupWizard", () => {
     await screen.findByText("المدير العام");
 
     // Move to level 2 — a non-root level, so the parent select must appear,
-    // pre-populated with the position just created at level 1.
-    fireEvent.click(screen.getByRole("button", { name: arMessages.OrgStructurePage.wizardNextLevelButton }));
+    // pre-populated with the position just created at level 1. Waited for
+    // not-disabled first — addPosition's own startTransition needs a tick
+    // to settle before this button is actually clickable.
+    const nextLevelButton = screen.getByRole("button", { name: arMessages.OrgStructurePage.wizardNextLevelButton });
+    await waitFor(() => expect((nextLevelButton as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(nextLevelButton);
     await screen.findByText("المستوى 2 من 2: المستوى 2");
     expect(screen.getByText(arMessages.OrgStructurePage.positionParentLabel)).toBeDefined();
-    expect(screen.getByRole("option", { name: "المدير العام" })).toBeDefined();
+    expect(screen.getByRole("option", { name: "المستوى 1 — المدير العام" })).toBeDefined();
 
     mockAddPosition.mockResolvedValueOnce({ status: "success", positionId: "pos-child" });
     fireEvent.change(screen.getByLabelText(arMessages.OrgStructurePage.positionNameArLabel), {
@@ -94,9 +98,13 @@ describe("OrgStructureSetupWizard", () => {
 
     // Last level — "next" becomes "finish", which just refreshes the page
     // (the server component then re-renders with the now-populated data).
+    // Waited for via findBy/waitFor rather than an immediate synchronous
+    // assertion — addPosition's own startTransition needs a tick to settle
+    // (isPending -> false) before the button is enabled and clickable.
     const finishButton = await screen.findByRole("button", { name: arMessages.OrgStructurePage.wizardFinishButton });
+    await waitFor(() => expect((finishButton as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(finishButton);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
   it("surfaces a forbidden error from createLevelsBatch instead of silently advancing", async () => {

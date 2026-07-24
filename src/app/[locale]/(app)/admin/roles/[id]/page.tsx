@@ -50,11 +50,17 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
     initialPermissions[row.process_area as ProcessArea] = row.vpra_level as VpraLevel;
   }
 
-  const [{ count: userRoleCount }, { count: pendingCount }] = await Promise.all([
-    supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role_id", id),
-    supabase.from("pending_role_assignments").select("id", { count: "exact", head: true }).eq("role_id", id),
+  // Counts DISTINCT users, not rows — a single user can hold several
+  // org-unit-scoped rows for the same role (one per granted unit), which
+  // would otherwise inflate both this displayed count and the delete gate.
+  const [{ data: userRoleRows }, { data: pendingRows }] = await Promise.all([
+    supabase.from("user_roles").select("user_id").eq("role_id", id),
+    supabase.from("pending_role_assignments").select("profile_id").eq("role_id", id),
   ]);
-  const assignedCount = (userRoleCount ?? 0) + (pendingCount ?? 0);
+  const assignedCount = new Set([
+    ...(userRoleRows ?? []).map((r) => `u:${r.user_id}`),
+    ...(pendingRows ?? []).map((r) => `p:${r.profile_id}`),
+  ]).size;
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>

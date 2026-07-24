@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
 import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
@@ -80,7 +79,6 @@ export default async function OrgStructureStaffingPage() {
 
       <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
         <AssignEmployeeForm positions={positionOptions} employees={employeeOptions} />
-        <AddOrgStructurePositionForm levels={levels} positions={positions} headingKey="addPositionHeading" />
       </section>
 
       <section>

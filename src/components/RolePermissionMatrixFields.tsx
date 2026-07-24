@@ -1,20 +1,21 @@
 "use client";
 
+import { Fragment } from "react";
 import { useTranslations } from "next-intl";
-import { processAreas, processAreaLabels, vpraLevelLabels, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { processAreas, processAreaLabels, processAreaSections, vpraLevelLabels, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 const vpraLevels: VpraLevel[] = ["none", "view", "prepare", "recommend", "approve"];
 
-const selectClass =
-  "w-full px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
 /**
  * Editable VPRA matrix (13 process areas x 5 levels) shared by
- * `CreateRoleForm`/`EditRoleForm` (2026-07-24) — the "position permission
- * editor" the project owner asked to base this on, adapted from the
- * reference screenshots' read/create/delete/approve checkbox grid to this
- * app's own none/view/prepare/recommend/approve VPRA scale instead of
- * literally copying the four-checkbox model.
+ * `CreateRoleForm`/`EditRoleForm`. Rebuilt 2026-07-25 as a checkbox grid
+ * per the project owner's explicit request, closer to the reference
+ * screenshots' read/create/delete/approve grid — adapted to this app's own
+ * exclusive none/view/prepare/recommend/approve scale (one checked box per
+ * row, enforced by always setting rather than toggling on click, not four
+ * independent booleans) with a "select all" checkbox per column header
+ * (checks that level for every area at once) and rows grouped under bold
+ * section titles.
  */
 export function RolePermissionMatrixFields({
   value,
@@ -24,35 +25,55 @@ export function RolePermissionMatrixFields({
   onChange: (area: ProcessArea, level: VpraLevel) => void;
 }) {
   const t = useTranslations("AdminPage");
+
+  function handleSelectAllColumn(level: VpraLevel) {
+    for (const area of processAreas) onChange(area, level);
+  }
+
   return (
     <div className="sru-card">
       <div className="table-scroll">
-        <table className="admin-matrix">
+        <table className="admin-matrix sru-permission-grid">
           <thead>
             <tr>
               <th>{t("permissionAreaColumn")}</th>
-              <th>{t("permissionLevelColumn")}</th>
+              {vpraLevels.map((level) => (
+                <th key={level}>
+                  <label className="sru-permission-selectall">
+                    <input
+                      type="checkbox"
+                      checked={processAreas.every((area) => (value[area] ?? "none") === level)}
+                      onChange={() => handleSelectAllColumn(level)}
+                      aria-label={t("selectAllColumn", { level: vpraLevelLabels[level] })}
+                    />
+                    <span>{vpraLevelLabels[level]}</span>
+                  </label>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {processAreas.map((area) => (
-              <tr key={area}>
-                <td>{processAreaLabels[area]}</td>
-                <td>
-                  <select
-                    value={value[area] ?? "none"}
-                    onChange={(e) => onChange(area, e.target.value as VpraLevel)}
-                    className={selectClass}
-                    style={{ maxWidth: 160 }}
-                  >
+            {processAreaSections.map((section) => (
+              <Fragment key={section.titleAr}>
+                <tr className="sru-permission-section-row">
+                  <td colSpan={vpraLevels.length + 1}>{section.titleAr}</td>
+                </tr>
+                {section.areas.map((area) => (
+                  <tr key={area}>
+                    <td>{processAreaLabels[area]}</td>
                     {vpraLevels.map((level) => (
-                      <option key={level} value={level}>
-                        {vpraLevelLabels[level]}
-                      </option>
+                      <td key={level} style={{ textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={(value[area] ?? "none") === level}
+                          onChange={() => onChange(area, level)}
+                          aria-label={`${processAreaLabels[area]} — ${vpraLevelLabels[level]}`}
+                        />
+                      </td>
                     ))}
-                  </select>
-                </td>
-              </tr>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
           </tbody>
         </table>

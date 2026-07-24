@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Check, Trash2, UserMinus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { updatePosition, unassignEmployee, deletePosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
@@ -104,10 +105,11 @@ export function OrgStructurePositionRow({
                   type="button"
                   disabled={isUnassigning && unassigningId === assignment.id}
                   onClick={() => handleUnassign(assignment.id)}
-                  className="sru-btn"
-                  style={{ fontSize: 11.5, padding: "3px 8px" }}
+                  className="sru-icon-action danger"
+                  title={t("unassignButton")}
+                  aria-label={t("unassignButton")}
                 >
-                  {t("unassignButton")}
+                  <UserMinus size={14} />
                 </button>
               </li>
             ))}
@@ -115,12 +117,12 @@ export function OrgStructurePositionRow({
         )}
       </td>
       <td>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-btn sru-btn-primary" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-            {t("saveButton")}
+        <div className="sru-icon-action-group">
+          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+            <Check size={15} />
           </button>
-          <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-btn" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-            {t("deleteButton")}
+          <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
+            <Trash2 size={15} />
           </button>
         </div>
         {error && (

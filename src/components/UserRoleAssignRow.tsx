@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { assignUserRole } from "@/app/[locale]/(app)/admin/roles/actions";
@@ -72,8 +73,15 @@ export function UserRoleAssignRow({
           </option>
         ))}
       </select>
-      <button type="button" disabled={isSaving} onClick={handleSave} className="sru-btn sru-btn-primary" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-        {isSaving ? t("savingRole") : t("saveButton")}
+      <button
+        type="button"
+        disabled={isSaving}
+        onClick={handleSave}
+        className="sru-icon-action primary"
+        title={t("saveButton")}
+        aria-label={t("saveButton")}
+      >
+        <Check size={15} />
       </button>
       {saved && !error && <span style={{ color: "var(--sru-success, #15803d)", fontSize: 11.5 }}>{t("success")}</span>}
       {error && (

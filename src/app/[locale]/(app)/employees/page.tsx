@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Eye, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
@@ -95,29 +96,34 @@ export default async function EmployeesPage({
       : Promise.resolve({ data: [] as { profile_id: string; roles: { name_ar: string } | null }[] }),
   ]);
 
-  const rolesByAuthUserId = new Map<string, string[]>();
+  // A user can hold the SAME role via several org-unit-scoped rows (one per
+  // granted unit, from the add-employee form's multi-org-unit scope picker)
+  // — de-duplicated by name here (a Set, not an array) so the role shows
+  // once regardless of how many org units it was granted across, not once
+  // per row.
+  const rolesByAuthUserId = new Map<string, Set<string>>();
   for (const row of (userRolesData ?? []) as unknown as { user_id: string; roles: { name_ar: string } | null }[]) {
     if (!row.roles) continue;
-    const list = rolesByAuthUserId.get(row.user_id) ?? [];
-    list.push(row.roles.name_ar);
-    rolesByAuthUserId.set(row.user_id, list);
+    const set = rolesByAuthUserId.get(row.user_id) ?? new Set<string>();
+    set.add(row.roles.name_ar);
+    rolesByAuthUserId.set(row.user_id, set);
   }
 
-  const pendingRolesByProfileId = new Map<string, string[]>();
+  const pendingRolesByProfileId = new Map<string, Set<string>>();
   for (const row of (pendingRolesData ?? []) as unknown as { profile_id: string; roles: { name_ar: string } | null }[]) {
     if (!row.roles) continue;
-    const list = pendingRolesByProfileId.get(row.profile_id) ?? [];
-    list.push(row.roles.name_ar);
-    pendingRolesByProfileId.set(row.profile_id, list);
+    const set = pendingRolesByProfileId.get(row.profile_id) ?? new Set<string>();
+    set.add(row.roles.name_ar);
+    pendingRolesByProfileId.set(row.profile_id, set);
   }
 
   function roleLabel(employee: { id: string; auth_user_id: string | null }): string {
     if (employee.auth_user_id) {
       const roles = rolesByAuthUserId.get(employee.auth_user_id);
-      return roles && roles.length > 0 ? roles.join("، ") : t("roleNone");
+      return roles && roles.size > 0 ? [...roles].join("، ") : t("roleNone");
     }
     const pending = pendingRolesByProfileId.get(employee.id);
-    return pending && pending.length > 0 ? t("rolePending", { role: pending.join("، ") }) : t("roleNone");
+    return pending && pending.size > 0 ? t("rolePending", { role: [...pending].join("، ") }) : t("roleNone");
   }
 
   // View/Edit/Delete row actions (2026-07-24 request): gated by the
@@ -242,22 +248,25 @@ export default async function EmployeesPage({
                     <td>{roleLabel(employee)}</td>
                     <td>{t(statusMessageKeys[employee.status as keyof typeof statusMessageKeys])}</td>
                     <td>{employee.auth_user_id ? t("accountActive") : t("accountPending")}</td>
-                    <td className="no-print" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <Link href={`/employees/${employee.id}`} className="sru-btn" style={{ padding: "4px 10px", fontSize: 12 }}>
-                        {t("actionView")}
-                      </Link>
-                      {canEditDelete && (
-                        <>
-                          <Link
-                            href={`/employees/${employee.id}/edit`}
-                            className="sru-btn sru-btn-primary"
-                            style={{ padding: "4px 10px", fontSize: 12 }}
-                          >
-                            {t("actionEdit")}
-                          </Link>
-                          <DeleteEmployeeButton profileId={employee.id} />
-                        </>
-                      )}
+                    <td className="no-print">
+                      <div className="sru-icon-action-group">
+                        <Link href={`/employees/${employee.id}`} className="sru-icon-action" title={t("actionView")} aria-label={t("actionView")}>
+                          <Eye size={15} />
+                        </Link>
+                        {canEditDelete && (
+                          <>
+                            <Link
+                              href={`/employees/${employee.id}/edit`}
+                              className="sru-icon-action primary"
+                              title={t("actionEdit")}
+                              aria-label={t("actionEdit")}
+                            >
+                              <Pencil size={15} />
+                            </Link>
+                            <DeleteEmployeeButton profileId={employee.id} />
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -50,10 +50,20 @@ export function AddOrgStructurePositionForm({
   const minLevelOrder = levels.length > 0 ? Math.min(...levels.map((l) => l.level_order)) : null;
   const selectedLevel = levels.find((l) => l.id === levelId);
   const isRootLevel = selectedLevel != null && selectedLevel.level_order === minLevelOrder;
-  const precedingLevel = selectedLevel
-    ? levels.find((l) => l.level_order === selectedLevel.level_order - 1)
-    : undefined;
-  const parentOptions = precedingLevel ? positions.filter((p) => p.level_id === precedingLevel.id) : [];
+  // Any level ABOVE the selected one (lower level_order), not just the
+  // immediately preceding one — the DB itself allows linking a position to
+  // any ancestor, skipping levels entirely (validate_org_structure_position_parent
+  // only blocks a self-parent and cycles, since 20260724000001), so the
+  // manual form now offers every higher level's positions as parent
+  // candidates instead of artificially restricting to one level up.
+  const levelOrderById = new Map(levels.map((l) => [l.id, l.level_order]));
+  const levelNameById = new Map(levels.map((l) => [l.id, l.name_ar]));
+  const parentOptions = selectedLevel
+    ? positions
+        .filter((p) => (levelOrderById.get(p.level_id) ?? Infinity) < selectedLevel.level_order)
+        .slice()
+        .sort((a, b) => (levelOrderById.get(b.level_id) ?? 0) - (levelOrderById.get(a.level_id) ?? 0))
+    : [];
 
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const parentId = selectedParentId ?? parentOptions[0]?.id ?? "";
@@ -106,7 +116,7 @@ export function AddOrgStructurePositionForm({
             <select value={parentId} onChange={(e) => setSelectedParentId(e.target.value)} required className={inputClass}>
               {parentOptions.map((position) => (
                 <option key={position.id} value={position.id}>
-                  {position.name_ar}
+                  {levelNameById.get(position.level_id) ?? "—"} — {position.name_ar}
                 </option>
               ))}
             </select>

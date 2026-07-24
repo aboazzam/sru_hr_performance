@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { deleteRole } from "@/app/[locale]/(app)/admin/roles/actions";
@@ -40,10 +41,11 @@ export function DeleteRoleButton({ roleId, disabled }: { roleId: string; disable
         type="button"
         disabled={isPending || disabled}
         onClick={handleDelete}
-        className="sru-btn"
-        style={{ padding: "4px 10px", fontSize: 12 }}
+        className="sru-icon-action danger"
+        title={t("deleteButton")}
+        aria-label={t("deleteButton")}
       >
-        {isPending ? t("deletingRole") : t("deleteButton")}
+        <Trash2 size={15} />
       </button>
       {error && (
         <span role="alert" style={{ color: "#b91c1c", fontSize: 11 }}>

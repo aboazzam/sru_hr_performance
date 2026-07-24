@@ -1,7 +1,9 @@
 import { getTranslations } from "next-intl/server";
+import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { DeleteRoleButton } from "@/components/DeleteRoleButton";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import {
@@ -95,11 +97,23 @@ export default async function AdminPage() {
   const userRoles = (userRolesData ?? []) as Array<{ user_id: string; role_id: string; scope_type: string }>;
   const pendingRoles = (pendingRolesData ?? []) as Array<{ profile_id: string; role_id: string; scope_type: string }>;
 
-  // Per-role headcount (any scope) for the Positions list.
-  const countByRoleId = new Map<string, number>();
-  for (const row of [...userRoles, ...pendingRoles]) {
-    countByRoleId.set(row.role_id, (countByRoleId.get(row.role_id) ?? 0) + 1);
+  // Per-role headcount (any scope) for the Positions list — counts DISTINCT
+  // users, not rows: a single user can hold several org-unit-scoped rows
+  // for the same role (one per granted unit, from the add-employee form's
+  // multi-org-unit scope picker), which would otherwise inflate the count.
+  const usersPerRole = new Map<string, Set<string>>();
+  for (const row of userRoles) {
+    const set = usersPerRole.get(row.role_id) ?? new Set<string>();
+    set.add(`u:${row.user_id}`);
+    usersPerRole.set(row.role_id, set);
   }
+  for (const row of pendingRoles) {
+    const set = usersPerRole.get(row.role_id) ?? new Set<string>();
+    set.add(`p:${row.profile_id}`);
+    usersPerRole.set(row.role_id, set);
+  }
+  const countByRoleId = new Map<string, number>();
+  for (const [roleId, set] of usersPerRole) countByRoleId.set(roleId, set.size);
 
   // Per-employee CURRENT global role, for the Users list's select prefill —
   // this simple screen only manages the scope_type='all' assignment (see
@@ -221,23 +235,34 @@ export default async function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {roles.map((role) => (
-                    <tr key={role.id}>
-                      <td style={{ fontSize: 13, fontWeight: 700 }}>{role.name_ar}</td>
-                      <td className="sru-en" style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
-                        {role.role_code}
-                      </td>
-                      <td style={{ fontSize: 13 }}>{countByRoleId.get(role.id) ?? 0}</td>
-                      <td style={{ fontSize: 12.5 }}>{role.is_system_role ? t("systemRoleYes") : t("systemRoleNo")}</td>
-                      {canManage && (
-                        <td>
-                          <Link href={`/admin/roles/${role.id}`} className="sru-btn" style={{ fontSize: 12.5, padding: "5px 10px" }}>
-                            {t("editButton")}
-                          </Link>
+                  {roles.map((role) => {
+                    const roleUserCount = countByRoleId.get(role.id) ?? 0;
+                    return (
+                      <tr key={role.id}>
+                        <td style={{ fontSize: 13, fontWeight: 700 }}>{role.name_ar}</td>
+                        <td className="sru-en" style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
+                          {role.role_code}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td style={{ fontSize: 13 }}>{roleUserCount}</td>
+                        <td style={{ fontSize: 12.5 }}>{role.is_system_role ? t("systemRoleYes") : t("systemRoleNo")}</td>
+                        {canManage && (
+                          <td>
+                            <div className="sru-icon-action-group">
+                              <Link
+                                href={`/admin/roles/${role.id}`}
+                                className="sru-icon-action primary"
+                                title={t("editButton")}
+                                aria-label={t("editButton")}
+                              >
+                                <Pencil size={15} />
+                              </Link>
+                              {!role.is_system_role && <DeleteRoleButton roleId={role.id} disabled={roleUserCount > 0} />}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

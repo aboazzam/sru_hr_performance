@@ -4,6 +4,7 @@ import {
   vpraLevelLabels,
   processAreas,
   processAreaLabels,
+  processAreaSections,
   defaultRoles,
   evaluationStates,
   getEvaluationStatePermission,
@@ -47,6 +48,18 @@ describe("static reference lists", () => {
   it("has an Arabic label for every process area", () => {
     for (const area of processAreas) {
       expect(processAreaLabels[area]?.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("groups every process area into exactly one labeled section", () => {
+    const allSectioned = processAreaSections.flatMap((s) => s.areas);
+    expect(allSectioned).toHaveLength(processAreas.length);
+    expect(new Set(allSectioned).size).toBe(processAreas.length);
+    for (const area of processAreas) {
+      expect(allSectioned).toContain(area);
+    }
+    for (const section of processAreaSections) {
+      expect(section.titleAr.length).toBeGreaterThan(0);
     }
   });
 
