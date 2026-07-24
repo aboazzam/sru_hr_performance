@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
 import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
 import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -64,6 +64,7 @@ export default async function OrgStructureStaffingPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="administration" current="admin/org-structure/staffing" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
           <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -73,9 +74,6 @@ export default async function OrgStructureStaffingPage() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <ImportOrgStructureExcelForm />
-          <Link href="/admin/org-structure" className="sru-btn">
-            {t("structureLink")}
-          </Link>
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

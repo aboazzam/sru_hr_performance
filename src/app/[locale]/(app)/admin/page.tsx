@@ -14,6 +14,7 @@ import {
 import { PrintButton } from "@/components/PrintButton";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 const vpraLevelStyle: Record<VpraLevel, { background: string; color: string }> = {
   none: { background: "rgba(107, 90, 128, 0.12)", color: "var(--sru-muted)" },
@@ -55,6 +56,7 @@ export default async function AdminPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="administration" current="admin" />
       <div
         className="no-print"
         style={{
