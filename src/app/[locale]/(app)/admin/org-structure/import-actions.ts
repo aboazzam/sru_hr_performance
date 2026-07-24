@@ -10,6 +10,8 @@ export type ImportResult =
       summary: {
         employeesUpserted: number;
         employeeErrors: string[];
+        rolesAssigned: number;
+        roleErrors: string[];
         levelsCreated: number;
         positionsUpserted: number;
         positionErrors: string[];
@@ -97,16 +99,20 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 /**
  * Imports the project owner's real org chart workbook (2026-07-24): sheet
  * "Employees Data" (employee master data, upserted by employee_number) and
- * sheet "الهيكل التنظيمي" (levels + positions + staffing, all three in one
- * row per position). Both sheets are processed in one action since the
- * structure sheet's staffing column references employees by number — the
- * employees must exist first.
+ * OPTIONALLY sheet "الهيكل التنظيمي" (levels + positions + staffing, all
+ * three in one row per position) — the org-structure sheet is not required
+ * (2026-07-24 follow-up): the Employees page offers a dedicated
+ * employees-only template with no such sheet at all, so this action must
+ * work with just "Employees Data" present. When the structure sheet IS
+ * present, both are processed together in one action since its staffing
+ * column references employees by number — the employees must exist first.
  *
  * Every write goes through the caller's own RLS-respecting client, exactly
  * like every other Server Action in this app — real authorization is
- * `profiles`/`org_structure_*`'s own RLS (`employeeData`/`orgStructure`
- * approve level), not this action's code. The admin client is used only
- * for `audit_log`, which has no INSERT policy for `authenticated`.
+ * `profiles`/`user_roles`/`pending_role_assignments`/`org_structure_*`'s
+ * own RLS (`employeeData`/`userManagement`/`orgStructure` approve level),
+ * not this action's code. The admin client is used only for `audit_log`,
+ * which has no INSERT policy for `authenticated`.
  */
 export async function importOrgStructureExcel(
   _prevState: ImportResult | null,
@@ -141,7 +147,7 @@ export async function importOrgStructureExcel(
     workbook.worksheets.find((w) => w.name.trim() === "الهيكل التنظيمي") ??
     workbook.worksheets.find((w) => w.name.includes("هيكل"));
 
-  if (!employeesSheet || !structureSheet) {
+  if (!employeesSheet) {
     return { status: "error", message: "invalid_input" };
   }
 
@@ -155,17 +161,20 @@ export async function importOrgStructureExcel(
     return { status: "error", message: "invalid_input" };
   }
 
-  const structCols = headerMap(structureSheet);
-  const missingStructCol = requireColumns(structCols, [
-    "المستوى",
-    "الرمز",
-    "الوحدة التنظيمية",
-  ]);
-  if (missingStructCol) {
-    return { status: "error", message: "invalid_input" };
+  const structCols = structureSheet ? headerMap(structureSheet) : null;
+  if (structCols) {
+    const missingStructCol = requireColumns(structCols, [
+      "المستوى",
+      "الرمز",
+      "الوحدة التنظيمية",
+    ]);
+    if (missingStructCol) {
+      return { status: "error", message: "invalid_input" };
+    }
   }
 
   const employeeErrors: string[] = [];
+  const roleErrors: string[] = [];
   const positionErrors: string[] = [];
   const assignmentErrors: string[] = [];
   const corrections: string[] = [];
@@ -212,6 +221,7 @@ export async function importOrgStructureExcel(
     gradeCode: number | null;
     employeeCategory: string | null;
     insuranceCategory: string | null;
+    roleName: string | null;
   }
 
   const employeeRows: EmployeeRow[] = [];
@@ -251,6 +261,7 @@ export async function importOrgStructureExcel(
       gradeCode: grade != null && !isNaN(grade) ? grade : null,
       employeeCategory: cellText(get(row, "Category"))?.trim() ?? null,
       insuranceCategory: cellText(get(row, "Insurance Category")),
+      roleName: cellText(get(row, "الدور في النظام")),
     });
   }
 
@@ -340,187 +351,277 @@ export async function importOrgStructureExcel(
   }
 
   // -----------------------------------------------------------------------
-  // 6. org_structure_levels — one row per distinct level number, named
-  //    "المستوى N" only when not already present (never overwrite a name
-  //    the project owner already gave a level through the UI).
+  // 5b. Role assignment — the "الدور في النظام" column, read against real
+  //     employee names (2026-07-24 follow-up). Matched by `roles.name_ar`
+  //     (not role_code), since the template lists role names in Arabic like
+  //     everything else in this app. A linked account (auth_user_id set)
+  //     writes to `user_roles`; an invited-but-not-linked one writes to
+  //     `pending_role_assignments` (promoted automatically once they accept
+  //     their invite — see 20260721000001), same split the Employees list's
+  //     own role column already reads from. Always scope_type='all' — a
+  //     bulk sheet has no reasonable way to express an org-unit scope per
+  //     row. Both tables' uniqueness is a PARTIAL index
+  //     (`WHERE scope_type='all'`), the same limitation already hit for
+  //     org_structure_positions/evaluation_scores/calibration_results, so
+  //     this checks existing rows first rather than a blind upsert.
   // -----------------------------------------------------------------------
-  const structGet = (row: ExcelJS.Row, col: string) =>
-    structCols.has(col) ? row.getCell(structCols.get(col)!).value : null;
+  const roleRowsToAssign = employeeRows.filter((e) => e.roleName);
+  let rolesAssigned = 0;
+  if (roleRowsToAssign.length > 0) {
+    const { data: rolesData } = await supabase.from("roles").select("id, name_ar");
+    const roleIdByName = new Map((rolesData ?? []).map((r) => [r.name_ar.trim(), r.id]));
 
-  interface StructRow {
-    level: number;
-    code: string;
-    nameAr: string;
-    nameEn: string | null;
-    parentCode: string | null;
-    employeeNumber: string | null;
-  }
+    const { data: profilesForRoles } = await supabase
+      .from("profiles")
+      .select("id, employee_number, auth_user_id")
+      .in(
+        "employee_number",
+        roleRowsToAssign.map((e) => e.employeeNumber)
+      );
+    const profileByNumber = new Map((profilesForRoles ?? []).map((p) => [p.employee_number, p]));
 
-  const structRows: StructRow[] = [];
-  for (let r = 2; r <= structureSheet.rowCount; r++) {
-    const row = structureSheet.getRow(r);
-    const code = cellText(structGet(row, "الرمز"));
-    const nameAr = cellText(structGet(row, "الوحدة التنظيمية"));
-    const levelText = cellText(structGet(row, "المستوى"));
-    if (!code || !nameAr || !levelText) continue;
+    const linkedUserIds = (profilesForRoles ?? []).filter((p) => p.auth_user_id).map((p) => p.auth_user_id as string);
+    const unlinkedProfileIds = (profilesForRoles ?? []).filter((p) => !p.auth_user_id).map((p) => p.id);
 
-    let parentCode = cellText(structGet(row, "رمز التبعية"));
-    if (parentCode && KNOWN_PARENT_CODE_CORRECTIONS[parentCode]) {
-      corrections.push(`position ${code} ("${nameAr}"): parent code ${parentCode} corrected to ${KNOWN_PARENT_CODE_CORRECTIONS[parentCode]}`);
-      parentCode = KNOWN_PARENT_CODE_CORRECTIONS[parentCode];
+    const [{ data: existingUserRoles }, { data: existingPending }] = await Promise.all([
+      linkedUserIds.length > 0
+        ? supabase.from("user_roles").select("user_id, role_id").eq("scope_type", "all").in("user_id", linkedUserIds)
+        : Promise.resolve({ data: [] as { user_id: string; role_id: string }[] }),
+      unlinkedProfileIds.length > 0
+        ? supabase
+            .from("pending_role_assignments")
+            .select("profile_id, role_id")
+            .eq("scope_type", "all")
+            .in("profile_id", unlinkedProfileIds)
+        : Promise.resolve({ data: [] as { profile_id: string; role_id: string }[] }),
+    ]);
+    const existingUserRoleKeys = new Set((existingUserRoles ?? []).map((r) => `${r.user_id}::${r.role_id}`));
+    const existingPendingKeys = new Set((existingPending ?? []).map((r) => `${r.profile_id}::${r.role_id}`));
+
+    const newUserRoles: { user_id: string; role_id: string; scope_type: "all" }[] = [];
+    const newPending: { profile_id: string; role_id: string; scope_type: "all" }[] = [];
+
+    for (const emp of roleRowsToAssign) {
+      const roleId = roleIdByName.get(emp.roleName!.trim());
+      if (!roleId) {
+        roleErrors.push(`${emp.employeeNumber}: role "${emp.roleName}" not found — skipped`);
+        continue;
+      }
+      const profile = profileByNumber.get(emp.employeeNumber);
+      if (!profile) {
+        roleErrors.push(`${emp.employeeNumber}: profile not found after upsert — skipped`);
+        continue;
+      }
+      if (profile.auth_user_id) {
+        const key = `${profile.auth_user_id}::${roleId}`;
+        if (existingUserRoleKeys.has(key)) continue;
+        existingUserRoleKeys.add(key);
+        newUserRoles.push({ user_id: profile.auth_user_id, role_id: roleId, scope_type: "all" });
+      } else {
+        const key = `${profile.id}::${roleId}`;
+        if (existingPendingKeys.has(key)) continue;
+        existingPendingKeys.add(key);
+        newPending.push({ profile_id: profile.id, role_id: roleId, scope_type: "all" });
+      }
     }
 
-    structRows.push({
-      level: parseInt(levelText, 10),
-      code,
-      nameAr,
-      nameEn: cellText(structGet(row, "Organizational Unit")),
-      parentCode,
-      employeeNumber: cellText(structGet(row, "الرقم الوظيفي لمن يشغل المنصب")),
-    });
+    if (newUserRoles.length > 0) {
+      const { error, count } = await supabase.from("user_roles").insert(newUserRoles, { count: "exact" });
+      if (error) roleErrors.push(`user_roles: ${error.message}`);
+      else rolesAssigned += count ?? newUserRoles.length;
+    }
+    if (newPending.length > 0) {
+      const { error, count } = await supabase.from("pending_role_assignments").insert(newPending, { count: "exact" });
+      if (error) roleErrors.push(`pending_role_assignments: ${error.message}`);
+      else rolesAssigned += count ?? newPending.length;
+    }
   }
 
-  const { data: existingLevels } = await supabase
-    .from("org_structure_levels")
-    .select("id, level_order")
-    .is("deleted_at", null);
-  const levelIdByOrder = new Map((existingLevels ?? []).map((l) => [l.level_order, l.id]));
-
-  const distinctLevelOrders = [...new Set(structRows.map((s) => s.level))].sort((a, b) => a - b);
-  const newLevelOrders = distinctLevelOrders.filter((n) => !levelIdByOrder.has(n));
+  // -----------------------------------------------------------------------
+  // 6-8. Org structure (levels/positions/staffing) — entirely optional
+  //      (2026-07-24 follow-up): the Employees page's dedicated template
+  //      has no "الهيكل التنظيمي" sheet at all, so this whole block simply
+  //      does not run when `structureSheet`/`structCols` are absent.
+  // -----------------------------------------------------------------------
   let levelsCreated = 0;
-  if (newLevelOrders.length > 0) {
-    const { data: inserted, error } = await supabase
-      .from("org_structure_levels")
-      .insert(newLevelOrders.map((n) => ({ name_ar: `المستوى ${n}`, level_order: n })))
-      .select("id, level_order");
-    if (error) {
-      positionErrors.push(`levels: ${error.message}`);
-    } else {
-      levelsCreated = inserted?.length ?? 0;
-      for (const l of inserted ?? []) levelIdByOrder.set(l.level_order, l.id);
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // 7. org_structure_positions — pass 1 creates/updates every position by
-  //    external_code WITHOUT parent_id (parent codes may not have a
-  //    matching row yet within this same import); pass 2 resolves and
-  //    writes parent_id once every position exists.
-  //
-  //    Deliberately NOT `.upsert()`: `external_code`'s uniqueness is a
-  //    PARTIAL index (`WHERE external_code IS NOT NULL AND deleted_at IS
-  //    NULL`), which PostgREST's `on_conflict` inference can't target —
-  //    confirmed live (`there is no unique or exclusion constraint
-  //    matching the ON CONFLICT specification`), the exact same limitation
-  //    already documented for `evaluation_scores`/`calibration_results`.
-  //    Select existing codes first, then INSERT the new ones in a batch
-  //    and UPDATE changed ones individually, same as those two tables.
-  // -----------------------------------------------------------------------
-  const { data: existingPositionsByCode } = await supabase
-    .from("org_structure_positions")
-    .select("id, external_code")
-    .is("deleted_at", null)
-    .not("external_code", "is", null);
-  const positionIdByCode = new Map((existingPositionsByCode ?? []).map((p) => [p.external_code as string, p.id]));
-
   let positionsUpserted = 0;
-  const toInsert: { external_code: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
-  const toUpdate: { id: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
-  for (const s of structRows) {
-    if (!levelIdByOrder.has(s.level)) continue;
-    const levelId = levelIdByOrder.get(s.level)!;
-    const existingId = positionIdByCode.get(s.code);
-    if (existingId) {
-      toUpdate.push({ id: existingId, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
-    } else {
-      toInsert.push({ external_code: s.code, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
-    }
-  }
-
-  for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
-    const batch = toInsert.slice(i, i + BATCH_SIZE);
-    const { data: inserted, error } = await supabase.from("org_structure_positions").insert(batch).select("id, external_code");
-    if (error) {
-      positionErrors.push(`positions insert batch ${i / BATCH_SIZE + 1}: ${error.message}`);
-    } else {
-      positionsUpserted += inserted?.length ?? 0;
-      for (const p of inserted ?? []) positionIdByCode.set(p.external_code as string, p.id);
-    }
-  }
-
-  for (const p of toUpdate) {
-    const { error } = await supabase
-      .from("org_structure_positions")
-      .update({ level_id: p.level_id, name_ar: p.name_ar, name_en: p.name_en })
-      .eq("id", p.id);
-    if (error) {
-      positionErrors.push(`position ${p.id}: ${error.message}`);
-    } else {
-      positionsUpserted += 1;
-    }
-  }
-
-  for (const s of structRows) {
-    if (!s.parentCode) continue;
-    const positionId = positionIdByCode.get(s.code);
-    const parentId = positionIdByCode.get(s.parentCode);
-    if (!positionId) continue;
-    if (!parentId) {
-      positionErrors.push(`position ${s.code} ("${s.nameAr}"): parent code ${s.parentCode} not found — left without a parent`);
-      continue;
-    }
-    const { error } = await supabase.from("org_structure_positions").update({ parent_id: parentId }).eq("id", positionId);
-    if (error) positionErrors.push(`position ${s.code}: ${error.message}`);
-  }
-
-  // -----------------------------------------------------------------------
-  // 8. org_structure_assignments — staffing embedded in the structure
-  //    sheet. Only ever ADDS a missing assignment (matching the project
-  //    owner's "اسمح بالإضافة والتعديل"); never removes an existing one on
-  //    re-import, since the sheet has no way to express "unassign" and
-  //    silently doing so on a re-run would be a real, surprising data loss.
-  //    Can't use .upsert() here — the uniqueness is a PARTIAL index
-  //    (WHERE deleted_at IS NULL), the same limitation already documented
-  //    for evaluation_scores/calibration_results — so this checks first.
-  // -----------------------------------------------------------------------
-  const { data: profilesByNumber } = await supabase
-    .from("profiles")
-    .select("id, employee_number")
-    .is("deleted_at", null);
-  const profileIdByNumber = new Map((profilesByNumber ?? []).map((p) => [p.employee_number, p.id]));
-
-  const { data: existingAssignments } = await supabase
-    .from("org_structure_assignments")
-    .select("position_id, employee_id")
-    .is("deleted_at", null);
-  const existingAssignmentKeys = new Set((existingAssignments ?? []).map((a) => `${a.position_id}::${a.employee_id}`));
-
   let assignmentsCreated = 0;
-  const newAssignments: { position_id: string; employee_id: string }[] = [];
-  for (const s of structRows) {
-    if (!s.employeeNumber) continue;
-    const positionId = positionIdByCode.get(s.code);
-    const employeeId = profileIdByNumber.get(s.employeeNumber);
-    if (!positionId) continue;
-    if (!employeeId) {
-      assignmentErrors.push(`position ${s.code}: employee number ${s.employeeNumber} not found among imported employees`);
-      continue;
-    }
-    const key = `${positionId}::${employeeId}`;
-    if (existingAssignmentKeys.has(key)) continue;
-    existingAssignmentKeys.add(key);
-    newAssignments.push({ position_id: positionId, employee_id: employeeId });
-  }
 
-  if (newAssignments.length > 0) {
-    const { error, count } = await supabase
+  if (structureSheet && structCols) {
+    // 6. org_structure_levels — one row per distinct level number, named
+    //    "المستوى N" only when not already present (never overwrite a name
+    //    the project owner already gave a level through the UI).
+    const structGet = (row: ExcelJS.Row, col: string) =>
+      structCols.has(col) ? row.getCell(structCols.get(col)!).value : null;
+
+    interface StructRow {
+      level: number;
+      code: string;
+      nameAr: string;
+      nameEn: string | null;
+      parentCode: string | null;
+      employeeNumber: string | null;
+    }
+
+    const structRows: StructRow[] = [];
+    for (let r = 2; r <= structureSheet.rowCount; r++) {
+      const row = structureSheet.getRow(r);
+      const code = cellText(structGet(row, "الرمز"));
+      const nameAr = cellText(structGet(row, "الوحدة التنظيمية"));
+      const levelText = cellText(structGet(row, "المستوى"));
+      if (!code || !nameAr || !levelText) continue;
+
+      let parentCode = cellText(structGet(row, "رمز التبعية"));
+      if (parentCode && KNOWN_PARENT_CODE_CORRECTIONS[parentCode]) {
+        corrections.push(`position ${code} ("${nameAr}"): parent code ${parentCode} corrected to ${KNOWN_PARENT_CODE_CORRECTIONS[parentCode]}`);
+        parentCode = KNOWN_PARENT_CODE_CORRECTIONS[parentCode];
+      }
+
+      structRows.push({
+        level: parseInt(levelText, 10),
+        code,
+        nameAr,
+        nameEn: cellText(structGet(row, "Organizational Unit")),
+        parentCode,
+        employeeNumber: cellText(structGet(row, "الرقم الوظيفي لمن يشغل المنصب")),
+      });
+    }
+
+    const { data: existingLevels } = await supabase
+      .from("org_structure_levels")
+      .select("id, level_order")
+      .is("deleted_at", null);
+    const levelIdByOrder = new Map((existingLevels ?? []).map((l) => [l.level_order, l.id]));
+
+    const distinctLevelOrders = [...new Set(structRows.map((s) => s.level))].sort((a, b) => a - b);
+    const newLevelOrders = distinctLevelOrders.filter((n) => !levelIdByOrder.has(n));
+    if (newLevelOrders.length > 0) {
+      const { data: inserted, error } = await supabase
+        .from("org_structure_levels")
+        .insert(newLevelOrders.map((n) => ({ name_ar: `المستوى ${n}`, level_order: n })))
+        .select("id, level_order");
+      if (error) {
+        positionErrors.push(`levels: ${error.message}`);
+      } else {
+        levelsCreated = inserted?.length ?? 0;
+        for (const l of inserted ?? []) levelIdByOrder.set(l.level_order, l.id);
+      }
+    }
+
+    // 7. org_structure_positions — pass 1 creates/updates every position by
+    //    external_code WITHOUT parent_id (parent codes may not have a
+    //    matching row yet within this same import); pass 2 resolves and
+    //    writes parent_id once every position exists.
+    //
+    //    Deliberately NOT `.upsert()`: `external_code`'s uniqueness is a
+    //    PARTIAL index (`WHERE external_code IS NOT NULL AND deleted_at IS
+    //    NULL`), which PostgREST's `on_conflict` inference can't target —
+    //    confirmed live (`there is no unique or exclusion constraint
+    //    matching the ON CONFLICT specification`), the exact same limitation
+    //    already documented for `evaluation_scores`/`calibration_results`.
+    //    Select existing codes first, then INSERT the new ones in a batch
+    //    and UPDATE changed ones individually, same as those two tables.
+    const { data: existingPositionsByCode } = await supabase
+      .from("org_structure_positions")
+      .select("id, external_code")
+      .is("deleted_at", null)
+      .not("external_code", "is", null);
+    const positionIdByCode = new Map((existingPositionsByCode ?? []).map((p) => [p.external_code as string, p.id]));
+
+    const toInsert: { external_code: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
+    const toUpdate: { id: string; level_id: string; name_ar: string; name_en: string | null }[] = [];
+    for (const s of structRows) {
+      if (!levelIdByOrder.has(s.level)) continue;
+      const levelId = levelIdByOrder.get(s.level)!;
+      const existingId = positionIdByCode.get(s.code);
+      if (existingId) {
+        toUpdate.push({ id: existingId, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
+      } else {
+        toInsert.push({ external_code: s.code, level_id: levelId, name_ar: s.nameAr, name_en: s.nameEn });
+      }
+    }
+
+    for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+      const batch = toInsert.slice(i, i + BATCH_SIZE);
+      const { data: inserted, error } = await supabase.from("org_structure_positions").insert(batch).select("id, external_code");
+      if (error) {
+        positionErrors.push(`positions insert batch ${i / BATCH_SIZE + 1}: ${error.message}`);
+      } else {
+        positionsUpserted += inserted?.length ?? 0;
+        for (const p of inserted ?? []) positionIdByCode.set(p.external_code as string, p.id);
+      }
+    }
+
+    for (const p of toUpdate) {
+      const { error } = await supabase
+        .from("org_structure_positions")
+        .update({ level_id: p.level_id, name_ar: p.name_ar, name_en: p.name_en })
+        .eq("id", p.id);
+      if (error) {
+        positionErrors.push(`position ${p.id}: ${error.message}`);
+      } else {
+        positionsUpserted += 1;
+      }
+    }
+
+    for (const s of structRows) {
+      if (!s.parentCode) continue;
+      const positionId = positionIdByCode.get(s.code);
+      const parentId = positionIdByCode.get(s.parentCode);
+      if (!positionId) continue;
+      if (!parentId) {
+        positionErrors.push(`position ${s.code} ("${s.nameAr}"): parent code ${s.parentCode} not found — left without a parent`);
+        continue;
+      }
+      const { error } = await supabase.from("org_structure_positions").update({ parent_id: parentId }).eq("id", positionId);
+      if (error) positionErrors.push(`position ${s.code}: ${error.message}`);
+    }
+
+    // 8. org_structure_assignments — staffing embedded in the structure
+    //    sheet. Only ever ADDS a missing assignment (matching the project
+    //    owner's "اسمح بالإضافة والتعديل"); never removes an existing one on
+    //    re-import, since the sheet has no way to express "unassign" and
+    //    silently doing so on a re-run would be a real, surprising data loss.
+    //    Can't use .upsert() here — the uniqueness is a PARTIAL index
+    //    (WHERE deleted_at IS NULL), the same limitation already documented
+    //    for evaluation_scores/calibration_results — so this checks first.
+    const { data: profilesByNumber } = await supabase
+      .from("profiles")
+      .select("id, employee_number")
+      .is("deleted_at", null);
+    const profileIdByNumber = new Map((profilesByNumber ?? []).map((p) => [p.employee_number, p.id]));
+
+    const { data: existingAssignments } = await supabase
       .from("org_structure_assignments")
-      .insert(newAssignments, { count: "exact" });
-    if (error) {
-      assignmentErrors.push(`assignments: ${error.message}`);
-    } else {
-      assignmentsCreated = count ?? newAssignments.length;
+      .select("position_id, employee_id")
+      .is("deleted_at", null);
+    const existingAssignmentKeys = new Set((existingAssignments ?? []).map((a) => `${a.position_id}::${a.employee_id}`));
+
+    const newAssignments: { position_id: string; employee_id: string }[] = [];
+    for (const s of structRows) {
+      if (!s.employeeNumber) continue;
+      const positionId = positionIdByCode.get(s.code);
+      const employeeId = profileIdByNumber.get(s.employeeNumber);
+      if (!positionId) continue;
+      if (!employeeId) {
+        assignmentErrors.push(`position ${s.code}: employee number ${s.employeeNumber} not found among imported employees`);
+        continue;
+      }
+      const key = `${positionId}::${employeeId}`;
+      if (existingAssignmentKeys.has(key)) continue;
+      existingAssignmentKeys.add(key);
+      newAssignments.push({ position_id: positionId, employee_id: employeeId });
+    }
+
+    if (newAssignments.length > 0) {
+      const { error, count } = await supabase
+        .from("org_structure_assignments")
+        .insert(newAssignments, { count: "exact" });
+      if (error) {
+        assignmentErrors.push(`assignments: ${error.message}`);
+      } else {
+        assignmentsCreated = count ?? newAssignments.length;
+      }
     }
   }
 
@@ -531,10 +632,12 @@ export async function importOrgStructureExcel(
     entity: "org_structure_positions",
     after_data: {
       employeesUpserted,
+      rolesAssigned,
       levelsCreated,
       positionsUpserted,
       assignmentsCreated,
       employeeErrorCount: employeeErrors.length,
+      roleErrorCount: roleErrors.length,
       positionErrorCount: positionErrors.length,
       assignmentErrorCount: assignmentErrors.length,
     },
@@ -545,6 +648,8 @@ export async function importOrgStructureExcel(
     summary: {
       employeesUpserted,
       employeeErrors,
+      rolesAssigned,
+      roleErrors,
       levelsCreated,
       positionsUpserted,
       positionErrors,

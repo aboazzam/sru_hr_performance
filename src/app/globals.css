@@ -350,6 +350,17 @@ table.admin-matrix {
   white-space: nowrap;
 }
 
+/* ===== Button text centering / no-wrap =====
+   sru-ui.css sets no text-align or white-space on .sru-btn, so under flex
+   space pressure a button's label could wrap mid-phrase and read
+   left-aligned across the two lines (seen on the Employees page header
+   row with several buttons) — additive per this project's "never edit
+   sru-ui.css directly" rule. */
+.sru-btn {
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* ===== Disabled buttons =====
    sru-ui.css defines no :disabled state at all, so a disabled .sru-btn
    looked visually identical to an active one (same solid color, only the

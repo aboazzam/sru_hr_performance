@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { PrintButton } from "@/components/PrintButton";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
+import { EmployeesExportMenu } from "@/components/EmployeesExportMenu";
+import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 const statusMessageKeys = {
   active: "statusActive",
@@ -89,6 +91,20 @@ export default async function EmployeesPage() {
     return pending && pending.length > 0 ? t("rolePending", { role: pending.join("، ") }) : t("roleNone");
   }
 
+  // View/Edit/Delete row actions (2026-07-24 request): gated by the
+  // caller's actual `employeeData` VPRA level, not hardcoded role names —
+  // "أضفها في جدول الصلاحيات بحيث يمكن اسنادها لمستخدم معين" means any role
+  // granted `employeeData=approve` in the permissions matrix gets Edit/
+  // Delete automatically, same mechanism NavBar filtering already uses.
+  // View has no extra gate — seeing this row at all already requires
+  // employeeData>=view via profiles_select's own RLS.
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const employeeDataLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "employeeData"
+    )?.vpra_level ?? "none";
+  const canEditDelete = hasVpraAccess(employeeDataLevel, "approve");
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -116,8 +132,8 @@ export default async function EmployeesPage() {
           <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
             {t("assignSupervisor")}
           </Link>
-          <ImportOrgStructureExcelForm />
-          <PrintButton />
+          <ImportOrgStructureExcelForm templateHref="/templates/sru-employees-import-template.xlsx" note={t("importNoteEmployeesOnly")} />
+          <EmployeesExportMenu />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
@@ -136,6 +152,7 @@ export default async function EmployeesPage() {
                   <th>{t("columnRole")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("columnAccount")}</th>
+                  <th className="no-print">{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,6 +164,23 @@ export default async function EmployeesPage() {
                     <td>{roleLabel(employee)}</td>
                     <td>{t(statusMessageKeys[employee.status as keyof typeof statusMessageKeys])}</td>
                     <td>{employee.auth_user_id ? t("accountActive") : t("accountPending")}</td>
+                    <td className="no-print" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <Link href={`/employees/${employee.id}`} className="sru-btn" style={{ padding: "4px 10px", fontSize: 12 }}>
+                        {t("actionView")}
+                      </Link>
+                      {canEditDelete && (
+                        <>
+                          <Link
+                            href={`/employees/${employee.id}/edit`}
+                            className="sru-btn sru-btn-primary"
+                            style={{ padding: "4px 10px", fontSize: 12 }}
+                          >
+                            {t("actionEdit")}
+                          </Link>
+                          <DeleteEmployeeButton profileId={employee.id} />
+                        </>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
