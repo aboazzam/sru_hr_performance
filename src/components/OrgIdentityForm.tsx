@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { updateOrgIdentity, type UpdateIdentityState } from "@/app/[locale]/(app)/admin/identity/actions";
@@ -64,8 +64,20 @@ export function OrgIdentityForm({
     setLogoUrl(publicUrlData.publicUrl);
   }
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike -- here
+  // that would revert primaryColor/secondaryColor back to their original
+  // defaultValue on a validation error.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction} className="space-y-5" style={{ maxWidth: 480 }}>
+    <form onSubmit={handleSubmit} className="space-y-5" style={{ maxWidth: 480 }}>
       <div>
         <label className="block text-sm font-medium mb-1">{t("logoUrlLabel")}</label>
         <input type="hidden" name="logoUrl" value={logoUrl} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, CheckCircle2, Mail } from "lucide-react";
 import { requestPasswordReset, type ForgotPasswordState } from "@/app/[locale]/forgot-password/actions";
@@ -22,8 +22,18 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
     );
   }
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <div className="sru-field-float">
         <input
           id="forgot-email"
