@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Briefcase, IdCard, ShieldCheck, User, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles } from "lucide-react";
 import { inviteEmployee, type InviteEmployeeState } from "@/app/[locale]/(app)/employees/new/actions";
@@ -85,8 +85,24 @@ export function EmployeeInviteForm({
     }
   }, [state]);
 
+  // React 19's <form action={fn}> resets every uncontrolled field after ANY
+  // submission completes -- success OR error -- not just on success (found
+  // live: a validation error wiped employeeNumber/fullNameAr/etc. while the
+  // controlled `password` field survived, since only uncontrolled inputs are
+  // affected by the implicit native form.reset() React performs). Submitting
+  // by hand instead of via the `action` prop sidesteps that automatic reset
+  // entirely -- `formAction` still works when invoked directly with a
+  // FormData, wrapped in startTransition so `pending` still tracks it.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form ref={formRef} action={formAction}>
+    <form ref={formRef} onSubmit={handleSubmit}>
       <section className="sru-formsection">
         <div className="sru-formsection-head">
           <span className="sru-formsection-badge">

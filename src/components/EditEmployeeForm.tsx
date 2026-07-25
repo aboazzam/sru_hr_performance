@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Briefcase, IdCard, ShieldCheck, User, AlertCircle } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
@@ -92,8 +92,21 @@ export function EditEmployeeForm({
     }
   }, [state, router, profile.id]);
 
+  // Same fix as EmployeeInviteForm.tsx: React 19's <form action={fn}> resets
+  // every uncontrolled field back to its defaultValue after ANY submission,
+  // not just success -- here that means a validation error (e.g. duplicate
+  // email) would silently revert the admin's just-typed edits back to the
+  // original profile values. Submitting by hand sidesteps that.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <input type="hidden" name="profileId" value={profile.id} />
 
       <section className="sru-formsection">
