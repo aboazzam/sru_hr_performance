@@ -18,22 +18,23 @@ import {
 } from "./navItems";
 
 describe("navItems (top-level, ungrouped)", () => {
-  it("has exactly 7 items with unique segments", () => {
+  it("has exactly 8 items with unique segments", () => {
     // 2026-07-24: promotions/rewards moved under the new "التوصيات"
     // (Recommendations) group tab per the project owner's explicit
     // "بالنسبة للترقيات والمكافآت تكون تحت التوصيات" — no longer flat
-    // top-level sidebar entries.
-    expect(navItems).toHaveLength(7);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(7);
+    // top-level sidebar entries. 2026-07-25: "reports" joined this list
+    // ungated (see below) as a personalized dashboard reachable by everyone.
+    expect(navItems).toHaveLength(8);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(8);
   });
 
   it("has exactly one home item (empty segment)", () => {
     expect(navItems.filter((i) => i.segment === "")).toHaveLength(1);
   });
 
-  it("every item except home declares an access requirement", () => {
+  it("home and reports are the only ungated items; every other item declares an access requirement", () => {
     for (const item of navItems) {
-      if (item.segment === "") {
+      if (item.segment === "" || item.segment === "reports") {
         expect(item.access).toBeUndefined();
       } else {
         expect(item.access).toBeDefined();
@@ -60,14 +61,13 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(new Set(allSegments).size).toBe(allSegments.length);
   });
 
-  it("the administration group has the five requested children, including reports (moved 2026-07-25)", () => {
+  it("the administration group has its four children (reports moved out entirely, 2026-07-25)", () => {
     const admin = navGroups.find((g) => g.groupKey === "administration")!;
     expect(admin.children.map((c) => c.segment)).toEqual([
       "admin/org-structure",
       "admin/org-structure/staffing",
       "admin",
       "admin/identity",
-      "reports",
     ]);
   });
 
@@ -76,7 +76,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "competencies", "bau-tasks", "feedback-360"]);
   });
 
-  it("the evaluationResults group has just recommendations now that reports moved into administration", () => {
+  it("the evaluationResults group has just recommendations (reports never returns to this group)", () => {
     const results = navGroups.find((g) => g.groupKey === "evaluationResults")!;
     expect(results.children.map((c) => c.segment)).toEqual(["recommendations"]);
   });
@@ -116,6 +116,8 @@ describe("visibleNavItems", () => {
     expect(segments).toContain("");
     expect(segments).toContain("career-path");
     expect(segments).toContain("vacancies");
+    // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
+    expect(segments).toContain("reports");
   });
 
   it("shows every tab for a full-access permission set", () => {
