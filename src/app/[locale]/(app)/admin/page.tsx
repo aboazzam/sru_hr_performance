@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { AdminUsersTable } from "@/components/AdminUsersTable";
 import { DeleteRoleButton } from "@/components/DeleteRoleButton";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
@@ -167,51 +167,18 @@ export default async function AdminPage() {
         {employees.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noUsers")}</p>
         ) : (
-          <div className="sru-card">
-            <div className="table-scroll">
-              <table className="admin-matrix">
-                <thead>
-                  <tr>
-                    <th>{t("userColumnNumber")}</th>
-                    <th>{t("userColumnName")}</th>
-                    <th>{t("userColumnRole")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((employee) => {
-                    const currentRoleIds = employee.auth_user_id
-                      ? globalRoleIdsByAuthUserId.get(employee.auth_user_id) ?? []
-                      : globalRoleIdsByProfileId.get(employee.id) ?? [];
-                    return (
-                      <tr key={employee.id}>
-                        <td style={{ fontSize: 13 }}>{employee.employee_number}</td>
-                        <td style={{ fontSize: 13 }}>{employee.full_name_ar}</td>
-                        <td>
-                          {canManage ? (
-                            <UserRoleAssignRow
-                              profileId={employee.id}
-                              authUserId={employee.auth_user_id}
-                              roles={roleOptions}
-                              initialRoleIds={currentRoleIds}
-                            />
-                          ) : (
-                            <span style={{ fontSize: 13 }}>
-                              {currentRoleIds.length > 0
-                                ? currentRoleIds
-                                    .map((id) => roles.find((r) => r.id === id)?.name_ar)
-                                    .filter(Boolean)
-                                    .join("، ")
-                                : t("roleNoneOption")}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AdminUsersTable
+            users={employees.map((employee) => ({
+              ...employee,
+              currentRoleIds: employee.auth_user_id
+                ? globalRoleIdsByAuthUserId.get(employee.auth_user_id) ?? []
+                : globalRoleIdsByProfileId.get(employee.id) ?? [],
+            }))}
+            roleOptions={roleOptions}
+            roles={roles}
+            canManage={canManage}
+            noneLabel={t("roleNoneOption")}
+          />
         )}
       </section>
 
