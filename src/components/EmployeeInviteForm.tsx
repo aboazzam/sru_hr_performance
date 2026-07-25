@@ -46,10 +46,12 @@ export function EmployeeInviteForm({
   orgUnits,
   roles,
   jobTitles,
+  canManageUsers,
 }: {
   orgUnits: OrgUnitOption[];
   roles: RoleOption[];
   jobTitles: JobTitleOption[];
+  canManageUsers: boolean;
 }) {
   const t = useTranslations("EmployeeInvitePage");
   const [state, formAction, pending] = useActionState<InviteEmployeeState, FormData>(
@@ -57,7 +59,10 @@ export function EmployeeInviteForm({
     null
   );
   const formRef = useRef<HTMLFormElement>(null);
-  const [mode, setMode] = useState<"invite" | "direct">("invite");
+  // "none" (no account, data only) is the only option for callers who don't
+  // hold userManagement -- the Role & Permissions section below doesn't even
+  // render for them, so this stays "none" for the whole session in that case.
+  const [mode, setMode] = useState<"none" | "invite" | "direct">(canManageUsers ? "invite" : "none");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -70,7 +75,7 @@ export function EmployeeInviteForm({
   const [lastHandledState, setLastHandledState] = useState<InviteEmployeeState>(null);
   if (state?.status === "success" && state !== lastHandledState) {
     setLastHandledState(state);
-    setMode("invite");
+    setMode(canManageUsers ? "invite" : "none");
     setPassword("");
   }
 
@@ -99,7 +104,11 @@ export function EmployeeInviteForm({
           </div>
           <div className="sru-field">
             <label>{t("emailLabel")}</label>
-            <input type="email" name="email" required dir="ltr" style={{ textAlign: "left" }} placeholder={t("emailPlaceholder")} />
+            <input type="email" name="email" dir="ltr" style={{ textAlign: "left" }} placeholder={t("emailPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("usernameLabel")}</label>
+            <input type="text" name="username" dir="ltr" style={{ textAlign: "left" }} placeholder={t("usernamePlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("fullNameArLabel")}</label>
@@ -218,6 +227,7 @@ export function EmployeeInviteForm({
         </div>
       </section>
 
+      {canManageUsers && (
       <section className="sru-formsection">
         <div className="sru-formsection-head">
           <span className="sru-formsection-badge">
@@ -232,6 +242,16 @@ export function EmployeeInviteForm({
           <div className="sru-field sru-scope-block">
             <label>{t("accountModeLabel")}</label>
             <div className="sru-scope-chip-row">
+              <label className="sru-scope-chip">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="none"
+                  checked={mode === "none"}
+                  onChange={() => setMode("none")}
+                />
+                {t("accountModeNone")}
+              </label>
               <label className="sru-scope-chip">
                 <input
                   type="radio"
@@ -254,7 +274,7 @@ export function EmployeeInviteForm({
               </label>
             </div>
             <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>
-              {mode === "invite" ? t("accountModeInviteHint") : t("accountModeDirectHint")}
+              {mode === "none" ? t("accountModeNoneHint") : mode === "invite" ? t("accountModeInviteHint") : t("accountModeDirectHint")}
             </span>
           </div>
 
@@ -300,40 +320,45 @@ export function EmployeeInviteForm({
             </div>
           )}
 
-          <div className="sru-field sru-scope-block">
-            <label>{t("roleLabel")}</label>
-            <div className="sru-scope-orgunits">
-              {roles.map((role) => (
-                <label key={role.id}>
-                  <input type="checkbox" name="roleIds" value={role.id} />
-                  {role.name_ar}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="sru-field sru-scope-block">
-            <label>{t("scopeLabel")}</label>
-            <div className="sru-scope-chip-row">
-              <label className="sru-scope-chip">
-                <input type="radio" name="scopeType" value="all" defaultChecked />
-                {t("scopeAllOption")}
-              </label>
-              <label className="sru-scope-chip">
-                <input type="radio" name="scopeType" value="org_unit" />
-                {t("scopeOrgUnitOption")}
-              </label>
-            </div>
-            <div className="sru-scope-orgunits">
-              {orgUnits.map((unit) => (
-                <label key={unit.id}>
-                  <input type="checkbox" name="scopeOrgUnitIds" value={unit.id} />
-                  {unit.name_ar}
-                </label>
-              ))}
-            </div>
-          </div>
+          {mode !== "none" && (
+            <>
+              <div className="sru-field sru-scope-block">
+                <label>{t("roleLabel")}</label>
+                <div className="sru-scope-orgunits">
+                  {roles.map((role) => (
+                    <label key={role.id}>
+                      <input type="checkbox" name="roleIds" value={role.id} />
+                      {role.name_ar}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="sru-field sru-scope-block">
+                <label>{t("scopeLabel")}</label>
+                <div className="sru-scope-chip-row">
+                  <label className="sru-scope-chip">
+                    <input type="radio" name="scopeType" value="all" defaultChecked />
+                    {t("scopeAllOption")}
+                  </label>
+                  <label className="sru-scope-chip">
+                    <input type="radio" name="scopeType" value="org_unit" />
+                    {t("scopeOrgUnitOption")}
+                  </label>
+                </div>
+                <div className="sru-scope-orgunits">
+                  {orgUnits.map((unit) => (
+                    <label key={unit.id}>
+                      <input type="checkbox" name="scopeOrgUnitIds" value={unit.id} />
+                      {unit.name_ar}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
+      )}
 
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">
@@ -346,14 +371,24 @@ export function EmployeeInviteForm({
         <p role="status" className="sru-auth-alert success">
           <CheckCircle2 size={15} aria-hidden />
           {state.mode === "direct"
-            ? t("successMessageDirect", { email: state.email })
-            : t("successMessage", { email: state.email })}
+            ? t("successMessageDirect", { email: state.email ?? "" })
+            : state.mode === "invite"
+              ? t("successMessage", { email: state.email ?? "" })
+              : state.pendingApproval
+                ? t("successMessagePending")
+                : t("successMessageDataOnly")}
         </p>
       )}
 
       <div className="sru-form-submitrow">
         <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
-          {pending ? t("submitting") : mode === "direct" ? t("submitDirect") : t("submit")}
+          {pending
+            ? t("submitting")
+            : mode === "direct"
+              ? t("submitDirect")
+              : mode === "none"
+                ? t("submitDataOnly")
+                : t("submit")}
         </button>
       </div>
     </form>
