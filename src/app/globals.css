@@ -506,22 +506,29 @@ dialog.sru-modal::backdrop {
   border-bottom-color: var(--sru-purple);
 }
 
-/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25) =====
-   Real feedback (2026-07-25): the previous nested-<ul> pure-CSS connector
+/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25, twice) =====
+   Real feedback (2026-07-25): the original nested-<ul> pure-CSS connector
    technique assumed every child sits exactly one row below its parent --
    broken once a position can link to ANY higher level (skip-level linking,
-   20260724000001 migration), since two siblings could belong to genuinely
-   different real levels while still being one DOM nesting step apart, and
-   the connector lines had no way to represent that gap. Replaced with an
-   explicit per-level ROW layout (one flex row per org_structure_levels row,
-   in level_order) plus an SVG overlay drawing each connector from the
-   parent node's measured DOM position to the child's -- correctly spans
-   however many levels are skipped, and a position's vertical row now always
-   reflects its OWN level, never its tree depth. */
+   20260724000001 migration). First fix: an explicit per-level ROW layout
+   (one flex row per org_structure_levels row) plus a measured SVG overlay
+   for connectors. That still left an ambiguous case: a straight (or even a
+   curved-bypass) line between a grandparent and grandchild-level position
+   could align with an unrelated intervening row purely by coincidence
+   (single-node rows all centered on the same axis), reading as a chain
+   through it. Now positions are laid out on a real tree-derived horizontal
+   grid (`computeSlots` in the component -- classic leaf-ordering tree
+   layout) so two positions that don't share a subtree are never
+   accidentally aligned in the same column, and a plain straight elbow
+   connector is unambiguous again. */
 .sru-orgchart-wrapper {
   position: relative;
   overflow-x: auto;
   padding: 12px;
+}
+.sru-orgchart-canvas {
+  position: relative;
+  margin: 0 auto;
 }
 .sru-orgchart-lines {
   position: absolute;
@@ -529,16 +536,6 @@ dialog.sru-modal::backdrop {
   width: 100%;
   height: 100%;
   pointer-events: none;
-}
-.sru-orgchart-row {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 24px;
-  flex-wrap: wrap;
-  min-height: 74px;
-  padding: 10px 0;
-  position: relative;
 }
 .sru-orgchart-node {
   display: inline-flex;
