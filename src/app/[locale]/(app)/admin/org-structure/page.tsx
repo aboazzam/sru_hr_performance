@@ -100,6 +100,12 @@ export default async function OrgStructurePage() {
         </div>
         {canBuild && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {levels.length > 0 && (
+              <>
+                <AddOrgStructureLevelForm />
+                <AddOrgStructurePositionForm levels={levels} positions={positions} />
+              </>
+            )}
             <ImportOrgStructureExcelForm />
           </div>
         )}
@@ -110,13 +116,6 @@ export default async function OrgStructurePage() {
         canBuild ? <OrgStructureSetupWizard /> : <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPositions")}</p>
       ) : (
         <>
-          {canBuild && (
-            <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
-              <AddOrgStructureLevelForm />
-              <AddOrgStructurePositionForm levels={levels} positions={positions} />
-            </section>
-          )}
-
           <section style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 4 }}>
               {t("orgChartHeading")}

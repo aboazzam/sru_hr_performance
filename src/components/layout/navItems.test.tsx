@@ -60,13 +60,14 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(new Set(allSegments).size).toBe(allSegments.length);
   });
 
-  it("the administration group has the four requested children", () => {
+  it("the administration group has the five requested children, including reports (moved 2026-07-25)", () => {
     const admin = navGroups.find((g) => g.groupKey === "administration")!;
     expect(admin.children.map((c) => c.segment)).toEqual([
       "admin/org-structure",
       "admin/org-structure/staffing",
       "admin",
       "admin/identity",
+      "reports",
     ]);
   });
 
@@ -75,9 +76,9 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "competencies", "bau-tasks", "feedback-360"]);
   });
 
-  it("the evaluationResults group has the two requested children", () => {
+  it("the evaluationResults group has just recommendations now that reports moved into administration", () => {
     const results = navGroups.find((g) => g.groupKey === "evaluationResults")!;
-    expect(results.children.map((c) => c.segment)).toEqual(["reports", "recommendations"]);
+    expect(results.children.map((c) => c.segment)).toEqual(["recommendations"]);
   });
 });
 

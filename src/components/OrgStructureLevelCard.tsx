@@ -108,15 +108,6 @@ export function OrgStructureLevelCard({
             ))}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setColor(null)}
-          disabled={color === null}
-          className="sru-btn"
-          style={{ padding: "4px 10px", fontSize: 12, alignSelf: "flex-end" }}
-        >
-          {t("useThemeColorButton")}
-        </button>
         <div className="sru-icon-action-group">
           <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
             <Check size={15} />

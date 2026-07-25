@@ -506,85 +506,39 @@ dialog.sru-modal::backdrop {
   border-bottom-color: var(--sru-purple);
 }
 
-/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24) =====
-   Pure-CSS connector-line tree ("second output" of the org-structure setup
-   wizard: a colorful, professional org-chart view, alongside the existing
-   plain positions+staffing list). Classic <ul>/<li> ::before/::after
-   connector technique — symmetric by construction, so it reads correctly
-   under this app's RTL direction without needing separate mirrored rules. */
+/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25) =====
+   Real feedback (2026-07-25): the previous nested-<ul> pure-CSS connector
+   technique assumed every child sits exactly one row below its parent --
+   broken once a position can link to ANY higher level (skip-level linking,
+   20260724000001 migration), since two siblings could belong to genuinely
+   different real levels while still being one DOM nesting step apart, and
+   the connector lines had no way to represent that gap. Replaced with an
+   explicit per-level ROW layout (one flex row per org_structure_levels row,
+   in level_order) plus an SVG overlay drawing each connector from the
+   parent node's measured DOM position to the child's -- correctly spans
+   however many levels are skipped, and a position's vertical row now always
+   reflects its OWN level, never its tree depth. */
 .sru-orgchart-wrapper {
+  position: relative;
   overflow-x: auto;
-  padding: 24px 12px 12px;
+  padding: 12px;
 }
-.sru-orgchart,
-.sru-orgchart ul {
+.sru-orgchart-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sru-orgchart-row {
   display: flex;
   justify-content: center;
-  padding-top: 28px;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  min-height: 74px;
+  padding: 10px 0;
   position: relative;
-  margin: 0;
-}
-.sru-orgchart li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  list-style: none;
-  position: relative;
-  padding: 28px 14px 0;
-}
-.sru-orgchart li::before,
-.sru-orgchart li::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 50%;
-  width: 50%;
-  height: 28px;
-  border-top: 2px solid var(--sru-border);
-}
-.sru-orgchart li::after {
-  right: auto;
-  left: 50%;
-  border-left: 2px solid var(--sru-border);
-}
-.sru-orgchart li:only-child {
-  padding-top: 0;
-}
-.sru-orgchart li:only-child::before,
-.sru-orgchart li:only-child::after {
-  display: none;
-}
-/* Vertical stem connecting a parent node down into its children's shared
-   horizontal bar — the piece the li::before/after rules above don't cover
-   on their own, most visibly missing for a single child (where the
-   sibling-joining horizontal bar is correctly hidden by :only-child, but
-   nothing was left to draw the straight line down to it). */
-.sru-orgchart ul::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 0;
-  height: 28px;
-  border-left: 2px solid var(--sru-border);
-}
-.sru-orgchart li:first-child::before,
-.sru-orgchart li:last-child::after {
-  border: 0 none;
-}
-.sru-orgchart li:last-child::before {
-  border-right: 2px solid var(--sru-border);
-  border-radius: 0 6px 0 0;
-}
-.sru-orgchart li:first-child::after {
-  border-radius: 6px 0 0 0;
-}
-.sru-orgchart > li {
-  padding-top: 0;
-}
-.sru-orgchart > li::before,
-.sru-orgchart > li::after {
-  display: none;
 }
 .sru-orgchart-node {
   display: inline-flex;
