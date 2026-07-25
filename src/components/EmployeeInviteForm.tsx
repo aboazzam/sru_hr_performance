@@ -1,9 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Briefcase, IdCard, ShieldCheck, User, CheckCircle2, AlertCircle } from "lucide-react";
+import { Briefcase, IdCard, ShieldCheck, User, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles } from "lucide-react";
 import { inviteEmployee, type InviteEmployeeState } from "@/app/[locale]/(app)/employees/new/actions";
+
+/** Client-side only — never sent anywhere until the admin actually submits the form. */
+function generateSuggestedPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = new Uint32Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (n) => chars[n % chars.length]).join("");
+}
 
 interface OrgUnitOption {
   id: string;
@@ -49,6 +57,22 @@ export function EmployeeInviteForm({
     null
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const [mode, setMode] = useState<"invite" | "direct">("invite");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // "Adjust state during rendering" (not inside the effect below) so this
+  // doesn't trip react-hooks/set-state-in-effect — React's own documented
+  // pattern for deriving state from a changed value rather than setting it
+  // as a side effect (a ref can't be read/written during render under the
+  // current lint rules, hence useState here instead). formRef.current?.reset()
+  // stays in the effect since it's a real DOM mutation, not React state.
+  const [lastHandledState, setLastHandledState] = useState<InviteEmployeeState>(null);
+  if (state?.status === "success" && state !== lastHandledState) {
+    setLastHandledState(state);
+    setMode("invite");
+    setPassword("");
+  }
 
   useEffect(() => {
     if (state?.status === "success") {
@@ -205,18 +229,87 @@ export function EmployeeInviteForm({
           </div>
         </div>
         <div className="sru-formgrid">
-          <div className="sru-field">
+          <div className="sru-field sru-scope-block">
+            <label>{t("accountModeLabel")}</label>
+            <div className="sru-scope-chip-row">
+              <label className="sru-scope-chip">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="invite"
+                  checked={mode === "invite"}
+                  onChange={() => setMode("invite")}
+                />
+                {t("accountModeInvite")}
+              </label>
+              <label className="sru-scope-chip">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="direct"
+                  checked={mode === "direct"}
+                  onChange={() => setMode("direct")}
+                />
+                {t("accountModeDirect")}
+              </label>
+            </div>
+            <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>
+              {mode === "invite" ? t("accountModeInviteHint") : t("accountModeDirectHint")}
+            </span>
+          </div>
+
+          {mode === "direct" && (
+            <div className="sru-field has-toggle">
+              <label>{t("passwordLabel")}</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  minLength={8}
+                  dir="ltr"
+                  style={{ textAlign: "left", flex: 1 }}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("passwordPlaceholder")}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="sru-icon-action"
+                  title={t("suggestPasswordButton")}
+                  aria-label={t("suggestPasswordButton")}
+                  onClick={() => {
+                    setPassword(generateSuggestedPassword());
+                    setShowPassword(true);
+                  }}
+                >
+                  <Sparkles size={15} />
+                </button>
+                <button
+                  type="button"
+                  className="sru-icon-action"
+                  title={showPassword ? t("hidePassword") : t("showPassword")}
+                  aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("passwordHint")}</span>
+            </div>
+          )}
+
+          <div className="sru-field sru-scope-block">
             <label>{t("roleLabel")}</label>
-            <select name="roleId" required defaultValue="">
-              <option value="" disabled>
-                {t("rolePlaceholder")}
-              </option>
+            <div className="sru-scope-orgunits">
               {roles.map((role) => (
-                <option key={role.id} value={role.id}>
+                <label key={role.id}>
+                  <input type="checkbox" name="roleIds" value={role.id} />
                   {role.name_ar}
-                </option>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
           <div className="sru-field sru-scope-block">
             <label>{t("scopeLabel")}</label>
@@ -252,13 +345,15 @@ export function EmployeeInviteForm({
       {state?.status === "success" && (
         <p role="status" className="sru-auth-alert success">
           <CheckCircle2 size={15} aria-hidden />
-          {t("successMessage", { email: state.email })}
+          {state.mode === "direct"
+            ? t("successMessageDirect", { email: state.email })
+            : t("successMessage", { email: state.email })}
         </p>
       )}
 
       <div className="sru-form-submitrow">
         <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
-          {pending ? t("submitting") : t("submit")}
+          {pending ? t("submitting") : mode === "direct" ? t("submitDirect") : t("submit")}
         </button>
       </div>
     </form>

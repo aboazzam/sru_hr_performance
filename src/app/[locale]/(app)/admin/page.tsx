@@ -115,22 +115,25 @@ export default async function AdminPage() {
   const countByRoleId = new Map<string, number>();
   for (const [roleId, set] of usersPerRole) countByRoleId.set(roleId, set.size);
 
-  // Per-employee CURRENT global role, for the Users list's select prefill —
-  // this simple screen only manages the scope_type='all' assignment (see
+  // Per-employee CURRENT global roles, for the Users list's checkbox-dropdown
+  // prefill — 2026-07-25: an employee may hold several roles at once (e.g.
+  // hr_admin AND competencies_admin), so this is now an array rather than
+  // "the first row found." Still only the scope_type='all' assignments (see
   // assignUserRole's own doc comment for why org-unit-scoped rows are left
-  // alone). If more than one somehow exists, the first is shown; saving
-  // collapses back to exactly one.
-  const globalRoleIdByAuthUserId = new Map<string, string>();
+  // alone).
+  const globalRoleIdsByAuthUserId = new Map<string, string[]>();
   for (const row of userRoles) {
-    if (row.scope_type === "all" && !globalRoleIdByAuthUserId.has(row.user_id)) {
-      globalRoleIdByAuthUserId.set(row.user_id, row.role_id);
-    }
+    if (row.scope_type !== "all") continue;
+    const list = globalRoleIdsByAuthUserId.get(row.user_id) ?? [];
+    list.push(row.role_id);
+    globalRoleIdsByAuthUserId.set(row.user_id, list);
   }
-  const globalRoleIdByProfileId = new Map<string, string>();
+  const globalRoleIdsByProfileId = new Map<string, string[]>();
   for (const row of pendingRoles) {
-    if (row.scope_type === "all" && !globalRoleIdByProfileId.has(row.profile_id)) {
-      globalRoleIdByProfileId.set(row.profile_id, row.role_id);
-    }
+    if (row.scope_type !== "all") continue;
+    const list = globalRoleIdsByProfileId.get(row.profile_id) ?? [];
+    list.push(row.role_id);
+    globalRoleIdsByProfileId.set(row.profile_id, list);
   }
 
   return (
@@ -176,9 +179,9 @@ export default async function AdminPage() {
                 </thead>
                 <tbody>
                   {employees.map((employee) => {
-                    const currentRoleId = employee.auth_user_id
-                      ? globalRoleIdByAuthUserId.get(employee.auth_user_id) ?? null
-                      : globalRoleIdByProfileId.get(employee.id) ?? null;
+                    const currentRoleIds = employee.auth_user_id
+                      ? globalRoleIdsByAuthUserId.get(employee.auth_user_id) ?? []
+                      : globalRoleIdsByProfileId.get(employee.id) ?? [];
                     return (
                       <tr key={employee.id}>
                         <td style={{ fontSize: 13 }}>{employee.employee_number}</td>
@@ -189,11 +192,16 @@ export default async function AdminPage() {
                               profileId={employee.id}
                               authUserId={employee.auth_user_id}
                               roles={roleOptions}
-                              initialRoleId={currentRoleId}
+                              initialRoleIds={currentRoleIds}
                             />
                           ) : (
                             <span style={{ fontSize: 13 }}>
-                              {roles.find((r) => r.id === currentRoleId)?.name_ar ?? t("roleNoneOption")}
+                              {currentRoleIds.length > 0
+                                ? currentRoleIds
+                                    .map((id) => roles.find((r) => r.id === id)?.name_ar)
+                                    .filter(Boolean)
+                                    .join("، ")
+                                : t("roleNoneOption")}
                             </span>
                           )}
                         </td>
