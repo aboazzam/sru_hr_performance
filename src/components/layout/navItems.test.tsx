@@ -61,13 +61,14 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(new Set(allSegments).size).toBe(allSegments.length);
   });
 
-  it("the administration group has its four children (reports moved out entirely, 2026-07-25)", () => {
+  it("the administration group has its five children (reports moved out, user-activity added, 2026-07-25)", () => {
     const admin = navGroups.find((g) => g.groupKey === "administration")!;
     expect(admin.children.map((c) => c.segment)).toEqual([
       "admin/org-structure",
       "admin/org-structure/staffing",
       "admin",
       "admin/identity",
+      "admin/user-activity",
     ]);
   });
 
