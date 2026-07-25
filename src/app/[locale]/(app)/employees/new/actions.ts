@@ -5,20 +5,26 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+const usernameRegex = /^[a-zA-Z0-9_.]{3,32}$/;
+
 const inviteSchema = z
   .object({
-    // "التسجيل بنظام الدعوة فقط، اسمح لمن لديه صلاحية المستخدمين انشاء حساب
-    // موظف بدون دعوة" (2026-07-25) — 'invite' (default) sends a real email
-    // via Supabase Auth exactly as before; 'direct' creates the auth.users
-    // row immediately with a password the admin typed or generated, no
-    // email at all, and forces a first-login password change (see
-    // must_change_password below).
-    mode: z.enum(["invite", "direct"]).default("invite"),
+    // 'none' (default) — just an employee-data record, no login account at
+    // all; reachable by anyone holding employeeData>=prepare (2026-07-25:
+    // "الازرار ... نريدها تظهر لمن عنده صلاحية اعداد او ترشيح او اعتماد").
+    // 'invite'/'direct' — an actual login account, gated separately behind
+    // userManagement>=approve (see below) regardless of the employeeData
+    // level that got the caller into this form at all.
+    mode: z.enum(["none", "invite", "direct"]).default("none"),
     password: z.string().trim().min(8).optional(),
     employeeNumber: z.string().trim().min(1),
     fullNameAr: z.string().trim().min(1),
     fullNameEn: z.string().trim().optional(),
-    email: z.string().trim().toLowerCase().email(),
+    // Both optional now (2026-07-25: "اجعل البريد الالكتروني اختياريا",
+    // "اضف اسم المستخدم") — but at least one is required whenever an
+    // account is actually being created (mode !== 'none'), checked below.
+    email: z.string().trim().toLowerCase().email().optional(),
+    username: z.string().trim().regex(usernameRegex).optional(),
     orgUnitId: z.string().uuid(),
     jobTitleId: z.string().uuid().optional(),
     hireDate: z
@@ -41,13 +47,16 @@ const inviteSchema = z
     nationality: z.string().trim().optional(),
     employeeCategory: z.string().trim().optional(),
     insuranceCategory: z.string().trim().optional(),
-    // "قد يكون له أكثر من دور مثل مدير الموارد البشرية ومدير الجدارات" —
-    // an employee may hold several roles at once; user_roles/
-    // pending_role_assignments already support multiple rows per user, this
-    // was purely a single-select UI limitation.
-    roleIds: z.array(z.string().uuid()).min(1),
-    scopeType: z.enum(["all", "org_unit"]),
+    // Only meaningful when mode !== 'none' — an employee may hold several
+    // roles at once; user_roles/pending_role_assignments already support
+    // multiple rows per user, this was purely a single-select UI limitation.
+    roleIds: z.array(z.string().uuid()).optional().default([]),
+    scopeType: z.enum(["all", "org_unit"]).optional().default("all"),
     scopeOrgUnitIds: z.array(z.string().uuid()).optional(),
+  })
+  .refine((data) => data.mode === "none" || data.roleIds.length > 0, {
+    message: "at least one role required when creating an account",
+    path: ["roleIds"],
   })
   .refine(
     (data) => data.scopeType === "all" || (data.scopeOrgUnitIds?.length ?? 0) > 0,
@@ -56,10 +65,14 @@ const inviteSchema = z
   .refine((data) => data.mode !== "direct" || !!data.password, {
     message: "password required for direct mode",
     path: ["password"],
+  })
+  .refine((data) => data.mode === "none" || !!data.email || !!data.username, {
+    message: "email or username required to create an account",
+    path: ["email"],
   });
 
 export type InviteEmployeeState =
-  | { status: "success"; email: string; mode: "invite" | "direct" }
+  | { status: "success"; email: string | null; mode: "none" | "invite" | "direct"; pendingApproval: boolean }
   | {
       status: "error";
       message:
@@ -75,32 +88,31 @@ export type InviteEmployeeState =
   | null;
 
 /**
- * Creates a `profiles` row and either invites the employee via Supabase Auth
- * email (mode='invite', SRU_System_Design.md §C steps 2-3 — the profile is
- * created first, the invite fires second, and `link_profile_to_auth_user()`
- * (20260716000009) links the two automatically by email once the invite is
- * accepted) or creates the `auth.users` row directly with a password the
- * caller supplied, no email at all (mode='direct', 2026-07-25 —
- * "التسجيل بنظام الدعوة فقط، اسمح لمن لديه صلاحية المستخدمين انشاء حساب
- * موظف بدون دعوة"). `link_profile_to_auth_user()` fires on any `auth.users`
- * INSERT regardless of how it was created, so the direct path reuses the
- * exact same linking/role-promotion mechanism with zero changes there.
+ * Creates a `profiles` row — reachable by anyone holding `employeeData` at
+ * `prepare` or above (RLS-enforced, `profiles_insert`'s own
+ * `check_vpra('employeeData','prepare', orgUnitId)`, unchanged). The
+ * resulting record's `approval_status` is 'approved' immediately when the
+ * caller already holds `employeeData`='approve' (scoped to the new
+ * employee's own org unit) — otherwise it starts 'pending' and only shows
+ * up in the main employees list once an approve-level holder reviews it
+ * (2026-07-25: "لا يضاف للقائمة الا بعد الاعتماد ممن لديه الاعتماد").
  *
- * The `profiles` INSERT goes through the caller's own RLS-respecting
- * client, not the admin client — `check_vpra('employeeData','prepare',
- * orgUnitId)` is enforced by Postgres itself (CLAUDE.md §5-A #4: server-side
- * VPRA check, not UI-only). The admin (service_role) client is used for the
- * things `authenticated` genuinely cannot do: the Admin Auth API call,
- * writing to `audit_log`, and (direct mode only) setting
- * `must_change_password` on a caller who may hold no employeeData grant.
+ * Creating an actual LOGIN account (mode='invite'|'direct') is a separate,
+ * more privileged action layered on top — gated explicitly here at
+ * `userManagement`='approve', the same bar `pending_role_assignments`'/
+ * `user_roles`' own RLS already requires for role assignment, since the
+ * Admin Auth API calls run through the service-role client and bypass RLS
+ * entirely (CLAUDE.md §5-A #4: server-side check, not UI-only). A caller
+ * below that bar can still submit employee DATA (mode stays 'none'); they
+ * just never reach the account-creation branch below.
  *
- * Both modes additionally require `userManagement`='approve', checked
- * explicitly here (not just relied on via RLS): `pending_role_assignments`'
- * own INSERT policy already requires it, but the Admin Auth API calls
- * (`inviteUserByEmail`/`createUser`) run through the service-role client and
- * bypass RLS entirely, so without this check a caller with `employeeData`
- * but no `userManagement` could still create a real login even though they
- * could never assign it a role.
+ * `mode='direct'` (2026-07-25 — "التسجيل بنظام الدعوة فقط، اسمح لمن لديه
+ * صلاحية المستخدمين انشاء حساب موظف بدون دعوة") creates the `auth.users`
+ * row immediately with a password the admin typed or generated, no email
+ * sent at all, forcing a first-login password change (`must_change_password`).
+ * `link_profile_to_auth_user()` fires on any `auth.users` INSERT regardless
+ * of how it was created, so this reuses the exact same linking/role-
+ * promotion mechanism as `mode='invite'` with zero changes there.
  */
 export async function inviteEmployee(
   _prevState: InviteEmployeeState,
@@ -112,7 +124,8 @@ export async function inviteEmployee(
     employeeNumber: formData.get("employeeNumber"),
     fullNameAr: formData.get("fullNameAr"),
     fullNameEn: formData.get("fullNameEn") || undefined,
-    email: formData.get("email"),
+    email: formData.get("email") || undefined,
+    username: formData.get("username") || undefined,
     orgUnitId: formData.get("orgUnitId"),
     jobTitleId: formData.get("jobTitleId") || undefined,
     hireDate: formData.get("hireDate") || undefined,
@@ -126,7 +139,7 @@ export async function inviteEmployee(
     employeeCategory: formData.get("employeeCategory") || undefined,
     insuranceCategory: formData.get("insuranceCategory") || undefined,
     roleIds: formData.getAll("roleIds"),
-    scopeType: formData.get("scopeType"),
+    scopeType: formData.get("scopeType") || undefined,
     scopeOrgUnitIds: formData.getAll("scopeOrgUnitIds"),
   });
 
@@ -144,8 +157,8 @@ export async function inviteEmployee(
   }
 
   // 20/hour per actor — generous for legitimate bulk onboarding, but stops
-  // a compromised/malicious hr_admin session from mass-inviting (CLAUDE.md
-  // §5-A rate limiting; see src/lib/rate-limit.ts for the mechanism).
+  // a compromised/malicious session from mass-inviting (CLAUDE.md §5-A
+  // rate limiting; see src/lib/rate-limit.ts for the mechanism).
   const allowed = await checkRateLimit(`invite:actor:${actor.id}`, 20, 60 * 60);
   if (!allowed) {
     return { status: "error", message: "rate_limited" };
@@ -158,6 +171,7 @@ export async function inviteEmployee(
     fullNameAr,
     fullNameEn,
     email,
+    username,
     orgUnitId,
     jobTitleId,
     hireDate,
@@ -175,15 +189,38 @@ export async function inviteEmployee(
     scopeOrgUnitIds,
   } = parsed.data;
 
+  const creatingAccount = mode !== "none";
+
   // Explicit application-level check — see doc comment above for why RLS
-  // alone (on pending_role_assignments) isn't enough here.
-  const { data: canManageUsers } = await supabase.rpc("check_vpra", {
-    p_process_area: "userManagement",
-    p_min_level: "approve",
-  });
-  if (!canManageUsers) {
-    return { status: "error", message: "forbidden" };
+  // alone (on pending_role_assignments) isn't enough here. Only checked
+  // when an account is actually being requested; a data-only submission
+  // doesn't need it at all.
+  if (creatingAccount) {
+    const { data: canManageUsers } = await supabase.rpc("check_vpra", {
+      p_process_area: "userManagement",
+      p_min_level: "approve",
+    });
+    if (!canManageUsers) {
+      return { status: "error", message: "forbidden" };
+    }
   }
+
+  // A synthetic technical address only when an account genuinely needs one
+  // and no real email was given — link_profile_to_auth_user() still matches
+  // on profiles.email, so this keeps that mechanism working unchanged. A
+  // data-only submission with no email is left exactly as entered (may be
+  // null), since nothing ever calls the Auth API for it.
+  const effectiveEmail = email ?? (creatingAccount ? `${username}@no-email.internal` : null);
+
+  // Approval workflow (2026-07-25): approved immediately if the preparer
+  // already holds employeeData='approve' for this org unit (no redundant
+  // second approval of their own addition); otherwise starts 'pending' and
+  // is invisible on the main employees list until reviewed.
+  const { data: canApproveEmployeeData } = await supabase.rpc("check_vpra", {
+    p_process_area: "employeeData",
+    p_min_level: "approve",
+    p_target_org_unit: orgUnitId,
+  });
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -191,7 +228,8 @@ export async function inviteEmployee(
       employee_number: employeeNumber,
       full_name_ar: fullNameAr,
       full_name_en: fullNameEn ?? null,
-      email,
+      email: effectiveEmail,
+      username: username ?? null,
       org_unit_id: orgUnitId,
       job_title_id: jobTitleId ?? null,
       hire_date: hireDate ?? null,
@@ -204,6 +242,8 @@ export async function inviteEmployee(
       nationality: nationality ?? null,
       employee_category: employeeCategory ?? null,
       insurance_category: insuranceCategory ?? null,
+      approval_status: canApproveEmployeeData ? "approved" : "pending",
+      created_by: actor.id,
     })
     .select("id")
     .single();
@@ -216,6 +256,18 @@ export async function inviteEmployee(
       return { status: "error", message: "forbidden" };
     }
     return { status: "error", message: "unknown" };
+  }
+
+  if (!creatingAccount) {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: actor.id,
+      action: canApproveEmployeeData ? "employee_data_added" : "employee_data_submitted_for_approval",
+      entity: "profiles",
+      entity_id: profile.id,
+      after_data: { employee_number: employeeNumber, org_unit_id: orgUnitId },
+    });
+    return { status: "success", email: effectiveEmail, mode: "none", pendingApproval: !canApproveEmployeeData };
   }
 
   const admin = createAdminClient();
@@ -256,8 +308,8 @@ export async function inviteEmployee(
 
   const { error: authError } =
     mode === "direct"
-      ? await admin.auth.admin.createUser({ email, password, email_confirm: true })
-      : await admin.auth.admin.inviteUserByEmail(email);
+      ? await admin.auth.admin.createUser({ email: effectiveEmail!, password: password!, email_confirm: true })
+      : await admin.auth.admin.inviteUserByEmail(effectiveEmail!);
 
   if (!authError && mode === "direct") {
     // Best-effort: even if this update fails, the account and role
@@ -280,7 +332,7 @@ export async function inviteEmployee(
     entity_id: profile.id,
     after_data: {
       employee_number: employeeNumber,
-      email,
+      email: effectiveEmail,
       org_unit_id: orgUnitId,
       role_ids: roleIds,
       scope_type: scopeType,
@@ -297,5 +349,5 @@ export async function inviteEmployee(
     return { status: "error", message: "invite_failed" };
   }
 
-  return { status: "success", email, mode };
+  return { status: "success", email: effectiveEmail, mode, pendingApproval: !canApproveEmployeeData };
 }
