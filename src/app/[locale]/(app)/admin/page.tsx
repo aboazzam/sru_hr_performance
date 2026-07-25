@@ -256,7 +256,7 @@ export default async function AdminPage() {
                               >
                                 <Pencil size={15} />
                               </Link>
-                              {!role.is_system_role && <DeleteRoleButton roleId={role.id} disabled={roleUserCount > 0} />}
+                              <DeleteRoleButton roleId={role.id} disabled={role.is_system_role || roleUserCount > 0} />
                             </div>
                           </td>
                         )}

@@ -26,8 +26,13 @@ export function RolePermissionMatrixFields({
 }) {
   const t = useTranslations("AdminPage");
 
-  function handleSelectAllColumn(level: VpraLevel) {
-    for (const area of processAreas) onChange(area, level);
+  // Checking a column's header sets every area to that level; UNCHECKING it
+  // clears every area back to 'none' — previously this always re-applied
+  // `level` regardless of direction, so an all-checked column could never
+  // be cleared by clicking its own header checkbox again.
+  function handleSelectAllColumn(level: VpraLevel, checked: boolean) {
+    const target: VpraLevel = checked ? level : "none";
+    for (const area of processAreas) onChange(area, target);
   }
 
   return (
@@ -43,7 +48,7 @@ export function RolePermissionMatrixFields({
                     <input
                       type="checkbox"
                       checked={processAreas.every((area) => (value[area] ?? "none") === level)}
-                      onChange={() => handleSelectAllColumn(level)}
+                      onChange={(e) => handleSelectAllColumn(level, e.target.checked)}
                       aria-label={t("selectAllColumn", { level: vpraLevelLabels[level] })}
                     />
                     <span>{vpraLevelLabels[level]}</span>

@@ -18,7 +18,7 @@ export default async function CreateRolePage() {
   const canManage = hasVpraAccess(level, "approve");
 
   return (
-    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+    <div className="sru-container" style={{ padding: "32px 22px 60px", maxWidth: 1180, margin: "0 auto" }}>
       <GroupTabs groupKey="administration" current="admin" />
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("createRoleTitle")}

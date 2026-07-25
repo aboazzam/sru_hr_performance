@@ -63,7 +63,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
   ]).size;
 
   return (
-    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+    <div className="sru-container" style={{ padding: "32px 22px 60px", maxWidth: 1180, margin: "0 auto" }}>
       <GroupTabs groupKey="administration" current="admin" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
@@ -74,7 +74,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
             {t("assignedUsersCount", { count: assignedCount })}
           </p>
         </div>
-        {!role.is_system_role && <DeleteRoleButton roleId={role.id} disabled={assignedCount > 0} />}
+        <DeleteRoleButton roleId={role.id} disabled={role.is_system_role || assignedCount > 0} />
       </div>
       {role.is_system_role && (
         <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 8 }}>{t("systemRoleNotice")}</p>

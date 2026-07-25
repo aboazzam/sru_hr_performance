@@ -8,15 +8,27 @@ import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExce
 import { OrgStructureSetupWizard } from "@/components/OrgStructureSetupWizard";
 import { OrgChartTree } from "@/components/OrgChartTree";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
-// 'approve'), hr_admin-only per the seeded matrix — 20260722000004). This
-// page itself only requires 'view' to be visible at all (enforced by the
-// SELECT policies), matching /admin's own display-only gate on the link here.
+// 'recommend'), hr_admin+ per the seeded matrix). This page itself only
+// requires 'view' to be visible at all (enforced by the SELECT policies).
+//
+// Real feedback (2026-07-25): a caller with only `orgStructure=view` was
+// seeing the full builder (Add Level/Add Position forms, the editable
+// levels/positions list, the Excel import) — all of that is a 'prepare'+
+// action; 'view' should see only the read-only org chart tree.
 export default async function OrgStructurePage() {
   const t = await getTranslations("OrgStructurePage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const orgStructureLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "orgStructure"
+    )?.vpra_level ?? "none";
+  const canBuild = hasVpraAccess(orgStructureLevel, "prepare");
 
   const { data: levelsData } = await supabase
     .from("org_structure_levels")
@@ -65,20 +77,24 @@ export default async function OrgStructurePage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <ImportOrgStructureExcelForm />
-        </div>
+        {canBuild && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <ImportOrgStructureExcelForm />
+          </div>
+        )}
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {levels.length === 0 ? (
-        <OrgStructureSetupWizard />
+        canBuild ? <OrgStructureSetupWizard /> : <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPositions")}</p>
       ) : (
         <>
-          <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
-            <AddOrgStructureLevelForm />
-            <AddOrgStructurePositionForm levels={levels} positions={positions} />
-          </section>
+          {canBuild && (
+            <section style={{ marginBottom: 30, display: "flex", gap: 20, flexWrap: "wrap" }}>
+              <AddOrgStructureLevelForm />
+              <AddOrgStructurePositionForm levels={levels} positions={positions} />
+            </section>
+          )}
 
           <section style={{ marginBottom: 36 }}>
             <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 4 }}>
@@ -95,41 +111,43 @@ export default async function OrgStructurePage() {
             </div>
           </section>
 
-          <section>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
-              {t("levelsHeading")}
-            </h2>
-            {levels.map((level) => {
-              const levelPositions = positions.filter((p) => p.level_id === level.id);
-              return (
-                <OrgStructureLevelCard
-                  key={level.id}
-                  levelId={level.id}
-                  levelOrder={level.level_order}
-                  initialNameAr={level.name_ar}
-                  initialNameEn={level.name_en}
-                >
-                  {levelPositions.length === 0 ? (
-                    <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
-                  ) : (
-                    <div>
-                      {levelPositions.map((position) => (
-                        <OrgStructurePositionMiniRow
-                          key={position.id}
-                          positionId={position.id}
-                          initialNameAr={position.name_ar}
-                          initialNameEn={position.name_en}
-                          parentLabel={
-                            position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
-                </OrgStructureLevelCard>
-              );
-            })}
-          </section>
+          {canBuild && (
+            <section>
+              <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
+                {t("levelsHeading")}
+              </h2>
+              {levels.map((level) => {
+                const levelPositions = positions.filter((p) => p.level_id === level.id);
+                return (
+                  <OrgStructureLevelCard
+                    key={level.id}
+                    levelId={level.id}
+                    levelOrder={level.level_order}
+                    initialNameAr={level.name_ar}
+                    initialNameEn={level.name_en}
+                  >
+                    {levelPositions.length === 0 ? (
+                      <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
+                    ) : (
+                      <div>
+                        {levelPositions.map((position) => (
+                          <OrgStructurePositionMiniRow
+                            key={position.id}
+                            positionId={position.id}
+                            initialNameAr={position.name_ar}
+                            initialNameEn={position.name_en}
+                            parentLabel={
+                              position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </OrgStructureLevelCard>
+                );
+              })}
+            </section>
+          )}
         </>
       )}
     </div>

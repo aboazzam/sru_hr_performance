@@ -20,10 +20,11 @@ export type UpdateIdentityState =
  * Upserts the singleton `org_identity` row (2026-07-24). The write goes
  * through the caller's own RLS-respecting client -- real authorization is
  * `org_identity_update`/`org_identity_insert`'s own
- * `check_vpra_global('orgStructure','approve')`, super_admin-only per the
- * seeded matrix now that hr_admin holds only 'recommend' there
- * (20260724000004). Deliberately no `.select().single()` assumption about
- * an existing row: find-or-create, since this table starts genuinely empty.
+ * `check_vpra_global('identity','approve')` -- a dedicated process area
+ * since 20260725000001/2 (split out of `orgStructure`), super_admin-only:
+ * hr_admin holds no `identity` grant at all. Deliberately no
+ * `.select().single()` assumption about an existing row: find-or-create,
+ * since this table starts genuinely empty.
  */
 export async function updateOrgIdentity(_prevState: UpdateIdentityState, formData: FormData): Promise<UpdateIdentityState> {
   const parsed = identitySchema.safeParse({
