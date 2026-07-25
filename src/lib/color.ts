@@ -36,3 +36,21 @@ export function darken(hex: string, amount = 0.3): string | null {
 export function lighten(hex: string, amount = 0.88): string | null {
   return mix(hex, [255, 255, 255], amount);
 }
+
+/**
+ * Picks readable text color (near-black or white) for an arbitrary
+ * admin-chosen background hex, using the standard WCAG relative-luminance
+ * threshold — needed for org-chart nodes once their color is no longer one
+ * of the fixed, already-paired SRU palette entries. Defaults to white (the
+ * safer fallback for an invalid hex, matching every existing node's fg).
+ */
+export function getContrastTextColor(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return "#ffffff";
+  const [r, g, b] = rgb.map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.5 ? "#1f2430" : "#ffffff";
+}

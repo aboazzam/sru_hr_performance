@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { darken, lighten } from "./color";
+import { darken, lighten, getContrastTextColor } from "./color";
 
 describe("darken", () => {
   it("mixes toward black", () => {
@@ -29,5 +29,21 @@ describe("lighten", () => {
 
   it("returns null for an invalid hex", () => {
     expect(lighten("javascript:alert(1)")).toBeNull();
+  });
+});
+
+describe("getContrastTextColor", () => {
+  it("returns white text for dark backgrounds", () => {
+    expect(getContrastTextColor("#000000")).toBe("#ffffff");
+    expect(getContrastTextColor("#501e8c")).toBe("#ffffff");
+  });
+
+  it("returns dark text for light backgrounds", () => {
+    expect(getContrastTextColor("#ffffff")).toBe("#1f2430");
+    expect(getContrastTextColor("#f2ecfa")).toBe("#1f2430");
+  });
+
+  it("defaults to white for an invalid hex", () => {
+    expect(getContrastTextColor("not-a-color")).toBe("#ffffff");
   });
 });

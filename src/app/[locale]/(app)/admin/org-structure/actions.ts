@@ -4,7 +4,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type OrgStructureErrorMessage = "invalid_input" | "unauthenticated" | "forbidden" | "has_dependents" | "unknown";
+export type OrgStructureErrorMessage =
+  | "invalid_input"
+  | "unauthenticated"
+  | "forbidden"
+  | "has_dependents"
+  | "duplicate"
+  | "unknown";
 
 export type OrgStructureActionState =
   | { status: "success" }
@@ -88,11 +94,30 @@ const updateLevelSchema = z.object({
   levelId: z.string().uuid(),
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
+  // null explicitly means "clear back to the theme default" (distinct from
+  // undefined/omitted, which this action never does -- the color field is
+  // always sent one way or the other by OrgStructureLevelCard).
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
+    .optional(),
 });
 
-/** Edits an existing level's name. Real authorization is `org_structure_levels_update`'s RLS. */
-export async function updateLevel(levelId: string, nameAr: string, nameEn: string): Promise<OrgStructureActionState> {
-  const parsed = updateLevelSchema.safeParse({ levelId, nameAr, nameEn: nameEn || undefined });
+/**
+ * Edits an existing level's name and/or org-chart color override. Real
+ * authorization is `org_structure_levels_update`'s RLS. `color` (2026-07-25):
+ * an explicit hex lets the admin distinguish levels that would otherwise
+ * share the same tree-depth-based chart color; passing `null` clears any
+ * override back to the automatically-derived theme rotation.
+ */
+export async function updateLevel(
+  levelId: string,
+  nameAr: string,
+  nameEn: string,
+  color?: string | null
+): Promise<OrgStructureActionState> {
+  const parsed = updateLevelSchema.safeParse({ levelId, nameAr, nameEn: nameEn || undefined, color });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
   }
@@ -107,7 +132,7 @@ export async function updateLevel(levelId: string, nameAr: string, nameEn: strin
 
   const { error } = await supabase
     .from("org_structure_levels")
-    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null })
+    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, color: parsed.data.color ?? null })
     .eq("id", parsed.data.levelId);
 
   if (error) return mapError(error);
@@ -118,7 +143,7 @@ export async function updateLevel(levelId: string, nameAr: string, nameEn: strin
     action: "org_structure_level_updated",
     entity: "org_structure_levels",
     entity_id: parsed.data.levelId,
-    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null },
+    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, color: parsed.data.color ?? null },
   });
 
   return { status: "success" };
@@ -168,6 +193,76 @@ export async function deleteLevel(levelId: string): Promise<OrgStructureActionSt
     action: "org_structure_level_deleted",
     entity: "org_structure_levels",
     entity_id: parsed.data,
+  });
+
+  return { status: "success" };
+}
+
+const reorderLevelsSchema = z.object({ orderedIds: z.array(z.string().uuid()).min(1) });
+
+/**
+ * Reorders every level to match `orderedIds` (1-indexed by position in the
+ * array). Real feedback (2026-07-25): levels only ever appended in insertion
+ * order with no way to fix a mistake ("أضفت C3 بعد C4 فاستمر بنفس ترتيب
+ * الإدخال") -- this backs a drag-and-drop levels list.
+ *
+ * `orderedIds` must be exactly the full set of current, non-deleted levels
+ * -- checked explicitly rather than trusted, since a partial or foreign list
+ * would silently corrupt the order of levels not mentioned in it.
+ *
+ * Two-phase update (negative placeholders, then the real 1..N values) is
+ * required because `org_structure_levels_order_uidx` is a live
+ * UNIQUE(level_order) index -- writing final values directly, one row at a
+ * time, would collide with whichever other row currently holds that number.
+ * Negative values never collide with any real (always-positive) order.
+ */
+export async function reorderLevels(orderedIds: string[]): Promise<OrgStructureActionState> {
+  const parsed = reorderLevelsSchema.safeParse({ orderedIds });
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("org_structure_levels")
+    .select("id")
+    .is("deleted_at", null);
+  if (fetchError) return mapError(fetchError);
+
+  const existingIds = new Set((existing ?? []).map((row) => row.id as string));
+  const requestedIds = parsed.data.orderedIds;
+  if (existingIds.size !== requestedIds.length || !requestedIds.every((id) => existingIds.has(id))) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  for (let i = 0; i < requestedIds.length; i++) {
+    const { error } = await supabase
+      .from("org_structure_levels")
+      .update({ level_order: -(i + 1) })
+      .eq("id", requestedIds[i]);
+    if (error) return mapError(error);
+  }
+  for (let i = 0; i < requestedIds.length; i++) {
+    const { error } = await supabase
+      .from("org_structure_levels")
+      .update({ level_order: i + 1 })
+      .eq("id", requestedIds[i]);
+    if (error) return mapError(error);
+  }
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_structure_levels_reordered",
+    entity: "org_structure_levels",
+    after_data: { order: requestedIds },
   });
 
   return { status: "success" };
@@ -461,7 +556,13 @@ export async function assignEmployee(positionId: string, employeeId: string): Pr
 
   if (error) {
     if (error.code === "23505") {
-      return { status: "error", message: "invalid_input" };
+      // Real feedback (2026-07-25): re-submitting the same (position,
+      // employee) pair -- e.g. the position already had this exact
+      // assignment -- was silently mapped to "invalid_input", shown to the
+      // user as "please fill required fields" despite every field being
+      // correctly filled. This is a genuinely different failure (a real
+      // duplicate, not a missing value) and needs its own message.
+      return { status: "error", message: "duplicate" };
     }
     return mapError(error);
   }

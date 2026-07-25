@@ -76,6 +76,11 @@ export interface NavGroup {
 // bar at the top of every page inside the group (GroupTabs.tsx) -- not
 // nested inside the sidebar itself, per the explicit "العناوين الفرعية تكون
 // على شكل تابات في أعلى الصفحة" instruction.
+//
+// 2026-07-25: "reports" moved from evaluationResults into administration
+// (its own gate too -- see the new `reports` process area in vpra.ts),
+// leaving evaluationResults with just "recommendations" -- per the explicit
+// "اضافة تاب التقارير ... داخل موديول الادارة" follow-up request.
 export const navGroups: NavGroup[] = [
   {
     groupKey: "administration",
@@ -86,6 +91,7 @@ export const navGroups: NavGroup[] = [
       { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "staffing", minLevel: "view" } },
       { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
       { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "identity", minLevel: "view" } },
+      { segment: "reports", labelKey: "reports", icon: FileBarChart, access: { processArea: "reports", minLevel: "view" } },
     ],
   },
   {
@@ -104,7 +110,6 @@ export const navGroups: NavGroup[] = [
     labelKey: "evaluationResults",
     icon: FileBarChart,
     children: [
-      { segment: "reports", labelKey: "reports", icon: FileBarChart, access: { processArea: "evaluation", minLevel: "view" } },
       { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: { processArea: "promotions", minLevel: "view" } },
     ],
   },

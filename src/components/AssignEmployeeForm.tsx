@@ -38,6 +38,7 @@ export function AssignEmployeeForm({ positions, employees }: { positions: Positi
     invalid_input: "errorInvalid",
     unauthenticated: "errorForbidden",
     forbidden: "errorForbidden",
+    duplicate: "errorDuplicate",
     unknown: "errorUnknown",
   };
 

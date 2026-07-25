@@ -28,6 +28,8 @@ export function OrgStructurePositionMiniRow({
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
   const [error, setError] = useState<string | null>(null);
 
+  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "");
+
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
     unauthenticated: "errorForbidden",
@@ -67,7 +69,7 @@ export function OrgStructurePositionMiniRow({
       <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 180 }} />
       <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 180 }} />
       <div className="sru-icon-action-group">
-        <button type="button" disabled={isSaving} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+        <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
           <Check size={14} />
         </button>
         <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
