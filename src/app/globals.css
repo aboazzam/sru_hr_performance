@@ -1010,3 +1010,32 @@ dialog.sru-modal::backdrop {
   gap: 12px;
   padding: 16px 2px 26px;
 }
+
+/* ===== Sticky topbar (2026-07-25) =====
+   sru-ui.css's .sru-topbar has no position rule, so it scrolled away with
+   the page like any other block. Pinned additively rather than editing the
+   kit file directly, per this project's "never override sru-ui.css classes
+   directly" rule. z-index keeps it above the sidebar/page content; the user
+   menu's own dropdown panel is a descendant so it still stacks above the
+   topbar correctly regardless of this value. */
+.sru-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* ===== Visible top-bar greeting (2026-07-25) =====
+   UserMenu previously only showed the user's name inside its dropdown
+   panel — the project owner asked for it visible next to the avatar at
+   all times instead. */
+.sru-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sru-user-greeting {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}

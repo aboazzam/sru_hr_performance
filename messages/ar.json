@@ -13,7 +13,8 @@
     "myCompetencies": "جداراتي",
     "myKpis": "مؤشرات الأداء",
     "myTasks": "مهامي التشغيلية",
-    "myPerformance": "مستوى أدائي"
+    "myPerformance": "مستوى أدائي",
+    "greeting": "مرحبًا، {name}"
   },
   "NavBar": {
     "home": "الرئيسية",
