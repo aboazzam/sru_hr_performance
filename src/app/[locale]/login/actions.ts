@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
@@ -63,6 +64,16 @@ export async function login(
   if (error) {
     return { error: "invalid_credentials" };
   }
+
+  // Real feedback (2026-07-25): CLAUDE.md §5-A rule 5.1 has always required
+  // audit_log to capture logins, but nothing in this codebase ever wrote one
+  // -- confirmed via a direct search before building the "أنشطة المستخدمين"
+  // admin tab that needs this data. A failed audit write must never block a
+  // legitimate login, so its result is deliberately not checked here. Logged
+  // unconditionally, before the must_change_password branch below — a login
+  // is a login regardless of what happens right after it.
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({ actor_id: signInData.user.id, action: "login", entity: "auth" });
 
   // 2026-07-25: accounts created directly (no invite email — see
   // employees/new/actions.ts's mode='direct') carry an admin-set or
