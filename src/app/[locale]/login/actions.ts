@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
@@ -58,11 +59,19 @@ export async function login(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     return { error: "invalid_credentials" };
   }
+
+  // Real feedback (2026-07-25): CLAUDE.md §5-A rule 5.1 has always required
+  // audit_log to capture logins, but nothing in this codebase ever wrote one
+  // -- confirmed via a direct search before building the "أنشطة المستخدمين"
+  // admin tab that needs this data. A failed audit write must never block a
+  // legitimate login, so its result is deliberately not checked here.
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({ actor_id: data.user.id, action: "login", entity: "auth" });
 
   return redirect({ href: "/", locale });
 }

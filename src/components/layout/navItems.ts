@@ -24,6 +24,7 @@ import {
   Palette,
   FileBarChart,
   Sparkles,
+  Activity,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -98,6 +99,11 @@ export const navGroups: NavGroup[] = [
       { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "staffing", minLevel: "view" } },
       { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
       { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "identity", minLevel: "view" } },
+      // Gated at 'approve' (not 'view', unlike this group's other tabs) --
+      // 2026-07-25 request: per-user login timestamps are more sensitive
+      // than most administration data, so this deliberately sits at the
+      // same tier as the role editor itself, not just "can see admin stuff".
+      { segment: "admin/user-activity", labelKey: "userActivity", icon: Activity, access: { processArea: "userManagement", minLevel: "approve" } },
     ],
   },
   {
