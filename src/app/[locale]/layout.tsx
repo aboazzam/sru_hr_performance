@@ -55,18 +55,28 @@ export default async function LocaleLayout({
   // stylesheet rule targeting the same element). org_identity_select's RLS
   // returns nothing for an unauthenticated visitor (anon has no grant), so
   // the login page simply keeps the default palette until sign-in.
+  //
+  // The dark/light shades below are mathematically derived (see
+  // src/lib/color.ts), not sru-ui.css's own hand-picked values -- close, but
+  // not pixel-identical (confirmed live: derives #381562 for the sidebar
+  // background where sru-ui.css hand-picked #3a1464). Skipping the override
+  // entirely when the stored color matches the real SRU default keeps that
+  // case pixel-perfect; only a genuinely different chosen color pays the
+  // (imperceptible in practice, but avoidable here) derived-shade cost.
+  const DEFAULT_PRIMARY = "#501e8c";
+  const DEFAULT_SECONDARY = "#0a6eaa";
   const supabase = await createClient();
   const { data: identity } = await supabase
     .from("org_identity")
     .select("primary_color, secondary_color")
     .maybeSingle();
   const identityStyle: Record<string, string> = {};
-  if (identity?.primary_color) {
+  if (identity?.primary_color && identity.primary_color.toLowerCase() !== DEFAULT_PRIMARY) {
     identityStyle["--sru-purple"] = identity.primary_color;
     identityStyle["--sru-purple-dark"] = darken(identity.primary_color, 0.3) ?? identity.primary_color;
     identityStyle["--sru-purple-light"] = lighten(identity.primary_color, 0.88) ?? identity.primary_color;
   }
-  if (identity?.secondary_color) {
+  if (identity?.secondary_color && identity.secondary_color.toLowerCase() !== DEFAULT_SECONDARY) {
     identityStyle["--sru-blue"] = identity.secondary_color;
     identityStyle["--sru-blue-light"] = lighten(identity.secondary_color, 0.9) ?? identity.secondary_color;
   }
