@@ -25,10 +25,7 @@ interface NodeColor {
 
 interface ConnectorLine {
   id: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  d: string;
 }
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
@@ -57,6 +54,13 @@ const THEME_NODE_COLORS: NodeColor[] = [
  * drawn via a measured SVG overlay so a skip-level link (a position linked
  * to any ancestor level, not just the immediately preceding one) renders as
  * a real line spanning the actual vertical gap, not a one-row hop.
+ *
+ * Follow-up (2026-07-25): a straight line for a skip-level connection still
+ * visually passed right through whatever row(s) sat in between, reading as
+ * a chain through them ("مدير رأس المال البشري يتبع مباشرة الرئيس
+ * التنفيذي وليس نائب الرئيس"). Skip connections now bow out to the side
+ * and back (see `measure()`) so they visibly route around the intervening
+ * row instead of appearing to pass through it.
  */
 export function OrgChartTree({
   positions,
@@ -98,25 +102,62 @@ export function OrgChartTree({
     return map;
   }, [positions]);
 
+  const positionById = useMemo(() => new Map(positions.map((p) => [p.id, p])), [positions]);
+
+  // Real feedback (2026-07-25): "لكن مدير رأس المال البشري يتبع مباشرة
+  // الرئيس التنفيذي (1) وليس نائب الرئيس (C2)" -- a straight connector line
+  // between a parent and a grandchild-level position visually passes right
+  // through any level rendered in between (e.g. CEO -> C4, skipping C2's
+  // row), reading as a chain (CEO -> C2 -> C4) even though C2 has nothing
+  // to do with it. `renderedRowIndexByLevelId` only counts OCCUPIED levels
+  // (matching what's actually drawn as a row below), so the gap it measures
+  // reflects real visual rows, not raw level_order values.
+  const renderedRowIndexByLevelId = useMemo(() => {
+    const occupiedLevels = sortedLevels.filter((l) => (positionsByLevelId.get(l.id)?.length ?? 0) > 0);
+    return new Map(occupiedLevels.map((l, index) => [l.id, index]));
+  }, [sortedLevels, positionsByLevelId]);
+
   const measure = () => {
     const container = containerRef.current;
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     const nextLines: ConnectorLine[] = [];
+    let skipCount = 0;
     for (const p of positions) {
       if (!p.parent_id) continue;
+      const parent = positionById.get(p.parent_id);
       const childEl = nodeElsRef.current.get(p.id);
       const parentEl = nodeElsRef.current.get(p.parent_id);
-      if (!childEl || !parentEl) continue;
+      if (!parent || !childEl || !parentEl) continue;
       const childRect = childEl.getBoundingClientRect();
       const parentRect = parentEl.getBoundingClientRect();
-      nextLines.push({
-        id: p.id,
-        x1: parentRect.left + parentRect.width / 2 - containerRect.left,
-        y1: parentRect.bottom - containerRect.top,
-        x2: childRect.left + childRect.width / 2 - containerRect.left,
-        y2: childRect.top - containerRect.top,
-      });
+      const x1 = parentRect.left + parentRect.width / 2 - containerRect.left;
+      const y1 = parentRect.bottom - containerRect.top;
+      const x2 = childRect.left + childRect.width / 2 - containerRect.left;
+      const y2 = childRect.top - containerRect.top;
+
+      const parentRow = renderedRowIndexByLevelId.get(parent.level_id);
+      const childRow = renderedRowIndexByLevelId.get(p.level_id);
+      const isSkip = parentRow != null && childRow != null && childRow - parentRow > 1;
+
+      let d: string;
+      if (!isSkip) {
+        const midY = (y1 + y2) / 2;
+        d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+      } else {
+        // Bows the line out to one side and back, visibly routing AROUND
+        // whatever row(s) sit between parent and child instead of straight
+        // through their center — alternating sides and widening per extra
+        // concurrent skip connector so several don't stack on top of each other.
+        const side = skipCount % 2 === 0 ? 1 : -1;
+        const offset = (90 + Math.floor(skipCount / 2) * 40) * side;
+        const bendGap = 18;
+        const cx1 = x1 + offset;
+        const cx2 = x2 + offset;
+        d = `M ${x1} ${y1} L ${x1} ${y1 + bendGap} Q ${cx1} ${y1 + bendGap} ${cx1} ${y1 + bendGap * 2} L ${cx2} ${y2 - bendGap * 2} Q ${cx2} ${y2 - bendGap} ${x2} ${y2 - bendGap} L ${x2} ${y2}`;
+        skipCount++;
+      }
+      nextLines.push({ id: p.id, d });
     }
     setLines(nextLines);
   };
@@ -145,18 +186,9 @@ export function OrgChartTree({
   return (
     <div ref={containerRef} className="sru-orgchart-wrapper">
       <svg className="sru-orgchart-lines">
-        {lines.map((line) => {
-          const midY = (line.y1 + line.y2) / 2;
-          return (
-            <path
-              key={line.id}
-              d={`M ${line.x1} ${line.y1} L ${line.x1} ${midY} L ${line.x2} ${midY} L ${line.x2} ${line.y2}`}
-              fill="none"
-              stroke="var(--sru-border)"
-              strokeWidth={2}
-            />
-          );
-        })}
+        {lines.map((line) => (
+          <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
+        ))}
       </svg>
       {sortedLevels.map((level) => {
         const levelPositions = positionsByLevelId.get(level.id);
