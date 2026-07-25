@@ -171,6 +171,8 @@
     "deletePositionConfirm": "Are you sure you want to delete this position?",
     "dragToReorder": "Drag to reorder",
     "levelColorLabel": "Org chart color",
+    "customColorLabel": "Custom color",
+    "identityColorsLabel": "Identity colors",
     "useThemeColorButton": "Use theme color",
     "errorInvalid": "Please fill in the required fields.",
     "errorForbidden": "You don't have permission to do this.",

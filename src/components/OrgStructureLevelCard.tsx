@@ -16,6 +16,7 @@ export function OrgStructureLevelCard({
   initialNameEn,
   initialColor,
   defaultColorSwatch,
+  identitySwatches,
   children,
 }: {
   levelId: string;
@@ -26,6 +27,8 @@ export function OrgStructureLevelCard({
   initialColor: string | null;
   /** Starting swatch value shown in the picker before any override is chosen. */
   defaultColorSwatch: string;
+  /** Quick-pick colors derived from the real org_identity primary/secondary colors — same list for every level. */
+  identitySwatches: string[];
   children: ReactNode;
 }) {
   const t = useTranslations("OrgStructurePage");
@@ -78,19 +81,42 @@ export function OrgStructureLevelCard({
         <span style={{ fontSize: 15, fontWeight: 700 }}>{levelOrder}.</span>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 220 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 220 }} />
-        <input
-          type="color"
-          value={color ?? defaultColorSwatch}
-          onChange={(e) => setColor(e.target.value)}
-          className="sru-color-swatch"
-          title={t("levelColorLabel")}
-          aria-label={t("levelColorLabel")}
-        />
-        {color !== null && (
-          <button type="button" onClick={() => setColor(null)} className="sru-btn" style={{ padding: "4px 10px", fontSize: 12 }}>
-            {t("useThemeColorButton")}
-          </button>
-        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <span style={{ fontSize: 10, color: "var(--sru-muted)" }}>{t("customColorLabel")}</span>
+          <input
+            type="color"
+            value={color ?? defaultColorSwatch}
+            onChange={(e) => setColor(e.target.value)}
+            className="sru-color-swatch"
+            title={t("customColorLabel")}
+            aria-label={t("customColorLabel")}
+          />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <span style={{ fontSize: 10, color: "var(--sru-muted)" }}>{t("identityColorsLabel")}</span>
+          <div style={{ display: "flex", gap: 4 }}>
+            {identitySwatches.map((swatch, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setColor(swatch)}
+                className={`sru-color-swatch-pick${color === swatch ? " selected" : ""}`}
+                style={{ background: swatch }}
+                title={swatch}
+                aria-label={swatch}
+              />
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setColor(null)}
+          disabled={color === null}
+          className="sru-btn"
+          style={{ padding: "4px 10px", fontSize: 12, alignSelf: "flex-end" }}
+        >
+          {t("useThemeColorButton")}
+        </button>
         <div className="sru-icon-action-group">
           <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
             <Check size={15} />

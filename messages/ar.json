@@ -171,6 +171,8 @@
     "deletePositionConfirm": "هل أنت متأكد من حذف هذا المنصب؟",
     "dragToReorder": "اسحب لإعادة الترتيب",
     "levelColorLabel": "لون المخطط الهرمي",
+    "customColorLabel": "لون مخصص",
+    "identityColorsLabel": "ألوان الهوية",
     "useThemeColorButton": "استخدام لون الثيم",
     "errorInvalid": "الرجاء تعبئة الحقول المطلوبة.",
     "errorForbidden": "لا تملك صلاحية القيام بهذا الإجراء.",

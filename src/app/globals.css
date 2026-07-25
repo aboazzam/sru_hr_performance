@@ -712,6 +712,20 @@ dialog.sru-modal::backdrop {
   border-radius: 6px;
   border: none;
 }
+.sru-color-swatch-pick {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--sru-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sru-color-swatch-pick:hover {
+  transform: scale(1.08);
+}
+.sru-color-swatch-pick.selected {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--sru-purple);
+}
 
 /* ===== Permission matrix checkbox grid (RolePermissionMatrixFields.tsx, 2026-07-25) ===== */
 .sru-permission-grid th,

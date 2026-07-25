@@ -10,7 +10,7 @@ import { OrgStructureSetupWizard } from "@/components/OrgStructureSetupWizard";
 import { OrgChartTree } from "@/components/OrgChartTree";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import { defaultLevelColorSwatch } from "@/lib/orgChartColors";
+import { defaultLevelColorSwatch, identityColorSwatches, SRU_DEFAULT_PRIMARY, SRU_DEFAULT_SECONDARY } from "@/lib/orgChartColors";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -45,6 +45,19 @@ export default async function OrgStructurePage() {
     level_order: number;
     color: string | null;
   }>;
+
+  // Follow-up request (2026-07-25): offer the admin quick-pick swatches
+  // derived from the REAL organization identity colors (configured on
+  // /admin/identity), not just a fully custom picker. `identity=view` is a
+  // separate process area from `orgStructure` (hr_admin doesn't hold it per
+  // the 20260725000002 split) -- read failing/returning nothing under RLS is
+  // expected for hr_admin, not an error, and falls back to the same SRU
+  // defaults `[locale]/layout.tsx` itself falls back to.
+  const { data: identity } = await supabase.from("org_identity").select("primary_color, secondary_color").maybeSingle();
+  const identitySwatches = identityColorSwatches(
+    identity?.primary_color ?? SRU_DEFAULT_PRIMARY,
+    identity?.secondary_color ?? SRU_DEFAULT_SECONDARY
+  );
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
@@ -138,6 +151,7 @@ export default async function OrgStructurePage() {
                         initialNameEn={level.name_en}
                         initialColor={level.color}
                         defaultColorSwatch={defaultLevelColorSwatch(levelIndex)}
+                        identitySwatches={identitySwatches}
                       >
                         {levelPositions.length === 0 ? (
                           <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
