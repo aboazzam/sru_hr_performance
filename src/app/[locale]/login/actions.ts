@@ -59,7 +59,7 @@ export async function login(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data: signInData, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     return { error: "invalid_credentials" };
@@ -69,9 +69,28 @@ export async function login(
   // audit_log to capture logins, but nothing in this codebase ever wrote one
   // -- confirmed via a direct search before building the "أنشطة المستخدمين"
   // admin tab that needs this data. A failed audit write must never block a
-  // legitimate login, so its result is deliberately not checked here.
+  // legitimate login, so its result is deliberately not checked here. Logged
+  // unconditionally, before the must_change_password branch below — a login
+  // is a login regardless of what happens right after it.
   const admin = createAdminClient();
-  await admin.from("audit_log").insert({ actor_id: data.user.id, action: "login", entity: "auth" });
+  await admin.from("audit_log").insert({ actor_id: signInData.user.id, action: "login", entity: "auth" });
+
+  // 2026-07-25: accounts created directly (no invite email — see
+  // employees/new/actions.ts's mode='direct') carry an admin-set or
+  // system-suggested password and must be forced to pick their own before
+  // reaching the app, entirely in-app, with no recovery-email round trip
+  // ("يطلب منه ادخال رقم سري جديد بدون الرجوع للبريد الالكتروني"). Checked
+  // via the caller's own RLS-respecting client — profiles_select's self-row
+  // bypass already allows this regardless of any employeeData grant.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("must_change_password")
+    .eq("auth_user_id", signInData.user.id)
+    .maybeSingle();
+
+  if (profile?.must_change_password) {
+    return redirect({ href: "/change-password", locale });
+  }
 
   return redirect({ href: "/", locale });
 }

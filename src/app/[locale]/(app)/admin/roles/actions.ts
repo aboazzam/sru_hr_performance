@@ -249,16 +249,20 @@ export async function deleteRole(roleId: string): Promise<RoleActionState> {
 const assignUserRoleSchema = z.object({
   profileId: z.string().uuid(),
   authUserId: z.string().uuid().optional(),
-  roleId: z.string().uuid().optional(),
+  roleIds: z.array(z.string().uuid()),
 });
 
 /**
- * "المستخدم موجود تلقائيًا مع الموظفين، فقط اسناد صلاحيات" (2026-07-24):
- * assigns (or clears) a single global (`scope_type='all'`) role for one
- * employee — the simple Qoyod-style "one user, one position" case this
- * screen targets. Deliberately touches only the 'all'-scope assignment,
- * leaving any org-unit-scoped assignment (bulk-import only, today)
- * untouched, since this UI has no org-unit picker at all.
+ * "قد يكون له أكثر من دور مثل مدير الموارد البشرية ومدير الجدارات مثلا فاسمح
+ * بتسجيل اكثر من دور للموظف" (2026-07-25): assigns (or clears) the full set
+ * of global (`scope_type='all'`) roles for one employee — was a single-role
+ * select until now, a pure UI limitation (`user_roles`/
+ * `pending_role_assignments` already allow several rows per user, one per
+ * role). Deliberately touches only 'all'-scope assignments, leaving any
+ * org-unit-scoped assignment (bulk-import only, today) untouched, since this
+ * UI has no org-unit picker at all. Diff-free delete-then-bulk-insert
+ * (not a diff, since the whole set is replaced every save — simpler than
+ * `updateRole`'s per-area diffing and cheap enough at this row count).
  *
  * A linked account's assignment lives in `user_roles` (keyed by
  * `auth_user_id`); an invited-but-not-yet-accepted profile's lives in
@@ -270,12 +274,12 @@ const assignUserRoleSchema = z.object({
 export async function assignUserRole(
   profileId: string,
   authUserId: string | null,
-  roleId: string | null
+  roleIds: string[]
 ): Promise<RoleActionState> {
   const parsed = assignUserRoleSchema.safeParse({
     profileId,
     authUserId: authUserId ?? undefined,
-    roleId: roleId ?? undefined,
+    roleIds,
   });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
@@ -297,10 +301,15 @@ export async function assignUserRole(
       .eq("scope_type", "all");
     if (delErr) return mapError(delErr);
 
-    if (parsed.data.roleId) {
-      const { error: insErr } = await supabase
-        .from("user_roles")
-        .insert({ user_id: parsed.data.authUserId, role_id: parsed.data.roleId, scope_type: "all", assigned_by: actor.id });
+    if (parsed.data.roleIds.length > 0) {
+      const { error: insErr } = await supabase.from("user_roles").insert(
+        parsed.data.roleIds.map((roleId) => ({
+          user_id: parsed.data.authUserId,
+          role_id: roleId,
+          scope_type: "all" as const,
+          assigned_by: actor.id,
+        }))
+      );
       if (insErr) return mapError(insErr);
     }
   } else {
@@ -311,10 +320,15 @@ export async function assignUserRole(
       .eq("scope_type", "all");
     if (delErr) return mapError(delErr);
 
-    if (parsed.data.roleId) {
-      const { error: insErr } = await supabase
-        .from("pending_role_assignments")
-        .insert({ profile_id: parsed.data.profileId, role_id: parsed.data.roleId, scope_type: "all", assigned_by: actor.id });
+    if (parsed.data.roleIds.length > 0) {
+      const { error: insErr } = await supabase.from("pending_role_assignments").insert(
+        parsed.data.roleIds.map((roleId) => ({
+          profile_id: parsed.data.profileId,
+          role_id: roleId,
+          scope_type: "all" as const,
+          assigned_by: actor.id,
+        }))
+      );
       if (insErr) return mapError(insErr);
     }
   }
@@ -325,7 +339,7 @@ export async function assignUserRole(
     action: "user_role_assigned",
     entity: "user_roles",
     entity_id: parsed.data.profileId,
-    after_data: { role_id: parsed.data.roleId },
+    after_data: { role_ids: parsed.data.roleIds },
   });
 
   return { status: "success" };

@@ -2,10 +2,28 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmployeeInviteForm } from "@/components/EmployeeInviteForm";
 
-// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+// Auth is enforced centrally by (app)/layout.tsx. VPRA is not — added here
+// explicitly (2026-07-25): creating an account (invite or direct) is a
+// userManagement action per the project owner's own framing ("اسمح لمن
+// لديه صلاحية المستخدمين انشاء حساب موظف")؛ the /employees list already
+// hides the link to this page for anyone without it, but a direct URL visit
+// must be blocked server-side too, not just by hiding the button.
 export default async function EmployeeInvitePage() {
   const t = await getTranslations("EmployeeInvitePage");
   const supabase = await createClient();
+
+  const { data: canManageUsers } = await supabase.rpc("check_vpra", {
+    p_process_area: "userManagement",
+    p_min_level: "approve",
+  });
+
+  if (!canManageUsers) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   // RLS-scoped to the caller: org_units_select requires
   // check_vpra('employeeData','view', <unit id>) per unit, so this list is
