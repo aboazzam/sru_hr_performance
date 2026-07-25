@@ -43,8 +43,7 @@ export type ProcessArea =
   | "userManagement"
   | "orgStructure"
   | "staffing"
-  | "identity"
-  | "reports";
+  | "identity";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -62,7 +61,6 @@ export const processAreas: ProcessArea[] = [
   "orgStructure",
   "staffing",
   "identity",
-  "reports",
 ];
 
 /**
@@ -88,7 +86,6 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   orgStructure: "الهيكل التنظيمي",
   staffing: "التسكين",
   identity: "الهوية",
-  reports: "التقارير",
 };
 
 export interface ProcessAreaSection {
@@ -97,15 +94,18 @@ export interface ProcessAreaSection {
 }
 
 /**
- * Grouping of the 16 process areas into labeled sections for the /admin
+ * Grouping of the 15 process areas into labeled sections for the /admin
  * permission-matrix editor (2026-07-25 checkbox-grid redesign, "قسمها إلى
  * سكاشن بحيث يكون عنوان السكشن بولد"). [استنتاج] — a presentational
  * grouping invented for readability, not a documented CLAUDE.md taxonomy;
  * every process area appears in exactly one section (enforced by a test).
- * `staffing`/`identity` (split out of `orgStructure`, 20260725000001) and
- * `reports` (its own new area, 20260725000006 — the Reports tab moved into
- * the "الإدارة" module per the same-day follow-up request) sit alongside it
- * in the same section.
+ * `staffing`/`identity` (split out of `orgStructure`, 20260725000001) sit
+ * alongside it in the same section. A short-lived `reports` area
+ * (20260725000006) was added and then removed the same day once /reports
+ * became a personalized, ungated dashboard whose cards check EXISTING
+ * process areas individually rather than one blanket gate — the Postgres
+ * enum value itself can't be un-added, but nothing in the app references it
+ * anymore.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -118,7 +118,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الإدارة والنظام",
-    areas: ["orgStructure", "staffing", "identity", "reports", "userManagement"],
+    areas: ["orgStructure", "staffing", "identity", "userManagement"],
   },
 ];
 

@@ -52,6 +52,13 @@ export interface NavItem {
 // competencies, bau-tasks, feedback-360) are no longer here.
 export const navItems: NavItem[] = [
   { segment: "", labelKey: "home", icon: Home },
+  // No `access` gate (2026-07-25): the dashboard itself is reachable by
+  // every logged-in user, like Home/Profile -- its CONTENT is what varies
+  // per permission (each card checks its own relevant process area), not
+  // whether the page loads at all. Previously gated behind a standalone
+  // `reports` process area seeded empty; that made the whole page invisible
+  // to everyone until explicitly granted, the opposite of "شخصي لكل يوزر".
+  { segment: "reports", labelKey: "reports", icon: FileBarChart },
   { segment: "employees", labelKey: "employees", icon: Users, access: { processArea: "employeeData", minLevel: "view" } },
   { segment: "career-path", labelKey: "careerPath", icon: Route, access: { processArea: "careerPath", minLevel: "view" } },
   // salary-scale's own RLS is "careerPath OR employeeData" (either grants read access),
@@ -77,10 +84,10 @@ export interface NavGroup {
 // nested inside the sidebar itself, per the explicit "العناوين الفرعية تكون
 // على شكل تابات في أعلى الصفحة" instruction.
 //
-// 2026-07-25: "reports" moved from evaluationResults into administration
-// (its own gate too -- see the new `reports` process area in vpra.ts),
-// leaving evaluationResults with just "recommendations" -- per the explicit
-// "اضافة تاب التقارير ... داخل موديول الادارة" follow-up request.
+// 2026-07-25: "reports" briefly lived here gated on its own `reports`
+// process area, then moved out entirely to the top-level `navItems` above
+// as a personalized, ungated dashboard (see that item's own comment) --
+// evaluationResults keeps just "recommendations" either way.
 export const navGroups: NavGroup[] = [
   {
     groupKey: "administration",
@@ -91,7 +98,6 @@ export const navGroups: NavGroup[] = [
       { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "staffing", minLevel: "view" } },
       { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
       { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "identity", minLevel: "view" } },
-      { segment: "reports", labelKey: "reports", icon: FileBarChart, access: { processArea: "reports", minLevel: "view" } },
     ],
   },
   {
