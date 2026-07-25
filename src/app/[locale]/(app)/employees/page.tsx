@@ -134,11 +134,24 @@ export default async function EmployeesPage({
   // View has no extra gate — seeing this row at all already requires
   // employeeData>=view via profiles_select's own RLS.
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
-  const employeeDataLevel =
-    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "employeeData"
-    )?.vpra_level ?? "none";
+  const permissionsByArea = ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).reduce(
+    (map, row) => map.set(row.process_area, row.vpra_level),
+    new Map<ProcessArea, VpraLevel>()
+  );
+  const employeeDataLevel = permissionsByArea.get("employeeData") ?? "none";
   const canEditDelete = hasVpraAccess(employeeDataLevel, "approve");
+
+  // 2026-07-25: "لمن ليس لديهم صلاحية على المستخدمين لا يظهر لهم الأيقونات
+  // الاضافة والاستيراد فقط التصدير وشريط البحث" — Add/Assign-supervisor/
+  // Import are account-creation-adjacent actions gated on userManagement
+  // specifically, not employeeData (mirrors the real RLS on
+  // pending_role_assignments/user_roles, which already requires
+  // userManagement='approve' for any role assignment). Row visibility
+  // itself needs no extra filtering here — profiles_select's RLS (self row,
+  // employeeData-scoped view, or is_my_direct_report) already narrows the
+  // query to exactly what a caller without this grant should see.
+  const userManagementLevel = permissionsByArea.get("userManagement") ?? "none";
+  const canManageAccounts = hasVpraAccess(userManagementLevel, "approve");
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -161,13 +174,17 @@ export default async function EmployeesPage({
           </p>
         </div>
         <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <Link href="/employees/new" className="sru-btn sru-btn-primary">
-            {t("addEmployee")}
-          </Link>
-          <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
-            {t("assignSupervisor")}
-          </Link>
-          <ImportOrgStructureExcelForm templateHref="/templates/sru-employees-import-template.xlsx" note={t("importNoteEmployeesOnly")} />
+          {canManageAccounts && (
+            <>
+              <Link href="/employees/new" className="sru-btn sru-btn-primary">
+                {t("addEmployee")}
+              </Link>
+              <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
+                {t("assignSupervisor")}
+              </Link>
+              <ImportOrgStructureExcelForm templateHref="/templates/sru-employees-import-template.xlsx" note={t("importNoteEmployeesOnly")} />
+            </>
+          )}
           <EmployeesExportMenu />
         </div>
       </div>
