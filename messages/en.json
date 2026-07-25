@@ -59,7 +59,9 @@
     "invalidInput": "Enter a valid email and password",
     "invalidCredentials": "Incorrect email or password",
     "rateLimited": "Too many attempts — please wait a moment before trying again",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "ForgotPasswordPage": {
     "title": "Forgot Password",
@@ -87,7 +89,9 @@
     "errorInvalidLink": "This link is invalid or has expired — please request a new one.",
     "errorTooShort": "Password must be at least 8 characters.",
     "errorMismatch": "Passwords do not match.",
-    "errorUnknown": "Could not change password — please try again."
+    "errorUnknown": "Could not change password — please try again.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "CompetenciesPage": {
     "title": "Competency Framework",
@@ -362,7 +366,15 @@
     "errorInviteFailed": "The employee record was created, but the login invite could not be sent — you can retry later.",
     "errorRoleAssignmentFailed": "The employee record was created, but the role could not be assigned — check your userManagement permission.",
     "errorRateLimited": "Too many attempts in a short period — please wait a moment before trying again.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionBasicTitle": "Basic Information",
+    "sectionBasicSubtitle": "Identity and primary contact",
+    "sectionPersonalTitle": "Personal Details",
+    "sectionPersonalSubtitle": "Optional — can be completed later",
+    "sectionJobTitle": "Employment Details",
+    "sectionJobSubtitle": "Org unit, job title, and academic details",
+    "sectionRoleTitle": "Role & Permissions",
+    "sectionRoleSubtitle": "Determines what they can see and do"
   },
   "EmployeeDetailPage": {
     "notFound": "This employee could not be found.",

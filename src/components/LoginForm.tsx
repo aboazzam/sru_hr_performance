@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { login, type LoginState } from "@/app/[locale]/login/actions";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
@@ -20,55 +21,65 @@ export function LoginForm({ locale }: { locale: Locale }) {
     login.bind(null, locale),
     null
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form action={formAction} className="space-y-5">
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          {t("emailLabel")}
-        </label>
+    <form action={formAction}>
+      <div className="sru-field-float">
         <input
+          id="login-email"
           type="email"
           name="email"
           required
           autoComplete="email"
-          className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-          placeholder={t("emailPlaceholder")}
+          placeholder=" "
+          dir="ltr"
+          style={{ textAlign: "left" }}
         />
+        <label htmlFor="login-email">
+          <Mail size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
+          {t("emailLabel")}
+        </label>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          {t("passwordLabel")}
-        </label>
+      <div className="sru-field-float has-toggle">
         <input
-          type="password"
+          id="login-password"
+          type={showPassword ? "text" : "password"}
           name="password"
           required
           autoComplete="current-password"
-          className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-          placeholder={t("passwordPlaceholder")}
+          placeholder=" "
+          dir="ltr"
+          style={{ textAlign: "left" }}
         />
+        <label htmlFor="login-password">
+          <Lock size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
+          {t("passwordLabel")}
+        </label>
+        <button
+          type="button"
+          className="sru-pass-toggle"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+        >
+          {showPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+        </button>
       </div>
 
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[state.error])}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className="sru-auth-submit">
         {pending ? t("submitting") : t("submit")}
       </button>
 
-      <p className="text-sm text-center">
-        <Link href="/forgot-password" className="text-[var(--color-primary)] hover:underline">
-          {t("forgotPassword")}
-        </Link>
+      <p className="sru-auth-link-row">
+        <Link href="/forgot-password">{t("forgotPassword")}</Link>
       </p>
     </form>
   );
