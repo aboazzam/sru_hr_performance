@@ -13,7 +13,8 @@
     "myCompetencies": "My Competencies",
     "myKpis": "My KPIs",
     "myTasks": "My Routine Tasks",
-    "myPerformance": "My Performance Level"
+    "myPerformance": "My Performance Level",
+    "greeting": "Hello, {name}"
   },
   "NavBar": {
     "home": "Home",

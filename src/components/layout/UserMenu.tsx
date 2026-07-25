@@ -41,6 +41,7 @@ export function UserMenu({ userName }: { userName?: string }) {
 
   return (
     <div className="sru-user-menu" ref={rootRef}>
+      {userName && <span className="sru-user-greeting">{t("greeting", { name: userName })}</span>}
       <button
         type="button"
         className="sru-avatar-btn"
