@@ -14,6 +14,7 @@ import {
   isNavGroupActive,
   visibleNavItems,
   visibleNavGroups,
+  sidebarGroupLabelKey,
 } from "./navItems";
 
 describe("navItems (top-level, ungrouped)", () => {
@@ -158,6 +159,28 @@ describe("visibleNavGroups", () => {
     const totalChildren = groups.reduce((sum, g) => sum + g.children.length, 0);
     const expectedTotal = navGroups.reduce((sum, g) => sum + g.children.length, 0);
     expect(totalChildren).toBe(expectedTotal);
+  });
+});
+
+describe("sidebarGroupLabelKey", () => {
+  it("uses the child's own label when exactly one child is visible (e.g. orgStructure=view only)", () => {
+    // Real feedback (2026-07-25): a caller with only orgStructure=view sees
+    // just الهيكل التنظيمي's chart-only view (staffing/identity/admin are
+    // now separate process areas) -- the sidebar's "الإدارة" group label
+    // should read as "الهيكل التنظيمي" specifically in that case, not the
+    // generic group name, since that's the only thing actually behind it.
+    const groups = visibleNavGroups(navGroups, { orgStructure: "view" });
+    const administration = groups.find((g) => g.groupKey === "administration")!;
+    expect(administration.children).toHaveLength(1);
+    expect(administration.children[0].segment).toBe("admin/org-structure");
+    expect(sidebarGroupLabelKey(administration)).toBe("orgStructure");
+  });
+
+  it("uses the generic group label when more than one child is visible", () => {
+    const groups = visibleNavGroups(navGroups, { orgStructure: "recommend", staffing: "view" });
+    const administration = groups.find((g) => g.groupKey === "administration")!;
+    expect(administration.children.length).toBeGreaterThan(1);
+    expect(sidebarGroupLabelKey(administration)).toBe("administration");
   });
 });
 

@@ -10,6 +10,7 @@ import {
   isNavGroupActive,
   visibleNavItems,
   visibleNavGroups,
+  sidebarGroupLabelKey,
 } from "./navItems";
 import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 
@@ -46,7 +47,7 @@ export function Sidebar({ permissions }: { permissions: Partial<Record<ProcessAr
           className={`sru-sidebar-item${isNavGroupActive(group, pathname) ? " active" : ""}`}
         >
           <group.icon size={18} aria-hidden />
-          <span>{t(group.labelKey)}</span>
+          <span>{t(sidebarGroupLabelKey(group))}</span>
         </Link>
       ))}
     </nav>

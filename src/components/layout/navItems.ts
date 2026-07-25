@@ -137,6 +137,22 @@ export function navItemHref(segment: string): string {
   return segment ? `/${segment}` : "/";
 }
 
+/**
+ * The sidebar collapses a whole group into one row linking to its first
+ * visible child, labeled with the group's own generic name (e.g. "الإدارة"
+ * for a caller who can reach الهيكل التنظيمي/التسكين/الصلاحيات/الهوية).
+ * Real feedback (2026-07-25): when a caller's permissions leave exactly ONE
+ * child visible in that group (e.g. `orgStructure=view` and nothing else in
+ * "الإدارة" — see the org-structure page's own view-vs-prepare split), the
+ * generic group label reads as too broad for what's actually behind it —
+ * use that one child's own label instead, so the sidebar accurately
+ * reflects "this row is really just الهيكل التنظيمي," not administration
+ * at large.
+ */
+export function sidebarGroupLabelKey(group: NavGroup & { children: NavItem[] }): string {
+  return group.children.length === 1 ? group.children[0].labelKey : group.labelKey;
+}
+
 // Flattened list of every real segment in the app (top-level items + every
 // group's children), used only to disambiguate overlapping prefixes below —
 // e.g. "admin" and "admin/org-structure" are now separate, sibling nav
