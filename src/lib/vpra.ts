@@ -41,7 +41,9 @@ export type ProcessArea =
   | "careerPath"
   | "employeeData"
   | "userManagement"
-  | "orgStructure";
+  | "orgStructure"
+  | "staffing"
+  | "identity";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -57,6 +59,8 @@ export const processAreas: ProcessArea[] = [
   "employeeData",
   "userManagement",
   "orgStructure",
+  "staffing",
+  "identity",
 ];
 
 /**
@@ -80,6 +84,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   employeeData: "بيانات الموظفين",
   userManagement: "إدارة المستخدمين والصلاحيات",
   orgStructure: "الهيكل التنظيمي",
+  staffing: "التسكين",
+  identity: "الهوية",
 };
 
 export interface ProcessAreaSection {
@@ -88,11 +94,13 @@ export interface ProcessAreaSection {
 }
 
 /**
- * Grouping of the 13 process areas into labeled sections for the /admin
+ * Grouping of the 15 process areas into labeled sections for the /admin
  * permission-matrix editor (2026-07-25 checkbox-grid redesign, "قسمها إلى
  * سكاشن بحيث يكون عنوان السكشن بولد"). [استنتاج] — a presentational
  * grouping invented for readability, not a documented CLAUDE.md taxonomy;
  * every process area appears in exactly one section (enforced by a test).
+ * `staffing`/`identity` (added 2026-07-25, split out of `orgStructure` —
+ * see migration 20260725000001) sit alongside it in the same section.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -105,7 +113,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الإدارة والنظام",
-    areas: ["orgStructure", "userManagement"],
+    areas: ["orgStructure", "staffing", "identity", "userManagement"],
   },
 ];
 

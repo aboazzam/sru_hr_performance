@@ -83,9 +83,9 @@ export const navGroups: NavGroup[] = [
     icon: ShieldCheck,
     children: [
       { segment: "admin/org-structure", labelKey: "orgStructure", icon: Network, access: { processArea: "orgStructure", minLevel: "view" } },
-      { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "orgStructure", minLevel: "view" } },
+      { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "staffing", minLevel: "view" } },
       { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
-      { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "orgStructure", minLevel: "view" } },
+      { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "identity", minLevel: "view" } },
     ],
   },
   {

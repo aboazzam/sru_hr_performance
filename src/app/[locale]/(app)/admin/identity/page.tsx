@@ -5,20 +5,23 @@ import { OrgIdentityForm } from "@/components/OrgIdentityForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx. Real write authorization
-// is org_identity's own RLS (check_vpra_global('orgStructure','approve'),
-// super_admin-only per the 2026-07-24 recommend/approve split — hr_admin
-// holds only 'recommend' there now and can view but not edit). This page
-// requires 'view' to render at all, enforced by org_identity_select.
+// is org_identity's own RLS (check_vpra_global('identity','approve') — a
+// dedicated process area since 20260725000001/2, split out of `orgStructure`
+// so Identity access no longer rides on the org-structure builder's level.
+// super_admin holds 'approve'; hr_admin holds no `identity` grant at all
+// (explicitly removed per the project owner's request) and can neither view
+// nor edit. This page requires 'view' to render at all, enforced by
+// org_identity_select.
 export default async function IdentityPage() {
   const t = await getTranslations("IdentityPage");
   const supabase = await createClient();
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
-  const orgStructureLevel =
+  const identityLevel =
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "orgStructure"
+      (row) => row.process_area === "identity"
     )?.vpra_level ?? "none";
-  const canEdit = hasVpraAccess(orgStructureLevel, "approve");
+  const canEdit = hasVpraAccess(identityLevel, "approve");
 
   const { data: identity } = await supabase
     .from("org_identity")

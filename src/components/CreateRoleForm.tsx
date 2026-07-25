@@ -43,9 +43,17 @@ export function CreateRoleForm() {
     });
   }
 
+  function handleReset() {
+    setRoleCode("");
+    setNameAr("");
+    setNameEn("");
+    setPermissions({});
+    setError(null);
+  }
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 640 }}>
-      <div className="sru-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="sru-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, maxWidth: 480 }}>
         <div>
           <label htmlFor="role-code" className="block text-sm font-medium mb-1">
             {t("roleCodeLabel")}
@@ -88,9 +96,14 @@ export function CreateRoleForm() {
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
-      <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary" style={{ alignSelf: "flex-start" }}>
-        {isPending ? t("savingRole") : t("createRoleButton")}
-      </button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary">
+          {isPending ? t("savingRole") : t("createRoleButton")}
+        </button>
+        <button type="button" onClick={handleReset} disabled={isPending} className="sru-btn">
+          {t("resetButton")}
+        </button>
+      </div>
     </form>
   );
 }
