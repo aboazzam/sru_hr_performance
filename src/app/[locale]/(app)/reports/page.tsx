@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 const COMPLETED_STATES = new Set(["approved", "finalized"]);
 
@@ -19,9 +20,32 @@ const COMPLETED_STATES = new Set(["approved", "finalized"]);
 // -- inventing a number here would be exactly the kind of fabricated
 // metric this project's discipline forbids. Flagged in the UI instead of
 // silently omitted.
+//
+// 2026-07-25 follow-up: moved into the "الإدارة" module and gated on its
+// own dedicated `reports` process area (migration 20260725000006) instead
+// of piggybacking on `evaluation` -- "بحيث عند الاتاحة للمشاهدة يطلع على
+// الارقام الخاصة به" (the numbers should only show once view access is
+// explicitly granted). Seeded with zero role_permissions rows, so every
+// role sees the "no permission" message below until the project owner
+// grants `reports=view`+ from /admin's role editor.
 export default async function ReportsPage() {
   const t = await getTranslations("ReportsPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const reportsLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find((row) => row.process_area === "reports")
+      ?.vpra_level ?? "none";
+  const canView = hasVpraAccess(reportsLevel, "view");
+
+  if (!canView) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <GroupTabs groupKey="administration" current="reports" />
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   const [{ count: openVacancies }, { data: evaluationsData }, { count: promotionsCount }, { count: rewardsCount }, { data: recommendationsData }] =
     await Promise.all([
@@ -57,7 +81,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <GroupTabs groupKey="evaluationResults" current="reports" />
+      <GroupTabs groupKey="administration" current="reports" />
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>
