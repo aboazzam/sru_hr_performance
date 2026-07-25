@@ -59,3 +59,78 @@ export async function deleteEmployee(_prevState: DeleteEmployeeState, formData: 
 
   return { status: "success" };
 }
+
+const reviewApprovalSchema = z.object({
+  profileId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+});
+
+export type ReviewEmployeeApprovalState =
+  | { status: "success" }
+  | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "unknown" }
+  | null;
+
+/**
+ * Approves or rejects a 'pending' employee-data submission (2026-07-25
+ * approval workflow — "لا يضاف للقائمة الا بعد الاعتماد ممن لديه الاعتماد").
+ * `profiles_update`'s own RLS only requires `employeeData`='prepare' (the
+ * same bar a normal edit needs), which is deliberately too low for a review
+ * decision — checked explicitly here at 'approve', scoped to the employee's
+ * own org unit, same discipline as `inviteEmployee`'s userManagement check.
+ * Rejected records are kept (soft — CLAUDE.md §5-A rule 7), visible only to
+ * their preparer (`created_by`) and to other approve-level holders, never
+ * on the main list.
+ */
+export async function reviewEmployeeApproval(
+  _prevState: ReviewEmployeeApprovalState,
+  formData: FormData
+): Promise<ReviewEmployeeApprovalState> {
+  const parsed = reviewApprovalSchema.safeParse({
+    profileId: formData.get("profileId"),
+    decision: formData.get("decision"),
+  });
+  if (!parsed.success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) {
+    return { status: "error", message: "unauthenticated" };
+  }
+
+  const { profileId, decision } = parsed.data;
+
+  const { data: target } = await supabase.from("profiles").select("org_unit_id, approval_status").eq("id", profileId).maybeSingle();
+  if (!target) {
+    return { status: "error", message: "forbidden" };
+  }
+
+  const { data: canApprove } = await supabase.rpc("check_vpra", {
+    p_process_area: "employeeData",
+    p_min_level: "approve",
+    p_target_org_unit: target.org_unit_id,
+  });
+  if (!canApprove) {
+    return { status: "error", message: "forbidden" };
+  }
+
+  const { error } = await supabase.from("profiles").update({ approval_status: decision }).eq("id", profileId);
+  if (error) {
+    return { status: "error", message: "unknown" };
+  }
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "employee_approval_reviewed",
+    entity: "profiles",
+    entity_id: profileId,
+    before_data: { approval_status: target.approval_status },
+    after_data: { approval_status: decision },
+  });
+
+  return { status: "success" };
+}

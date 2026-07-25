@@ -40,6 +40,7 @@ export type ProcessArea =
   | "vacancies"
   | "careerPath"
   | "employeeData"
+  | "employeeDataSubordinates"
   | "userManagement"
   | "orgStructure"
   | "staffing"
@@ -57,6 +58,7 @@ export const processAreas: ProcessArea[] = [
   "vacancies",
   "careerPath",
   "employeeData",
+  "employeeDataSubordinates",
   "userManagement",
   "orgStructure",
   "staffing",
@@ -81,7 +83,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   promotions: "الترقيات والمكافآت",
   vacancies: "الشواغر",
   careerPath: "المسار الوظيفي",
-  employeeData: "بيانات الموظفين",
+  employeeData: "بيانات جميع الموظفين",
+  employeeDataSubordinates: "بيانات الموظفين التابعين",
   userManagement: "إدارة المستخدمين والصلاحيات",
   orgStructure: "الهيكل التنظيمي",
   staffing: "التسكين",
@@ -94,7 +97,7 @@ export interface ProcessAreaSection {
 }
 
 /**
- * Grouping of the 15 process areas into labeled sections for the /admin
+ * Grouping of the 16 process areas into labeled sections for the /admin
  * permission-matrix editor (2026-07-25 checkbox-grid redesign, "قسمها إلى
  * سكاشن بحيث يكون عنوان السكشن بولد"). [استنتاج] — a presentational
  * grouping invented for readability, not a documented CLAUDE.md taxonomy;
@@ -105,7 +108,9 @@ export interface ProcessAreaSection {
  * became a personalized, ungated dashboard whose cards check EXISTING
  * process areas individually rather than one blanket gate — the Postgres
  * enum value itself can't be un-added, but nothing in the app references it
- * anymore.
+ * anymore. `employeeDataSubordinates` (20260725000008) split "Employee
+ * Data" into org-wide visibility (`employeeData`, unchanged) and a
+ * recursive-subordinate-chain visibility grant, per explicit request.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -114,7 +119,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
-    areas: ["employeeData", "careerPath", "promotions", "vacancies"],
+    areas: ["employeeData", "employeeDataSubordinates", "careerPath", "promotions", "vacancies"],
   },
   {
     titleAr: "الإدارة والنظام",

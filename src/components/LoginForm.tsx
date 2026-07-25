@@ -27,18 +27,18 @@ export function LoginForm({ locale }: { locale: Locale }) {
     <form action={formAction}>
       <div className="sru-field-float">
         <input
-          id="login-email"
-          type="email"
-          name="email"
+          id="login-identifier"
+          type="text"
+          name="identifier"
           required
-          autoComplete="email"
+          autoComplete="username"
           placeholder=" "
           dir="ltr"
           style={{ textAlign: "left" }}
         />
-        <label htmlFor="login-email">
+        <label htmlFor="login-identifier">
           <Mail size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
-          {t("emailLabel")}
+          {t("identifierLabel")}
         </label>
       </div>
 

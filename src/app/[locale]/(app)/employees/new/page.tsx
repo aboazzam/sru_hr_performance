@@ -3,11 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { EmployeeInviteForm } from "@/components/EmployeeInviteForm";
 
 // Auth is enforced centrally by (app)/layout.tsx. VPRA is not — added here
-// explicitly (2026-07-25): creating an account (invite or direct) is a
-// userManagement action per the project owner's own framing ("اسمح لمن
-// لديه صلاحية المستخدمين انشاء حساب موظف")؛ the /employees list already
-// hides the link to this page for anyone without it, but a direct URL visit
-// must be blocked server-side too, not just by hiding the button.
+// explicitly. 2026-07-25 feedback loosened this: entering employee DATA only
+// requires employeeData>=prepare (RLS on profiles_insert already enforces
+// this — a caller below that bar simply gets a "forbidden" error on submit,
+// no separate page-level check needed for the data-only case). Creating an
+// actual LOGIN account (mode='invite'|'direct' in the form) stays a
+// userManagement action — the form itself only shows that section when
+// canManageUsers is true, and inviteEmployee re-checks it server-side too.
 export default async function EmployeeInvitePage() {
   const t = await getTranslations("EmployeeInvitePage");
   const supabase = await createClient();
@@ -16,14 +18,6 @@ export default async function EmployeeInvitePage() {
     p_process_area: "userManagement",
     p_min_level: "approve",
   });
-
-  if (!canManageUsers) {
-    return (
-      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
-      </div>
-    );
-  }
 
   // RLS-scoped to the caller: org_units_select requires
   // check_vpra('employeeData','view', <unit id>) per unit, so this list is
@@ -61,7 +55,12 @@ export default async function EmployeeInvitePage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {orgUnits && orgUnits.length > 0 ? (
-        <EmployeeInviteForm orgUnits={orgUnits} roles={roles ?? []} jobTitles={jobTitles ?? []} />
+        <EmployeeInviteForm
+          orgUnits={orgUnits}
+          roles={roles ?? []}
+          jobTitles={jobTitles ?? []}
+          canManageUsers={!!canManageUsers}
+        />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}

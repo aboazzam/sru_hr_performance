@@ -8,7 +8,10 @@ const editSchema = z.object({
   profileId: z.string().uuid(),
   fullNameAr: z.string().trim().min(1),
   fullNameEn: z.string().trim().optional(),
-  email: z.string().trim().toLowerCase().email(),
+  // Optional since 2026-07-25 (profiles.email dropped its NOT NULL) —
+  // "اجعل البريد الالكتروني اختياريا وليس اجباريا".
+  email: z.string().trim().toLowerCase().email().optional(),
+  username: z.string().trim().regex(/^[a-zA-Z0-9_.]{3,32}$/).optional(),
   orgUnitId: z.string().uuid(),
   jobTitleId: z.string().uuid().optional(),
   hireDate: z
@@ -52,7 +55,8 @@ export async function updateEmployee(_prevState: EditEmployeeState, formData: Fo
     profileId: formData.get("profileId"),
     fullNameAr: formData.get("fullNameAr"),
     fullNameEn: formData.get("fullNameEn") || undefined,
-    email: formData.get("email"),
+    email: formData.get("email") || undefined,
+    username: formData.get("username") || undefined,
     orgUnitId: formData.get("orgUnitId"),
     jobTitleId: formData.get("jobTitleId") || undefined,
     hireDate: formData.get("hireDate") || undefined,
@@ -90,7 +94,8 @@ export async function updateEmployee(_prevState: EditEmployeeState, formData: Fo
       {
         full_name_ar: fields.fullNameAr,
         full_name_en: fields.fullNameEn ?? null,
-        email: fields.email,
+        email: fields.email ?? null,
+        username: fields.username ?? null,
         org_unit_id: fields.orgUnitId,
         job_title_id: fields.jobTitleId ?? null,
         hire_date: fields.hireDate ?? null,
