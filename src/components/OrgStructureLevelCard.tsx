@@ -14,12 +14,18 @@ export function OrgStructureLevelCard({
   levelOrder,
   initialNameAr,
   initialNameEn,
+  initialColor,
+  defaultColorSwatch,
   children,
 }: {
   levelId: string;
   levelOrder: number;
   initialNameAr: string;
   initialNameEn: string | null;
+  /** NULL = no admin override yet, chart falls back to the theme rotation. */
+  initialColor: string | null;
+  /** Starting swatch value shown in the picker before any override is chosen. */
+  defaultColorSwatch: string;
   children: ReactNode;
 }) {
   const t = useTranslations("OrgStructurePage");
@@ -28,7 +34,10 @@ export function OrgStructureLevelCard({
   const [isDeleting, startDeleting] = useTransition();
   const [nameAr, setNameAr] = useState(initialNameAr);
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
+  const [color, setColor] = useState<string | null>(initialColor);
   const [error, setError] = useState<string | null>(null);
+
+  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "") || color !== initialColor;
 
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
@@ -41,7 +50,7 @@ export function OrgStructureLevelCard({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updateLevel(levelId, nameAr, nameEn);
+      const res = await updateLevel(levelId, nameAr, nameEn, color);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -69,8 +78,21 @@ export function OrgStructureLevelCard({
         <span style={{ fontSize: 15, fontWeight: 700 }}>{levelOrder}.</span>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 220 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 220 }} />
+        <input
+          type="color"
+          value={color ?? defaultColorSwatch}
+          onChange={(e) => setColor(e.target.value)}
+          className="sru-color-swatch"
+          title={t("levelColorLabel")}
+          aria-label={t("levelColorLabel")}
+        />
+        {color !== null && (
+          <button type="button" onClick={() => setColor(null)} className="sru-btn" style={{ padding: "4px 10px", fontSize: 12 }}>
+            {t("useThemeColorButton")}
+          </button>
+        )}
         <div className="sru-icon-action-group">
-          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+          <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
             <Check size={15} />
           </button>
           <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>

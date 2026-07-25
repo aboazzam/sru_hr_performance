@@ -39,6 +39,8 @@ export function OrgStructurePositionRow({
   const [unassigningId, setUnassigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "");
+
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
     unauthenticated: "errorForbidden",
@@ -118,7 +120,7 @@ export function OrgStructurePositionRow({
       </td>
       <td>
         <div className="sru-icon-action-group">
-          <button type="button" disabled={isSaving} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+          <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
             <Check size={15} />
           </button>
           <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>

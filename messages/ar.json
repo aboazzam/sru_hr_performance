@@ -169,6 +169,9 @@
     "deleteButton": "حذف",
     "deleteLevelConfirm": "هل أنت متأكد من حذف هذا المستوى؟",
     "deletePositionConfirm": "هل أنت متأكد من حذف هذا المنصب؟",
+    "dragToReorder": "اسحب لإعادة الترتيب",
+    "levelColorLabel": "لون المخطط الهرمي",
+    "useThemeColorButton": "استخدام لون الثيم",
     "errorInvalid": "الرجاء تعبئة الحقول المطلوبة.",
     "errorForbidden": "لا تملك صلاحية القيام بهذا الإجراء.",
     "errorHasDependentsLevel": "لا يمكن حذف هذا المستوى لوجود مناصب فيه — احذفها أولًا.",
@@ -238,6 +241,7 @@
     "errorInvalid": "الرجاء تعبئة الحقول المطلوبة.",
     "errorForbidden": "لا تملك صلاحية القيام بهذا الإجراء.",
     "errorHasDependents": "لا يمكن حذف هذا المنصب لوجود موظفين مسكَّنين عليه أو مناصب تابعة له — عالج ذلك أولًا.",
+    "errorDuplicate": "هذا الموظف مسكَّن بالفعل على هذا المنصب.",
     "errorUnknown": "حدث خطأ غير متوقع.",
     "success": "تم الحفظ بنجاح."
   },
@@ -391,7 +395,7 @@
   "EmployeeEditPage": {
     "title": "تعديل بيانات موظف",
     "notFound": "لم يتم العثور على هذا الموظف.",
-    "errorForbidden": "ليست لديك صلاحية تعديل بيانات الموظفين.",
+    "errorForbidden": "ليست لديك صلاحية القيام بهذا الإجراء.",
     "employeeNumberLabel": "الرقم الوظيفي",
     "fullNameArLabel": "الاسم الكامل (عربي)",
     "fullNameEnLabel": "الاسم الكامل (إنجليزي) — اختياري",
@@ -430,7 +434,6 @@
     "submitting": "جارٍ الحفظ...",
     "errorInvalidInput": "تحقق من الحقول المطلوبة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
-    "errorForbidden": "ليست لديك صلاحية القيام بهذا الإجراء.",
     "errorDuplicate": "البريد الإلكتروني مستخدم مسبقًا لموظف آخر.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
