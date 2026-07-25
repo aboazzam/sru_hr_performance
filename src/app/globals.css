@@ -681,3 +681,332 @@ dialog.sru-modal::backdrop {
   font-size: 13px;
   padding: 8px 12px;
 }
+
+/* ===== Auth pages — floating glass card (2026-07-25 redesign) =====
+   Login / forgot-password / reset-password share this look: an ambient
+   two-tone radial background, a translucent blurred card, and inputs with
+   floating labels. Kept separate from sru-ui.css's plain .sru-field (label
+   above, no floating behavior) since that pattern is still correct for
+   dense data-entry forms like the employee form below — this one is
+   specific to the three short, single-purpose auth forms. */
+.sru-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  position: relative;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(80, 30, 140, 0.14), transparent 42%),
+    radial-gradient(circle at 88% 82%, rgba(10, 110, 170, 0.12), transparent 46%),
+    var(--sru-bg);
+}
+
+.sru-auth-locale {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-purple);
+  border: 1px solid var(--sru-purple);
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #fff;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sru-auth-locale:hover {
+  background: var(--sru-purple);
+  color: #fff;
+}
+
+.sru-auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  padding: 34px 30px 30px;
+  box-shadow: 0 30px 50px -30px rgba(80, 30, 140, 0.4);
+}
+
+.sru-auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 26px;
+  text-align: center;
+}
+.sru-auth-brand img {
+  height: 52px;
+  width: auto;
+  margin-bottom: 6px;
+}
+.sru-auth-brand h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+}
+.sru-auth-brand p {
+  font-size: 12.5px;
+  color: var(--sru-muted);
+}
+
+.sru-field-float {
+  position: relative;
+  margin-bottom: 16px;
+}
+.sru-field-float input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--sru-ink);
+  background: rgba(247, 245, 251, 0.7);
+  border: 1.4px solid rgba(80, 30, 140, 0.14);
+  border-radius: 14px;
+  padding: 20px 14px 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.sru-field-float.has-toggle input {
+  padding-inline-end: 42px;
+}
+.sru-field-float input::placeholder {
+  color: transparent;
+}
+.sru-field-float label {
+  position: absolute;
+  top: 15px;
+  inset-inline-start: 15px;
+  font-size: 14px;
+  color: var(--sru-muted);
+  font-weight: 600;
+  pointer-events: none;
+  transition: top 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+}
+.sru-field-float input:focus,
+.sru-field-float input:not(:placeholder-shown) {
+  padding-top: 22px;
+  padding-bottom: 6px;
+}
+.sru-field-float input:focus ~ label,
+.sru-field-float input:not(:placeholder-shown) ~ label {
+  top: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--sru-purple);
+}
+.sru-field-float input:focus {
+  border-color: var(--sru-blue);
+  box-shadow: 0 0 0 4px var(--sru-blue-light);
+  background: #fff;
+}
+
+.sru-pass-toggle {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--sru-muted);
+  display: flex;
+}
+.sru-pass-toggle:hover {
+  color: var(--sru-purple);
+}
+
+.sru-auth-submit {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--sru-purple), var(--sru-purple-dark));
+  box-shadow: 0 14px 24px -12px rgba(80, 30, 140, 0.55);
+  transition: filter 0.15s ease, transform 0.05s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.sru-auth-submit:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.sru-auth-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.sru-auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sru-auth-link-row {
+  text-align: center;
+  font-size: 13px;
+  margin-top: 18px;
+}
+.sru-auth-link-row a {
+  color: var(--sru-purple);
+  font-weight: 700;
+  text-decoration: none;
+}
+.sru-auth-link-row a:hover {
+  text-decoration: underline;
+}
+
+.sru-auth-alert {
+  font-size: 12.5px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+.sru-auth-alert.error {
+  color: #a3123a;
+  background: #fdecef;
+}
+.sru-auth-alert.success {
+  color: #166534;
+  background: #eafaf0;
+}
+.sru-auth-alert svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sru-auth-status {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--sru-muted);
+  padding: 10px 0 2px;
+}
+
+/* ===== Sectioned data-entry forms (2026-07-25 redesign) =====
+   Groups a long flat field list (first used on the "add employee" form)
+   into labeled cards instead of one continuous stack — same underlying
+   .sru-field label/input pattern from sru-ui.css, just wrapped in
+   sectioned containers with an icon badge per group. */
+.sru-formsection {
+  background: #fff;
+  border: 1px solid var(--sru-border);
+  border-radius: 16px;
+  padding: 20px 20px 6px;
+  margin-bottom: 16px;
+}
+.sru-formsection-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.sru-formsection-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--sru-purple-light), var(--sru-blue-light));
+  color: var(--sru-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sru-formsection-head h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sru-ink);
+}
+.sru-formsection-head span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--sru-muted);
+  font-weight: 500;
+  margin-top: 1px;
+}
+.sru-formgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+@media (max-width: 640px) {
+  .sru-formgrid {
+    grid-template-columns: 1fr;
+  }
+}
+.sru-formgrid .sru-field {
+  min-width: 0;
+}
+
+.sru-scope-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sru-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1.4px solid var(--sru-border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: #fff;
+  color: var(--sru-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+.sru-scope-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.sru-scope-chip:has(input:checked) {
+  border-color: var(--sru-purple);
+  color: var(--sru-purple);
+  background: var(--sru-purple-light);
+}
+.sru-scope-orgunits {
+  display: none;
+  margin-top: 10px;
+  max-height: 190px;
+  overflow-y: auto;
+  border: 1px solid var(--sru-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--sru-bg);
+}
+.sru-scope-block:has(input[value="org_unit"]:checked) .sru-scope-orgunits {
+  display: flex;
+}
+.sru-scope-orgunits label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.sru-form-submitrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 2px 26px;
+}

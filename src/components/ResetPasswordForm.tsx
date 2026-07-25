@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -49,6 +50,8 @@ export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
@@ -94,20 +97,14 @@ export function ResetPasswordForm() {
     setTimeout(() => router.push("/"), 2000);
   }
 
-  const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   if (status === "checking") {
-    return (
-      <p className="text-sm text-center" style={{ color: "var(--sru-muted)" }}>
-        {t("checking")}
-      </p>
-    );
+    return <p className="sru-auth-status">{t("checking")}</p>;
   }
 
   if (status === "invalid") {
     return (
-      <p role="alert" className="text-sm text-red-600 text-center">
+      <p role="alert" className="sru-auth-alert error">
+        <AlertCircle size={15} aria-hidden />
         {t("errorInvalidLink")}
       </p>
     );
@@ -115,51 +112,75 @@ export function ResetPasswordForm() {
 
   if (status === "success") {
     return (
-      <p role="status" className="text-sm text-green-700 text-center">
+      <p role="status" className="sru-auth-alert success">
+        <CheckCircle2 size={15} aria-hidden />
         {t("successMessage")}
       </p>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("passwordLabel")}</label>
+    <form onSubmit={handleSubmit}>
+      <div className="sru-field-float has-toggle">
         <input
-          type="password"
+          id="reset-password"
+          type={showPassword ? "text" : "password"}
           required
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className={inputClass}
-          placeholder={t("passwordPlaceholder")}
+          placeholder=" "
+          dir="ltr"
+          style={{ textAlign: "left" }}
         />
+        <label htmlFor="reset-password">
+          <Lock size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
+          {t("passwordLabel")}
+        </label>
+        <button
+          type="button"
+          className="sru-pass-toggle"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+        >
+          {showPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+        </button>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("confirmPasswordLabel")}</label>
+      <div className="sru-field-float has-toggle">
         <input
-          type="password"
+          id="reset-confirm-password"
+          type={showConfirmPassword ? "text" : "password"}
           required
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
-          className={inputClass}
-          placeholder={t("confirmPasswordPlaceholder")}
+          placeholder=" "
+          dir="ltr"
+          style={{ textAlign: "left" }}
         />
+        <label htmlFor="reset-confirm-password">
+          <Lock size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
+          {t("confirmPasswordLabel")}
+        </label>
+        <button
+          type="button"
+          className="sru-pass-toggle"
+          onClick={() => setShowConfirmPassword((v) => !v)}
+          aria-label={showConfirmPassword ? t("hidePassword") : t("showPassword")}
+        >
+          {showConfirmPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+        </button>
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={status === "submitting"}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
+      <button type="submit" disabled={status === "submitting"} className="sru-auth-submit">
         {status === "submitting" ? t("submitting") : t("submit")}
       </button>
     </form>

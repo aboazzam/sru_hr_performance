@@ -59,7 +59,9 @@
     "invalidInput": "أدخل بريدًا إلكترونيًا صحيحًا وكلمة المرور",
     "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
     "rateLimited": "محاولات كثيرة جدًا — يرجى الانتظار قليلًا قبل إعادة المحاولة",
-    "forgotPassword": "نسيت كلمة المرور؟"
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور"
   },
   "ForgotPasswordPage": {
     "title": "نسيت كلمة المرور",
@@ -87,7 +89,9 @@
     "errorInvalidLink": "الرابط غير صالح أو منتهي الصلاحية — يرجى طلب رابط جديد.",
     "errorTooShort": "كلمة المرور يجب ألا تقل عن 8 أحرف.",
     "errorMismatch": "كلمتا المرور غير متطابقتين.",
-    "errorUnknown": "تعذّر تغيير كلمة المرور — حاول مرة أخرى."
+    "errorUnknown": "تعذّر تغيير كلمة المرور — حاول مرة أخرى.",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور"
   },
   "CompetenciesPage": {
     "title": "إطار الجدارات",
@@ -356,7 +360,15 @@
     "errorInviteFailed": "أُنشئ سجل الموظف لكن تعذّر إرسال دعوة الدخول — يمكن إعادة المحاولة لاحقًا.",
     "errorRoleAssignmentFailed": "أُنشئ سجل الموظف لكن تعذّر إسناد الدور — تحقق من صلاحيتك على إدارة المستخدمين.",
     "errorRateLimited": "محاولات كثيرة جدًا خلال فترة قصيرة — يرجى الانتظار قليلًا قبل إعادة المحاولة.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "sectionBasicTitle": "البيانات الأساسية",
+    "sectionBasicSubtitle": "الهوية والتواصل الرئيسي",
+    "sectionPersonalTitle": "البيانات الشخصية",
+    "sectionPersonalSubtitle": "اختياري — يمكن استكمالها لاحقًا",
+    "sectionJobTitle": "البيانات الوظيفية",
+    "sectionJobSubtitle": "الوحدة والمسمى والتفاصيل الأكاديمية",
+    "sectionRoleTitle": "الدور والصلاحيات",
+    "sectionRoleSubtitle": "يحدّد ما يمكنه رؤيته والتصرف فيه"
   },
   "EmployeeDetailPage": {
     "notFound": "لم يتم العثور على هذا الموظف.",
@@ -391,7 +403,7 @@
   "EmployeeEditPage": {
     "title": "تعديل بيانات موظف",
     "notFound": "لم يتم العثور على هذا الموظف.",
-    "errorForbidden": "ليست لديك صلاحية تعديل بيانات الموظفين.",
+    "errorForbidden": "ليست لديك صلاحية القيام بهذا الإجراء.",
     "employeeNumberLabel": "الرقم الوظيفي",
     "fullNameArLabel": "الاسم الكامل (عربي)",
     "fullNameEnLabel": "الاسم الكامل (إنجليزي) — اختياري",
@@ -430,7 +442,6 @@
     "submitting": "جارٍ الحفظ...",
     "errorInvalidInput": "تحقق من الحقول المطلوبة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
-    "errorForbidden": "ليست لديك صلاحية القيام بهذا الإجراء.",
     "errorDuplicate": "البريد الإلكتروني مستخدم مسبقًا لموظف آخر.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
