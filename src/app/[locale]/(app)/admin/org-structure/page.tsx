@@ -3,12 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { AddOrgStructureLevelForm } from "@/components/AddOrgStructureLevelForm";
 import { AddOrgStructurePositionForm } from "@/components/AddOrgStructurePositionForm";
 import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
+import { OrgStructureLevelsList } from "@/components/OrgStructureLevelsList";
 import { OrgStructurePositionMiniRow } from "@/components/OrgStructurePositionMiniRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { OrgStructureSetupWizard } from "@/components/OrgStructureSetupWizard";
 import { OrgChartTree } from "@/components/OrgChartTree";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { defaultLevelColorSwatch } from "@/lib/orgChartColors";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -32,11 +34,17 @@ export default async function OrgStructurePage() {
 
   const { data: levelsData } = await supabase
     .from("org_structure_levels")
-    .select("id, name_ar, name_en, level_order")
+    .select("id, name_ar, name_en, level_order, color")
     .is("deleted_at", null)
     .order("level_order", { ascending: true });
 
-  const levels = (levelsData ?? []) as Array<{ id: string; name_ar: string; name_en: string | null; level_order: number }>;
+  const levels = (levelsData ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    level_order: number;
+    color: string | null;
+  }>;
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
@@ -104,6 +112,7 @@ export default async function OrgStructurePage() {
             <div className="sru-card">
               <OrgChartTree
                 positions={positions}
+                levels={levels.map((l) => ({ id: l.id, level_order: l.level_order, color: l.color }))}
                 assigneesByPosition={assigneesByPosition}
                 emptyLabel={t("noPositions")}
                 vacantLabel={t("orgChartVacant")}
@@ -116,36 +125,42 @@ export default async function OrgStructurePage() {
               <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
                 {t("levelsHeading")}
               </h2>
-              {levels.map((level) => {
-                const levelPositions = positions.filter((p) => p.level_id === level.id);
-                return (
-                  <OrgStructureLevelCard
-                    key={level.id}
-                    levelId={level.id}
-                    levelOrder={level.level_order}
-                    initialNameAr={level.name_ar}
-                    initialNameEn={level.name_en}
-                  >
-                    {levelPositions.length === 0 ? (
-                      <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
-                    ) : (
-                      <div>
-                        {levelPositions.map((position) => (
-                          <OrgStructurePositionMiniRow
-                            key={position.id}
-                            positionId={position.id}
-                            initialNameAr={position.name_ar}
-                            initialNameEn={position.name_en}
-                            parentLabel={
-                              position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
-                            }
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </OrgStructureLevelCard>
-                );
-              })}
+              <OrgStructureLevelsList
+                items={levels.map((level, levelIndex) => {
+                  const levelPositions = positions.filter((p) => p.level_id === level.id);
+                  return {
+                    id: level.id,
+                    node: (
+                      <OrgStructureLevelCard
+                        levelId={level.id}
+                        levelOrder={level.level_order}
+                        initialNameAr={level.name_ar}
+                        initialNameEn={level.name_en}
+                        initialColor={level.color}
+                        defaultColorSwatch={defaultLevelColorSwatch(levelIndex)}
+                      >
+                        {levelPositions.length === 0 ? (
+                          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
+                        ) : (
+                          <div>
+                            {levelPositions.map((position) => (
+                              <OrgStructurePositionMiniRow
+                                key={position.id}
+                                positionId={position.id}
+                                initialNameAr={position.name_ar}
+                                initialNameEn={position.name_en}
+                                parentLabel={
+                                  position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </OrgStructureLevelCard>
+                    ),
+                  };
+                })}
+              />
             </section>
           )}
         </>

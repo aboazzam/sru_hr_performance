@@ -658,6 +658,61 @@ dialog.sru-modal::backdrop {
   cursor: not-allowed;
 }
 
+/* ===== Drag-and-drop level reordering (2026-07-25) ===== */
+.sru-draggable-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.sru-draggable-item.dragging {
+  opacity: 0.45;
+}
+.sru-draggable-item.drag-over > .sru-drag-handle-col {
+  box-shadow: 0 0 0 2px var(--sru-purple);
+  border-radius: 12px;
+}
+.sru-drag-handle-col {
+  flex: 1;
+  min-width: 0;
+}
+.sru-drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 16px;
+  border-radius: 6px;
+  color: var(--sru-muted);
+  cursor: grab;
+}
+.sru-drag-handle:hover {
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+}
+.sru-draggable-item.dragging .sru-drag-handle {
+  cursor: grabbing;
+}
+
+/* ===== Level color picker (OrgStructureLevelCard, 2026-07-25) ===== */
+.sru-color-swatch {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--sru-border);
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+}
+.sru-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.sru-color-swatch::-webkit-color-swatch {
+  border-radius: 6px;
+  border: none;
+}
+
 /* ===== Permission matrix checkbox grid (RolePermissionMatrixFields.tsx, 2026-07-25) ===== */
 .sru-permission-grid th,
 .sru-permission-grid td {
