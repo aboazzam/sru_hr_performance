@@ -29,7 +29,14 @@ export default async function ReportsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: myProfile } = await supabase.from("profiles").select("id").eq("auth_user_id", user!.id).maybeSingle();
+  // `user` can be null here even though (app)/layout.tsx's own getUser() call
+  // already gated this route -- observed live for a background/prefetch
+  // request that reached this page before the layout's redirect took effect.
+  // Treat it the same as "no linked profile" (an already-handled state below)
+  // rather than crash on `user!.id`.
+  const { data: myProfile } = user
+    ? await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle()
+    : { data: null };
   const myProfileId = myProfile?.id ?? null;
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
