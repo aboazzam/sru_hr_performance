@@ -39,11 +39,13 @@ export function OrgStructurePositionRow({
   orgUnits: OrgUnitOption[];
   assignments: Assignment[];
   // Employees whose own `profiles.org_unit_id` matches this position's
-  // linked org unit (2026-07-26) — distinct from `assignments` (who is
-  // explicitly staffed onto this exact position node). This is the actual
-  // answer to "لا نجد الموظفين التابعين لمدير ادارة معينة": the position's
-  // org-unit link lets this list surface every real employee in that
-  // department, not just whoever happens to be individually staffed here.
+  // linked org unit OR any of that unit's descendant units in
+  // `org_units.parent_id` (2026-07-26) — distinct from `assignments` (who
+  // is explicitly staffed onto this exact position node). This is the
+  // actual answer to "لا نجد الموظفين التابعين لمدير ادارة معينة": the
+  // position's org-unit link lets this list surface every real employee in
+  // that department AND its sub-units, not just whoever happens to be
+  // individually staffed here or in the exact linked unit alone.
   orgUnitEmployeeLabels: string[];
 }) {
   const t = useTranslations("OrgStructureStaffingPage");

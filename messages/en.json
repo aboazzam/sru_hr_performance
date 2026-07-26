@@ -254,7 +254,7 @@
     "positionColumnName": "Position",
     "positionColumnParent": "Reports To",
     "positionColumnAssigned": "Assigned Employees",
-    "positionColumnOrgUnitEmployees": "Employees in Linked Org Unit",
+    "positionColumnOrgUnitEmployees": "Employees in Linked Org Unit (incl. sub-units)",
     "rootChip": "Root",
     "noPositions": "No positions yet — add levels and positions first from the Organizational Structure screen.",
     "assignHeading": "Assign an Employee to a Position",
