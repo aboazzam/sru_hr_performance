@@ -39,13 +39,14 @@ describe("hasVpraAccess", () => {
 });
 
 describe("static reference lists", () => {
-  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates (added 2026-07-22 and 2026-07-25)", () => {
-    expect(processAreas).toHaveLength(16);
-    expect(new Set(processAreas).size).toBe(16);
+  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings (added 2026-07-22, 2026-07-25, and 2026-07-26)", () => {
+    expect(processAreas).toHaveLength(17);
+    expect(new Set(processAreas).size).toBe(17);
     expect(processAreas).toContain("orgStructure");
     expect(processAreas).toContain("staffing");
     expect(processAreas).toContain("identity");
     expect(processAreas).toContain("employeeDataSubordinates");
+    expect(processAreas).toContain("systemSettings");
     expect(processAreas).not.toContain("reports");
   });
 

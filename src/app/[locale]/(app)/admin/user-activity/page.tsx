@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -80,6 +81,14 @@ export default async function UserActivityPage({
   // enforced above, and a real hr_admin/super_admin holding both grants
   // would never have noticed the undercount.
   const admin = createAdminClient();
+
+  // 2026-07-26: last-sign-in was rendering in the server's own timezone
+  // (UK) instead of Saudi Arabia time -- read via the caller's own
+  // RLS-respecting client (not `admin`), so this genuinely reflects the
+  // real `systemSettings` permission boundary rather than always
+  // succeeding just because this page already uses a service-role client
+  // for its other reads.
+  const displayTimezone = await getDisplayTimezone(supabase);
 
   const { data: profilesData } = await admin
     .from("profiles")
@@ -215,7 +224,7 @@ export default async function UserActivityPage({
                   <tr key={r.id}>
                     <td>{r.employee_number}</td>
                     <td>{r.full_name_ar}</td>
-                    <td>{r.lastSignInAt ? new Date(r.lastSignInAt).toLocaleString("ar-SA") : t("neverSignedIn")}</td>
+                    <td>{r.lastSignInAt ? new Date(r.lastSignInAt).toLocaleString("ar-SA", { timeZone: displayTimezone }) : t("neverSignedIn")}</td>
                     <td>{isActive ? t("activeYes") : t("activeNo")}</td>
                   </tr>
                 );

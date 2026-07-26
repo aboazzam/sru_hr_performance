@@ -25,6 +25,7 @@ import {
   FileBarChart,
   Sparkles,
   Activity,
+  Settings,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -104,6 +105,11 @@ export const navGroups: NavGroup[] = [
       // than most administration data, so this deliberately sits at the
       // same tier as the role editor itself, not just "can see admin stuff".
       { segment: "admin/user-activity", labelKey: "userActivity", icon: Activity, access: { processArea: "userManagement", minLevel: "approve" } },
+      // 2026-07-26: "إعدادات النظام" (System Settings) tab, starting with a
+      // configurable display timezone. Gated at `systemSettings>=view`,
+      // seeded super_admin-only (same narrow tier as `identity`) -- see
+      // that migration's own doc comment for why.
+      { segment: "admin/settings", labelKey: "systemSettings", icon: Settings, access: { processArea: "systemSettings", minLevel: "view" } },
     ],
   },
   {

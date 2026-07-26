@@ -36,6 +36,7 @@
     "permissions": "الصلاحيات",
     "identity": "الهوية",
     "userActivity": "أنشطة المستخدمين",
+    "systemSettings": "إعدادات النظام",
     "evaluationMethods": "طرق التقييم",
     "performance": "الأداء",
     "evaluationResults": "نتائج التقييم",
@@ -962,6 +963,19 @@
     "errorInvalidInput": "تحقق من صحة الرابط وصيغة الألوان (مثال: #501e8c).",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية تعديل الهوية.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "SystemSettingsPage": {
+    "title": "إعدادات النظام",
+    "subtitle": "إعدادات عامة على مستوى النظام، بدءًا بالتوقيت المستخدم في عرض التواريخ والأوقات.",
+    "timezoneLabel": "المنطقة الزمنية",
+    "submit": "حفظ",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم حفظ الإعدادات بنجاح.",
+    "viewOnlyNote": "يمكنك مشاهدة الإعدادات الحالية فقط — تعديلها يتطلب صلاحية اعتماد.",
+    "errorForbidden": "لا تملك صلاحية مشاهدة إعدادات النظام.",
+    "errorInvalidInput": "اختر منطقة زمنية صحيحة.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
   "UserActivityPage": {
