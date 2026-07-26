@@ -361,7 +361,15 @@
     "columnTo": "To",
     "columnRequirements": "Requirements",
     "gradeLabel": "Grade {grade}",
-    "manageJobTitles": "Manage Job Titles & Competencies"
+    "manageJobTitles": "Manage Job Titles & Competencies",
+    "selfSubtitle": "Your current job, and your upcoming career path only.",
+    "selfNoJobTitle": "No job title is set for you yet to show a career path.",
+    "selfCurrentJobLabel": "Your Current Job",
+    "selfDescriptionLabel": "Job Description",
+    "selfNoDescription": "Not defined yet",
+    "selfCompetenciesLabel": "Required Competencies",
+    "selfNoCompetencies": "No competencies defined yet",
+    "selfEmpty": "No career path is defined for your job title yet."
   },
   "CareerPathJobTitlesPage": {
     "title": "Manage Job Titles & Competencies",
@@ -377,9 +385,11 @@
     "hasDescription": "Defined",
     "noDescription": "Not defined yet",
     "competencyCount": "{count} competencies",
-    "manage": "Manage"
+    "manage": "Manage",
+    "noPermission": "You don't have permission to manage job titles & competencies."
   },
   "CareerPathJobTitleDetailPage": {
+    "noPermission": "You don't have permission to manage job titles & competencies.",
     "errorNotFound": "Job title not found.",
     "gradeLabel": "Grade {grade}",
     "backToList": "Back to List",

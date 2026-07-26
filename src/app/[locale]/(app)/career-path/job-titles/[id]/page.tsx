@@ -6,11 +6,19 @@ import type { BehavioralLevel } from "@/lib/data/competencies";
 import { JobTitleDescriptionForm } from "@/components/JobTitleDescriptionForm";
 import { JobTitleCompetenciesManager } from "@/components/JobTitleCompetenciesManager";
 
-// Auth is enforced centrally by (app)/layout.tsx. Real write authorization
-// is job_titles_update / job_title_competencies_insert|update's own RLS
-// (check_vpra_global('careerPath','prepare')) — this page only mirrors that
-// bar in application code to decide whether to render editable controls or
-// a read-only view, same pattern as /admin/identity.
+// Auth is enforced centrally by (app)/layout.tsx.
+//
+// This whole page is part of the management screen and requires
+// careerPath>=prepare, not just its writes — found live (2026-07-26)
+// alongside the /career-path-list issue that a view-level employee could
+// browse into any job title's full detail (description + every required
+// competency) here, even though writes were already correctly blocked.
+// Real authorization for the writes below remains job_titles_update /
+// job_title_competencies_insert|update's own RLS
+// (check_vpra_global('careerPath','prepare')); this page-level gate
+// additionally restricts the READ side of the whole screen to the same
+// bar, skipping every query below entirely rather than just hiding
+// controls, same discipline as /admin/org-structure's view-vs-prepare split.
 export default async function CareerPathJobTitleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const t = await getTranslations("CareerPathJobTitleDetailPage");
@@ -22,6 +30,14 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
       (row) => row.process_area === "careerPath"
     )?.vpra_level ?? "none";
   const canEdit = hasVpraAccess(careerPathLevel, "prepare");
+
+  if (!canEdit) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPermission")}</p>
+      </div>
+    );
+  }
 
   const { data: jobTitle } = await supabase
     .from("job_titles")
