@@ -1062,3 +1062,21 @@ dialog.sru-modal::backdrop {
   color: #fff;
   white-space: nowrap;
 }
+
+/* ===== Fixed app shell — sidebar stays put, gets its own scrollbar
+   (2026-07-25) =====
+   Previously the whole page (including the sidebar) scrolled as one long
+   document, so the sidebar moved out of view along with the content. This
+   locks the (app)/ shell to the viewport height and lets only .sru-sidebar
+   and <main> scroll internally — .sru-app-body/.sru-sidebar already had
+   the flex/overflow rules this needed (min-height:0, overflow-y:auto), they
+   just had no height-bounded ancestor to make them engage. Scoped to this
+   wrapper only (not <body>), so the login/forgot-password/reset-password
+   pages — which use a plain min-height:100vh centered layout outside this
+   shell — are completely unaffected. */
+.sru-app-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

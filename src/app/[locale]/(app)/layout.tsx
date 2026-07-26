@@ -57,12 +57,12 @@ export default async function AppShellLayout({
   ) as Partial<Record<ProcessArea, VpraLevel>>;
 
   return (
-    <>
+    <div className="sru-app-shell">
       <TopBar locale={safeLocale} userName={userName} />
       <div className="sru-app-body">
         <Sidebar permissions={permissions} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
       </div>
-    </>
+    </div>
   );
 }
