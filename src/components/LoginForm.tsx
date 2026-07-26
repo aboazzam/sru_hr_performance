@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { login, type LoginState } from "@/app/[locale]/login/actions";
@@ -23,22 +23,34 @@ export function LoginForm({ locale }: { locale: Locale }) {
   );
   const [showPassword, setShowPassword] = useState(false);
 
+  // React 19's <form action={fn}> resets every uncontrolled field after ANY
+  // submission, success or error alike -- a wrong password would otherwise
+  // wipe the identifier the user just typed too. See EmployeeInviteForm.tsx
+  // for the full writeup of this quirk.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <div className="sru-field-float">
         <input
-          id="login-email"
-          type="email"
-          name="email"
+          id="login-identifier"
+          type="text"
+          name="identifier"
           required
-          autoComplete="email"
+          autoComplete="username"
           placeholder=" "
           dir="ltr"
           style={{ textAlign: "left" }}
         />
-        <label htmlFor="login-email">
+        <label htmlFor="login-identifier">
           <Mail size={14} aria-hidden style={{ display: "inline", marginInlineEnd: 6, verticalAlign: "-2px" }} />
-          {t("emailLabel")}
+          {t("identifierLabel")}
         </label>
       </div>
 

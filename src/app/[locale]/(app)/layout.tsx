@@ -36,9 +36,18 @@ export default async function AppShellLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name_ar, full_name_en")
+    .select("full_name_ar, full_name_en, must_change_password")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  // Forced first-login password change (2026-07-25, see login/actions.ts) —
+  // enforced here too, not just at the login redirect, so it can't be
+  // bypassed by navigating straight to any (app)/ URL with an existing
+  // session (e.g. a bookmarked link, or simply not logging out first).
+  if (profile?.must_change_password) {
+    redirect({ href: "/change-password", locale: safeLocale });
+    return null;
+  }
 
   const userName =
     (safeLocale === "ar" ? profile?.full_name_ar : profile?.full_name_en ?? profile?.full_name_ar) ??

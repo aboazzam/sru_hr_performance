@@ -28,6 +28,9 @@ interface ConnectorLine {
   d: string;
 }
 
+const SLOT_WIDTH = 200;
+const ROW_HEIGHT = 96;
+
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
 // means varied depth within that palette, not an arbitrary rainbow. These
@@ -45,22 +48,66 @@ const THEME_NODE_COLORS: NodeColor[] = [
 ];
 
 /**
+ * Assigns every position a horizontal "slot" via a classic tree-layout
+ * leaf-ordering pass: each LEAF gets the next sequential slot in traversal
+ * order, and each internal node's slot is the average of its own children's
+ * slots. Two positions that don't share a subtree end up in genuinely
+ * different horizontal columns even when they happen to render on adjacent
+ * or distant rows — the actual fix for the 2026-07-25 report ("مدير رأس
+ * المال البشري يتبع مباشرة الرئيس التنفيذي وليس نائب الرئيس"): a straight
+ * bypass curve around the intervening row still read as ambiguous, because
+ * both positions sat in the exact same horizontal column by coincidence
+ * (each alone in its own row). Giving CEO's two independent children (one
+ * at C2, one at C4) distinct slots means the CEO node naturally centers
+ * between them, and each connector runs straight to its own column with no
+ * visual overlap or need for a curve at all.
+ */
+function computeSlots(positions: OrgChartPosition[]): { slotOf: Map<string, number>; leafCount: number } {
+  const positionById = new Map(positions.map((p) => [p.id, p]));
+  const childrenByParentId = new Map<string, OrgChartPosition[]>();
+  for (const p of positions) {
+    if (!p.parent_id || !positionById.has(p.parent_id)) continue;
+    const list = childrenByParentId.get(p.parent_id);
+    if (list) list.push(p);
+    else childrenByParentId.set(p.parent_id, [p]);
+  }
+
+  const slotOf = new Map<string, number>();
+  let nextLeaf = 0;
+
+  function visit(p: OrgChartPosition): number {
+    const children = childrenByParentId.get(p.id) ?? [];
+    if (children.length === 0) {
+      const slot = nextLeaf;
+      nextLeaf += 1;
+      slotOf.set(p.id, slot);
+      return slot;
+    }
+    const childSlots = children.map(visit);
+    const slot = childSlots.reduce((sum, s) => sum + s, 0) / childSlots.length;
+    slotOf.set(p.id, slot);
+    return slot;
+  }
+
+  const roots = positions.filter((p) => !p.parent_id || !positionById.has(p.parent_id));
+  for (const root of roots) visit(root);
+
+  return { slotOf, leafCount: nextLeaf };
+}
+
+/**
  * The org-structure setup wizard's "second output" (2026-07-24): a
  * colorful, professional org-chart tree, complementing the plain editable
  * positions list already on this page and the staffing table on
  * `/admin/org-structure/staffing`. Rebuilt 2026-07-25 (see the CSS comment
  * in globals.css for the full "why"): every position renders in the row
- * belonging to its OWN level (not its tree depth), and connector lines are
- * drawn via a measured SVG overlay so a skip-level link (a position linked
- * to any ancestor level, not just the immediately preceding one) renders as
- * a real line spanning the actual vertical gap, not a one-row hop.
- *
- * Follow-up (2026-07-25): a straight line for a skip-level connection still
- * visually passed right through whatever row(s) sat in between, reading as
- * a chain through them ("مدير رأس المال البشري يتبع مباشرة الرئيس
- * التنفيذي وليس نائب الرئيس"). Skip connections now bow out to the side
- * and back (see `measure()`) so they visibly route around the intervening
- * row instead of appearing to pass through it.
+ * belonging to its OWN level (not its tree depth). Its horizontal position
+ * is driven by `computeSlots` (a real tree-layout pass, not per-row
+ * centering) so two positions that don't share a subtree never end up
+ * accidentally aligned in the same column, and connector lines (drawn via
+ * a measured SVG overlay, so real box heights/wrapping stay accurate)
+ * always run as a clean straight elbow with no ambiguity about which
+ * position reports to which parent.
  */
 export function OrgChartTree({
   positions,
@@ -92,37 +139,23 @@ export function OrgChartTree({
     [sortedLevels]
   );
 
-  const positionsByLevelId = useMemo(() => {
-    const map = new Map<string, OrgChartPosition[]>();
-    for (const p of positions) {
-      const list = map.get(p.level_id);
-      if (list) list.push(p);
-      else map.set(p.level_id, [p]);
-    }
-    return map;
-  }, [positions]);
-
   const positionById = useMemo(() => new Map(positions.map((p) => [p.id, p])), [positions]);
 
-  // Real feedback (2026-07-25): "لكن مدير رأس المال البشري يتبع مباشرة
-  // الرئيس التنفيذي (1) وليس نائب الرئيس (C2)" -- a straight connector line
-  // between a parent and a grandchild-level position visually passes right
-  // through any level rendered in between (e.g. CEO -> C4, skipping C2's
-  // row), reading as a chain (CEO -> C2 -> C4) even though C2 has nothing
-  // to do with it. `renderedRowIndexByLevelId` only counts OCCUPIED levels
-  // (matching what's actually drawn as a row below), so the gap it measures
-  // reflects real visual rows, not raw level_order values.
   const renderedRowIndexByLevelId = useMemo(() => {
-    const occupiedLevels = sortedLevels.filter((l) => (positionsByLevelId.get(l.id)?.length ?? 0) > 0);
+    const occupiedLevels = sortedLevels.filter((l) => positions.some((p) => p.level_id === l.id));
     return new Map(occupiedLevels.map((l, index) => [l.id, index]));
-  }, [sortedLevels, positionsByLevelId]);
+  }, [sortedLevels, positions]);
+
+  const { slotOf, leafCount } = useMemo(() => computeSlots(positions), [positions]);
+
+  const canvasWidth = Math.max(leafCount, 1) * SLOT_WIDTH;
+  const canvasHeight = Math.max(renderedRowIndexByLevelId.size, 1) * ROW_HEIGHT;
 
   const measure = () => {
     const container = containerRef.current;
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     const nextLines: ConnectorLine[] = [];
-    let skipCount = 0;
     for (const p of positions) {
       if (!p.parent_id) continue;
       const parent = positionById.get(p.parent_id);
@@ -135,29 +168,8 @@ export function OrgChartTree({
       const y1 = parentRect.bottom - containerRect.top;
       const x2 = childRect.left + childRect.width / 2 - containerRect.left;
       const y2 = childRect.top - containerRect.top;
-
-      const parentRow = renderedRowIndexByLevelId.get(parent.level_id);
-      const childRow = renderedRowIndexByLevelId.get(p.level_id);
-      const isSkip = parentRow != null && childRow != null && childRow - parentRow > 1;
-
-      let d: string;
-      if (!isSkip) {
-        const midY = (y1 + y2) / 2;
-        d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
-      } else {
-        // Bows the line out to one side and back, visibly routing AROUND
-        // whatever row(s) sit between parent and child instead of straight
-        // through their center — alternating sides and widening per extra
-        // concurrent skip connector so several don't stack on top of each other.
-        const side = skipCount % 2 === 0 ? 1 : -1;
-        const offset = (90 + Math.floor(skipCount / 2) * 40) * side;
-        const bendGap = 18;
-        const cx1 = x1 + offset;
-        const cx2 = x2 + offset;
-        d = `M ${x1} ${y1} L ${x1} ${y1 + bendGap} Q ${cx1} ${y1 + bendGap} ${cx1} ${y1 + bendGap * 2} L ${cx2} ${y2 - bendGap * 2} Q ${cx2} ${y2 - bendGap} ${x2} ${y2 - bendGap} L ${x2} ${y2}`;
-        skipCount++;
-      }
-      nextLines.push({ id: p.id, d });
+      const midY = (y1 + y2) / 2;
+      nextLines.push({ id: p.id, d: `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}` });
     }
     setLines(nextLines);
   };
@@ -185,40 +197,43 @@ export function OrgChartTree({
 
   return (
     <div ref={containerRef} className="sru-orgchart-wrapper">
-      <svg className="sru-orgchart-lines">
-        {lines.map((line) => (
-          <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
-        ))}
-      </svg>
-      {sortedLevels.map((level) => {
-        const levelPositions = positionsByLevelId.get(level.id);
-        if (!levelPositions || levelPositions.length === 0) return null;
-        const color = colorByLevelId.get(level.id)!;
-        return (
-          <div key={level.id} className="sru-orgchart-row">
-            {levelPositions.map((p) => {
-              const assignees = assigneesByPosition[p.id] ?? [];
-              return (
-                <div
-                  key={p.id}
-                  ref={(el) => {
-                    if (el) nodeElsRef.current.set(p.id, el);
-                    else nodeElsRef.current.delete(p.id);
-                  }}
-                  className="sru-orgchart-node"
-                  style={{ background: color.bg, color: color.fg }}
-                >
-                  <strong>{p.name_ar}</strong>
-                  <span className="sru-orgchart-node-assignees">
-                    <Users size={12} />
-                    {assignees.length > 0 ? assignees.join("، ") : vacantLabel}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
+      <div className="sru-orgchart-canvas" style={{ width: canvasWidth, height: canvasHeight }}>
+        <svg className="sru-orgchart-lines">
+          {lines.map((line) => (
+            <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
+          ))}
+        </svg>
+        {positions.map((p) => {
+          const rowIndex = renderedRowIndexByLevelId.get(p.level_id) ?? 0;
+          const slot = slotOf.get(p.id) ?? 0;
+          const color = colorByLevelId.get(p.level_id)!;
+          const assignees = assigneesByPosition[p.id] ?? [];
+          return (
+            <div
+              key={p.id}
+              ref={(el) => {
+                if (el) nodeElsRef.current.set(p.id, el);
+                else nodeElsRef.current.delete(p.id);
+              }}
+              className="sru-orgchart-node"
+              style={{
+                position: "absolute",
+                left: slot * SLOT_WIDTH + SLOT_WIDTH / 2,
+                top: rowIndex * ROW_HEIGHT,
+                transform: "translateX(-50%)",
+                background: color.bg,
+                color: color.fg,
+              }}
+            >
+              <strong>{p.name_ar}</strong>
+              <span className="sru-orgchart-node-assignees">
+                <Users size={12} />
+                {assignees.length > 0 ? assignees.join("، ") : vacantLabel}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

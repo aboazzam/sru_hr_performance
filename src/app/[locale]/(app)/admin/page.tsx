@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { AdminUsersTable } from "@/components/AdminUsersTable";
 import { DeleteRoleButton } from "@/components/DeleteRoleButton";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
@@ -115,22 +115,25 @@ export default async function AdminPage() {
   const countByRoleId = new Map<string, number>();
   for (const [roleId, set] of usersPerRole) countByRoleId.set(roleId, set.size);
 
-  // Per-employee CURRENT global role, for the Users list's select prefill —
-  // this simple screen only manages the scope_type='all' assignment (see
+  // Per-employee CURRENT global roles, for the Users list's checkbox-dropdown
+  // prefill — 2026-07-25: an employee may hold several roles at once (e.g.
+  // hr_admin AND competencies_admin), so this is now an array rather than
+  // "the first row found." Still only the scope_type='all' assignments (see
   // assignUserRole's own doc comment for why org-unit-scoped rows are left
-  // alone). If more than one somehow exists, the first is shown; saving
-  // collapses back to exactly one.
-  const globalRoleIdByAuthUserId = new Map<string, string>();
+  // alone).
+  const globalRoleIdsByAuthUserId = new Map<string, string[]>();
   for (const row of userRoles) {
-    if (row.scope_type === "all" && !globalRoleIdByAuthUserId.has(row.user_id)) {
-      globalRoleIdByAuthUserId.set(row.user_id, row.role_id);
-    }
+    if (row.scope_type !== "all") continue;
+    const list = globalRoleIdsByAuthUserId.get(row.user_id) ?? [];
+    list.push(row.role_id);
+    globalRoleIdsByAuthUserId.set(row.user_id, list);
   }
-  const globalRoleIdByProfileId = new Map<string, string>();
+  const globalRoleIdsByProfileId = new Map<string, string[]>();
   for (const row of pendingRoles) {
-    if (row.scope_type === "all" && !globalRoleIdByProfileId.has(row.profile_id)) {
-      globalRoleIdByProfileId.set(row.profile_id, row.role_id);
-    }
+    if (row.scope_type !== "all") continue;
+    const list = globalRoleIdsByProfileId.get(row.profile_id) ?? [];
+    list.push(row.role_id);
+    globalRoleIdsByProfileId.set(row.profile_id, list);
   }
 
   return (
@@ -164,46 +167,18 @@ export default async function AdminPage() {
         {employees.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noUsers")}</p>
         ) : (
-          <div className="sru-card">
-            <div className="table-scroll">
-              <table className="admin-matrix">
-                <thead>
-                  <tr>
-                    <th>{t("userColumnNumber")}</th>
-                    <th>{t("userColumnName")}</th>
-                    <th>{t("userColumnRole")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((employee) => {
-                    const currentRoleId = employee.auth_user_id
-                      ? globalRoleIdByAuthUserId.get(employee.auth_user_id) ?? null
-                      : globalRoleIdByProfileId.get(employee.id) ?? null;
-                    return (
-                      <tr key={employee.id}>
-                        <td style={{ fontSize: 13 }}>{employee.employee_number}</td>
-                        <td style={{ fontSize: 13 }}>{employee.full_name_ar}</td>
-                        <td>
-                          {canManage ? (
-                            <UserRoleAssignRow
-                              profileId={employee.id}
-                              authUserId={employee.auth_user_id}
-                              roles={roleOptions}
-                              initialRoleId={currentRoleId}
-                            />
-                          ) : (
-                            <span style={{ fontSize: 13 }}>
-                              {roles.find((r) => r.id === currentRoleId)?.name_ar ?? t("roleNoneOption")}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AdminUsersTable
+            users={employees.map((employee) => ({
+              ...employee,
+              currentRoleIds: employee.auth_user_id
+                ? globalRoleIdsByAuthUserId.get(employee.auth_user_id) ?? []
+                : globalRoleIdsByProfileId.get(employee.id) ?? [],
+            }))}
+            roleOptions={roleOptions}
+            roles={roles}
+            canManage={canManage}
+            noneLabel={t("roleNoneOption")}
+          />
         )}
       </section>
 

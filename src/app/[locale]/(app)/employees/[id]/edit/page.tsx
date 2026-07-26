@@ -30,7 +30,7 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, employee_number, full_name_ar, full_name_en, email, status, org_unit_id, job_title_id, hire_date, qualification, education_speciality, date_of_birth, mobile, marital_status, gender, nationality, employee_category, insurance_category"
+      "id, employee_number, full_name_ar, full_name_en, email, username, auth_user_id, status, org_unit_id, job_title_id, hire_date, qualification, education_speciality, date_of_birth, mobile, marital_status, gender, nationality, employee_category, insurance_category"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -51,6 +51,39 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
     .is("deleted_at", null)
     .order("name_ar");
 
+  // Role & Permissions section (2026-07-25, "بالنسبة لاسناد الدور لا يظهر
+  // في النموذجين الا لمن لديه صلاحيات اضافة المستخدمين") — same
+  // userManagement>=approve gate as the add-employee form's account
+  // section, reusing UserRoleAssignRow verbatim.
+  const { data: canManageUsersData } = await supabase.rpc("check_vpra", {
+    p_process_area: "userManagement",
+    p_min_level: "approve",
+  });
+  const canManageUsers = !!canManageUsersData;
+
+  let roles: { id: string; name_ar: string }[] = [];
+  let initialRoleIds: string[] = [];
+  if (canManageUsers) {
+    const { data: rolesData } = await supabase.from("roles").select("id, name_ar").order("name_ar");
+    roles = rolesData ?? [];
+
+    if (profile.auth_user_id) {
+      const { data: userRoles } = await supabase
+        .from("user_roles")
+        .select("role_id")
+        .eq("user_id", profile.auth_user_id)
+        .eq("scope_type", "all");
+      initialRoleIds = (userRoles ?? []).map((r) => r.role_id);
+    } else {
+      const { data: pendingRoles } = await supabase
+        .from("pending_role_assignments")
+        .select("role_id")
+        .eq("profile_id", profile.id)
+        .eq("scope_type", "all");
+      initialRoleIds = (pendingRoles ?? []).map((r) => r.role_id);
+    }
+  }
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -61,7 +94,14 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <EditEmployeeForm profile={profile} orgUnits={orgUnits ?? []} jobTitles={jobTitles ?? []} />
+      <EditEmployeeForm
+        profile={profile}
+        orgUnits={orgUnits ?? []}
+        jobTitles={jobTitles ?? []}
+        roles={roles}
+        canManageUsers={canManageUsers}
+        initialRoleIds={initialRoleIds}
+      />
     </div>
   );
 }
