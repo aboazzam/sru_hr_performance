@@ -4,6 +4,7 @@ import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -79,27 +80,10 @@ export default async function OrgStructureStaffingPage() {
   // `org_units.parent_id` (the same hierarchy `is_org_unit_in_scope()`
   // already walks for VPRA org-unit scoping). An exact-match-only lookup
   // missed this entirely; descendants must be included recursively, not
-  // just the linked unit itself.
-  const childOrgUnitIdsByParent = new Map<string, string[]>();
-  for (const u of orgUnits) {
-    if (!u.parent_id) continue;
-    const list = childOrgUnitIdsByParent.get(u.parent_id) ?? [];
-    list.push(u.id);
-    childOrgUnitIdsByParent.set(u.parent_id, list);
-  }
-  function descendantOrgUnitIds(rootId: string): Set<string> {
-    const result = new Set<string>([rootId]);
-    const queue = [rootId];
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      for (const childId of childOrgUnitIdsByParent.get(current) ?? []) {
-        if (result.has(childId)) continue; // guards against a corrupted cyclical parent_id chain
-        result.add(childId);
-        queue.push(childId);
-      }
-    }
-    return result;
-  }
+  // just the linked unit itself. Extracted to `src/lib/orgUnitHierarchy.ts`
+  // (2026-07-27) after the exact same gap was independently found on the
+  // visual org chart -- one shared implementation now, not two to drift.
+  const descendantOrgUnitIds = buildDescendantOrgUnitIdsResolver(orgUnits);
 
   const employeesByOrgUnitId = new Map<string, string[]>();
   for (const e of employees) {
