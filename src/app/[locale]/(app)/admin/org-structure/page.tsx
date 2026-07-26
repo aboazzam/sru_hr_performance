@@ -11,6 +11,7 @@ import { OrgChartTree } from "@/components/OrgChartTree";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { defaultLevelColorSwatch, identityColorSwatches, SRU_DEFAULT_PRIMARY, SRU_DEFAULT_SECONDARY } from "@/lib/orgChartColors";
+import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -80,21 +81,57 @@ export default async function OrgStructurePage() {
   // `org_units_select` RLS every other org-unit-picking screen already
   // relies on (employeeData/vacancies view -- hr_admin/super_admin, the
   // only roles that reach `canBuild` below, already hold employeeData).
-  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar");
-  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string }>;
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar, parent_id").is("deleted_at", null).order("name_ar");
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
-    .select("position_id, profiles(full_name_ar)")
+    .select("position_id, profiles(id, full_name_ar)")
     .is("deleted_at", null);
   const assignments = (assignmentsData ?? []) as unknown as Array<{
     position_id: string;
-    profiles: { full_name_ar: string } | null;
+    profiles: { id: string; full_name_ar: string } | null;
   }>;
-  const assigneesByPosition: Record<string, string[]> = {};
+
+  // 2026-07-27: the chart only ever showed employees directly staffed via
+  // `org_structure_assignments`, missing anyone visible through a position's
+  // org-unit link -- the exact gap already fixed on the staffing table's
+  // own "موظفو الوحدة التنظيمية" column (real feedback: نائب الرئيس
+  // showed only 1 of the 3 real employees under it). Merges both sources
+  // here too, deduped by profile id since the same person can appear in
+  // both (e.g. explicitly assigned AND a member of the linked org unit).
+  const { data: employeesData } = await supabase.from("profiles").select("id, full_name_ar, org_unit_id").is("deleted_at", null);
+  const employees = (employeesData ?? []) as Array<{ id: string; full_name_ar: string; org_unit_id: string | null }>;
+  const employeesByOrgUnitId = new Map<string, Array<{ id: string; full_name_ar: string }>>();
+  for (const e of employees) {
+    if (!e.org_unit_id) continue;
+    const list = employeesByOrgUnitId.get(e.org_unit_id) ?? [];
+    list.push({ id: e.id, full_name_ar: e.full_name_ar });
+    employeesByOrgUnitId.set(e.org_unit_id, list);
+  }
+  const descendantOrgUnitIds = buildDescendantOrgUnitIdsResolver(orgUnits);
+
+  const assigneesByPositionEntries = new Map<string, Map<string, string>>();
+  function addAssignee(positionId: string, employeeId: string, label: string) {
+    const byEmployeeId = assigneesByPositionEntries.get(positionId) ?? new Map<string, string>();
+    byEmployeeId.set(employeeId, label);
+    assigneesByPositionEntries.set(positionId, byEmployeeId);
+  }
   for (const a of assignments) {
     if (!a.profiles) continue;
-    (assigneesByPosition[a.position_id] ??= []).push(a.profiles.full_name_ar);
+    addAssignee(a.position_id, a.profiles.id, a.profiles.full_name_ar);
+  }
+  for (const p of positions) {
+    if (!p.org_unit_id) continue;
+    for (const unitId of descendantOrgUnitIds(p.org_unit_id)) {
+      for (const e of employeesByOrgUnitId.get(unitId) ?? []) {
+        addAssignee(p.id, e.id, e.full_name_ar);
+      }
+    }
+  }
+  const assigneesByPosition: Record<string, string[]> = {};
+  for (const [positionId, byEmployeeId] of assigneesByPositionEntries) {
+    assigneesByPosition[positionId] = Array.from(byEmployeeId.values());
   }
 
   return (
