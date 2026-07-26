@@ -61,7 +61,7 @@ export default async function OrgStructurePage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -71,8 +71,17 @@ export default async function OrgStructurePage() {
     parent_id: string | null;
     name_ar: string;
     name_en: string | null;
+    org_unit_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+
+  // 2026-07-26: optional position -> org unit link, closing the reported
+  // gap between employees' own org unit and the org-chart tree. Same
+  // `org_units_select` RLS every other org-unit-picking screen already
+  // relies on (employeeData/vacancies view -- hr_admin/super_admin, the
+  // only roles that reach `canBuild` below, already hold employeeData).
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar");
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -103,7 +112,7 @@ export default async function OrgStructurePage() {
             {levels.length > 0 && (
               <>
                 <AddOrgStructureLevelForm />
-                <AddOrgStructurePositionForm levels={levels} positions={positions} />
+                <AddOrgStructurePositionForm levels={levels} positions={positions} orgUnits={orgUnits} />
               </>
             )}
             <ImportOrgStructureExcelForm />
@@ -162,6 +171,8 @@ export default async function OrgStructurePage() {
                                 positionId={position.id}
                                 initialNameAr={position.name_ar}
                                 initialNameEn={position.name_en}
+                                initialOrgUnitId={position.org_unit_id}
+                                orgUnits={orgUnits}
                                 parentLabel={
                                   position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
                                 }

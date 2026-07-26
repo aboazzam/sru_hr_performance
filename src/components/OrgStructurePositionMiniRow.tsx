@@ -9,15 +9,24 @@ import { updatePosition, deletePosition } from "@/app/[locale]/(app)/admin/org-s
 const inputClass =
   "px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
+interface OrgUnitOption {
+  id: string;
+  name_ar: string;
+}
+
 export function OrgStructurePositionMiniRow({
   positionId,
   initialNameAr,
   initialNameEn,
+  initialOrgUnitId,
+  orgUnits,
   parentLabel,
 }: {
   positionId: string;
   initialNameAr: string;
   initialNameEn: string | null;
+  initialOrgUnitId: string | null;
+  orgUnits: OrgUnitOption[];
   parentLabel: string;
 }) {
   const t = useTranslations("OrgStructurePage");
@@ -26,9 +35,10 @@ export function OrgStructurePositionMiniRow({
   const [isDeleting, startDeleting] = useTransition();
   const [nameAr, setNameAr] = useState(initialNameAr);
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
+  const [orgUnitId, setOrgUnitId] = useState(initialOrgUnitId ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "");
+  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "") || orgUnitId !== (initialOrgUnitId ?? "");
 
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
@@ -41,7 +51,7 @@ export function OrgStructurePositionMiniRow({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updatePosition(positionId, nameAr, nameEn);
+      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -68,6 +78,20 @@ export function OrgStructurePositionMiniRow({
       <span style={{ color: "var(--sru-muted)", fontSize: 11.5, minWidth: 80 }}>{parentLabel}</span>
       <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 180 }} />
       <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 180 }} />
+      <select
+        value={orgUnitId}
+        onChange={(e) => setOrgUnitId(e.target.value)}
+        className={inputClass}
+        style={{ maxWidth: 180 }}
+        aria-label={t("positionOrgUnitLabel")}
+      >
+        <option value="">{t("positionOrgUnitNone")}</option>
+        {orgUnits.map((unit) => (
+          <option key={unit.id} value={unit.id}>
+            {unit.name_ar}
+          </option>
+        ))}
+      </select>
       <div className="sru-icon-action-group">
         <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
           <Check size={14} />

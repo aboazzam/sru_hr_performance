@@ -273,6 +273,7 @@ const addPositionSchema = z.object({
   parentId: z.string().uuid().optional(),
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 export type AddPositionResult =
@@ -300,13 +301,15 @@ export async function addPosition(
   levelId: string,
   nameAr: string,
   nameEn: string,
-  parentId?: string
+  parentId?: string,
+  orgUnitId?: string
 ): Promise<AddPositionResult> {
   const parsed = addPositionSchema.safeParse({
     levelId,
     parentId: parentId || undefined,
     nameAr,
     nameEn: nameEn || undefined,
+    orgUnitId: orgUnitId || undefined,
   });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
@@ -327,6 +330,7 @@ export async function addPosition(
       parent_id: parsed.data.parentId ?? null,
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn ?? null,
+      org_unit_id: parsed.data.orgUnitId ?? null,
     })
     .select("id")
     .single();
@@ -344,6 +348,7 @@ export async function addPosition(
       parent_id: parsed.data.parentId ?? null,
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn ?? null,
+      org_unit_id: parsed.data.orgUnitId ?? null,
     },
   });
 
@@ -419,20 +424,27 @@ const updatePositionSchema = z.object({
   positionId: z.string().uuid(),
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
+  orgUnitId: z.string().uuid().nullable(),
 });
 
 /**
- * Edits an existing position's name — the "خاصية التعديل" (edit
- * capability) the project owner asked for on the staffing screen. Real
- * authorization is `org_structure_positions_update`'s RLS
+ * Edits an existing position's name and org-unit link — the "خاصية التعديل"
+ * (edit capability) the project owner asked for on the staffing screen.
+ * Real authorization is `org_structure_positions_update`'s RLS
  * (`check_vpra_global('orgStructure','approve')`).
+ *
+ * `orgUnitId` (2026-07-26) is `string | null`, not optional — unlike
+ * `addPosition`'s optional param, an edit form always resends the current
+ * selection, and `null` explicitly means "clear the link" (same
+ * null-vs-undefined convention `updateLevel`'s `color` already uses).
  */
 export async function updatePosition(
   positionId: string,
   nameAr: string,
-  nameEn: string
+  nameEn: string,
+  orgUnitId: string | null
 ): Promise<OrgStructureActionState> {
-  const parsed = updatePositionSchema.safeParse({ positionId, nameAr, nameEn: nameEn || undefined });
+  const parsed = updatePositionSchema.safeParse({ positionId, nameAr, nameEn: nameEn || undefined, orgUnitId });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
   }
@@ -447,7 +459,7 @@ export async function updatePosition(
 
   const { error } = await supabase
     .from("org_structure_positions")
-    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null })
+    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, org_unit_id: parsed.data.orgUnitId })
     .eq("id", parsed.data.positionId);
 
   if (error) return mapError(error);
@@ -458,7 +470,7 @@ export async function updatePosition(
     action: "org_structure_position_updated",
     entity: "org_structure_positions",
     entity_id: parsed.data.positionId,
-    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null },
+    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, org_unit_id: parsed.data.orgUnitId },
   });
 
   return { status: "success" };

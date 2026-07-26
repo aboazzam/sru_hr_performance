@@ -23,7 +23,7 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const positions = (positionsData ?? []) as Array<{
@@ -32,8 +32,16 @@ export default async function OrgStructureStaffingPage() {
     parent_id: string | null;
     name_ar: string;
     name_en: string | null;
+    org_unit_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+
+  // 2026-07-26: optional position -> org unit link, closing the reported
+  // gap between employees' own org unit and the org-chart tree ("لا نجد
+  // الموظفين التابعين لمدير ادارة معينة"). Same `org_units_select` RLS
+  // every other org-unit-picking screen already relies on.
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar");
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -50,10 +58,27 @@ export default async function OrgStructureStaffingPage() {
   // discipline as the existing /employees list page.
   const { data: employeesData } = await supabase
     .from("profiles")
-    .select("id, employee_number, full_name_ar")
+    .select("id, employee_number, full_name_ar, org_unit_id")
     .is("deleted_at", null)
     .order("full_name_ar", { ascending: true });
-  const employees = (employeesData ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>;
+  const employees = (employeesData ?? []) as Array<{
+    id: string;
+    employee_number: string;
+    full_name_ar: string;
+    org_unit_id: string | null;
+  }>;
+
+  // Employees whose OWN org unit matches a position's linked org unit —
+  // the real answer to "لا نجد الموظفين التابعين لمدير ادارة معينة",
+  // distinct from `assignments` below (who is individually staffed onto
+  // this exact position node).
+  const employeesByOrgUnitId = new Map<string, string[]>();
+  for (const e of employees) {
+    if (!e.org_unit_id) continue;
+    const list = employeesByOrgUnitId.get(e.org_unit_id) ?? [];
+    list.push(`${e.employee_number} — ${e.full_name_ar}`);
+    employeesByOrgUnitId.set(e.org_unit_id, list);
+  }
 
   const positionOptions = positions.map((p) => ({
     id: p.id,
@@ -94,6 +119,7 @@ export default async function OrgStructureStaffingPage() {
                     <th>{t("positionColumnParent")}</th>
                     <th>{t("positionColumnName")}</th>
                     <th>{t("positionColumnAssigned")}</th>
+                    <th>{t("positionColumnOrgUnitEmployees")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -113,7 +139,10 @@ export default async function OrgStructureStaffingPage() {
                         positionId={position.id}
                         initialNameAr={position.name_ar}
                         initialNameEn={position.name_en}
+                        initialOrgUnitId={position.org_unit_id}
+                        orgUnits={orgUnits}
                         assignments={positionAssignments}
+                        orgUnitEmployeeLabels={position.org_unit_id ? employeesByOrgUnitId.get(position.org_unit_id) ?? [] : []}
                       />
                     );
                   })}
