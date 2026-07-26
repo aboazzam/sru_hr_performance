@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Briefcase, IdCard, ShieldCheck, User, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles } from "lucide-react";
-import { inviteEmployee, type InviteEmployeeState } from "@/app/[locale]/(app)/employees/new/actions";
+import { inviteEmployee, type InviteEmployeeState, type InviteFieldError } from "@/app/[locale]/(app)/employees/new/actions";
 
 /** Client-side only — never sent anywhere until the admin actually submits the form. */
 function generateSuggestedPassword(): string {
@@ -40,6 +40,20 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   role_assignment_failed: "errorRoleAssignmentFailed",
   rate_limited: "errorRateLimited",
   unknown: "errorUnknown",
+};
+
+/** Per-condition messages for `invalid_input` (2026-07-26) -- replaces one
+ * generic bundled message that listed every possible cause regardless of
+ * which one actually failed. */
+const fieldErrorKeys: Record<InviteFieldError, string> = {
+  employeeNumber: "errorFieldEmployeeNumber",
+  fullNameAr: "errorFieldFullNameAr",
+  orgUnitId: "errorFieldOrgUnit",
+  roleIds: "errorFieldRole",
+  scopeOrgUnitIds: "errorFieldScopeOrgUnits",
+  password: "errorFieldPassword",
+  identifier: "errorFieldIdentifier",
+  other: "errorInvalidInput",
 };
 
 export function EmployeeInviteForm({
@@ -376,7 +390,18 @@ export function EmployeeInviteForm({
       </section>
       )}
 
-      {state?.status === "error" && (
+      {state?.status === "error" && state.message === "invalid_input" && state.fields && state.fields.length > 0 && (
+        <div role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
+          <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+            {state.fields.map((field) => (
+              <li key={field}>{t(fieldErrorKeys[field])}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {state?.status === "error" && !(state.message === "invalid_input" && state.fields && state.fields.length > 0) && (
         <p role="alert" className="sru-auth-alert error">
           <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[state.message])}
