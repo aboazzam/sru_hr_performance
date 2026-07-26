@@ -54,10 +54,6 @@ const inviteSchema = z
     scopeType: z.enum(["all", "org_unit"]).optional().default("all"),
     scopeOrgUnitIds: z.array(z.string().uuid()).optional(),
   })
-  .refine((data) => data.mode === "none" || data.roleIds.length > 0, {
-    message: "at least one role required when creating an account",
-    path: ["roleIds"],
-  })
   .refine(
     (data) => data.scopeType === "all" || (data.scopeOrgUnitIds?.length ?? 0) > 0,
     { message: "org units required for org_unit scope", path: ["scopeOrgUnitIds"] }
@@ -352,7 +348,16 @@ export async function inviteEmployee(
           }))
         );
 
-  const { error: roleError } = await supabase.from("pending_role_assignments").insert(pendingRows);
+  // Role selection is optional even when creating an account (2026-07-26:
+  // "صلاحية اضافة موظف مختلفة عن اعطاء الصلاحيات" -- adding an employee is a
+  // distinct capability from granting them a role; a role can be assigned
+  // later, e.g. via /admin's Users tab). Skip the insert entirely when no
+  // role was picked -- an empty-array insert isn't a meaningful write and
+  // some Supabase-js versions treat it as an error rather than a no-op.
+  const { error: roleError } =
+    pendingRows.length > 0
+      ? await supabase.from("pending_role_assignments").insert(pendingRows)
+      : { error: null };
 
   const { error: authError } =
     mode === "direct"
