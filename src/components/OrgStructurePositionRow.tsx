@@ -14,20 +14,37 @@ interface Assignment {
   label: string;
 }
 
+interface OrgUnitOption {
+  id: string;
+  name_ar: string;
+}
+
 export function OrgStructurePositionRow({
   levelName,
   parentName,
   positionId,
   initialNameAr,
   initialNameEn,
+  initialOrgUnitId,
+  orgUnits,
   assignments,
+  orgUnitEmployeeLabels,
 }: {
   levelName: string;
   parentName: string;
   positionId: string;
   initialNameAr: string;
   initialNameEn: string | null;
+  initialOrgUnitId: string | null;
+  orgUnits: OrgUnitOption[];
   assignments: Assignment[];
+  // Employees whose own `profiles.org_unit_id` matches this position's
+  // linked org unit (2026-07-26) — distinct from `assignments` (who is
+  // explicitly staffed onto this exact position node). This is the actual
+  // answer to "لا نجد الموظفين التابعين لمدير ادارة معينة": the position's
+  // org-unit link lets this list surface every real employee in that
+  // department, not just whoever happens to be individually staffed here.
+  orgUnitEmployeeLabels: string[];
 }) {
   const t = useTranslations("OrgStructureStaffingPage");
   const router = useRouter();
@@ -36,10 +53,11 @@ export function OrgStructurePositionRow({
   const [isUnassigning, startUnassigning] = useTransition();
   const [nameAr, setNameAr] = useState(initialNameAr);
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
+  const [orgUnitId, setOrgUnitId] = useState(initialOrgUnitId ?? "");
   const [unassigningId, setUnassigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "");
+  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "") || orgUnitId !== (initialOrgUnitId ?? "");
 
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
@@ -52,7 +70,7 @@ export function OrgStructurePositionRow({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updatePosition(positionId, nameAr, nameEn);
+      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -93,7 +111,15 @@ export function OrgStructurePositionRow({
       <td style={{ verticalAlign: "top", fontSize: 13 }}>{parentName}</td>
       <td>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ marginBottom: 4 }} />
-        <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />
+        <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ marginBottom: 4 }} />
+        <select value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)} className={inputClass} aria-label={t("positionOrgUnitLabel")}>
+          <option value="">{t("positionOrgUnitNone")}</option>
+          {orgUnits.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              {unit.name_ar}
+            </option>
+          ))}
+        </select>
       </td>
       <td>
         {assignments.length === 0 ? (
@@ -113,6 +139,19 @@ export function OrgStructurePositionRow({
                 >
                   <UserMinus size={14} />
                 </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </td>
+      <td>
+        {orgUnitEmployeeLabels.length === 0 ? (
+          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>—</span>
+        ) : (
+          <ul style={{ display: "flex", flexDirection: "column", gap: 4, listStyle: "none", margin: 0, padding: 0 }}>
+            {orgUnitEmployeeLabels.map((label) => (
+              <li key={label} style={{ fontSize: 13 }}>
+                {label}
               </li>
             ))}
           </ul>
