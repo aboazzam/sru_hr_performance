@@ -367,7 +367,15 @@
     "columnTo": "إلى",
     "columnRequirements": "المتطلبات",
     "gradeLabel": "درجة {grade}",
-    "manageJobTitles": "إدارة الوظائف والجدارات"
+    "manageJobTitles": "إدارة الوظائف والجدارات",
+    "selfSubtitle": "وظيفتك الحالية، ومسارك الوظيفي القادم فقط.",
+    "selfNoJobTitle": "لا يوجد مسمى وظيفي مُسجَّل لك بعد لعرض مسار وظيفي.",
+    "selfCurrentJobLabel": "وظيفتك الحالية",
+    "selfDescriptionLabel": "الوصف الوظيفي",
+    "selfNoDescription": "لم يُحدَّد بعد",
+    "selfCompetenciesLabel": "الجدارات المطلوبة",
+    "selfNoCompetencies": "لم تُحدَّد جدارات بعد",
+    "selfEmpty": "لا يوجد مسار وظيفي مُعرَّف لمسماك الوظيفي بعد."
   },
   "CareerPathJobTitlesPage": {
     "title": "إدارة الوظائف والجدارات",
@@ -383,9 +391,11 @@
     "hasDescription": "مُحدَّد",
     "noDescription": "لم يُحدَّد بعد",
     "competencyCount": "{count} جدارة",
-    "manage": "إدارة"
+    "manage": "إدارة",
+    "noPermission": "لا تملك صلاحية إدارة الوظائف والجدارات."
   },
   "CareerPathJobTitleDetailPage": {
+    "noPermission": "لا تملك صلاحية إدارة الوظائف والجدارات.",
     "errorNotFound": "المسمى الوظيفي غير موجود.",
     "gradeLabel": "درجة {grade}",
     "backToList": "العودة للقائمة",

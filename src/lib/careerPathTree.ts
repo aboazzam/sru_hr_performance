@@ -1,8 +1,18 @@
+import type { BehavioralLevel } from "@/lib/data/competencies";
+
 export interface CareerPathEdge {
   id: string;
   requirementsAr: string | null;
   fromJobTitleId: string;
   toJobTitleId: string;
+}
+
+/** Shared shape for a job title's own description + required competencies, keyed by job_title_id. */
+export interface CareerJobTitleInfo {
+  nameAr: string;
+  gradeLevel: number;
+  descriptionAr: string | null;
+  competencies: Array<{ nameAr: string; requiredLevel: BehavioralLevel }>;
 }
 
 export interface CareerTreeNode {
