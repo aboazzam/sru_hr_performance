@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -48,7 +49,12 @@ export default async function CareerPathPage() {
             {t("subtitle")}
           </p>
         </div>
-        <PrintButton />
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/career-path/job-titles" className="sru-btn">
+            {t("manageJobTitles")}
+          </Link>
+          <PrintButton />
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

@@ -1,8 +1,77 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
+import { pillars, getCompetenciesByPillar, behavioralLevelLabels, type BehavioralLevel } from "@/lib/data/competencies";
 import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
+import {
+  buildForwardCareerTree,
+  collectCareerTreeJobTitleIds,
+  type CareerPathEdge,
+  type CareerTreeNode,
+} from "@/lib/careerPathTree";
+
+type ProfileTranslator = Awaited<ReturnType<typeof getTranslations>>;
+
+interface CareerJobTitleInfo {
+  nameAr: string;
+  gradeLevel: number;
+  descriptionAr: string | null;
+  competencies: Array<{ nameAr: string; requiredLevel: BehavioralLevel }>;
+}
+
+// Renders only the future branches of the tree (the root/current job is
+// shown separately above) — indentation communicates depth, and a job with
+// more than one next step (real data has genuine fan-outs) simply renders
+// more than one card at that level.
+function renderCareerTreeNodes(
+  nodes: CareerTreeNode[],
+  jobTitleInfo: Map<string, CareerJobTitleInfo>,
+  t: ProfileTranslator,
+  depth: number
+) {
+  return (
+    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      {nodes.map((node) => {
+        const info = jobTitleInfo.get(node.jobTitleId);
+        return (
+          <li key={node.jobTitleId} style={{ marginInlineStart: depth * 24, marginBottom: 14 }}>
+            <div className="sru-card" style={{ padding: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <strong>{info?.nameAr ?? "—"}</strong>
+                {info && <span className="sru-chip sru-en">{t("gradeLabel", { grade: info.gradeLevel })}</span>}
+              </div>
+              {node.requirementsAr && (
+                <p style={{ fontSize: 13, marginBottom: 6 }}>
+                  <b>{t("careerPathColumnRequirements")}: </b>
+                  {node.requirementsAr}
+                </p>
+              )}
+              <p style={{ fontSize: 13, marginBottom: 6 }}>
+                <b>{t("careerPathJobDescription")}: </b>
+                {info?.descriptionAr ?? t("careerPathNoDescription")}
+              </p>
+              <div style={{ fontSize: 13 }}>
+                <b>{t("careerPathRequiredCompetencies")}: </b>
+                {info && info.competencies.length > 0 ? (
+                  <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                    {info.competencies.map((c, i) => (
+                      <span key={i} className="sru-chip">
+                        {c.nameAr} ({behavioralLevelLabels[c.requiredLevel]})
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  t("careerPathNoCompetencies")
+                )}
+              </div>
+            </div>
+            {node.children.length > 0 && renderCareerTreeNodes(node.children, jobTitleInfo, t, depth + 1)}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // Read-only for now, per the project owner's explicit "not editable yet"
@@ -96,26 +165,60 @@ export default async function MyProfilePage() {
   }> | null;
 
   // career_path_select's RLS (check_vpra('careerPath','view')) already lets
-  // employee read the whole table; filtered here to rows touching their own
-  // job title specifically, per the project owner's explicit request ("his
-  // career path", not the full company matrix) — same self-scoping
-  // discipline as goals/evaluations above, not left to a broader RLS grant.
-  const { data: careerPathData } = p?.job_title_id
-    ? await supabase
-        .from("career_path")
-        .select(
-          "id, requirements_ar, from_job_title:job_titles!from_job_title_id(name_ar,grade_level), to_job_title:job_titles!to_job_title_id(name_ar,grade_level)"
-        )
-        .or(`from_job_title_id.eq.${p.job_title_id},to_job_title_id.eq.${p.job_title_id}`)
-        .is("deleted_at", null)
+  // employee read the whole table -- fetched here in full (small table,
+  // ~150-200 rows) and walked forward in TS via buildForwardCareerTree,
+  // rather than a new recursive SQL function, matching this app's
+  // established preference for assembling small structures client/server
+  // side (OrgChartTree, /reports) over new SQL complexity. The tree is then
+  // narrowed to exactly the job titles reachable from this employee's own
+  // job title -- "his upcoming path only", per the project owner's explicit
+  // instruction -- not the full company matrix.
+  const { data: allCareerPathEdges } = p?.job_title_id
+    ? await supabase.from("career_path").select("id, requirements_ar, from_job_title_id, to_job_title_id").is("deleted_at", null)
     : { data: null };
 
-  const careerPaths = careerPathData as unknown as Array<{
-    id: string;
-    requirements_ar: string | null;
-    from_job_title: { name_ar: string; grade_level: number } | null;
-    to_job_title: { name_ar: string; grade_level: number } | null;
-  }> | null;
+  const careerPathEdges: CareerPathEdge[] = (allCareerPathEdges ?? []).map((e) => ({
+    id: e.id,
+    requirementsAr: e.requirements_ar,
+    fromJobTitleId: e.from_job_title_id,
+    toJobTitleId: e.to_job_title_id,
+  }));
+
+  const careerTree = p?.job_title_id ? buildForwardCareerTree(careerPathEdges, p.job_title_id) : null;
+  const careerTreeJobTitleIds = careerTree ? [...collectCareerTreeJobTitleIds(careerTree)] : [];
+
+  const { data: careerJobTitlesData } =
+    careerTreeJobTitleIds.length > 0
+      ? await supabase
+          .from("job_titles")
+          .select(
+            "id, name_ar, grade_level, description_ar, job_title_competencies(required_level, competencies(name_ar))"
+          )
+          .in("id", careerTreeJobTitleIds)
+          .is("deleted_at", null)
+      : { data: null };
+
+  const careerJobTitleInfo = new Map<string, CareerJobTitleInfo>(
+    (
+      careerJobTitlesData as unknown as Array<{
+        id: string;
+        name_ar: string;
+        grade_level: number;
+        description_ar: string | null;
+        job_title_competencies: Array<{ required_level: BehavioralLevel; competencies: { name_ar: string } | null }>;
+      }> | null
+    )?.map((jt) => [
+      jt.id,
+      {
+        nameAr: jt.name_ar,
+        gradeLevel: jt.grade_level,
+        descriptionAr: jt.description_ar,
+        competencies: jt.job_title_competencies
+          .filter((jtc) => jtc.competencies)
+          .map((jtc) => ({ nameAr: jtc.competencies!.name_ar, requiredLevel: jtc.required_level })),
+      },
+    ]) ?? []
+  );
 
   // "My Performance Level" — an early, explicitly-flagged-as-interim
   // dashboard (2026-07-22): the project owner asked for a performance
@@ -341,44 +444,20 @@ export default async function MyProfilePage() {
           label: t("careerPathTitle"),
           content: !p.job_title_id ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathNoJobTitle")}</p>
-          ) : !careerPaths || careerPaths.length === 0 ? (
+          ) : !careerTree || careerTree.children.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathEmpty")}</p>
           ) : (
-            <div className="sru-card">
-              <div className="table-scroll">
-                <table className="admin-matrix">
-                  <thead>
-                    <tr>
-                      <th>{t("careerPathColumnFrom")}</th>
-                      <th>{t("careerPathColumnTo")}</th>
-                      <th>{t("careerPathColumnRequirements")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {careerPaths.map((path) => (
-                      <tr key={path.id}>
-                        <td>
-                          {path.from_job_title?.name_ar ?? "—"}
-                          {path.from_job_title && (
-                            <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                              {t("gradeLabel", { grade: path.from_job_title.grade_level })}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {path.to_job_title?.name_ar ?? "—"}
-                          {path.to_job_title && (
-                            <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                              {t("gradeLabel", { grade: path.to_job_title.grade_level })}
-                            </span>
-                          )}
-                        </td>
-                        <td>{path.requirements_ar ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div>
+              <div className="sru-card" style={{ marginBottom: 16, padding: 14 }}>
+                <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>{t("careerPathCurrentJobLabel")}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  <strong>{careerJobTitleInfo.get(p.job_title_id)?.nameAr ?? p.job_titles?.name_ar ?? "—"}</strong>
+                  {p.job_titles && (
+                    <span className="sru-chip sru-en">{t("gradeLabel", { grade: p.job_titles.grade_level })}</span>
+                  )}
+                </div>
               </div>
+              {renderCareerTreeNodes(careerTree.children, careerJobTitleInfo, t, 0)}
             </div>
           ),
         },
