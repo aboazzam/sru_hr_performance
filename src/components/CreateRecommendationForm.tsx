@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { createRecommendation, type CreateRecommendationState } from "@/app/[locale]/(app)/recommendations/actions";
 
@@ -32,11 +32,21 @@ export function CreateRecommendationForm({ employees, cycles }: { employees: Emp
     if (state?.status === "success") formRef.current?.reset();
   }, [state]);
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   const inputClass =
     "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4" style={{ maxWidth: 480 }}>
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4" style={{ maxWidth: 480 }}>
       <div>
         <label className="block text-sm font-medium mb-1">{t("employeeLabel")}</label>
         <select name="employeeId" required className={inputClass} defaultValue="">

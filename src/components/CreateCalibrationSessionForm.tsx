@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   createCalibrationSession,
@@ -47,8 +47,18 @@ export function CreateCalibrationSessionForm({
   const inputClass =
     "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction} className="space-y-5 max-w-lg">
+    <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <div>
         <label className="block text-sm font-medium mb-1">{t("cycleLabel")}</label>
         <select name="cycleId" required className={inputClass} defaultValue="">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { importOrgStructureExcel, type ImportResult } from "@/app/[locale]/(app)/admin/org-structure/import-actions";
@@ -50,6 +50,19 @@ export function ImportOrgStructureExcelForm({
     }
   }, [state, router]);
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike -- here
+  // that would silently clear the chosen file on an import error while
+  // `fileName` (React state) kept showing the old name, letting a retry
+  // submit with no file at all despite the UI still showing one selected.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
     <>
       <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn sru-btn-primary">
@@ -85,7 +98,7 @@ export function ImportOrgStructureExcelForm({
           {t("downloadTemplate")}
         </a>
 
-        <form ref={formRef} action={formAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <form ref={formRef} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <input
             ref={fileInputRef}
             type="file"

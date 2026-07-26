@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   saveEvaluationScores,
@@ -72,8 +72,20 @@ export function EvaluationScoresForm({
     ));
   }
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike -- here
+  // that would wipe every competency/goal's just-entered score/comment on a
+  // single validation error, not just the one that failed.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8">
       <div>
         <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
           {t("competenciesHeading")}

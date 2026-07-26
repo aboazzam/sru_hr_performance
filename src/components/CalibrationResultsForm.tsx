@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   saveCalibrationResults,
@@ -44,8 +44,20 @@ export function CalibrationResultsForm({
   const textInputClass =
     "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
+  // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
+  // uncontrolled field after ANY submission, success or error alike -- here
+  // that would wipe every employee's just-entered rating/justification on a
+  // single validation error, not just the one row that failed.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
+
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="sru-card">
         <div className="table-scroll">
           <table className="admin-matrix">
