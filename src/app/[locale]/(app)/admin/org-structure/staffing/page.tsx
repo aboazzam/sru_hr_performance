@@ -40,8 +40,8 @@ export default async function OrgStructureStaffingPage() {
   // gap between employees' own org unit and the org-chart tree ("لا نجد
   // الموظفين التابعين لمدير ادارة معينة"). Same `org_units_select` RLS
   // every other org-unit-picking screen already relies on.
-  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar");
-  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string }>;
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar, parent_id").is("deleted_at", null).order("name_ar");
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -68,10 +68,39 @@ export default async function OrgStructureStaffingPage() {
     org_unit_id: string | null;
   }>;
 
-  // Employees whose OWN org unit matches a position's linked org unit —
-  // the real answer to "لا نجد الموظفين التابعين لمدير ادارة معينة",
-  // distinct from `assignments` below (who is individually staffed onto
-  // this exact position node).
+  // Employees whose OWN org unit matches a position's linked org unit, OR
+  // any of that unit's descendant units — the real answer to "لا نجد
+  // الموظفين التابعين لمدير ادارة معينة", distinct from `assignments`
+  // below (who is individually staffed onto this exact position node).
+  //
+  // Real feedback (2026-07-26): a position linked to "نائب الرئيس للشؤون
+  // الأكاديمية" wasn't showing two employees whose own org unit is
+  // "النائب المساعد للتميز الأكاديمي" -- a real CHILD unit of it in
+  // `org_units.parent_id` (the same hierarchy `is_org_unit_in_scope()`
+  // already walks for VPRA org-unit scoping). An exact-match-only lookup
+  // missed this entirely; descendants must be included recursively, not
+  // just the linked unit itself.
+  const childOrgUnitIdsByParent = new Map<string, string[]>();
+  for (const u of orgUnits) {
+    if (!u.parent_id) continue;
+    const list = childOrgUnitIdsByParent.get(u.parent_id) ?? [];
+    list.push(u.id);
+    childOrgUnitIdsByParent.set(u.parent_id, list);
+  }
+  function descendantOrgUnitIds(rootId: string): Set<string> {
+    const result = new Set<string>([rootId]);
+    const queue = [rootId];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      for (const childId of childOrgUnitIdsByParent.get(current) ?? []) {
+        if (result.has(childId)) continue; // guards against a corrupted cyclical parent_id chain
+        result.add(childId);
+        queue.push(childId);
+      }
+    }
+    return result;
+  }
+
   const employeesByOrgUnitId = new Map<string, string[]>();
   for (const e of employees) {
     if (!e.org_unit_id) continue;
@@ -142,7 +171,11 @@ export default async function OrgStructureStaffingPage() {
                         initialOrgUnitId={position.org_unit_id}
                         orgUnits={orgUnits}
                         assignments={positionAssignments}
-                        orgUnitEmployeeLabels={position.org_unit_id ? employeesByOrgUnitId.get(position.org_unit_id) ?? [] : []}
+                        orgUnitEmployeeLabels={
+                          position.org_unit_id
+                            ? Array.from(descendantOrgUnitIds(position.org_unit_id)).flatMap((id) => employeesByOrgUnitId.get(id) ?? [])
+                            : []
+                        }
                       />
                     );
                   })}

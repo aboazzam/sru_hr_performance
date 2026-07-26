@@ -254,7 +254,7 @@
     "positionColumnName": "المنصب",
     "positionColumnParent": "يتبع",
     "positionColumnAssigned": "الموظفون المسكَّنون",
-    "positionColumnOrgUnitEmployees": "موظفو الوحدة التنظيمية المرتبطة",
+    "positionColumnOrgUnitEmployees": "موظفو الوحدة التنظيمية المرتبطة ووحداتها الفرعية",
     "rootChip": "جذر",
     "noPositions": "لا توجد مناصب بعد — أضف مستويات ومناصب أولًا من شاشة الهيكل التنظيمي.",
     "assignHeading": "تسكين موظف على منصب",
