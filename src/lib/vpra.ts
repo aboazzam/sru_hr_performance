@@ -44,7 +44,8 @@ export type ProcessArea =
   | "userManagement"
   | "orgStructure"
   | "staffing"
-  | "identity";
+  | "identity"
+  | "systemSettings";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -63,6 +64,7 @@ export const processAreas: ProcessArea[] = [
   "orgStructure",
   "staffing",
   "identity",
+  "systemSettings",
 ];
 
 /**
@@ -89,6 +91,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   orgStructure: "الهيكل التنظيمي",
   staffing: "التسكين",
   identity: "الهوية",
+  systemSettings: "إعدادات النظام",
 };
 
 export interface ProcessAreaSection {
@@ -111,6 +114,8 @@ export interface ProcessAreaSection {
  * anymore. `employeeDataSubordinates` (20260725000008) split "Employee
  * Data" into org-wide visibility (`employeeData`, unchanged) and a
  * recursive-subordinate-chain visibility grant, per explicit request.
+ * `systemSettings` (20260726000003) backs the "إعدادات النظام" tab
+ * (timezone, initially), super_admin-only, same narrow gate as `identity`.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -123,7 +128,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الإدارة والنظام",
-    areas: ["orgStructure", "staffing", "identity", "userManagement"],
+    areas: ["orgStructure", "staffing", "identity", "userManagement", "systemSettings"],
   },
 ];
 

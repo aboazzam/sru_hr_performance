@@ -36,6 +36,7 @@
     "permissions": "Permissions",
     "identity": "Identity",
     "userActivity": "User Activity",
+    "systemSettings": "System Settings",
     "evaluationMethods": "Evaluation Methods",
     "performance": "Performance",
     "evaluationResults": "Evaluation Results",
@@ -962,6 +963,19 @@
     "errorInvalidInput": "Check the URL and color format (e.g. #501e8c).",
     "errorUnauthenticated": "You must be logged in first.",
     "errorForbidden": "You don't have permission to edit identity settings.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "SystemSettingsPage": {
+    "title": "System Settings",
+    "subtitle": "System-wide settings, starting with the timezone used to display dates and times.",
+    "timezoneLabel": "Timezone",
+    "submit": "Save",
+    "submitting": "Saving...",
+    "successMessage": "Settings saved successfully.",
+    "viewOnlyNote": "You can view the current settings only — editing them requires approval-level permission.",
+    "errorForbidden": "You don't have permission to view system settings.",
+    "errorInvalidInput": "Choose a valid timezone.",
+    "errorUnauthenticated": "You must be logged in first.",
     "errorUnknown": "An unexpected error occurred."
   },
   "UserActivityPage": {
