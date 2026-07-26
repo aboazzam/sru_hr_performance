@@ -54,10 +54,6 @@ const inviteSchema = z
     scopeType: z.enum(["all", "org_unit"]).optional().default("all"),
     scopeOrgUnitIds: z.array(z.string().uuid()).optional(),
   })
-  .refine((data) => data.mode === "none" || data.roleIds.length > 0, {
-    message: "at least one role required when creating an account",
-    path: ["roleIds"],
-  })
   .refine(
     (data) => data.scopeType === "all" || (data.scopeOrgUnitIds?.length ?? 0) > 0,
     { message: "org units required for org_unit scope", path: ["scopeOrgUnitIds"] }
@@ -66,10 +62,37 @@ const inviteSchema = z
     message: "password required for direct mode",
     path: ["password"],
   })
+  // Deliberately a distinct `identifier` path, not `email` -- the base
+  // schema's own `email` field already owns that path for its own format
+  // check (invalid email syntax), a genuinely different failure than "you
+  // gave neither an email nor a username at all". Sharing one path made it
+  // impossible to tell the two apart when building per-field error messages
+  // (2026-07-26, found live: a bundled generic message couldn't say which
+  // of five unrelated conditions actually failed).
   .refine((data) => data.mode === "none" || !!data.email || !!data.username, {
     message: "email or username required to create an account",
-    path: ["email"],
+    path: ["identifier"],
   });
+
+/**
+ * The specific sub-conditions `invalid_input` can report — surfaced
+ * separately (2026-07-26) instead of one bundled generic message that
+ * listed every possible cause regardless of which one actually failed
+ * ("تحقق من الحقول المطلوبة — الرقم الوظيفي والاسم..."), found live to be
+ * genuinely hard to debug from ("which of these five things is it?").
+ * `other` is the fallback for anything not worth a dedicated message
+ * (malformed email syntax, bad date format, etc. — already caught by the
+ * input's own `type=` constraint in the common case).
+ */
+export type InviteFieldError =
+  | "employeeNumber"
+  | "fullNameAr"
+  | "orgUnitId"
+  | "roleIds"
+  | "scopeOrgUnitIds"
+  | "password"
+  | "identifier"
+  | "other";
 
 export type InviteEmployeeState =
   | { status: "success"; email: string | null; mode: "none" | "invite" | "direct"; pendingApproval: boolean }
@@ -84,8 +107,29 @@ export type InviteEmployeeState =
         | "role_assignment_failed"
         | "rate_limited"
         | "unknown";
+      fields?: InviteFieldError[];
     }
   | null;
+
+const knownFieldErrors: ReadonlySet<string> = new Set([
+  "employeeNumber",
+  "fullNameAr",
+  "orgUnitId",
+  "roleIds",
+  "scopeOrgUnitIds",
+  "password",
+  "identifier",
+]);
+
+/** Dedupe the Zod issues down to which specific fields actually failed, for a precise error message instead of one generic bundle. */
+function toFieldErrors(issues: { path: PropertyKey[] }[]): InviteFieldError[] {
+  const fields = new Set<InviteFieldError>();
+  for (const issue of issues) {
+    const key = String(issue.path[0] ?? "");
+    fields.add(knownFieldErrors.has(key) ? (key as InviteFieldError) : "other");
+  }
+  return [...fields];
+}
 
 /**
  * Creates a `profiles` row — reachable by anyone holding `employeeData` at
@@ -144,7 +188,7 @@ export async function inviteEmployee(
   });
 
   if (!parsed.success) {
-    return { status: "error", message: "invalid_input" };
+    return { status: "error", message: "invalid_input", fields: toFieldErrors(parsed.error.issues) };
   }
 
   const supabase = await createClient();
@@ -304,7 +348,16 @@ export async function inviteEmployee(
           }))
         );
 
-  const { error: roleError } = await supabase.from("pending_role_assignments").insert(pendingRows);
+  // Role selection is optional even when creating an account (2026-07-26:
+  // "صلاحية اضافة موظف مختلفة عن اعطاء الصلاحيات" -- adding an employee is a
+  // distinct capability from granting them a role; a role can be assigned
+  // later, e.g. via /admin's Users tab). Skip the insert entirely when no
+  // role was picked -- an empty-array insert isn't a meaningful write and
+  // some Supabase-js versions treat it as an error rather than a no-op.
+  const { error: roleError } =
+    pendingRows.length > 0
+      ? await supabase.from("pending_role_assignments").insert(pendingRows)
+      : { error: null };
 
   const { error: authError } =
     mode === "direct"
