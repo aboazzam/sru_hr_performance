@@ -18,14 +18,16 @@ import {
 } from "./navItems";
 
 describe("navItems (top-level, ungrouped)", () => {
-  it("has exactly 8 items with unique segments", () => {
+  it("has exactly 10 items with unique segments", () => {
     // 2026-07-24: promotions/rewards moved under the new "التوصيات"
     // (Recommendations) group tab per the project owner's explicit
     // "بالنسبة للترقيات والمكافآت تكون تحت التوصيات" — no longer flat
     // top-level sidebar entries. 2026-07-25: "reports" joined this list
     // ungated (see below) as a personalized dashboard reachable by everyone.
-    expect(navItems).toHaveLength(8);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(8);
+    // 2026-07-27: "kpis" (مؤشرات الأداء) and "kpis/library" (بنك مؤشرات
+    // الأداء) added, mirroring goals/goals-library's own placement.
+    expect(navItems).toHaveLength(10);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(10);
   });
 
   it("has exactly one home item (empty segment)", () => {
@@ -91,11 +93,12 @@ describe("visibleNavItems", () => {
   });
 
   it("hides admin/reference tabs for the real employee permission set", () => {
-    // The actual seeded `employee` role grants (2026-07-22): goalsLibrary=view,
+    // The actual seeded `employee` role grants (2026-07-22, plus kpiLibrary/
+    // kpiAssignment added 2026-07-27): goalsLibrary=view,
     // competencyFramework=view, goalAssignment=view, bauTasks=prepare,
-    // evaluation=prepare, vacancies=view, careerPath=view — everything else
-    // (employeeData, calibration, promotions, userManagement, orgStructure)
-    // is absent (none).
+    // evaluation=prepare, vacancies=view, careerPath=view, kpiLibrary=view,
+    // kpiAssignment=view — everything else (employeeData, calibration,
+    // promotions, userManagement, orgStructure) is absent (none).
     const employeePermissions = {
       goalsLibrary: "view",
       competencyFramework: "view",
@@ -104,6 +107,8 @@ describe("visibleNavItems", () => {
       evaluation: "prepare",
       vacancies: "view",
       careerPath: "view",
+      kpiLibrary: "view",
+      kpiAssignment: "view",
     } as const;
 
     const segments = visibleNavItems(navItems, employeePermissions).map((i) => i.segment);
@@ -113,11 +118,15 @@ describe("visibleNavItems", () => {
     expect(segments).not.toContain("salary-scale");
     expect(segments).not.toContain("goals/library");
     expect(segments).not.toContain("calibration");
+    // kpiLibrary=view doesn't clear the "prepare" bar this catalog page requires.
+    expect(segments).not.toContain("kpis/library");
 
     // Still meaningful for a plain employee.
     expect(segments).toContain("");
     expect(segments).toContain("career-path");
     expect(segments).toContain("vacancies");
+    // kpiAssignment=view is enough for the employee-facing cascade page.
+    expect(segments).toContain("kpis");
     // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
     expect(segments).toContain("reports");
   });

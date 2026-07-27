@@ -45,7 +45,9 @@ export type ProcessArea =
   | "orgStructure"
   | "staffing"
   | "identity"
-  | "systemSettings";
+  | "systemSettings"
+  | "kpiLibrary"
+  | "kpiAssignment";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -65,6 +67,8 @@ export const processAreas: ProcessArea[] = [
   "staffing",
   "identity",
   "systemSettings",
+  "kpiLibrary",
+  "kpiAssignment",
 ];
 
 /**
@@ -92,6 +96,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   staffing: "التسكين",
   identity: "الهوية",
   systemSettings: "إعدادات النظام",
+  kpiLibrary: "بنك مؤشرات الأداء",
+  kpiAssignment: "إسناد مؤشرات الأداء",
 };
 
 export interface ProcessAreaSection {
@@ -116,11 +122,25 @@ export interface ProcessAreaSection {
  * recursive-subordinate-chain visibility grant, per explicit request.
  * `systemSettings` (20260726000003) backs the "إعدادات النظام" tab
  * (timezone, initially), super_admin-only, same narrow gate as `identity`.
+ * `kpiLibrary`/`kpiAssignment` (20260727000001) back the new "مؤشرات
+ * الأداء" module — a KPI catalog managed/distributed by `strategy_admin`
+ * (`kpiLibrary`) and the per-employee cascade set by the direct supervisor
+ * (`kpiAssignment`), mirroring `goalsLibrary`/`goalAssignment` exactly.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
     titleAr: "طرق التقييم وإدارة الأداء",
-    areas: ["evaluation", "calibration", "goalsLibrary", "goalAssignment", "bauTasks", "competencyFramework", "defaultTemplates"],
+    areas: [
+      "evaluation",
+      "calibration",
+      "goalsLibrary",
+      "goalAssignment",
+      "kpiLibrary",
+      "kpiAssignment",
+      "bauTasks",
+      "competencyFramework",
+      "defaultTemplates",
+    ],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
