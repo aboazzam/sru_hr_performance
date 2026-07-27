@@ -900,7 +900,24 @@
     "createEvaluation": "Create Evaluation",
     "myEvaluations": "My Evaluations",
     "myTeamEvaluations": "My Team's Evaluations",
-    "needsMyReview": "Needs My Review"
+    "needsMyReview": "Needs My Review",
+    "addCycle": "Add Evaluation Cycle"
+  },
+  "NewEvaluationCyclePage": {
+    "title": "Add Evaluation Cycle",
+    "subtitle": "Create a new evaluation cycle — the time period goals, BAU tasks, and evaluations are built around.",
+    "nameArLabel": "Cycle Name (Arabic)",
+    "nameArPlaceholder": "e.g. 2026 Annual Review",
+    "nameEnLabel": "Cycle Name (English) — optional",
+    "nameEnPlaceholder": "Cycle name in English",
+    "startDateLabel": "Start Date",
+    "endDateLabel": "End Date",
+    "submit": "Add Cycle",
+    "submitting": "Adding...",
+    "errorInvalidInput": "Check the fields — name and dates are required, and the end date must be after the start date.",
+    "errorUnauthenticated": "You must sign in first.",
+    "errorForbidden": "You don't have permission to create evaluation cycles.",
+    "errorUnknown": "An unexpected error occurred."
   },
   "MyProfilePage": {
     "title": "My Profile",
