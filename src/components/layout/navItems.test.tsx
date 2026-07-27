@@ -18,23 +18,27 @@ import {
 } from "./navItems";
 
 describe("navItems (top-level, ungrouped)", () => {
-  it("has exactly 8 items with unique segments", () => {
+  it("has exactly 10 items with unique segments", () => {
     // 2026-07-24: promotions/rewards moved under the new "التوصيات"
     // (Recommendations) group tab per the project owner's explicit
     // "بالنسبة للترقيات والمكافآت تكون تحت التوصيات" — no longer flat
     // top-level sidebar entries. 2026-07-25: "reports" joined this list
     // ungated (see below) as a personalized dashboard reachable by everyone.
-    expect(navItems).toHaveLength(8);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(8);
+    // 2026-07-27: "kpis" (مؤشرات الأداء, ungated -- real access is row-level
+    // via the strategic-goal cascade's own RLS, not a role_permissions
+    // grant) and "kpis/strategic-goals" (strategy_admin-only admin screen)
+    // added, mirroring goals/goals-library's own placement.
+    expect(navItems).toHaveLength(10);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(10);
   });
 
   it("has exactly one home item (empty segment)", () => {
     expect(navItems.filter((i) => i.segment === "")).toHaveLength(1);
   });
 
-  it("home and reports are the only ungated items; every other item declares an access requirement", () => {
+  it("home, reports, and kpis are the only ungated items; every other item declares an access requirement", () => {
     for (const item of navItems) {
-      if (item.segment === "" || item.segment === "reports") {
+      if (item.segment === "" || item.segment === "reports" || item.segment === "kpis") {
         expect(item.access).toBeUndefined();
       } else {
         expect(item.access).toBeDefined();
@@ -61,7 +65,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(new Set(allSegments).size).toBe(allSegments.length);
   });
 
-  it("the administration group has its five children (reports moved out, user-activity added, 2026-07-25)", () => {
+  it("the administration group has its six children (reports moved out 2026-07-25, user-activity added 2026-07-25, settings added 2026-07-26)", () => {
     const admin = navGroups.find((g) => g.groupKey === "administration")!;
     expect(admin.children.map((c) => c.segment)).toEqual([
       "admin/org-structure",
@@ -69,6 +73,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
       "admin",
       "admin/identity",
       "admin/user-activity",
+      "admin/settings",
     ]);
   });
 
@@ -92,9 +97,11 @@ describe("visibleNavItems", () => {
   it("hides admin/reference tabs for the real employee permission set", () => {
     // The actual seeded `employee` role grants (2026-07-22): goalsLibrary=view,
     // competencyFramework=view, goalAssignment=view, bauTasks=prepare,
-    // evaluation=prepare, vacancies=view, careerPath=view — everything else
-    // (employeeData, calibration, promotions, userManagement, orgStructure)
-    // is absent (none).
+    // evaluation=prepare, vacancies=view, careerPath=view — no
+    // strategicPlanning grant at all (2026-07-27: that area is
+    // strategy_admin/ceo only, everyone else's cascade access is row-level,
+    // not a role grant) — everything else (employeeData, calibration,
+    // promotions, userManagement, orgStructure) is absent (none).
     const employeePermissions = {
       goalsLibrary: "view",
       competencyFramework: "view",
@@ -112,19 +119,34 @@ describe("visibleNavItems", () => {
     expect(segments).not.toContain("salary-scale");
     expect(segments).not.toContain("goals/library");
     expect(segments).not.toContain("calibration");
+    // No strategicPlanning grant at all -> the admin screen stays hidden.
+    expect(segments).not.toContain("kpis/strategic-goals");
 
     // Still meaningful for a plain employee.
     expect(segments).toContain("");
     expect(segments).toContain("career-path");
     expect(segments).toContain("vacancies");
+    // Ungated (2026-07-27): kpis is a personalized cascade view reachable by everyone.
+    expect(segments).toContain("kpis");
     // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
     expect(segments).toContain("reports");
   });
 
   it("shows every tab for a full-access permission set", () => {
-    const allApprove = Object.fromEntries(navItems.filter((i) => i.access).map((i) => [i.access!.processArea, "approve"]));
+    const allApprove = Object.fromEntries(
+      navItems.filter((i) => i.access).flatMap((i) => i.access!.map((a) => [a.processArea, "approve"]))
+    );
     const segments = visibleNavItems(navItems, allApprove).map((i) => i.segment);
     expect(segments).toHaveLength(navItems.length);
+  });
+
+  it("employees is visible with only the narrower employeeDataSubordinates grant, not just employeeData", () => {
+    // Real report (2026-07-27): a manager/deputy with genuine direct reports
+    // but no employeeData grant -- only employeeDataSubordinates -- could
+    // already see their team on the /employees page itself via RLS, but the
+    // sidebar tab never showed at all.
+    const segments = visibleNavItems(navItems, { employeeDataSubordinates: "view" }).map((i) => i.segment);
+    expect(segments).toContain("employees");
   });
 });
 
@@ -156,7 +178,7 @@ describe("visibleNavGroups", () => {
 
   it("shows every group and every child for a full-access permission set", () => {
     const allApprove = Object.fromEntries(
-      navGroups.flatMap((g) => g.children).map((c) => [c.access!.processArea, "approve"])
+      navGroups.flatMap((g) => g.children).flatMap((c) => c.access!.map((a) => [a.processArea, "approve"]))
     );
     const groups = visibleNavGroups(navGroups, allApprove);
     expect(groups).toHaveLength(navGroups.length);

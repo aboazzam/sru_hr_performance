@@ -1,8 +1,25 @@
+import type { BehavioralLevel } from "@/lib/data/competencies";
+
 export interface CareerPathEdge {
   id: string;
   requirementsAr: string | null;
   fromJobTitleId: string;
   toJobTitleId: string;
+}
+
+/** Shared shape for a job title's own description + required competencies, keyed by job_title_id. */
+export interface CareerJobTitleInfo {
+  nameAr: string;
+  gradeLevel: number;
+  descriptionAr: string | null;
+  competencies: Array<{ nameAr: string; requiredLevel: BehavioralLevel }>;
+  /**
+   * Approval status of this job's career-path content (2026-07-27). The
+   * self-scoped employee view hides description/competencies entirely
+   * while 'draft' — showing unapproved draft content to an employee before
+   * HR/CEO sign-off would defeat the point of the approval step.
+   */
+  careerContentStatus: "draft" | "approved";
 }
 
 export interface CareerTreeNode {

@@ -4,6 +4,7 @@ import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -23,7 +24,7 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const positions = (positionsData ?? []) as Array<{
@@ -32,8 +33,25 @@ export default async function OrgStructureStaffingPage() {
     parent_id: string | null;
     name_ar: string;
     name_en: string | null;
+    org_unit_id: string | null;
+    job_title_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+
+  // 2026-07-27: same job-title lookup already shipped on the visual org
+  // chart -- shown here too as a read-only column (no edit UI for it on
+  // this page yet, same as the chart).
+  const jobTitleIds = Array.from(new Set(positions.map((p) => p.job_title_id).filter((id): id is string => !!id)));
+  const { data: jobTitlesData } =
+    jobTitleIds.length > 0 ? await supabase.from("job_titles").select("id, name_ar").in("id", jobTitleIds) : { data: [] };
+  const jobTitleNameById = new Map(((jobTitlesData ?? []) as Array<{ id: string; name_ar: string }>).map((j) => [j.id, j.name_ar]));
+
+  // 2026-07-26: optional position -> org unit link, closing the reported
+  // gap between employees' own org unit and the org-chart tree ("لا نجد
+  // الموظفين التابعين لمدير ادارة معينة"). Same `org_units_select` RLS
+  // every other org-unit-picking screen already relies on.
+  const { data: orgUnitsData } = await supabase.from("org_units").select("id, name_ar, parent_id").is("deleted_at", null).order("name_ar");
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -50,10 +68,39 @@ export default async function OrgStructureStaffingPage() {
   // discipline as the existing /employees list page.
   const { data: employeesData } = await supabase
     .from("profiles")
-    .select("id, employee_number, full_name_ar")
+    .select("id, employee_number, full_name_ar, org_unit_id")
     .is("deleted_at", null)
     .order("full_name_ar", { ascending: true });
-  const employees = (employeesData ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>;
+  const employees = (employeesData ?? []) as Array<{
+    id: string;
+    employee_number: string;
+    full_name_ar: string;
+    org_unit_id: string | null;
+  }>;
+
+  // Employees whose OWN org unit matches a position's linked org unit, OR
+  // any of that unit's descendant units — the real answer to "لا نجد
+  // الموظفين التابعين لمدير ادارة معينة", distinct from `assignments`
+  // below (who is individually staffed onto this exact position node).
+  //
+  // Real feedback (2026-07-26): a position linked to "نائب الرئيس للشؤون
+  // الأكاديمية" wasn't showing two employees whose own org unit is
+  // "النائب المساعد للتميز الأكاديمي" -- a real CHILD unit of it in
+  // `org_units.parent_id` (the same hierarchy `is_org_unit_in_scope()`
+  // already walks for VPRA org-unit scoping). An exact-match-only lookup
+  // missed this entirely; descendants must be included recursively, not
+  // just the linked unit itself. Extracted to `src/lib/orgUnitHierarchy.ts`
+  // (2026-07-27) after the exact same gap was independently found on the
+  // visual org chart -- one shared implementation now, not two to drift.
+  const descendantOrgUnitIds = buildDescendantOrgUnitIdsResolver(orgUnits);
+
+  const employeesByOrgUnitId = new Map<string, string[]>();
+  for (const e of employees) {
+    if (!e.org_unit_id) continue;
+    const list = employeesByOrgUnitId.get(e.org_unit_id) ?? [];
+    list.push(`${e.employee_number} — ${e.full_name_ar}`);
+    employeesByOrgUnitId.set(e.org_unit_id, list);
+  }
 
   const positionOptions = positions.map((p) => ({
     id: p.id,
@@ -93,7 +140,9 @@ export default async function OrgStructureStaffingPage() {
                     <th>{t("positionColumnLevel")}</th>
                     <th>{t("positionColumnParent")}</th>
                     <th>{t("positionColumnName")}</th>
+                    <th>{t("positionColumnJobTitle")}</th>
                     <th>{t("positionColumnAssigned")}</th>
+                    <th>{t("positionColumnOrgUnitEmployees")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -113,7 +162,15 @@ export default async function OrgStructureStaffingPage() {
                         positionId={position.id}
                         initialNameAr={position.name_ar}
                         initialNameEn={position.name_en}
+                        initialOrgUnitId={position.org_unit_id}
+                        orgUnits={orgUnits}
+                        jobTitle={position.job_title_id ? jobTitleNameById.get(position.job_title_id) ?? null : null}
                         assignments={positionAssignments}
+                        orgUnitEmployeeLabels={
+                          position.org_unit_id
+                            ? Array.from(descendantOrgUnitIds(position.org_unit_id)).flatMap((id) => employeesByOrgUnitId.get(id) ?? [])
+                            : []
+                        }
                       />
                     );
                   })}

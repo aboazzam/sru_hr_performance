@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 
 type PromotionRewardAction = "promotion_reviewed" | "reward_reviewed";
 
@@ -11,9 +12,15 @@ type PromotionRewardAction = "promotion_reviewed" | "reward_reviewed";
 // mirroring promotions_select/rewards_select's own real org-unit scoping;
 // every other action type in audit_log stays completely unreadable, same
 // as before.
+//
+// 2026-07-26: the decision-date column now renders via `getDisplayTimezone`
+// (the new `system_settings` singleton) instead of the server's own
+// timezone — same fix as /admin/user-activity's last-sign-in column, for
+// the identical underlying bug.
 export default async function PromotionsRewardsHistoryPage() {
   const t = await getTranslations("PromotionsRewardsHistoryPage");
   const supabase = await createClient();
+  const displayTimezone = await getDisplayTimezone(supabase);
 
   const { data: entriesData } = await supabase
     .from("audit_log")
@@ -123,7 +130,7 @@ export default async function PromotionsRewardsHistoryPage() {
 
                   return (
                     <tr key={entry.id}>
-                      <td>{new Date(entry.created_at).toLocaleString("ar-SA")}</td>
+                      <td>{new Date(entry.created_at).toLocaleString("ar-SA", { timeZone: displayTimezone })}</td>
                       <td>{entry.entity === "promotions" ? t("typePromotion") : t("typeReward")}</td>
                       <td>
                         {employee ? `${employee.employee_number} — ${employee.full_name_ar}` : "—"}

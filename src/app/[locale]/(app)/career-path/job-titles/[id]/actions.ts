@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 export type JobTitleErrorMessage = "invalid_input" | "unauthenticated" | "forbidden" | "duplicate" | "unknown";
 
@@ -16,6 +17,27 @@ function mapError(error: { code?: string; message: string }): JobTitleActionStat
     return { status: "error", message: "duplicate" };
   }
   return { status: "error", message: "unknown" };
+}
+
+/**
+ * Any successful edit to a job title's career-path content (description,
+ * competencies, or — via the sibling job-titles/actions.ts — core fields)
+ * reverts career_content_status to 'draft', UNLESS the actor already holds
+ * careerPath>=approve (in which case their own edit doesn't need re-approval
+ * from someone else). Best-effort — a failure here doesn't fail the edit
+ * itself, since RLS/VPRA on the edit remain the real authorization boundary.
+ */
+async function resetToDraftIfNotApproved(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  jobTitleId: string
+): Promise<void> {
+  const { data } = await supabase.rpc("get_my_permissions");
+  const level =
+    ((data ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "careerPath"
+    )?.vpra_level ?? "none";
+  if (hasVpraAccess(level, "approve")) return;
+  await supabase.from("job_titles").update({ career_content_status: "draft" }).eq("id", jobTitleId);
 }
 
 const updateDescriptionSchema = z.object({
@@ -55,6 +77,7 @@ export async function updateJobTitleDescription(
     .eq("id", parsed.data.jobTitleId);
 
   if (error) return mapError(error);
+  await resetToDraftIfNotApproved(supabase, parsed.data.jobTitleId);
 
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
@@ -110,6 +133,7 @@ export async function assignJobTitleCompetency(
     .single();
 
   if (error) return mapError(error);
+  await resetToDraftIfNotApproved(supabase, parsed.data.jobTitleId);
 
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
@@ -147,12 +171,15 @@ export async function removeJobTitleCompetency(requirementId: string): Promise<J
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("job_title_competencies")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", parsed.data.requirementId);
+    .eq("id", parsed.data.requirementId)
+    .select("job_title_id")
+    .single();
 
   if (error) return mapError(error);
+  await resetToDraftIfNotApproved(supabase, updated.job_title_id);
 
   const admin = createAdminClient();
   await admin.from("audit_log").insert({

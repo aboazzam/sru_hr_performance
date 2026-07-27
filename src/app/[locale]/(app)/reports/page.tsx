@@ -1,8 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasVpraAccess, evaluationStateLabels, type EvaluationState, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { ProfileTabs } from "@/components/ProfileTabs";
 
 const COMPLETED_STATES = new Set(["approved", "finalized"]);
+
+function achievementPercent(row: { target_value: number | null; actual_value: number | null }): number | null {
+  if (row.actual_value == null || !row.target_value) return null;
+  return Math.round((row.actual_value / row.target_value) * 100);
+}
 
 // Personalized dashboard (2026-07-25 rebuild): reachable by every logged-in
 // user (no page-level gate — see navItems.ts), but its CONTENT is composed
@@ -75,6 +81,15 @@ export default async function ReportsPage() {
   const showEmployeeData = has("employeeData");
   const showStaffing = has("orgStructure") || has("staffing");
   const showUserManagement = has("userManagement");
+  // "الرئيس التنفيذي يكون له صلاحية الاطلاع والمتابعة من خلال داشبورد
+  // متابعة" — ceo (view) + strategy_admin (approve) both clear this;
+  // deliberately the SAME `strategicPlanning` grant that gates the whole
+  // module, not a broader `view`-for-everyone one (see the migration's own
+  // header: real per-user cascade access is row-level, not this flat
+  // grant — this specific ORG-WIDE oversight tab is the one place a flat
+  // grant is actually the right shape, matching strategic_goals_select's
+  // own check_vpra_global branch).
+  const showStrategy = has("strategicPlanning");
 
   let completionRate: number | null = null;
   let completedEvaluations = 0;
@@ -164,18 +179,41 @@ export default async function ReportsPage() {
       .sort((a, b) => b.count - a.count);
   }
 
+  interface StrategicGoalSummary {
+    id: string;
+    title_ar: string;
+    target_value: number | null;
+    actual_value: number | null;
+    unit_ar: string;
+    subGoalsCount: number;
+  }
+  let strategicGoalsSummary: StrategicGoalSummary[] = [];
+  let subGoalsTotal = 0;
+  let targetsTotal = 0;
+  if (showStrategy) {
+    const [{ data: goalsData }, { data: subGoalsData }, { count: targetsCount }] = await Promise.all([
+      supabase.from("strategic_goals").select("id, title_ar, target_value, actual_value, unit_ar").is("deleted_at", null),
+      supabase.from("sub_goals").select("id, strategic_goal_id").is("deleted_at", null),
+      supabase.from("targets").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    ]);
+    const subGoals = (subGoalsData ?? []) as Array<{ id: string; strategic_goal_id: string }>;
+    const subGoalCountByGoal = new Map<string, number>();
+    for (const sg of subGoals) {
+      subGoalCountByGoal.set(sg.strategic_goal_id, (subGoalCountByGoal.get(sg.strategic_goal_id) ?? 0) + 1);
+    }
+    strategicGoalsSummary = (
+      (goalsData ?? []) as Array<{ id: string; title_ar: string; target_value: number | null; actual_value: number | null; unit_ar: string }>
+    ).map((g) => ({ ...g, subGoalsCount: subGoalCountByGoal.get(g.id) ?? 0 }));
+    subGoalsTotal = subGoals.length;
+    targetsTotal = targetsCount ?? 0;
+  }
+
   const cardStyle: React.CSSProperties = { padding: 16, minWidth: 180 };
   const numberStyle: React.CSSProperties = { fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" };
   const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--sru-muted)" };
 
-  return (
-    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
-        {t("title")}
-      </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
-      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
-
+  const overviewContent = (
+    <>
       <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
         {t("myDashboardHeading")}
       </h2>
@@ -322,11 +360,83 @@ export default async function ReportsPage() {
               ))}
             </ul>
           )}
-
-          <div className="sru-card" style={{ padding: 16, background: "var(--sru-purple-light)" }}>
-            <p style={{ fontSize: 13, color: "var(--sru-ink)" }}>{t("strategicGoalsNotAvailable")}</p>
-          </div>
         </>
+      )}
+    </>
+  );
+
+  const strategyContent = (
+    <>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("strategySubtitle")}</p>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{strategicGoalsSummary.length}</div>
+          <div style={labelStyle}>{t("strategyGoalsCount")}</div>
+        </div>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{subGoalsTotal}</div>
+          <div style={labelStyle}>{t("strategySubGoalsCount")}</div>
+        </div>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{targetsTotal}</div>
+          <div style={labelStyle}>{t("strategyTargetsCount")}</div>
+        </div>
+      </div>
+
+      {strategicGoalsSummary.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("strategyEmpty")}</p>
+      ) : (
+        <div className="sru-card">
+          <div className="table-scroll">
+            <table className="admin-matrix">
+              <thead>
+                <tr>
+                  <th>{t("strategyColumnTitle")}</th>
+                  <th>{t("strategyColumnTarget")}</th>
+                  <th>{t("strategyColumnActual")}</th>
+                  <th>{t("strategyColumnAchievement")}</th>
+                  <th>{t("strategyColumnSubGoals")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {strategicGoalsSummary.map((goal) => (
+                  <tr key={goal.id}>
+                    <td>{goal.title_ar}</td>
+                    <td>
+                      {goal.target_value ?? "—"} {goal.unit_ar}
+                    </td>
+                    <td>
+                      {goal.actual_value ?? "—"} {goal.unit_ar}
+                    </td>
+                    <td>{achievementPercent(goal) != null ? `${achievementPercent(goal)}%` : "—"}</td>
+                    <td>{goal.subGoalsCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <h1 className="sru-title" style={{ fontSize: 24 }}>
+        {t("title")}
+      </h1>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {showStrategy ? (
+        <ProfileTabs
+          tabs={[
+            { id: "overview", label: t("overviewTab"), content: overviewContent },
+            { id: "strategy", label: t("strategyTab"), content: strategyContent },
+          ]}
+        />
+      ) : (
+        overviewContent
       )}
     </div>
   );

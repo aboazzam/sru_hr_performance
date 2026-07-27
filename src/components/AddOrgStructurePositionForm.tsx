@@ -20,11 +20,24 @@ interface PositionOption {
   level_id: string;
 }
 
+interface OrgUnitOption {
+  id: string;
+  name_ar: string;
+}
+
 // Compact trigger button opening a <dialog> modal (2026-07-25 request: the
 // always-visible full-width card took up too much page height for such an
 // occasional action -- reuses the exact pattern already established by
 // ImportOrgStructureExcelForm/AddOrgStructureLevelForm).
-export function AddOrgStructurePositionForm({ levels, positions }: { levels: LevelOption[]; positions: PositionOption[] }) {
+export function AddOrgStructurePositionForm({
+  levels,
+  positions,
+  orgUnits,
+}: {
+  levels: LevelOption[];
+  positions: PositionOption[];
+  orgUnits: OrgUnitOption[];
+}) {
   const t = useTranslations("OrgStructurePage");
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -40,6 +53,7 @@ export function AddOrgStructurePositionForm({ levels, positions }: { levels: Lev
   const levelId = selectedLevelId ?? levels[0]?.id ?? "";
   const [nameAr, setNameAr] = useState("");
   const [nameEn, setNameEn] = useState("");
+  const [orgUnitId, setOrgUnitId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const minLevelOrder = levels.length > 0 ? Math.min(...levels.map((l) => l.level_order)) : null;
@@ -74,10 +88,11 @@ export function AddOrgStructurePositionForm({ levels, positions }: { levels: Lev
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const res = await addPosition(levelId, nameAr, nameEn, isRootLevel ? undefined : parentId);
+      const res = await addPosition(levelId, nameAr, nameEn, isRootLevel ? undefined : parentId, orgUnitId || undefined);
       if (res.status === "success") {
         setNameAr("");
         setNameEn("");
+        setOrgUnitId("");
         dialogRef.current?.close();
         router.refresh();
       } else {
@@ -141,6 +156,17 @@ export function AddOrgStructurePositionForm({ levels, positions }: { levels: Lev
           <div>
             <label className="block text-sm font-medium mb-1">{t("positionNameEnLabel")}</label>
             <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("positionOrgUnitLabel")}</label>
+            <select value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)} className={inputClass}>
+              <option value="">{t("positionOrgUnitNone")}</option>
+              {orgUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name_ar}
+                </option>
+              ))}
+            </select>
           </div>
           {error && (
             <p role="alert" className="text-sm text-red-600">

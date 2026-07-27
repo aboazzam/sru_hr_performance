@@ -44,7 +44,9 @@ export type ProcessArea =
   | "userManagement"
   | "orgStructure"
   | "staffing"
-  | "identity";
+  | "identity"
+  | "systemSettings"
+  | "strategicPlanning";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -63,6 +65,8 @@ export const processAreas: ProcessArea[] = [
   "orgStructure",
   "staffing",
   "identity",
+  "systemSettings",
+  "strategicPlanning",
 ];
 
 /**
@@ -89,6 +93,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   orgStructure: "الهيكل التنظيمي",
   staffing: "التسكين",
   identity: "الهوية",
+  systemSettings: "إعدادات النظام",
+  strategicPlanning: "التخطيط الاستراتيجي",
 };
 
 export interface ProcessAreaSection {
@@ -111,11 +117,31 @@ export interface ProcessAreaSection {
  * anymore. `employeeDataSubordinates` (20260725000008) split "Employee
  * Data" into org-wide visibility (`employeeData`, unchanged) and a
  * recursive-subordinate-chain visibility grant, per explicit request.
+ * `systemSettings` (20260726000003) backs the "إعدادات النظام" tab
+ * (timezone, initially), super_admin-only, same narrow gate as `identity`.
+ * `kpiLibrary`/`kpiAssignment` (20260727000001) briefly backed a flat
+ * "مؤشرات الأداء" module, then were superseded the SAME DAY by
+ * `strategicPlanning` (20260727000004) once the project owner asked for a
+ * real strategic cascade instead — `strategic_goals` -> `sub_goals` ->
+ * `targets`, owned by `strategy_admin` and delegated through the org
+ * structure tree rather than a flat department distribution. Same
+ * abandoned-enum-value precedent as `reports`: the two old Postgres enum
+ * values can't be removed, but nothing in the app references them anymore
+ * (kpi_library/kpis tables themselves were dropped in that migration).
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
     titleAr: "طرق التقييم وإدارة الأداء",
-    areas: ["evaluation", "calibration", "goalsLibrary", "goalAssignment", "bauTasks", "competencyFramework", "defaultTemplates"],
+    areas: [
+      "evaluation",
+      "calibration",
+      "goalsLibrary",
+      "goalAssignment",
+      "strategicPlanning",
+      "bauTasks",
+      "competencyFramework",
+      "defaultTemplates",
+    ],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
@@ -123,7 +149,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الإدارة والنظام",
-    areas: ["orgStructure", "staffing", "identity", "userManagement"],
+    areas: ["orgStructure", "staffing", "identity", "userManagement", "systemSettings"],
   },
 ];
 

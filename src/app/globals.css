@@ -506,7 +506,7 @@ dialog.sru-modal::backdrop {
   border-bottom-color: var(--sru-purple);
 }
 
-/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25, twice) =====
+/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25 twice, 2026-07-27) =====
    Real feedback (2026-07-25): the original nested-<ul> pure-CSS connector
    technique assumed every child sits exactly one row below its parent --
    broken once a position can link to ANY higher level (skip-level linking,
@@ -516,11 +516,23 @@ dialog.sru-modal::backdrop {
    curved-bypass) line between a grandparent and grandchild-level position
    could align with an unrelated intervening row purely by coincidence
    (single-node rows all centered on the same axis), reading as a chain
-   through it. Now positions are laid out on a real tree-derived horizontal
-   grid (`computeSlots` in the component -- classic leaf-ordering tree
-   layout) so two positions that don't share a subtree are never
-   accidentally aligned in the same column, and a plain straight elbow
-   connector is unambiguous again. */
+   through it. Fixed with positions laid out on a real tree-derived
+   horizontal grid (`computeSlots` in the component -- classic leaf-ordering
+   tree layout) so two positions that don't share a subtree are never
+   accidentally aligned in the same column.
+   Real feedback (2026-07-27): with real data, a level holding many
+   positions (e.g. C4) still stretched that ROW -- and therefore the whole
+   chart -- out horizontally far enough to need constant scrolling just to
+   see the shape of the tree. Rebuilt again: each LEVEL is now a COLUMN
+   (root on the right, depth increasing to the left, matching RTL flow),
+   with `computeSlots`'s same slot value now driving vertical position
+   instead -- siblings stack top-to-bottom within their column. A wide
+   level now only makes the chart taller, which a normal page scrolls far
+   more gracefully than horizontal overflow. `white-space: nowrap` is
+   dropped in favor of a fixed max-width with wrapping, so a long position
+   name grows a node vertically (bounded, predictable) instead of widening
+   it indefinitely (which would have broken the fixed per-column x
+   position this layout depends on). */
 .sru-orgchart-wrapper {
   position: relative;
   overflow-x: auto;
@@ -538,18 +550,26 @@ dialog.sru-modal::backdrop {
   pointer-events: none;
 }
 .sru-orgchart-node {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 140px;
+  width: 190px;
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 12.5px;
   font-weight: 700;
   text-align: center;
   box-shadow: 0 4px 10px rgba(80, 30, 140, 0.14);
-  white-space: nowrap;
+  white-space: normal;
+}
+.sru-orgchart-node-jobtitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.95;
 }
 .sru-orgchart-node-assignees {
   display: flex;
