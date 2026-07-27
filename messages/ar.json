@@ -637,7 +637,11 @@
     "errorInvalidInput": "تحقق من الحقول — يجب اختيار الموظف والدورة، وهدف واحد فقط (من البنك أو مخصص).",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إسناد الأهداف.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "sectionTargetTitle": "الموظف والدورة",
+    "sectionTargetSubtitle": "لمن هذا الهدف، وفي أي دورة تقييم",
+    "sectionGoalDetailsTitle": "تفاصيل الهدف",
+    "sectionGoalDetailsSubtitle": "من بنك الأهداف أو عنوان مخصص، مع الوزن والمستهدف"
   },
   "BauTasksPage": {
     "title": "المهام التشغيلية",

@@ -637,7 +637,11 @@
     "errorInvalidInput": "Check the fields — the employee and cycle are required, and exactly one goal source (library or custom).",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to assign goals.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionTargetTitle": "Employee & Cycle",
+    "sectionTargetSubtitle": "Who this goal is for, and which evaluation cycle",
+    "sectionGoalDetailsTitle": "Goal Details",
+    "sectionGoalDetailsSubtitle": "From the goal library or a custom title, plus weight and target"
   },
   "BauTasksPage": {
     "title": "BAU Tasks",
