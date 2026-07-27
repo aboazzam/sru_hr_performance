@@ -34,7 +34,11 @@ export function UserMenu({ userName }: { userName?: string }) {
   const items: Array<{ href: string; label: string }> = [
     { href: "/profile#my-data", label: t("myData") },
     { href: "/profile#my-competencies", label: t("myCompetencies") },
-    { href: "/profile#my-kpis", label: t("myKpis") },
+    // Points at the real KPI module (2026-07-27), not /profile#my-kpis —
+    // that section was always the interim "goals relabeled as KPIs"
+    // placeholder (2026-07-22), now stale since a real cascaded-KPI system
+    // exists. Left the /profile section itself untouched (separate scope).
+    { href: "/kpis", label: t("myKpis") },
     { href: "/profile#my-tasks", label: t("myTasks") },
     { href: "/profile#my-performance", label: t("myPerformance") },
   ];
