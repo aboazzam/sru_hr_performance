@@ -33,8 +33,17 @@ export interface NavItem {
   segment: string;
   labelKey: string;
   icon: LucideIcon;
-  /** Omitted for items visible to every logged-in user regardless of role (home). */
-  access?: { processArea: ProcessArea; minLevel: VpraLevel };
+  /**
+   * Item is visible if the caller meets AT LEAST ONE of these (OR) — a plain
+   * array of one is the common case, matching every item declared below
+   * except "employees" (2026-07-27: a manager/deputy with real direct
+   * reports but no `employeeData` grant, only the narrower
+   * `employeeDataSubordinates`, correctly saw their team on the page itself
+   * via RLS but the nav tab never showed at all — it only ever checked
+   * `employeeData`). Omit entirely for items visible to every logged-in
+   * user regardless of role (home).
+   */
+  access?: Array<{ processArea: ProcessArea; minLevel: VpraLevel }>;
 }
 
 // Per-item threshold is a deliberate product choice, not a mechanical ">none"
@@ -61,16 +70,27 @@ export const navItems: NavItem[] = [
   // `reports` process area seeded empty; that made the whole page invisible
   // to everyone until explicitly granted, the opposite of "شخصي لكل يوزر".
   { segment: "reports", labelKey: "reports", icon: FileBarChart },
-  { segment: "employees", labelKey: "employees", icon: Users, access: { processArea: "employeeData", minLevel: "view" } },
-  { segment: "career-path", labelKey: "careerPath", icon: Route, access: { processArea: "careerPath", minLevel: "view" } },
+  // Either a broad employeeData grant OR the narrower "my subordinates"
+  // grant unlocks the tab -- see the NavItem.access doc comment above for
+  // the real report this fixes.
+  {
+    segment: "employees",
+    labelKey: "employees",
+    icon: Users,
+    access: [
+      { processArea: "employeeData", minLevel: "view" },
+      { processArea: "employeeDataSubordinates", minLevel: "view" },
+    ],
+  },
+  { segment: "career-path", labelKey: "careerPath", icon: Route, access: [{ processArea: "careerPath", minLevel: "view" }] },
   // salary-scale's own RLS is "careerPath OR employeeData" (either grants read access),
   // but the nav tab deliberately checks employeeData alone -- full company salary
   // figures are more sensitive than a promotion-path reference, so holding only
   // careerPath=view (like `employee`) isn't enough to surface this as a top-level tab.
-  { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: { processArea: "employeeData", minLevel: "view" } },
-  { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: { processArea: "goalsLibrary", minLevel: "prepare" } },
-  { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: { processArea: "calibration", minLevel: "view" } },
-  { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: { processArea: "vacancies", minLevel: "view" } },
+  { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: [{ processArea: "employeeData", minLevel: "view" }] },
+  { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
+  { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: [{ processArea: "calibration", minLevel: "view" }] },
+  { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
 ];
 
 export interface NavGroup {
@@ -96,20 +116,20 @@ export const navGroups: NavGroup[] = [
     labelKey: "administration",
     icon: ShieldCheck,
     children: [
-      { segment: "admin/org-structure", labelKey: "orgStructure", icon: Network, access: { processArea: "orgStructure", minLevel: "view" } },
-      { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: { processArea: "staffing", minLevel: "view" } },
-      { segment: "admin", labelKey: "permissions", icon: KeyRound, access: { processArea: "userManagement", minLevel: "view" } },
-      { segment: "admin/identity", labelKey: "identity", icon: Palette, access: { processArea: "identity", minLevel: "view" } },
+      { segment: "admin/org-structure", labelKey: "orgStructure", icon: Network, access: [{ processArea: "orgStructure", minLevel: "view" }] },
+      { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: [{ processArea: "staffing", minLevel: "view" }] },
+      { segment: "admin", labelKey: "permissions", icon: KeyRound, access: [{ processArea: "userManagement", minLevel: "view" }] },
+      { segment: "admin/identity", labelKey: "identity", icon: Palette, access: [{ processArea: "identity", minLevel: "view" }] },
       // Gated at 'approve' (not 'view', unlike this group's other tabs) --
       // 2026-07-25 request: per-user login timestamps are more sensitive
       // than most administration data, so this deliberately sits at the
       // same tier as the role editor itself, not just "can see admin stuff".
-      { segment: "admin/user-activity", labelKey: "userActivity", icon: Activity, access: { processArea: "userManagement", minLevel: "approve" } },
+      { segment: "admin/user-activity", labelKey: "userActivity", icon: Activity, access: [{ processArea: "userManagement", minLevel: "approve" }] },
       // 2026-07-26: "إعدادات النظام" (System Settings) tab, starting with a
       // configurable display timezone. Gated at `systemSettings>=view`,
       // seeded super_admin-only (same narrow tier as `identity`) -- see
       // that migration's own doc comment for why.
-      { segment: "admin/settings", labelKey: "systemSettings", icon: Settings, access: { processArea: "systemSettings", minLevel: "view" } },
+      { segment: "admin/settings", labelKey: "systemSettings", icon: Settings, access: [{ processArea: "systemSettings", minLevel: "view" }] },
     ],
   },
   {
@@ -117,10 +137,10 @@ export const navGroups: NavGroup[] = [
     labelKey: "evaluationMethods",
     icon: ClipboardList,
     children: [
-      { segment: "evaluations", labelKey: "performance", icon: ClipboardList, access: { processArea: "evaluation", minLevel: "view" } },
-      { segment: "competencies", labelKey: "competencies", icon: Award, access: { processArea: "competencyFramework", minLevel: "view" } },
-      { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: { processArea: "bauTasks", minLevel: "prepare" } },
-      { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: { processArea: "evaluation", minLevel: "prepare" } },
+      { segment: "evaluations", labelKey: "performance", icon: ClipboardList, access: [{ processArea: "evaluation", minLevel: "view" }] },
+      { segment: "competencies", labelKey: "competencies", icon: Award, access: [{ processArea: "competencyFramework", minLevel: "view" }] },
+      { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: [{ processArea: "bauTasks", minLevel: "prepare" }] },
+      { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: [{ processArea: "evaluation", minLevel: "prepare" }] },
     ],
   },
   {
@@ -128,7 +148,7 @@ export const navGroups: NavGroup[] = [
     labelKey: "evaluationResults",
     icon: FileBarChart,
     children: [
-      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: { processArea: "promotions", minLevel: "view" } },
+      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: [{ processArea: "promotions", minLevel: "view" }] },
     ],
   },
 ];
@@ -139,9 +159,10 @@ export function visibleNavItems(
   permissions: Partial<Record<ProcessArea, VpraLevel>>
 ): NavItem[] {
   return items.filter((item) => {
-    if (!item.access) return true;
-    const level = permissions[item.access.processArea] ?? "none";
-    return hasVpraAccess(level, item.access.minLevel);
+    if (!item.access || item.access.length === 0) return true;
+    return item.access.some(({ processArea, minLevel }) =>
+      hasVpraAccess(permissions[processArea] ?? "none", minLevel)
+    );
   });
 }
 
