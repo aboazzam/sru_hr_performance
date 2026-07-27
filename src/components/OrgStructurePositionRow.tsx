@@ -27,6 +27,7 @@ export function OrgStructurePositionRow({
   initialNameEn,
   initialOrgUnitId,
   orgUnits,
+  jobTitle,
   assignments,
   orgUnitEmployeeLabels,
 }: {
@@ -37,13 +38,17 @@ export function OrgStructurePositionRow({
   initialNameEn: string | null;
   initialOrgUnitId: string | null;
   orgUnits: OrgUnitOption[];
+  /** 2026-07-27: position's linked job_titles.name_ar, when set. Read-only here (no edit UI yet), same as the org chart. */
+  jobTitle: string | null;
   assignments: Assignment[];
   // Employees whose own `profiles.org_unit_id` matches this position's
-  // linked org unit (2026-07-26) — distinct from `assignments` (who is
-  // explicitly staffed onto this exact position node). This is the actual
-  // answer to "لا نجد الموظفين التابعين لمدير ادارة معينة": the position's
-  // org-unit link lets this list surface every real employee in that
-  // department, not just whoever happens to be individually staffed here.
+  // linked org unit OR any of that unit's descendant units in
+  // `org_units.parent_id` (2026-07-26) — distinct from `assignments` (who
+  // is explicitly staffed onto this exact position node). This is the
+  // actual answer to "لا نجد الموظفين التابعين لمدير ادارة معينة": the
+  // position's org-unit link lets this list surface every real employee in
+  // that department AND its sub-units, not just whoever happens to be
+  // individually staffed here or in the exact linked unit alone.
   orgUnitEmployeeLabels: string[];
 }) {
   const t = useTranslations("OrgStructureStaffingPage");
@@ -121,6 +126,7 @@ export function OrgStructurePositionRow({
           ))}
         </select>
       </td>
+      <td style={{ verticalAlign: "top", fontSize: 13 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>
       <td>
         {assignments.length === 0 ? (
           <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>—</span>

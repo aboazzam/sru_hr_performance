@@ -132,9 +132,20 @@ describe("visibleNavItems", () => {
   });
 
   it("shows every tab for a full-access permission set", () => {
-    const allApprove = Object.fromEntries(navItems.filter((i) => i.access).map((i) => [i.access!.processArea, "approve"]));
+    const allApprove = Object.fromEntries(
+      navItems.filter((i) => i.access).flatMap((i) => i.access!.map((a) => [a.processArea, "approve"]))
+    );
     const segments = visibleNavItems(navItems, allApprove).map((i) => i.segment);
     expect(segments).toHaveLength(navItems.length);
+  });
+
+  it("employees is visible with only the narrower employeeDataSubordinates grant, not just employeeData", () => {
+    // Real report (2026-07-27): a manager/deputy with genuine direct reports
+    // but no employeeData grant -- only employeeDataSubordinates -- could
+    // already see their team on the /employees page itself via RLS, but the
+    // sidebar tab never showed at all.
+    const segments = visibleNavItems(navItems, { employeeDataSubordinates: "view" }).map((i) => i.segment);
+    expect(segments).toContain("employees");
   });
 });
 
@@ -166,7 +177,7 @@ describe("visibleNavGroups", () => {
 
   it("shows every group and every child for a full-access permission set", () => {
     const allApprove = Object.fromEntries(
-      navGroups.flatMap((g) => g.children).map((c) => [c.access!.processArea, "approve"])
+      navGroups.flatMap((g) => g.children).flatMap((c) => c.access!.map((a) => [a.processArea, "approve"]))
     );
     const groups = visibleNavGroups(navGroups, allApprove);
     expect(groups).toHaveLength(navGroups.length);

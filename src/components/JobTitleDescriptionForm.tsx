@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { updateJobTitleDescription } from "@/app/[locale]/(app)/career-path/job-titles/[id]/actions";
+import { SuggestDescriptionButton } from "@/components/SuggestDescriptionButton";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -16,10 +17,20 @@ export function JobTitleDescriptionForm({
   jobTitleId,
   descriptionAr,
   canEdit,
+  nameAr,
+  familyNameAr,
+  gradeLevel,
+  category,
+  qualificationRequired,
 }: {
   jobTitleId: string;
   descriptionAr: string | null;
   canEdit: boolean;
+  nameAr: string;
+  familyNameAr: string;
+  gradeLevel: number;
+  category: string;
+  qualificationRequired?: string | null;
 }) {
   const t = useTranslations("CareerPathJobTitleDetailPage");
   const router = useRouter();
@@ -57,6 +68,16 @@ export function JobTitleDescriptionForm({
         placeholder={t("descriptionPlaceholder")}
         className={inputClass}
       />
+      {canEdit && (
+        <SuggestDescriptionButton
+          nameAr={nameAr}
+          familyNameAr={familyNameAr}
+          gradeLevel={gradeLevel}
+          category={category}
+          qualificationRequired={qualificationRequired ?? undefined}
+          onSuggested={setValue}
+        />
+      )}
       {error && (
         <p role="alert" className="text-sm text-red-600">
           {t(errorMessageKeys[error] ?? "errorUnknown")}

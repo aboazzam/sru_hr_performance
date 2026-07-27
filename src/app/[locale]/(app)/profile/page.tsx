@@ -351,6 +351,7 @@ export default async function MyProfilePage() {
                   noDescriptionLabel: t("careerPathNoDescription"),
                   competenciesLabel: t("careerPathRequiredCompetencies"),
                   noCompetenciesLabel: t("careerPathNoCompetencies"),
+                  pendingApprovalLabel: t("careerPathPendingApproval"),
                 }}
               />
               {careerTree.children.length === 0 && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Users } from "lucide-react";
+import { Briefcase, Users } from "lucide-react";
 import { getContrastTextColor } from "@/lib/color";
 
 interface OrgChartPosition {
@@ -29,7 +29,7 @@ interface ConnectorLine {
 }
 
 const SLOT_WIDTH = 200;
-const ROW_HEIGHT = 96;
+const ROW_HEIGHT = 112;
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
@@ -113,12 +113,15 @@ export function OrgChartTree({
   positions,
   levels,
   assigneesByPosition,
+  jobTitleByPosition,
   emptyLabel,
   vacantLabel,
 }: {
   positions: OrgChartPosition[];
   levels: OrgChartLevel[];
   assigneesByPosition: Record<string, string[]>;
+  /** 2026-07-27: position id -> linked job_titles.name_ar, when set. */
+  jobTitleByPosition: Record<string, string>;
   emptyLabel: string;
   vacantLabel: string;
 }) {
@@ -208,6 +211,7 @@ export function OrgChartTree({
           const slot = slotOf.get(p.id) ?? 0;
           const color = colorByLevelId.get(p.level_id)!;
           const assignees = assigneesByPosition[p.id] ?? [];
+          const jobTitle = jobTitleByPosition[p.id];
           return (
             <div
               key={p.id}
@@ -226,6 +230,12 @@ export function OrgChartTree({
               }}
             >
               <strong>{p.name_ar}</strong>
+              {jobTitle && (
+                <span className="sru-orgchart-node-jobtitle">
+                  <Briefcase size={11} />
+                  {jobTitle}
+                </span>
+              )}
               <span className="sru-orgchart-node-assignees">
                 <Users size={12} />
                 {assignees.length > 0 ? assignees.join("، ") : vacantLabel}
