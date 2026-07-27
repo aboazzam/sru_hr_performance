@@ -199,6 +199,8 @@
     "addPositionButton": "إضافة المنصب",
     "staffingLink": "الانتقال إلى شاشة تسكين الموظفين",
     "saveButton": "حفظ",
+    "editButton": "تعديل",
+    "cancelButton": "إلغاء",
     "deleteButton": "حذف",
     "deleteLevelConfirm": "هل أنت متأكد من حذف هذا المستوى؟",
     "deletePositionConfirm": "هل أنت متأكد من حذف هذا المنصب؟",

@@ -199,6 +199,8 @@
     "addPositionButton": "Add Position",
     "staffingLink": "Go to Staffing Screen",
     "saveButton": "Save",
+    "editButton": "Edit",
+    "cancelButton": "Cancel",
     "deleteButton": "Delete",
     "deleteLevelConfirm": "Are you sure you want to delete this level?",
     "deletePositionConfirm": "Are you sure you want to delete this position?",
