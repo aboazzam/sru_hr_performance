@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 interface StrategicGoalRow {
   id: string;
@@ -25,9 +26,35 @@ interface SubGoalRow {
 // Nav-gated at strategicPlanning>=approve (strategy_admin only) — see
 // navItems.ts. `strategic_goals_select`'s RLS itself also lets strategy_admin
 // see everything via check_vpra_global('strategicPlanning','view').
+//
+// This admin screen previously had NO server-side gate of its own — a real
+// bug found live in production (2026-07-28): any authenticated user who
+// navigated directly to this URL saw the full admin screen, bypassing the
+// nav-only gate entirely. The underlying `strategic_goals`/`sub_goals` data
+// was never actually exposed to an unauthorized caller (RLS already scoped
+// those SELECTs correctly), but per CLAUDE.md §5-A rule 4 ("never rely on
+// UI-only protection") this page must check VPRA itself, not just hide its
+// own nav link. Mirrors the exact `get_my_permissions` + `hasVpraAccess`
+// pattern already established on /admin/settings and /admin/org-structure,
+// at the same `approve` bar the nav tab and every write action already use.
 export default async function StrategicGoalsPage() {
   const t = await getTranslations("StrategicGoalsPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const strategicPlanningLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "strategicPlanning"
+    )?.vpra_level ?? "none";
+  const canView = hasVpraAccess(strategicPlanningLevel, "approve");
+
+  if (!canView) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   const { data: goalsData } = await supabase
     .from("strategic_goals")

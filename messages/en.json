@@ -813,7 +813,8 @@
     "subGoalsHeading": "Sub-Goals",
     "subGoalsEmpty": "No sub-goals yet.",
     "addSubGoalButton": "Add Sub-Goal",
-    "columnOwner": "Owner (Position)"
+    "columnOwner": "Owner (Position)",
+    "errorForbidden": "You don't have permission to view strategic goals."
   },
   "NewStrategicGoalPage": {
     "title": "Add Strategic Goal",

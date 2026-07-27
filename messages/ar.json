@@ -813,7 +813,8 @@
     "subGoalsHeading": "الأهداف الفرعية",
     "subGoalsEmpty": "لا توجد أهداف فرعية بعد.",
     "addSubGoalButton": "إضافة هدف فرعي",
-    "columnOwner": "المالك (المنصب)"
+    "columnOwner": "المالك (المنصب)",
+    "errorForbidden": "ليست لديك صلاحية مشاهدة الأهداف الاستراتيجية."
   },
   "NewStrategicGoalPage": {
     "title": "إضافة هدف استراتيجي",
