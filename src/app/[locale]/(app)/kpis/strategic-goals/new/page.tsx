@@ -1,22 +1,25 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { NewKpiLibraryForm } from "@/components/NewKpiLibraryForm";
+import { NewStrategicGoalForm } from "@/components/NewStrategicGoalForm";
 import { isLocale } from "@/i18n/config";
 
-// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
-export default async function NewKpiLibraryPage({
+// Auth is enforced centrally by (app)/layout.tsx — the real gate is
+// strategic_goals_insert's own RLS (strategy_admin only).
+export default async function NewStrategicGoalPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const locale = isLocale(rawLocale) ? rawLocale : "ar";
-  const t = await getTranslations("NewKpiLibraryPage");
+  const t = await getTranslations("NewStrategicGoalPage");
   const supabase = await createClient();
 
-  // RLS-scoped to the caller, same "seeing an option here doesn't guarantee
-  // the insert succeeds" caveat as every other create screen.
-  const { data: orgUnits } = await supabase.from("org_units").select("id, name_ar").order("name_ar");
+  const { data: cycles } = await supabase
+    .from("evaluation_cycles")
+    .select("id, name_ar, start_date, end_date")
+    .is("deleted_at", null)
+    .order("start_date", { ascending: false });
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -26,7 +29,7 @@ export default async function NewKpiLibraryPage({
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <NewKpiLibraryForm locale={locale} orgUnits={orgUnits ?? []} />
+      <NewStrategicGoalForm locale={locale} cycles={cycles ?? []} />
     </div>
   );
 }

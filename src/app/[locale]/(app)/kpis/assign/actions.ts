@@ -2,24 +2,28 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { redirect } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/config";
 
-const assignKpiSchema = z
+const assignTargetSchema = z
   .object({
-    employeeId: z.string().uuid(),
-    cycleId: z.string().uuid(),
-    kpiLibraryId: z.string().uuid().optional(),
-    customTitleAr: z.string().trim().min(1).optional(),
+    subGoalId: z.string().uuid().optional(),
+    parentTargetId: z.string().uuid().optional(),
+    titleAr: z.string().trim().min(1),
     targetValue: z.coerce.number(),
-    actualValue: z.coerce.number().optional(),
     unitAr: z.string().trim().min(1),
     weight: z.coerce.number().min(0.01).max(100).optional(),
+    positionId: z.string().uuid().optional(),
+    employeeId: z.string().uuid().optional(),
   })
-  .refine((data) => Boolean(data.kpiLibraryId) !== Boolean(data.customTitleAr), {
-    message: "exactly one of kpiLibraryId or customTitleAr is required",
+  .refine((data) => Boolean(data.subGoalId) !== Boolean(data.parentTargetId), {
+    message: "exactly one parent context (subGoalId or parentTargetId) is required",
+  })
+  .refine((data) => Boolean(data.positionId) !== Boolean(data.employeeId), {
+    message: "exactly one recipient (position or employee) is required",
   });
 
-export type AssignKpiState =
+export type AssignTargetState =
   | { status: "success" }
   | {
       status: "error";
@@ -28,25 +32,26 @@ export type AssignKpiState =
   | null;
 
 /**
- * Creates a `kpis` row for an employee (the "الرئيس المباشر هو الذي يحدد
- * مؤشرات الاداء على مستوى الموظف" cascade) through the caller's own
- * RLS-respecting client — `kpis`' RLS (20260727000002) requires
- * check_vpra('kpiAssignment','prepare', orgUnitId) OR
- * is_my_direct_report(employeeId) for INSERT, with NO self-row bypass, so
- * this only ever succeeds for a real supervisor/manager (or a role at that
- * level), never a plain employee cascading a KPI onto themselves —
- * enforced by Postgres itself, not this action's code.
+ * Creates a `targets` row -- cascading a sub_goal (or another target)
+ * further down, per "مدير الاستارتيجية يسقط للمدراء وهم من يسقطونها لمن
+ * دونهم سواء ادارات او اقسام او موظفين". Through the caller's own
+ * RLS-respecting client -- `targets_insert` (20260727000005) requires
+ * being the current owner of the immediate parent (is_my_strategic_position
+ * on the parent sub_goal's owner_position_id or the parent target's
+ * assigned_position_id), enforced by Postgres itself -- seeing this form
+ * doesn't guarantee the insert succeeds, same convention as every other
+ * assign screen in this app.
  */
-export async function assignKpi(_prevState: AssignKpiState, formData: FormData): Promise<AssignKpiState> {
-  const parsed = assignKpiSchema.safeParse({
-    employeeId: formData.get("employeeId"),
-    cycleId: formData.get("cycleId"),
-    kpiLibraryId: formData.get("kpiLibraryId") || undefined,
-    customTitleAr: formData.get("customTitleAr") || undefined,
+export async function assignTarget(locale: Locale, _prevState: AssignTargetState, formData: FormData): Promise<AssignTargetState> {
+  const parsed = assignTargetSchema.safeParse({
+    subGoalId: formData.get("subGoalId") || undefined,
+    parentTargetId: formData.get("parentTargetId") || undefined,
+    titleAr: formData.get("titleAr"),
     targetValue: formData.get("targetValue"),
-    actualValue: formData.get("actualValue") || undefined,
     unitAr: formData.get("unitAr"),
     weight: formData.get("weight") || undefined,
+    positionId: formData.get("positionId") || undefined,
+    employeeId: formData.get("employeeId") || undefined,
   });
 
   if (!parsed.success) {
@@ -55,29 +60,43 @@ export async function assignKpi(_prevState: AssignKpiState, formData: FormData):
 
   const supabase = await createClient();
   const {
-    data: { user: actor },
+    data: { user },
   } = await supabase.auth.getUser();
 
-  if (!actor) {
+  if (!user) {
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { employeeId, cycleId, kpiLibraryId, customTitleAr, targetValue, actualValue, unitAr, weight } = parsed.data;
+  const { subGoalId, parentTargetId, titleAr, targetValue, unitAr, weight, positionId, employeeId } = parsed.data;
 
-  const { data: kpi, error } = await supabase
-    .from("kpis")
-    .insert({
-      employee_id: employeeId,
-      cycle_id: cycleId,
-      kpi_library_id: kpiLibraryId ?? null,
-      custom_title_ar: customTitleAr ?? null,
-      target_value: targetValue,
-      actual_value: actualValue ?? null,
-      unit_ar: unitAr,
-      weight: weight ?? null,
-    })
-    .select("id")
-    .single();
+  // sub_goal_id is required on every row (a target always ultimately
+  // belongs to one sub_goal, even several hops down) -- when cascading
+  // from an existing target, inherit its sub_goal_id rather than asking
+  // the form for it again.
+  let resolvedSubGoalId = subGoalId ?? null;
+  if (!resolvedSubGoalId && parentTargetId) {
+    const { data: parent } = await supabase.from("targets").select("sub_goal_id").eq("id", parentTargetId).maybeSingle();
+    resolvedSubGoalId = parent?.sub_goal_id ?? null;
+  }
+  if (!resolvedSubGoalId) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  // Self-row lookup (profiles_select always allows this regardless of
+  // VPRA) — created_by references profiles(id), not auth.users(id).
+  const { data: myProfile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle();
+
+  const { error } = await supabase.from("targets").insert({
+    sub_goal_id: resolvedSubGoalId,
+    parent_target_id: parentTargetId ?? null,
+    assigned_position_id: positionId ?? null,
+    assigned_employee_id: employeeId ?? null,
+    created_by: myProfile?.id ?? null,
+    title_ar: titleAr,
+    target_value: targetValue,
+    unit_ar: unitAr,
+    weight: weight ?? null,
+  });
 
   if (error) {
     if (error.code === "42501" || error.message.includes("row-level security")) {
@@ -89,22 +108,6 @@ export async function assignKpi(_prevState: AssignKpiState, formData: FormData):
     return { status: "error", message: "unknown" };
   }
 
-  const admin = createAdminClient();
-  await admin.from("audit_log").insert({
-    actor_id: actor.id,
-    action: "kpi_assigned",
-    entity: "kpis",
-    entity_id: kpi.id,
-    after_data: {
-      employee_id: employeeId,
-      cycle_id: cycleId,
-      kpi_library_id: kpiLibraryId ?? null,
-      custom_title_ar: customTitleAr ?? null,
-      target_value: targetValue,
-      unit_ar: unitAr,
-      weight: weight ?? null,
-    },
-  });
-
-  return { status: "success" };
+  redirect({ href: "/kpis", locale });
+  return null;
 }
