@@ -4,10 +4,18 @@ import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import type { EvaluationCycleType } from "./cycles/new/actions";
+
+const cycleTypeLabelKeys: Record<EvaluationCycleType, string> = {
+  academic: "cycleTypeAcademic",
+  calendar: "cycleTypeCalendar",
+  fiscal: "cycleTypeFiscal",
+};
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationCyclesPage() {
   const t = await getTranslations("EvaluationCyclesPage");
+  const tType = await getTranslations("NewEvaluationCyclePage");
   const supabase = await createClient();
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
@@ -22,13 +30,14 @@ export default async function EvaluationCyclesPage() {
   // cycles are university-wide metadata, not per-employee/org-unit scoped.
   const { data } = await supabase
     .from("evaluation_cycles")
-    .select("id, name_ar, start_date, end_date")
+    .select("id, name_ar, cycle_type, start_date, end_date")
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
 
   const cycles = data as Array<{
     id: string;
     name_ar: string;
+    cycle_type: EvaluationCycleType;
     start_date: string;
     end_date: string;
   }> | null;
@@ -83,6 +92,7 @@ export default async function EvaluationCyclesPage() {
               <thead>
                 <tr>
                   <th>{t("columnName")}</th>
+                  <th>{t("columnType")}</th>
                   <th>{t("columnStartDate")}</th>
                   <th>{t("columnEndDate")}</th>
                   <th className="no-print">{t("columnActions")}</th>
@@ -92,6 +102,7 @@ export default async function EvaluationCyclesPage() {
                 {cycles.map((cycle) => (
                   <tr key={cycle.id}>
                     <td>{cycle.name_ar}</td>
+                    <td>{tType(cycleTypeLabelKeys[cycle.cycle_type])}</td>
                     <td>{cycle.start_date}</td>
                     <td>{cycle.end_date}</td>
                     <td className="no-print">

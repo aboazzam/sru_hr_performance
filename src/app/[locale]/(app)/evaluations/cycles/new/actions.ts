@@ -5,8 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
 
+const cycleTypes = ["academic", "calendar", "fiscal"] as const;
+export type EvaluationCycleType = (typeof cycleTypes)[number];
+
 const createEvaluationCycleSchema = z
   .object({
+    cycleType: z.enum(cycleTypes),
     nameAr: z.string().trim().min(1),
     nameEn: z.string().trim().optional(),
     startDate: z.string().min(1),
@@ -40,6 +44,7 @@ export async function createEvaluationCycle(
   formData: FormData
 ): Promise<CreateEvaluationCycleState> {
   const parsed = createEvaluationCycleSchema.safeParse({
+    cycleType: formData.get("cycleType"),
     nameAr: formData.get("nameAr"),
     nameEn: formData.get("nameEn") || undefined,
     startDate: formData.get("startDate"),
@@ -59,9 +64,10 @@ export async function createEvaluationCycle(
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { nameAr, nameEn, startDate, endDate } = parsed.data;
+  const { cycleType, nameAr, nameEn, startDate, endDate } = parsed.data;
 
   const { error } = await supabase.from("evaluation_cycles").insert({
+    cycle_type: cycleType,
     name_ar: nameAr,
     name_en: nameEn || null,
     start_date: startDate,
