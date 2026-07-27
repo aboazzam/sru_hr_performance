@@ -884,7 +884,24 @@
     "createEvaluation": "إنشاء تقييم",
     "myEvaluations": "تقييماتي",
     "myTeamEvaluations": "تقييمات فريقي",
-    "needsMyReview": "بانتظار مراجعتي"
+    "needsMyReview": "بانتظار مراجعتي",
+    "addCycle": "إضافة دورة تقييم"
+  },
+  "NewEvaluationCyclePage": {
+    "title": "إضافة دورة تقييم",
+    "subtitle": "أنشئ دورة تقييم جديدة — الفترة الزمنية التي تُبنى عليها الأهداف والمهام التشغيلية والتقييمات.",
+    "nameArLabel": "اسم الدورة (عربي)",
+    "nameArPlaceholder": "مثال: تقييم عام 2026",
+    "nameEnLabel": "اسم الدورة (إنجليزي) — اختياري",
+    "nameEnPlaceholder": "Cycle name in English",
+    "startDateLabel": "تاريخ البداية",
+    "endDateLabel": "تاريخ النهاية",
+    "submit": "إضافة الدورة",
+    "submitting": "جارٍ الإضافة...",
+    "errorInvalidInput": "تحقق من الحقول — الاسم والتواريخ مطلوبة، ويجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إضافة دورات تقييم.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",

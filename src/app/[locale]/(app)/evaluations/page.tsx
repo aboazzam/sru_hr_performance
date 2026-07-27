@@ -3,11 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationCyclesPage() {
   const t = await getTranslations("EvaluationCyclesPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const permissions = Object.fromEntries(
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).map((row) => [row.process_area, row.vpra_level])
+  ) as Partial<Record<ProcessArea, VpraLevel>>;
+  const canCreateCycle = hasVpraAccess(permissions.evaluation ?? "none", "approve");
 
   // RLS-scoped to the caller (evaluation_cycles_select:
   // check_vpra('evaluation','view')) — every role holding any grant on
@@ -48,6 +55,11 @@ export default async function EvaluationCyclesPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {canCreateCycle && (
+            <Link href="/evaluations/cycles/new" className="sru-btn sru-btn-primary">
+              {t("addCycle")}
+            </Link>
+          )}
           <Link href="/evaluations/mine" className="sru-btn sru-btn-primary">
             {t("myEvaluations")}
           </Link>
