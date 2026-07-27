@@ -737,7 +737,11 @@
     "errorInvalidInput": "Check the fields — the employee and cycle are required, and exactly one goal source (library or custom).",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to assign goals.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionTargetTitle": "Employee & Cycle",
+    "sectionTargetSubtitle": "Who this goal is for, and which evaluation cycle",
+    "sectionGoalDetailsTitle": "Goal Details",
+    "sectionGoalDetailsSubtitle": "From the goal library or a custom title, plus weight and target"
   },
   "KpisPage": {
     "title": "KPIs",
@@ -790,7 +794,11 @@
     "errorInvalidInput": "Check the fields — title, target value, and unit are required, and the recipient must be exactly a position or an employee, not both.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to assign a target under this goal.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionTargetInfoTitle": "Target Information",
+    "sectionTargetInfoSubtitle": "Title, target value, and weight",
+    "sectionRecipientTitle": "Recipient",
+    "sectionRecipientSubtitle": "An org-structure position or a specific employee"
   },
   "StrategicGoalsPage": {
     "title": "Strategic Goals",
@@ -827,7 +835,11 @@
     "errorInvalidInput": "Check the fields — title, cycle, and unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to add strategic goals.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionGoalTitle": "Goal Information",
+    "sectionGoalSubtitle": "Title, description, and the linked cycle",
+    "sectionIndicatorTitle": "Target Indicator",
+    "sectionIndicatorSubtitle": "Target value, unit, and weight"
   },
   "NewSubGoalPage": {
     "title": "Add Sub-Goal",
@@ -850,7 +862,11 @@
     "errorInvalidInput": "Check the fields — title, position, and unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to add sub-goals.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionGoalTitle": "Sub-goal Information",
+    "sectionGoalSubtitle": "Title, description, and the owning position",
+    "sectionIndicatorTitle": "Target Indicator",
+    "sectionIndicatorSubtitle": "Target value, unit, and weight"
   },
   "BauTasksPage": {
     "title": "BAU Tasks",
