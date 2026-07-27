@@ -2,6 +2,7 @@
 
 import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, Flag, Gauge } from "lucide-react";
 import { createStrategicGoal, type CreateStrategicGoalState } from "@/app/[locale]/(app)/kpis/strategic-goals/new/actions";
 import type { Locale } from "@/i18n/config";
 
@@ -28,9 +29,6 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
     null
   );
 
-  const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -42,68 +40,80 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("cycleLabel")}</label>
-        <select name="cycleId" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            {t("cyclePlaceholder")}
-          </option>
-          {cycles.map((cycle) => (
-            <option key={cycle.id} value={cycle.id}>
-              {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("titleLabel")}</label>
-        <input type="text" name="titleAr" required dir="rtl" className={inputClass} placeholder={t("titlePlaceholder")} />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("descriptionLabel")}</label>
-        <textarea name="descriptionAr" dir="rtl" rows={3} className={inputClass} placeholder={t("descriptionPlaceholder")} />
-      </div>
-
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <label className="block text-sm font-medium mb-1">{t("targetLabel")}</label>
-          <input type="number" name="targetValue" step="0.01" className={inputClass} placeholder={t("targetPlaceholder")} />
+    <form onSubmit={handleSubmit}>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Flag size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionGoalTitle")}</h3>
+            <span>{t("sectionGoalSubtitle")}</span>
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <label className="block text-sm font-medium mb-1">{t("unitLabel")}</label>
-          <input type="text" name="unitAr" required dir="rtl" className={inputClass} placeholder={t("unitPlaceholder")} />
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("cycleLabel")}</label>
+            <select name="cycleId" required defaultValue="">
+              <option value="" disabled>
+                {t("cyclePlaceholder")}
+              </option>
+              {cycles.map((cycle) => (
+                <option key={cycle.id} value={cycle.id}>
+                  {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field">
+            <label>{t("titleLabel")}</label>
+            <input type="text" name="titleAr" required dir="rtl" placeholder={t("titlePlaceholder")} />
+          </div>
         </div>
-      </div>
+        <div className="sru-field">
+          <label>{t("descriptionLabel")}</label>
+          <textarea name="descriptionAr" dir="rtl" rows={3} placeholder={t("descriptionPlaceholder")} />
+        </div>
+      </section>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("weightLabel")}</label>
-        <input
-          type="number"
-          name="weight"
-          min="0.01"
-          max="100"
-          step="0.01"
-          className={inputClass}
-          placeholder={t("weightPlaceholder")}
-        />
-      </div>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Gauge size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionIndicatorTitle")}</h3>
+            <span>{t("sectionIndicatorSubtitle")}</span>
+          </div>
+        </div>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("targetLabel")}</label>
+            <input type="number" name="targetValue" step="0.01" placeholder={t("targetPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("unitLabel")}</label>
+            <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("weightLabel")}</label>
+            <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
+          </div>
+        </div>
+      </section>
 
       {state?.status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[state.message])}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
-        {pending ? t("submitting") : t("submit")}
-      </button>
+      <div className="sru-form-submitrow">
+        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+          {pending ? t("submitting") : t("submit")}
+        </button>
+      </div>
     </form>
   );
 }
