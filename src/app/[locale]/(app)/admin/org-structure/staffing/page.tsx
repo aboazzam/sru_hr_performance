@@ -24,7 +24,7 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const positions = (positionsData ?? []) as Array<{
@@ -34,8 +34,17 @@ export default async function OrgStructureStaffingPage() {
     name_ar: string;
     name_en: string | null;
     org_unit_id: string | null;
+    job_title_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+
+  // 2026-07-27: same job-title lookup already shipped on the visual org
+  // chart -- shown here too as a read-only column (no edit UI for it on
+  // this page yet, same as the chart).
+  const jobTitleIds = Array.from(new Set(positions.map((p) => p.job_title_id).filter((id): id is string => !!id)));
+  const { data: jobTitlesData } =
+    jobTitleIds.length > 0 ? await supabase.from("job_titles").select("id, name_ar").in("id", jobTitleIds) : { data: [] };
+  const jobTitleNameById = new Map(((jobTitlesData ?? []) as Array<{ id: string; name_ar: string }>).map((j) => [j.id, j.name_ar]));
 
   // 2026-07-26: optional position -> org unit link, closing the reported
   // gap between employees' own org unit and the org-chart tree ("لا نجد
@@ -131,6 +140,7 @@ export default async function OrgStructureStaffingPage() {
                     <th>{t("positionColumnLevel")}</th>
                     <th>{t("positionColumnParent")}</th>
                     <th>{t("positionColumnName")}</th>
+                    <th>{t("positionColumnJobTitle")}</th>
                     <th>{t("positionColumnAssigned")}</th>
                     <th>{t("positionColumnOrgUnitEmployees")}</th>
                     <th></th>
@@ -154,6 +164,7 @@ export default async function OrgStructureStaffingPage() {
                         initialNameEn={position.name_en}
                         initialOrgUnitId={position.org_unit_id}
                         orgUnits={orgUnits}
+                        jobTitle={position.job_title_id ? jobTitleNameById.get(position.job_title_id) ?? null : null}
                         assignments={positionAssignments}
                         orgUnitEmployeeLabels={
                           position.org_unit_id

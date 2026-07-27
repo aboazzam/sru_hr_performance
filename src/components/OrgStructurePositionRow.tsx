@@ -27,6 +27,7 @@ export function OrgStructurePositionRow({
   initialNameEn,
   initialOrgUnitId,
   orgUnits,
+  jobTitle,
   assignments,
   orgUnitEmployeeLabels,
 }: {
@@ -37,6 +38,8 @@ export function OrgStructurePositionRow({
   initialNameEn: string | null;
   initialOrgUnitId: string | null;
   orgUnits: OrgUnitOption[];
+  /** 2026-07-27: position's linked job_titles.name_ar, when set. Read-only here (no edit UI yet), same as the org chart. */
+  jobTitle: string | null;
   assignments: Assignment[];
   // Employees whose own `profiles.org_unit_id` matches this position's
   // linked org unit OR any of that unit's descendant units in
@@ -123,6 +126,7 @@ export function OrgStructurePositionRow({
           ))}
         </select>
       </td>
+      <td style={{ verticalAlign: "top", fontSize: 13 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>
       <td>
         {assignments.length === 0 ? (
           <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>—</span>
