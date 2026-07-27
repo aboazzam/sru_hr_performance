@@ -67,6 +67,7 @@ export default async function CareerPathPage() {
                 noDescriptionLabel: t("selfNoDescription"),
                 competenciesLabel: t("selfCompetenciesLabel"),
                 noCompetenciesLabel: t("selfNoCompetencies"),
+                pendingApprovalLabel: t("selfPendingApproval"),
               }}
             />
             {tree.children.length === 0 && (
