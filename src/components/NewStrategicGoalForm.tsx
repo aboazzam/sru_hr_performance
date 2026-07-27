@@ -2,15 +2,17 @@
 
 import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { createKpiLibraryEntry, type CreateKpiLibraryState } from "@/app/[locale]/(app)/kpis/library/new/actions";
+import { createStrategicGoal, type CreateStrategicGoalState } from "@/app/[locale]/(app)/kpis/strategic-goals/new/actions";
 import type { Locale } from "@/i18n/config";
 
-interface OrgUnitOption {
+interface CycleOption {
   id: string;
   name_ar: string;
+  start_date: string;
+  end_date: string;
 }
 
-type ErrorMessage = Extract<CreateKpiLibraryState, { status: "error" }>["message"];
+type ErrorMessage = Extract<CreateStrategicGoalState, { status: "error" }>["message"];
 
 const errorMessageKeys: Record<ErrorMessage, string> = {
   invalid_input: "errorInvalidInput",
@@ -19,10 +21,10 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   unknown: "errorUnknown",
 };
 
-export function NewKpiLibraryForm({ locale, orgUnits }: { locale: Locale; orgUnits: OrgUnitOption[] }) {
-  const t = useTranslations("NewKpiLibraryPage");
-  const [state, formAction, pending] = useActionState<CreateKpiLibraryState, FormData>(
-    createKpiLibraryEntry.bind(null, locale),
+export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycles: CycleOption[] }) {
+  const t = useTranslations("NewStrategicGoalPage");
+  const [state, formAction, pending] = useActionState<CreateStrategicGoalState, FormData>(
+    createStrategicGoal.bind(null, locale),
     null
   );
 
@@ -42,6 +44,20 @@ export function NewKpiLibraryForm({ locale, orgUnits }: { locale: Locale; orgUni
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <div>
+        <label className="block text-sm font-medium mb-1">{t("cycleLabel")}</label>
+        <select name="cycleId" required className={inputClass} defaultValue="">
+          <option value="" disabled>
+            {t("cyclePlaceholder")}
+          </option>
+          {cycles.map((cycle) => (
+            <option key={cycle.id} value={cycle.id}>
+              {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium mb-1">{t("titleLabel")}</label>
         <input type="text" name="titleAr" required dir="rtl" className={inputClass} placeholder={t("titlePlaceholder")} />
       </div>
@@ -51,34 +67,28 @@ export function NewKpiLibraryForm({ locale, orgUnits }: { locale: Locale; orgUni
         <textarea name="descriptionAr" dir="rtl" rows={3} className={inputClass} placeholder={t("descriptionPlaceholder")} />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("unitLabel")}</label>
-        <input type="text" name="unitAr" required dir="rtl" className={inputClass} placeholder={t("unitPlaceholder")} />
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label className="block text-sm font-medium mb-1">{t("targetLabel")}</label>
+          <input type="number" name="targetValue" step="0.01" className={inputClass} placeholder={t("targetPlaceholder")} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label className="block text-sm font-medium mb-1">{t("unitLabel")}</label>
+          <input type="text" name="unitAr" required dir="rtl" className={inputClass} placeholder={t("unitPlaceholder")} />
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">{t("defaultWeightLabel")}</label>
+        <label className="block text-sm font-medium mb-1">{t("weightLabel")}</label>
         <input
           type="number"
-          name="defaultWeight"
+          name="weight"
           min="0.01"
           max="100"
           step="0.01"
           className={inputClass}
-          placeholder={t("defaultWeightPlaceholder")}
+          placeholder={t("weightPlaceholder")}
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("orgUnitLabel")}</label>
-        <select name="orgUnitId" className={inputClass} defaultValue="">
-          <option value="">{t("orgUnitPlaceholder")}</option>
-          {orgUnits.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.name_ar}
-            </option>
-          ))}
-        </select>
       </div>
 
       {state?.status === "error" && (

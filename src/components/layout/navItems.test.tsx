@@ -24,8 +24,10 @@ describe("navItems (top-level, ungrouped)", () => {
     // "بالنسبة للترقيات والمكافآت تكون تحت التوصيات" — no longer flat
     // top-level sidebar entries. 2026-07-25: "reports" joined this list
     // ungated (see below) as a personalized dashboard reachable by everyone.
-    // 2026-07-27: "kpis" (مؤشرات الأداء) and "kpis/library" (بنك مؤشرات
-    // الأداء) added, mirroring goals/goals-library's own placement.
+    // 2026-07-27: "kpis" (مؤشرات الأداء, ungated -- real access is row-level
+    // via the strategic-goal cascade's own RLS, not a role_permissions
+    // grant) and "kpis/strategic-goals" (strategy_admin-only admin screen)
+    // added, mirroring goals/goals-library's own placement.
     expect(navItems).toHaveLength(10);
     expect(new Set(navItems.map((i) => i.segment)).size).toBe(10);
   });
@@ -34,9 +36,9 @@ describe("navItems (top-level, ungrouped)", () => {
     expect(navItems.filter((i) => i.segment === "")).toHaveLength(1);
   });
 
-  it("home and reports are the only ungated items; every other item declares an access requirement", () => {
+  it("home, reports, and kpis are the only ungated items; every other item declares an access requirement", () => {
     for (const item of navItems) {
-      if (item.segment === "" || item.segment === "reports") {
+      if (item.segment === "" || item.segment === "reports" || item.segment === "kpis") {
         expect(item.access).toBeUndefined();
       } else {
         expect(item.access).toBeDefined();
@@ -93,11 +95,12 @@ describe("visibleNavItems", () => {
   });
 
   it("hides admin/reference tabs for the real employee permission set", () => {
-    // The actual seeded `employee` role grants (2026-07-22, plus kpiLibrary/
-    // kpiAssignment added 2026-07-27): goalsLibrary=view,
+    // The actual seeded `employee` role grants (2026-07-22): goalsLibrary=view,
     // competencyFramework=view, goalAssignment=view, bauTasks=prepare,
-    // evaluation=prepare, vacancies=view, careerPath=view, kpiLibrary=view,
-    // kpiAssignment=view — everything else (employeeData, calibration,
+    // evaluation=prepare, vacancies=view, careerPath=view — no
+    // strategicPlanning grant at all (2026-07-27: that area is
+    // strategy_admin/ceo only, everyone else's cascade access is row-level,
+    // not a role grant) — everything else (employeeData, calibration,
     // promotions, userManagement, orgStructure) is absent (none).
     const employeePermissions = {
       goalsLibrary: "view",
@@ -107,8 +110,6 @@ describe("visibleNavItems", () => {
       evaluation: "prepare",
       vacancies: "view",
       careerPath: "view",
-      kpiLibrary: "view",
-      kpiAssignment: "view",
     } as const;
 
     const segments = visibleNavItems(navItems, employeePermissions).map((i) => i.segment);
@@ -118,14 +119,14 @@ describe("visibleNavItems", () => {
     expect(segments).not.toContain("salary-scale");
     expect(segments).not.toContain("goals/library");
     expect(segments).not.toContain("calibration");
-    // kpiLibrary=view doesn't clear the "prepare" bar this catalog page requires.
-    expect(segments).not.toContain("kpis/library");
+    // No strategicPlanning grant at all -> the admin screen stays hidden.
+    expect(segments).not.toContain("kpis/strategic-goals");
 
     // Still meaningful for a plain employee.
     expect(segments).toContain("");
     expect(segments).toContain("career-path");
     expect(segments).toContain("vacancies");
-    // kpiAssignment=view is enough for the employee-facing cascade page.
+    // Ungated (2026-07-27): kpis is a personalized cascade view reachable by everyone.
     expect(segments).toContain("kpis");
     // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
     expect(segments).toContain("reports");

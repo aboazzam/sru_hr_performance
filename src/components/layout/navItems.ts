@@ -91,15 +91,20 @@ export const navItems: NavItem[] = [
   // careerPath=view (like `employee`) isn't enough to surface this as a top-level tab.
   { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: [{ processArea: "employeeData", minLevel: "view" }] },
   { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
-  // "مؤشرات الأداء" (2026-07-27): the employee-facing cascade view (own
-  // KPIs, plus a team view + assign link for supervisor/manager) --
-  // kpiAssignment=view is the seeded floor for every role including
-  // `employee`, mirroring goalAssignment's own "everyone can at least view"
-  // shape. The catalog/distribution page sits behind kpiLibrary=prepare
-  // (strategy_admin only), same exact gate goalsLibrary uses for
-  // "goals/library" -- `employee`/`supervisor`/etc. hold only view there.
-  { segment: "kpis", labelKey: "kpis", icon: Gauge, access: [{ processArea: "kpiAssignment", minLevel: "view" }] },
-  { segment: "kpis/library", labelKey: "kpiLibrary", icon: Layers, access: [{ processArea: "kpiLibrary", minLevel: "prepare" }] },
+  // "مؤشرات الأداء" (2026-07-27, redesigned same day into a real strategic
+  // cascade): no `access` gate, same "reports" precedent -- real access is
+  // entirely row-level (org_structure_assignments ownership / being the
+  // assigned employee via strategic_goals/sub_goals/targets RLS), not a
+  // flat role_permissions grant most roles never hold. Gating the TAB
+  // itself on `strategicPlanning` would hide it from everyone but
+  // strategy_admin/ceo even though real position-holders genuinely have
+  // their own cascaded data to see.
+  { segment: "kpis", labelKey: "kpis", icon: Gauge },
+  // The strategic-goals admin screen (create strategic goals + the first
+  // sub_goal cascade to a position) stays genuinely gated -- strategy_admin
+  // is the sole 'approve' holder per the confirmed design ("هو الأدمن لهذا
+  // الموديول"), same tier as goalsLibrary's own "goals/library" gate.
+  { segment: "kpis/strategic-goals", labelKey: "strategicGoals", icon: Layers, access: [{ processArea: "strategicPlanning", minLevel: "approve" }] },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: [{ processArea: "calibration", minLevel: "view" }] },
   { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
 ];
