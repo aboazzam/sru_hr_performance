@@ -46,7 +46,9 @@ export async function getSelfScopedCareerTree(
   // was leaking the deleted row back in as a duplicate.
   const { data: careerJobTitlesData } = await supabase
     .from("job_titles")
-    .select("id, name_ar, grade_level, description_ar, job_title_competencies(required_level, competencies(name_ar))")
+    .select(
+      "id, name_ar, grade_level, description_ar, career_content_status, job_title_competencies(required_level, competencies(name_ar))"
+    )
     .in("id", jobTitleIds)
     .is("deleted_at", null)
     .is("job_title_competencies.deleted_at", null);
@@ -58,6 +60,7 @@ export async function getSelfScopedCareerTree(
         name_ar: string;
         grade_level: number;
         description_ar: string | null;
+        career_content_status: "draft" | "approved";
         job_title_competencies: Array<{ required_level: BehavioralLevel; competencies: { name_ar: string } | null }>;
       }> | null
     )?.map((jt) => [
@@ -69,6 +72,12 @@ export async function getSelfScopedCareerTree(
         competencies: jt.job_title_competencies
           .filter((jtc) => jtc.competencies)
           .map((jtc) => ({ nameAr: jtc.competencies!.name_ar, requiredLevel: jtc.required_level })),
+        // Gating on 'draft' happens at render time (CareerPathForwardTree),
+        // not here -- the raw content is still needed there to distinguish
+        // "nothing entered yet" (show the normal empty state) from "real
+        // draft content awaiting approval" (show "قيد الاعتماد" instead of
+        // the unapproved text), which requires seeing both fields together.
+        careerContentStatus: jt.career_content_status,
       },
     ]) ?? []
   );

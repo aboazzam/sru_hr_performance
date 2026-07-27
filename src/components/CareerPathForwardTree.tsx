@@ -9,6 +9,8 @@ export interface CareerPathTreeLabels {
   noDescriptionLabel: string;
   competenciesLabel: string;
   noCompetenciesLabel: string;
+  /** Shown instead of real description/competencies while career_content_status is 'draft' AND real content exists to gate. */
+  pendingApprovalLabel: string;
 }
 
 /**
@@ -23,6 +25,15 @@ export interface CareerPathTreeLabels {
  * competencies too, not just name+grade, per the same feedback: "الوصف
  * الوظيفي والجدارات ... الخاصة بوظيفته") followed by the forward branches
  * only (never repeating the root as if it were a future step).
+ *
+ * Approval gating (2026-07-27): if a job's career_content_status is
+ * 'draft' AND it actually has description/competency content (i.e. someone
+ * really did write a draft, it just isn't approved yet), that content is
+ * replaced with `pendingApprovalLabel` — showing an unreviewed draft to an
+ * employee would defeat the point of the approval step. A job with
+ * career_content_status='draft' but genuinely nothing entered yet (the
+ * column's own default) still shows the normal "not set" empty states —
+ * there's nothing pending approval to hide.
  */
 export function CareerPathForwardTree({
   currentJobTitleId,
@@ -45,27 +56,46 @@ export function CareerPathForwardTree({
           <strong>{currentInfo?.nameAr ?? "—"}</strong>
           {currentInfo && <span className="sru-chip sru-en">{labels.gradeLabel(currentInfo.gradeLevel)}</span>}
         </div>
-        <p style={{ fontSize: 13, marginBottom: 6 }}>
-          <b>{labels.descriptionLabel}: </b>
-          {currentInfo?.descriptionAr ?? labels.noDescriptionLabel}
-        </p>
-        <div style={{ fontSize: 13 }}>
-          <b>{labels.competenciesLabel}: </b>
-          {currentInfo && currentInfo.competencies.length > 0 ? (
-            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-              {currentInfo.competencies.map((c, i) => (
-                <span key={i} className="sru-chip">
-                  {c.nameAr} ({behavioralLevelLabels[c.requiredLevel]})
-                </span>
-              ))}
-            </span>
-          ) : (
-            labels.noCompetenciesLabel
-          )}
-        </div>
+        {renderContentSection(currentInfo, labels)}
       </div>
       {renderNodes(tree.children, jobTitleInfo, labels, 0)}
     </div>
+  );
+}
+
+function hasUnapprovedContent(info: CareerJobTitleInfo | undefined): boolean {
+  return !!info && info.careerContentStatus === "draft" && (!!info.descriptionAr || info.competencies.length > 0);
+}
+
+function renderContentSection(info: CareerJobTitleInfo | undefined, labels: CareerPathTreeLabels) {
+  if (hasUnapprovedContent(info)) {
+    return (
+      <p style={{ fontSize: 13, color: "var(--sru-muted)" }} role="status">
+        {labels.pendingApprovalLabel}
+      </p>
+    );
+  }
+  return (
+    <>
+      <p style={{ fontSize: 13, marginBottom: 6 }}>
+        <b>{labels.descriptionLabel}: </b>
+        {info?.descriptionAr ?? labels.noDescriptionLabel}
+      </p>
+      <div style={{ fontSize: 13 }}>
+        <b>{labels.competenciesLabel}: </b>
+        {info && info.competencies.length > 0 ? (
+          <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+            {info.competencies.map((c, i) => (
+              <span key={i} className="sru-chip">
+                {c.nameAr} ({behavioralLevelLabels[c.requiredLevel]})
+              </span>
+            ))}
+          </span>
+        ) : (
+          labels.noCompetenciesLabel
+        )}
+      </div>
+    </>
   );
 }
 
@@ -92,24 +122,7 @@ function renderNodes(
                   {node.requirementsAr}
                 </p>
               )}
-              <p style={{ fontSize: 13, marginBottom: 6 }}>
-                <b>{labels.descriptionLabel}: </b>
-                {info?.descriptionAr ?? labels.noDescriptionLabel}
-              </p>
-              <div style={{ fontSize: 13 }}>
-                <b>{labels.competenciesLabel}: </b>
-                {info && info.competencies.length > 0 ? (
-                  <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                    {info.competencies.map((c, i) => (
-                      <span key={i} className="sru-chip">
-                        {c.nameAr} ({behavioralLevelLabels[c.requiredLevel]})
-                      </span>
-                    ))}
-                  </span>
-                ) : (
-                  labels.noCompetenciesLabel
-                )}
-              </div>
+              {renderContentSection(info, labels)}
             </div>
             {node.children.length > 0 && renderNodes(node.children, jobTitleInfo, labels, depth + 1)}
           </li>

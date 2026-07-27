@@ -47,7 +47,9 @@ export default async function CareerPathJobTitlesPage({
   // soft-deleted requirement still inflates this list's competency count.
   const { data: jobTitlesData } = await supabase
     .from("job_titles")
-    .select("id, name_ar, grade_level, description_ar, job_families(name_ar), job_title_competencies(id)")
+    .select(
+      "id, name_ar, grade_level, description_ar, career_content_status, job_families(name_ar), job_title_competencies(id)"
+    )
     .is("deleted_at", null)
     .is("job_title_competencies.deleted_at", null)
     .order("grade_level", { ascending: false })
@@ -58,6 +60,7 @@ export default async function CareerPathJobTitlesPage({
     name_ar: string;
     grade_level: number;
     description_ar: string | null;
+    career_content_status: "draft" | "approved";
     job_families: { name_ar: string } | null;
     job_title_competencies: Array<{ id: string }>;
   };
@@ -77,9 +80,14 @@ export default async function CareerPathJobTitlesPage({
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <Link href="/career-path" className="sru-btn">
-          {t("backToCareerPath")}
-        </Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/career-path/job-titles/new" className="sru-btn sru-btn-primary">
+            {t("createNew")}
+          </Link>
+          <Link href="/career-path" className="sru-btn">
+            {t("backToCareerPath")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
@@ -112,6 +120,7 @@ export default async function CareerPathJobTitlesPage({
                   <th>{t("columnFamily")}</th>
                   <th>{t("columnDescription")}</th>
                   <th>{t("columnCompetencies")}</th>
+                  <th>{t("columnStatus")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -127,6 +136,7 @@ export default async function CareerPathJobTitlesPage({
                     <td>{r.job_families?.name_ar ?? "—"}</td>
                     <td>{r.description_ar ? t("hasDescription") : t("noDescription")}</td>
                     <td>{t("competencyCount", { count: r.job_title_competencies.length })}</td>
+                    <td>{r.career_content_status === "approved" ? t("statusApproved") : t("statusDraft")}</td>
                     <td>
                       <Link href={`/career-path/job-titles/${r.id}`} className="sru-btn">
                         {t("manage")}
