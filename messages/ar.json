@@ -253,6 +253,7 @@
     "positionColumnLevel": "المستوى",
     "positionColumnName": "المنصب",
     "positionColumnParent": "يتبع",
+    "positionColumnJobTitle": "المسمى الوظيفي",
     "positionColumnAssigned": "الموظفون المسكَّنون",
     "positionColumnOrgUnitEmployees": "موظفو الوحدة التنظيمية المرتبطة ووحداتها الفرعية",
     "rootChip": "جذر",

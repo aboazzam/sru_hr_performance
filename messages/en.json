@@ -253,6 +253,7 @@
     "positionColumnLevel": "Level",
     "positionColumnName": "Position",
     "positionColumnParent": "Reports To",
+    "positionColumnJobTitle": "Job Title",
     "positionColumnAssigned": "Assigned Employees",
     "positionColumnOrgUnitEmployees": "Employees in Linked Org Unit (incl. sub-units)",
     "rootChip": "Root",
