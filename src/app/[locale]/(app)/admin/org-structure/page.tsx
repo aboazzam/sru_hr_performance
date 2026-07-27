@@ -62,7 +62,7 @@ export default async function OrgStructurePage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -73,8 +73,27 @@ export default async function OrgStructurePage() {
     name_ar: string;
     name_en: string | null;
     org_unit_id: string | null;
+    job_title_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+
+  // 2026-07-27: "اعرض المسميات الوظيفية على شاشة الهيكل التنظيمي" -- show
+  // each position's linked job title (20260727000002/000003) on the chart
+  // itself. `job_titles_select`'s own RLS (careerPath>=view OR
+  // employeeData>=view) already covers every role that can reach this page
+  // (hr_admin/super_admin both hold employeeData); a caller without either
+  // grant simply gets an empty jobTitleNameById, and positions render with
+  // no title line, same graceful-degradation posture as every other
+  // optional lookup on this page.
+  const jobTitleIds = Array.from(new Set(positions.map((p) => p.job_title_id).filter((id): id is string => !!id)));
+  const { data: jobTitlesData } =
+    jobTitleIds.length > 0 ? await supabase.from("job_titles").select("id, name_ar").in("id", jobTitleIds) : { data: [] };
+  const jobTitleNameById = new Map(((jobTitlesData ?? []) as Array<{ id: string; name_ar: string }>).map((j) => [j.id, j.name_ar]));
+  const jobTitleByPosition: Record<string, string> = {};
+  for (const p of positions) {
+    const name = p.job_title_id ? jobTitleNameById.get(p.job_title_id) : undefined;
+    if (name) jobTitleByPosition[p.id] = name;
+  }
 
   // 2026-07-26: optional position -> org unit link, closing the reported
   // gap between employees' own org unit and the org-chart tree. Same
@@ -172,6 +191,7 @@ export default async function OrgStructurePage() {
                 positions={positions}
                 levels={levels.map((l) => ({ id: l.id, level_order: l.level_order, color: l.color }))}
                 assigneesByPosition={assigneesByPosition}
+                jobTitleByPosition={jobTitleByPosition}
                 emptyLabel={t("noPositions")}
                 vacantLabel={t("orgChartVacant")}
               />
