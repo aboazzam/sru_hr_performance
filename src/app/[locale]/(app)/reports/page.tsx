@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasVpraAccess, evaluationStateLabels, type EvaluationState, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import { ProfileTabs } from "@/components/ProfileTabs";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 
 const COMPLETED_STATES = new Set(["approved", "finalized"]);
 
@@ -11,13 +11,13 @@ function achievementPercent(row: { target_value: number | null; actual_value: nu
 }
 
 // Personalized dashboard (2026-07-25 rebuild): reachable by every logged-in
-// user (no page-level gate — see navItems.ts), but its CONTENT is composed
-// per user from their own permissions, each card checking the same
-// process-area/level that already governs that data elsewhere in the app.
-// A plain employee sees only their personal section; hr_admin/super_admin
-// see nearly everything. Every query is additionally RLS-scoped as usual —
-// an org-unit-scoped manager's "org-wide" cards still only reflect their
-// own visible subset, same as every other page in this app.
+// user (no page-level gate — see navItems.ts), but its report-tab CONTENT
+// is composed per user from their own permissions, each card checking the
+// same process-area/level that already governs that data elsewhere in the
+// app. A plain employee sees only their personal section; hr_admin/
+// super_admin see nearly everything. Every query is additionally RLS-scoped
+// as usual — an org-unit-scoped manager's "org-wide" cards still only
+// reflect their own visible subset, same as every other page in this app.
 //
 // The project owner's exact request (2026-07-24) named several metrics —
 // implemented all of them with real data below EXCEPT "نسبة تحقيق الأهداف
@@ -27,6 +27,14 @@ function achievementPercent(row: { target_value: number | null; actual_value: nu
 // needing to mature to track that distinction first) -- inventing a number
 // here would be exactly the kind of fabricated metric this project's
 // discipline forbids. Flagged in the UI instead of silently omitted.
+//
+// Restructured 2026-07-27 into three independently-gated tabs ("تقارير
+// الأداء"/"تقارير الاستراتيجية"/"تقارير الجدارات"), per direct request:
+// "اضف التقارير كعنوان في الصلاحيات ... تظهر كتبويبات في موديول التقارير
+// وتضاف سكاشن في جدول الصلاحيات". The always-visible personal section
+// (`personalContent`) was pulled OUT of any tab so gating the new
+// performance tab can't take away a plain employee's own summary, which
+// this page has shown unconditionally since 2026-07-25.
 export default async function ReportsPage() {
   const t = await getTranslations("ReportsPage");
   const supabase = await createClient();
@@ -90,6 +98,13 @@ export default async function ReportsPage() {
   // grant is actually the right shape, matching strategic_goals_select's
   // own check_vpra_global branch).
   const showStrategy = has("strategicPlanning");
+  // New tab-level gates (2026-07-27), per direct request: "تضاف سكاشن في
+  // جدول الصلاحيات" (added as sections in the permissions table) — these
+  // decide whether the "تقارير الأداء"/"تقارير الجدارات" TABS appear at
+  // all, on top of (not instead of) each card's own existing individual
+  // gate inside `performanceContent` below.
+  const showPerformanceReports = has("performanceReports");
+  const showCompetencyReports = has("competencyReports");
 
   let completionRate: number | null = null;
   let completedEvaluations = 0;
@@ -208,11 +223,56 @@ export default async function ReportsPage() {
     targetsTotal = targetsCount ?? 0;
   }
 
+  // ---- Competency Reports tab (2026-07-27): institutional framework
+  // size only (pillars/domains/competencies/behavioral levels — real,
+  // structural counts) plus per-employee competency-score coverage.
+  // Deliberately does NOT invent a per-employee "average competency
+  // score" narrative beyond that coverage count — evaluation_scores has
+  // zero rows linked to a competency in production today (there are no
+  // evaluation cycles yet at all), so a fabricated distribution would be
+  // exactly the kind of invented metric this project's discipline forbids
+  // (same reasoning already applied to the omitted "% أهداف استراتيجية
+  // محققة" metric above). Each table here already carries its own
+  // `competencyFramework`-based RLS — a caller holding `competencyReports`
+  // without also holding `competencyFramework` will correctly see zero
+  // rows, same documented "each table's own RLS decides" caveat as every
+  // other cross-permission card on this page.
+  let competencyPillarsCount = 0;
+  let competencyDomainsCount = 0;
+  let competencyCountsByType: Array<{ type: string; count: number }> = [];
+  let competencyLevelsCount = 0;
+  let competencyScoresRecorded = 0;
+  if (showCompetencyReports) {
+    const [{ count: pillarsCount }, { count: domainsCount }, { data: competenciesData }, { count: levelsCount }, { count: scoresCount }] =
+      await Promise.all([
+        supabase.from("competency_pillars").select("id", { count: "exact", head: true }),
+        supabase.from("competency_domains").select("id", { count: "exact", head: true }),
+        supabase.from("competencies").select("type").is("deleted_at", null),
+        supabase.from("competency_levels").select("id", { count: "exact", head: true }),
+        supabase.from("evaluation_scores").select("id", { count: "exact", head: true }).not("competency_id", "is", null),
+      ]);
+    competencyPillarsCount = pillarsCount ?? 0;
+    competencyDomainsCount = domainsCount ?? 0;
+    competencyLevelsCount = levelsCount ?? 0;
+    competencyScoresRecorded = scoresCount ?? 0;
+    const typeCounts = new Map<string, number>();
+    for (const row of (competenciesData ?? []) as Array<{ type: string }>) {
+      typeCounts.set(row.type, (typeCounts.get(row.type) ?? 0) + 1);
+    }
+    competencyCountsByType = [...typeCounts.entries()].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count);
+  }
+
   const cardStyle: React.CSSProperties = { padding: 16, minWidth: 180 };
   const numberStyle: React.CSSProperties = { fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" };
   const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--sru-muted)" };
 
-  const overviewContent = (
+  // Always visible regardless of any report-tab permission — a plain
+  // employee has always seen their own evaluation/goals/tasks summary
+  // here (see the module comment at the top of this file), and gating the
+  // new "تقارير الأداء" tab must not take that away. Pulled out of the tab
+  // content entirely (2026-07-27) rather than left inside the now-gated
+  // performance tab.
+  const personalContent = (
     <>
       <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
         {t("myDashboardHeading")}
@@ -233,7 +293,11 @@ export default async function ReportsPage() {
           <div style={labelStyle}>{t("myTasksLabel")}</div>
         </div>
       </div>
+    </>
+  );
 
+  const performanceContent = (
+    <>
       {(showEvaluation || showCalibration || showPromotions || showVacancies || showEmployeeData || showStaffing) && (
         <>
           <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
@@ -365,6 +429,70 @@ export default async function ReportsPage() {
     </>
   );
 
+  const competencyTypeLabels: Record<string, string> = {
+    core: "المؤسسية",
+    leadership: "القيادية",
+    specialized: "التخصصية",
+  };
+
+  const competencyContent = (
+    <>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("competencySubtitle")}</p>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{competencyPillarsCount}</div>
+          <div style={labelStyle}>{t("competencyPillarsLabel")}</div>
+        </div>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{competencyDomainsCount}</div>
+          <div style={labelStyle}>{t("competencyDomainsLabel")}</div>
+        </div>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{competencyCountsByType.reduce((sum, c) => sum + c.count, 0)}</div>
+          <div style={labelStyle}>{t("competencyTotalLabel")}</div>
+        </div>
+        <div className="sru-card" style={cardStyle}>
+          <div style={numberStyle}>{competencyLevelsCount}</div>
+          <div style={labelStyle}>{t("competencyLevelsLabel")}</div>
+        </div>
+      </div>
+
+      {competencyCountsByType.length > 0 && (
+        <>
+          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+            {t("competencyByTypeHeading")}
+          </h2>
+          <div className="sru-card" style={{ marginBottom: 32 }}>
+            <div className="table-scroll">
+              <table className="admin-matrix">
+                <thead>
+                  <tr>
+                    <th>{t("competencyTypeColumn")}</th>
+                    <th>{t("countColumn")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {competencyCountsByType.map((row) => (
+                    <tr key={row.type}>
+                      <td>{competencyTypeLabels[row.type] ?? row.type}</td>
+                      <td>{row.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>
+        {competencyScoresRecorded > 0
+          ? t("competencyScoresRecorded", { count: competencyScoresRecorded })
+          : t("competencyNoEmployeeData")}
+      </p>
+    </>
+  );
+
   const strategyContent = (
     <>
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("strategySubtitle")}</p>
@@ -420,6 +548,20 @@ export default async function ReportsPage() {
     </>
   );
 
+  // Reports tabs (2026-07-27): three independently-gated report
+  // categories, each its own row in the /admin permission matrix. Only
+  // "تقارير الأداء"/"تقارير الجدارات" are NEW gates (`performanceReports`/
+  // `competencyReports`) -- "تقارير الاستراتيجية" reuses the already-
+  // existing `strategicPlanning` grant (see vpra.ts's own comment for why
+  // a third, redundant area wasn't added). Zero, one, or several tabs may
+  // be visible depending on the caller's own grants; the tab bar itself
+  // (ProfileTabs) is only rendered when there's genuinely more than one to
+  // switch between, same discipline this page already used before today.
+  const reportTabs: ProfileTab[] = [];
+  if (showPerformanceReports) reportTabs.push({ id: "performance", label: t("performanceTab"), content: performanceContent });
+  if (showStrategy) reportTabs.push({ id: "strategy", label: t("strategyTab"), content: strategyContent });
+  if (showCompetencyReports) reportTabs.push({ id: "competency", label: t("competencyTab"), content: competencyContent });
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -428,16 +570,18 @@ export default async function ReportsPage() {
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {showStrategy ? (
-        <ProfileTabs
-          tabs={[
-            { id: "overview", label: t("overviewTab"), content: overviewContent },
-            { id: "strategy", label: t("strategyTab"), content: strategyContent },
-          ]}
-        />
-      ) : (
-        overviewContent
-      )}
+      {personalContent}
+
+      {reportTabs.length > 1 ? (
+        <ProfileTabs tabs={reportTabs} />
+      ) : reportTabs.length === 1 ? (
+        <>
+          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+            {reportTabs[0].label}
+          </h2>
+          {reportTabs[0].content}
+        </>
+      ) : null}
     </div>
   );
 }
