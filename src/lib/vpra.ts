@@ -46,7 +46,9 @@ export type ProcessArea =
   | "staffing"
   | "identity"
   | "systemSettings"
-  | "strategicPlanning";
+  | "strategicPlanning"
+  | "performanceReports"
+  | "competencyReports";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -67,6 +69,8 @@ export const processAreas: ProcessArea[] = [
   "identity",
   "systemSettings",
   "strategicPlanning",
+  "performanceReports",
+  "competencyReports",
 ];
 
 /**
@@ -95,6 +99,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   identity: "الهوية",
   systemSettings: "إعدادات النظام",
   strategicPlanning: "التخطيط الاستراتيجي",
+  performanceReports: "تقارير الأداء",
+  competencyReports: "تقارير الجدارات",
 };
 
 export interface ProcessAreaSection {
@@ -103,7 +109,7 @@ export interface ProcessAreaSection {
 }
 
 /**
- * Grouping of the 16 process areas into labeled sections for the /admin
+ * Grouping of the process areas into labeled sections for the /admin
  * permission-matrix editor (2026-07-25 checkbox-grid redesign, "قسمها إلى
  * سكاشن بحيث يكون عنوان السكشن بولد"). [استنتاج] — a presentational
  * grouping invented for readability, not a documented CLAUDE.md taxonomy;
@@ -128,6 +134,15 @@ export interface ProcessAreaSection {
  * abandoned-enum-value precedent as `reports`: the two old Postgres enum
  * values can't be removed, but nothing in the app references them anymore
  * (kpi_library/kpis tables themselves were dropped in that migration).
+ * `performanceReports`/`competencyReports` (20260727000006) back the
+ * /reports module's tab-level gates, per explicit request ("تضاف سكاشن في
+ * جدول الصلاحيات" — added as sections in the permissions table) — their
+ * own "التقارير" section below. The THIRD requested tab, "تقارير
+ * الاستراتيجية", deliberately reuses `strategicPlanning` (still listed
+ * only under its original section above, per the one-section-per-area
+ * invariant) rather than adding a third redundant area — that area's own
+ * `view`-vs-`approve` split already separates read-only strategic
+ * reporting from full module management (see /reports's own code comment).
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -142,6 +157,10 @@ export const processAreaSections: ProcessAreaSection[] = [
       "competencyFramework",
       "defaultTemplates",
     ],
+  },
+  {
+    titleAr: "التقارير",
+    areas: ["performanceReports", "competencyReports"],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",

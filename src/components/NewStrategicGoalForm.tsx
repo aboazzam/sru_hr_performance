@@ -19,6 +19,7 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   invalid_input: "errorInvalidInput",
   unauthenticated: "errorUnauthenticated",
   forbidden: "errorForbidden",
+  identity_incomplete: "errorIdentityIncomplete",
   unknown: "errorUnknown",
 };
 
