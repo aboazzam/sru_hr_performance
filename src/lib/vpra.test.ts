@@ -39,15 +39,17 @@ describe("hasVpraAccess", () => {
 });
 
 describe("static reference lists", () => {
-  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings (added 2026-07-22, 2026-07-25, and 2026-07-26)", () => {
-    expect(processAreas).toHaveLength(18);
-    expect(new Set(processAreas).size).toBe(18);
+  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings/strategicPlanning/performanceReports/competencyReports (added 2026-07-22, 2026-07-25, 2026-07-26, and 2026-07-27)", () => {
+    expect(processAreas).toHaveLength(20);
+    expect(new Set(processAreas).size).toBe(20);
     expect(processAreas).toContain("orgStructure");
     expect(processAreas).toContain("staffing");
     expect(processAreas).toContain("identity");
     expect(processAreas).toContain("employeeDataSubordinates");
     expect(processAreas).toContain("systemSettings");
     expect(processAreas).toContain("strategicPlanning");
+    expect(processAreas).toContain("performanceReports");
+    expect(processAreas).toContain("competencyReports");
     expect(processAreas).not.toContain("reports");
     expect(processAreas).not.toContain("kpiLibrary");
     expect(processAreas).not.toContain("kpiAssignment");
