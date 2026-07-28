@@ -4,16 +4,31 @@ import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { CreateRecommendationForm } from "@/components/CreateRecommendationForm";
 import { RecommendationReviewActions } from "@/components/RecommendationReviewActions";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx. Hub page for the
-// project owner's "التوصيات" concept (2026-07-24): promotion and reward
-// recommendations keep using their own established /promotions and
-// /rewards flows (linked here, not rebuilt) -- this page hosts only the
-// two types with no existing table, development and separation, via the
-// new `recommendations` table (migration 20260724000005).
+// Hub page for the project owner's "التوصيات" concept (2026-07-24):
+// promotion and reward recommendations keep using their own established
+// /promotions and /rewards flows (linked here, not rebuilt) -- this page
+// hosts only the two types with no existing table, development and
+// separation, via the new `recommendations` table (migration 20260724000005).
+//
+// The counts/list below are already RLS-scoped safely (recommendations_select
+// mirrors promotions/rewards' own self-row/org-scoped bar) — the gap was the
+// inline create form: recommendations_insert requires
+// check_vpra('promotions','recommend', org_unit_id), the same bar as
+// /promotions/new and /rewards/new, but this form had no matching page-level
+// check and was reachable by any authenticated user (same bug class found in
+// the audit that fixed kpis/strategic-goals).
 export default async function RecommendationsPage() {
   const t = await getTranslations("RecommendationsPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const promotionsLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "promotions"
+    )?.vpra_level ?? "none";
+  const canCreate = hasVpraAccess(promotionsLevel, "recommend");
 
   // Each count query is RLS-scoped to the caller on its own terms -- a
   // caller who can't see promotions/rewards/recommendations at all simply
@@ -89,7 +104,7 @@ export default async function RecommendationsPage() {
       <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
         {t("newRecommendationHeading")}
       </h2>
-      {employees && employees.length > 0 ? (
+      {canCreate && employees && employees.length > 0 ? (
         <CreateRecommendationForm employees={employees} cycles={cycles ?? []} />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>

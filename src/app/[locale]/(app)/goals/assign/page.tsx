@@ -1,11 +1,38 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { AssignGoalForm } from "@/components/AssignGoalForm";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+// goals_insert's own RLS requires check_vpra('goalAssignment','prepare',
+// org_unit_id) OR is_my_direct_report(employee_id) (20260718000010) — this
+// form was previously reachable and fully renderable by any authenticated
+// user (same bug class found in the audit that fixed kpis/strategic-goals).
+// Gated here at the flat `goalAssignment>=prepare` bar. Accepted trade-off,
+// same class already documented elsewhere in this app (e.g. the `employees`
+// nav item's employeeData/employeeDataSubordinates split): a supervisor who
+// only has the is_my_direct_report relationship (no flat grant) also loses
+// this page, since there is no per-row relationship signal available at
+// page-render time (unlike a single employee id, this form addresses
+// arbitrary employees). Real per-employee write authorization is still
+// enforced by goals_insert's own RLS, unchanged.
 export default async function AssignGoalPage() {
   const t = await getTranslations("AssignGoalPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const goalAssignmentLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "goalAssignment"
+    )?.vpra_level ?? "none";
+  const canAssign = hasVpraAccess(goalAssignmentLevel, "prepare");
+
+  if (!canAssign) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   // RLS-scoped to the caller. profiles_select requires check_vpra
   // ('employeeData','view', org_unit_id) (or self) — not necessarily the

@@ -2,8 +2,18 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { isLocale } from "@/i18n/config";
 import { PrintButton } from "@/components/PrintButton";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+// salary_scale_select's own RLS (check_vpra_global('careerPath','view') OR
+// check_vpra_global('employeeData','view')) would let any careerPath=view
+// holder (i.e. every employee, via the career-path screen's own grant) read
+// the full company-wide salary matrix — but navItems.ts's own gate on this
+// tab deliberately requires employeeData specifically, not careerPath,
+// exactly because "full company salary figures are more sensitive than a
+// promotion-path reference". That distinction was previously enforced only
+// by hiding the nav link — this page itself had no matching check (found in
+// the same audit that fixed kpis/strategic-goals), so anyone could still
+// read the full salary matrix by hitting the URL directly.
 export default async function SalaryScalePage({
   params,
 }: {
@@ -13,6 +23,21 @@ export default async function SalaryScalePage({
   const locale = isLocale(rawLocale) ? rawLocale : "ar";
   const t = await getTranslations("SalaryScalePage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const employeeDataLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "employeeData"
+    )?.vpra_level ?? "none";
+  const canView = hasVpraAccess(employeeDataLevel, "view");
+
+  if (!canView) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   // RLS-scoped to the caller (salary_scale_select: check_vpra('careerPath',
   // 'view') OR check_vpra('employeeData','view') — SRU_System_Design.md §A's
