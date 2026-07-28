@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function GoalLibraryPage() {
@@ -31,6 +32,7 @@ export default async function GoalLibraryPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="strategicPlan" current="goals/library" />
       <div
         className="no-print"
         style={{

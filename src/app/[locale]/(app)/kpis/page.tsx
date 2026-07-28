@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { UpdateProgressForm } from "@/components/UpdateProgressForm";
+import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 interface SubGoalRow {
@@ -114,6 +115,7 @@ export default async function KpisPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="strategicPlan" current="kpis" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
           <h1 className="sru-title" style={{ fontSize: 24 }}>
