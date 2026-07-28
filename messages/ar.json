@@ -801,6 +801,38 @@
     "sectionRecipientTitle": "الجهة المستفيدة",
     "sectionRecipientSubtitle": "منصب في الهيكل التنظيمي أو موظف بعينه"
   },
+  "StrategicIdentityPage": {
+    "title": "الرؤية والرسالة والقيم",
+    "subtitle": "الأساس الاستراتيجي الذي تُبنى عليه الأهداف الاستراتيجية (مدير الاستراتيجية فقط).",
+    "errorForbidden": "ليست لديك صلاحية مشاهدة هذه الصفحة.",
+    "visionArLabel": "الرؤية (عربي)",
+    "visionArPlaceholder": "اكتب رؤية الجامعة",
+    "visionEnLabel": "الرؤية (إنجليزي) — اختياري",
+    "visionEnPlaceholder": "Vision in English",
+    "missionArLabel": "الرسالة (عربي)",
+    "missionArPlaceholder": "اكتب رسالة الجامعة",
+    "missionEnLabel": "الرسالة (إنجليزي) — اختياري",
+    "missionEnPlaceholder": "Mission in English",
+    "submit": "حفظ",
+    "submitting": "جارٍ الحفظ...",
+    "successMessage": "تم الحفظ بنجاح.",
+    "viewOnlyNote": "للاطلاع فقط — لا تملك صلاحية التعديل.",
+    "errorInvalidInput": "تحقق من الحقول المدخلة.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "valuesHeading": "القيم",
+    "valuesEmpty": "لا توجد قيم بعد.",
+    "valueTitleArPlaceholder": "اسم القيمة (عربي)",
+    "valueTitleEnPlaceholder": "Value name (English)",
+    "valueDescriptionPlaceholder": "وصف مختصر — اختياري",
+    "addValueButton": "إضافة قيمة",
+    "addingValue": "جارٍ الإضافة...",
+    "editButton": "تعديل",
+    "cancelButton": "إلغاء",
+    "saveButton": "حفظ",
+    "deleteButton": "حذف",
+    "deleteValueConfirm": "هل تريد حذف هذه القيمة؟"
+  },
   "StrategicGoalsPage": {
     "title": "الأهداف الاستراتيجية",
     "subtitle": "إدارة الأهداف الاستراتيجية وإسقاط أهدافها الفرعية على الإدارات (مدير الاستراتيجية فقط).",
@@ -815,7 +847,9 @@
     "subGoalsEmpty": "لا توجد أهداف فرعية بعد.",
     "addSubGoalButton": "إضافة هدف فرعي",
     "columnOwner": "المالك (المنصب)",
-    "errorForbidden": "ليست لديك صلاحية مشاهدة الأهداف الاستراتيجية."
+    "errorForbidden": "ليست لديك صلاحية مشاهدة الأهداف الاستراتيجية.",
+    "identityLinkButton": "الرؤية والرسالة والقيم",
+    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا."
   },
   "NewStrategicGoalPage": {
     "title": "إضافة هدف استراتيجي",
@@ -837,11 +871,14 @@
     "errorInvalidInput": "تحقق من الحقول — العنوان والدورة ووحدة القياس مطلوبة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة أهداف استراتيجية.",
+    "errorIdentityIncomplete": "يجب تحديد الرؤية والرسالة والقيم قبل إضافة أي هدف استراتيجي.",
     "errorUnknown": "حدث خطأ غير متوقع.",
     "sectionGoalTitle": "بيانات الهدف",
     "sectionGoalSubtitle": "العنوان والوصف والدورة المرتبطة به",
     "sectionIndicatorTitle": "المؤشر المستهدف",
-    "sectionIndicatorSubtitle": "القيمة المستهدفة ووحدة القياس والوزن"
+    "sectionIndicatorSubtitle": "القيمة المستهدفة ووحدة القياس والوزن",
+    "identityLinkButton": "الرؤية والرسالة والقيم",
+    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا."
   },
   "NewSubGoalPage": {
     "title": "إضافة هدف فرعي",

@@ -801,6 +801,38 @@
     "sectionRecipientTitle": "Recipient",
     "sectionRecipientSubtitle": "An org-structure position or a specific employee"
   },
+  "StrategicIdentityPage": {
+    "title": "Vision, Mission & Values",
+    "subtitle": "The strategic foundation strategic goals are built on (Strategy Admin only).",
+    "errorForbidden": "You don't have permission to view this page.",
+    "visionArLabel": "Vision (Arabic)",
+    "visionArPlaceholder": "Enter the university's vision",
+    "visionEnLabel": "Vision (English) — optional",
+    "visionEnPlaceholder": "Vision in English",
+    "missionArLabel": "Mission (Arabic)",
+    "missionArPlaceholder": "Enter the university's mission",
+    "missionEnLabel": "Mission (English) — optional",
+    "missionEnPlaceholder": "Mission in English",
+    "submit": "Save",
+    "submitting": "Saving...",
+    "successMessage": "Saved successfully.",
+    "viewOnlyNote": "View only — you don't have permission to edit.",
+    "errorInvalidInput": "Check the entered fields.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorUnknown": "An unexpected error occurred.",
+    "valuesHeading": "Values",
+    "valuesEmpty": "No values yet.",
+    "valueTitleArPlaceholder": "Value name (Arabic)",
+    "valueTitleEnPlaceholder": "Value name (English)",
+    "valueDescriptionPlaceholder": "Short description — optional",
+    "addValueButton": "Add Value",
+    "addingValue": "Adding...",
+    "editButton": "Edit",
+    "cancelButton": "Cancel",
+    "saveButton": "Save",
+    "deleteButton": "Delete",
+    "deleteValueConfirm": "Delete this value?"
+  },
   "StrategicGoalsPage": {
     "title": "Strategic Goals",
     "subtitle": "Manage strategic goals and cascade their sub-goals to departments (Strategy Admin only).",
@@ -815,7 +847,9 @@
     "subGoalsEmpty": "No sub-goals yet.",
     "addSubGoalButton": "Add Sub-Goal",
     "columnOwner": "Owner (Position)",
-    "errorForbidden": "You don't have permission to view strategic goals."
+    "errorForbidden": "You don't have permission to view strategic goals.",
+    "identityLinkButton": "Vision, Mission & Values",
+    "identityGateMessage": "Before adding any strategic goal, the vision, mission, and values must be set first."
   },
   "NewStrategicGoalPage": {
     "title": "Add Strategic Goal",
@@ -837,11 +871,14 @@
     "errorInvalidInput": "Check the fields — title, cycle, and unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to add strategic goals.",
+    "errorIdentityIncomplete": "The vision, mission, and values must be set before adding any strategic goal.",
     "errorUnknown": "An unexpected error occurred.",
     "sectionGoalTitle": "Goal Information",
     "sectionGoalSubtitle": "Title, description, and the linked cycle",
     "sectionIndicatorTitle": "Target Indicator",
-    "sectionIndicatorSubtitle": "Target value, unit, and weight"
+    "sectionIndicatorSubtitle": "Target value, unit, and weight",
+    "identityLinkButton": "Vision, Mission & Values",
+    "identityGateMessage": "Before adding any strategic goal, the vision, mission, and values must be set first."
   },
   "NewSubGoalPage": {
     "title": "Add Sub-Goal",

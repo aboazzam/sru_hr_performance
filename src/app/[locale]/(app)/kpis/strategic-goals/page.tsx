@@ -56,6 +56,17 @@ export default async function StrategicGoalsPage() {
     );
   }
 
+  // Gate: strategy_admin must set up vision/mission/values before creating
+  // any strategic goal (requested directly, 2026-07-28) -- checked here too,
+  // not just on the create-goal page, so the "add goal" button itself
+  // reflects readiness instead of leading to a dead end.
+  const { data: identity } = await supabase.from("strategic_identity").select("vision_ar, mission_ar").maybeSingle();
+  const { count: valuesCount } = await supabase
+    .from("strategic_values")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  const identityComplete = Boolean(identity?.vision_ar?.trim() && identity?.mission_ar?.trim() && (valuesCount ?? 0) > 0);
+
   const { data: goalsData } = await supabase
     .from("strategic_goals")
     .select("id, title_ar, target_value, actual_value, unit_ar, weight")
@@ -92,11 +103,29 @@ export default async function StrategicGoalsPage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <Link href="/kpis/strategic-goals/new" className="sru-btn sru-btn-primary">
-          {t("addGoalButton")}
-        </Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Link href="/kpis/strategic-identity" className="sru-btn">
+            {t("identityLinkButton")}
+          </Link>
+          {identityComplete && (
+            <Link href="/kpis/strategic-goals/new" className="sru-btn sru-btn-primary">
+              {t("addGoalButton")}
+            </Link>
+          )}
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {!identityComplete && (
+        <div className="sru-card" style={{ padding: 16, marginBottom: 20, borderColor: "var(--sru-purple)" }}>
+          <p style={{ fontSize: 14 }}>
+            {t("identityGateMessage")}{" "}
+            <Link href="/kpis/strategic-identity" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
+              {t("identityLinkButton")}
+            </Link>
+          </p>
+        </div>
+      )}
 
       {goals.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>

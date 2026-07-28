@@ -17,7 +17,7 @@ const createStrategicGoalSchema = z.object({
 export type CreateStrategicGoalState =
   | {
       status: "error";
-      message: "invalid_input" | "unauthenticated" | "forbidden" | "unknown";
+      message: "invalid_input" | "unauthenticated" | "forbidden" | "identity_incomplete" | "unknown";
     }
   | null;
 
@@ -55,6 +55,20 @@ export async function createStrategicGoal(
   }
 
   const { cycleId, titleAr, descriptionAr, unitAr, targetValue, weight } = parsed.data;
+
+  // Business-rule guard, not a security boundary (the page itself already
+  // hides this form when incomplete) — re-checked here per CLAUDE.md §5-A's
+  // "never rely on UI-only protection" discipline, same reasoning already
+  // applied to the VPRA page-gates on this route.
+  const { data: identity } = await supabase.from("strategic_identity").select("vision_ar, mission_ar").maybeSingle();
+  const { count: valuesCount } = await supabase
+    .from("strategic_values")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  const identityComplete = Boolean(identity?.vision_ar?.trim() && identity?.mission_ar?.trim() && (valuesCount ?? 0) > 0);
+  if (!identityComplete) {
+    return { status: "error", message: "identity_incomplete" };
+  }
 
   // Self-row lookup (profiles_select always allows this regardless of
   // VPRA) — created_by references profiles(id), not auth.users(id).

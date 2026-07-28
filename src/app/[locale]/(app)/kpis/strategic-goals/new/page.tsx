@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { NewStrategicGoalForm } from "@/components/NewStrategicGoalForm";
+import { Link } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/config";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -34,6 +35,35 @@ export default async function NewStrategicGoalPage({
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
+
+  // Same identity-completeness gate as /kpis/strategic-goals -- see that
+  // page's comment. Checked again here since this route is reachable
+  // directly, not only via the list page's conditional button.
+  const { data: identity } = await supabase.from("strategic_identity").select("vision_ar, mission_ar").maybeSingle();
+  const { count: valuesCount } = await supabase
+    .from("strategic_values")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  const identityComplete = Boolean(identity?.vision_ar?.trim() && identity?.mission_ar?.trim() && (valuesCount ?? 0) > 0);
+
+  if (!identityComplete) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <h1 className="sru-title" style={{ fontSize: 24 }}>
+          {t("title")}
+        </h1>
+        <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+        <div className="sru-card" style={{ padding: 16 }}>
+          <p style={{ fontSize: 14 }}>
+            {t("identityGateMessage")}{" "}
+            <Link href="/kpis/strategic-identity" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
+              {t("identityLinkButton")}
+            </Link>
+          </p>
+        </div>
       </div>
     );
   }
