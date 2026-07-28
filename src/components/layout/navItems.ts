@@ -28,6 +28,7 @@ import {
   Settings,
   Gauge,
   Layers,
+  Compass,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -90,21 +91,6 @@ export const navItems: NavItem[] = [
   // figures are more sensitive than a promotion-path reference, so holding only
   // careerPath=view (like `employee`) isn't enough to surface this as a top-level tab.
   { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: [{ processArea: "employeeData", minLevel: "view" }] },
-  { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
-  // "مؤشرات الأداء" (2026-07-27, redesigned same day into a real strategic
-  // cascade): no `access` gate, same "reports" precedent -- real access is
-  // entirely row-level (org_structure_assignments ownership / being the
-  // assigned employee via strategic_goals/sub_goals/targets RLS), not a
-  // flat role_permissions grant most roles never hold. Gating the TAB
-  // itself on `strategicPlanning` would hide it from everyone but
-  // strategy_admin/ceo even though real position-holders genuinely have
-  // their own cascaded data to see.
-  { segment: "kpis", labelKey: "kpis", icon: Gauge },
-  // The strategic-goals admin screen (create strategic goals + the first
-  // sub_goal cascade to a position) stays genuinely gated -- strategy_admin
-  // is the sole 'approve' holder per the confirmed design ("هو الأدمن لهذا
-  // الموديول"), same tier as goalsLibrary's own "goals/library" gate.
-  { segment: "kpis/strategic-goals", labelKey: "strategicGoals", icon: Layers, access: [{ processArea: "strategicPlanning", minLevel: "approve" }] },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: [{ processArea: "calibration", minLevel: "view" }] },
   { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
 ];
@@ -127,6 +113,35 @@ export interface NavGroup {
 // as a personalized, ungated dashboard (see that item's own comment) --
 // evaluationResults keeps just "recommendations" either way.
 export const navGroups: NavGroup[] = [
+  // "الخطة الاستراتيجية" (2026-07-28): these three were previously separate
+  // top-level items (الأهداف الاستراتيجية / مؤشرات الأداء / بنك الأهداف) —
+  // combined into one sidebar row per the explicit "اجمعها كلها في موديول
+  // واحد" request, since they're really one strategic-planning module (goal
+  // library feeds strategic/sub-goal titles, which cascade into KPIs).
+  {
+    groupKey: "strategicPlan",
+    labelKey: "strategicPlan",
+    icon: Compass,
+    children: [
+      // The strategic-goals admin screen (create strategic goals + the
+      // first sub_goal cascade to a position) stays genuinely gated --
+      // strategy_admin is the sole 'approve' holder per the confirmed
+      // design ("هو الأدمن لهذا الموديول").
+      { segment: "kpis/strategic-goals", labelKey: "strategicGoals", icon: Layers, access: [{ processArea: "strategicPlanning", minLevel: "approve" }] },
+      // "مؤشرات الأداء" (2026-07-27, redesigned same day into a real
+      // strategic cascade): no `access` gate, same "reports" precedent --
+      // real access is entirely row-level (org_structure_assignments
+      // ownership / being the assigned employee via
+      // strategic_goals/sub_goals/targets RLS), not a flat
+      // role_permissions grant most roles never hold. Gating this on
+      // `strategicPlanning` would hide it from everyone but
+      // strategy_admin/ceo even though real position-holders genuinely
+      // have their own cascaded data to see. Since this child has no
+      // gate, the whole group is always visible to every logged-in user.
+      { segment: "kpis", labelKey: "kpis", icon: Gauge },
+      { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
+    ],
+  },
   {
     groupKey: "administration",
     labelKey: "administration",

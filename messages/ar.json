@@ -43,7 +43,8 @@
     "performance": "الأداء",
     "evaluationResults": "نتائج التقييم",
     "reports": "التقارير",
-    "recommendations": "التوصيات"
+    "recommendations": "التوصيات",
+    "strategicPlan": "الخطة الاستراتيجية"
   },
   "PrintButton": {
     "print": "طباعة"

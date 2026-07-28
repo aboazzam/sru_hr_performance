@@ -5,9 +5,9 @@ import { navGroups, navItemHref, visibleNavItems } from "./navItems";
 import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 
 /**
- * Top-of-page tab bar for the three sidebar groups (الإدارة / طرق التقييم /
- * نتائج التقييم), per the explicit "العناوين الفرعية تكون على شكل تابات في
- * أعلى الصفحة" instruction (2026-07-24) -- the group's children are NOT
+ * Top-of-page tab bar for the sidebar groups (الخطة الاستراتيجية / الإدارة /
+ * طرق التقييم / نتائج التقييم), per the explicit "العناوين الفرعية تكون على
+ * شكل تابات في أعلى الصفحة" instruction (2026-07-24) -- the group's children are NOT
  * nested in the sidebar itself (Sidebar.tsx links straight to the first
  * child), they only ever appear here, added once at the top of every page
  * that belongs to a group.
@@ -23,7 +23,7 @@ export async function GroupTabs({
   groupKey,
   current,
 }: {
-  groupKey: "administration" | "evaluationMethods" | "evaluationResults";
+  groupKey: "strategicPlan" | "administration" | "evaluationMethods" | "evaluationResults";
   current: string;
 }) {
   const t = await getTranslations("NavBar");
