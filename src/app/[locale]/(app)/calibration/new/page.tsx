@@ -2,8 +2,15 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { CreateCalibrationSessionForm } from "@/components/CreateCalibrationSessionForm";
 import { isLocale } from "@/i18n/config";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
+// calibration_sessions_insert's own RLS requires check_vpra('calibration',
+// 'approve', org_unit_id), hr_admin-only per the real seeded matrix. This
+// form was previously reachable and fully renderable by any authenticated
+// user (same bug class found in the audit that fixed kpis/strategic-goals).
+// Gated here at the flat `calibration>=approve` bar as a page-level
+// pre-check; the real per-org-unit boundary stays calibration_sessions'
+// own RLS.
 export default async function CreateCalibrationSessionPage({
   params,
 }: {
@@ -13,6 +20,21 @@ export default async function CreateCalibrationSessionPage({
   const locale = isLocale(rawLocale) ? rawLocale : "ar";
   const t = await getTranslations("CreateCalibrationSessionPage");
   const supabase = await createClient();
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const calibrationLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "calibration"
+    )?.vpra_level ?? "none";
+  const canCreate = hasVpraAccess(calibrationLevel, "approve");
+
+  if (!canCreate) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   // RLS-scoped to the caller, same reasoning as the goals/evaluations
   // "create" screens: seeing a cycle/org unit here doesn't guarantee the

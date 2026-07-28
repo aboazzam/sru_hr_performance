@@ -510,7 +510,8 @@
     "columnJobTitle": "Job Title",
     "columnAnnualCap": "Annual Increase Cap",
     "columnEffectiveDate": "Effective Date",
-    "gradeLabel": "Grade {grade}"
+    "gradeLabel": "Grade {grade}",
+    "errorForbidden": "You don't have permission to view the salary scale."
   },
   "EmployeeInvitePage": {
     "title": "Add Employee",

@@ -510,7 +510,8 @@
     "columnJobTitle": "المسمى الوظيفي",
     "columnAnnualCap": "الحد الأقصى للعلاوة السنوية",
     "columnEffectiveDate": "تاريخ السريان",
-    "gradeLabel": "درجة {grade}"
+    "gradeLabel": "درجة {grade}",
+    "errorForbidden": "ليست لديك صلاحية مشاهدة سلم الرواتب."
   },
   "EmployeeInvitePage": {
     "title": "إضافة موظف",

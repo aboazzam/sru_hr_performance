@@ -1,23 +1,39 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmployeeInviteForm } from "@/components/EmployeeInviteForm";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx. VPRA is not — added here
-// explicitly. 2026-07-25 feedback loosened this: entering employee DATA only
-// requires employeeData>=prepare (RLS on profiles_insert already enforces
-// this — a caller below that bar simply gets a "forbidden" error on submit,
-// no separate page-level check needed for the data-only case). Creating an
-// actual LOGIN account (mode='invite'|'direct' in the form) stays a
-// userManagement action — the form itself only shows that section when
-// canManageUsers is true, and inviteEmployee re-checks it server-side too.
+// This page previously relied only on the 2026-07-25 comment's claim that
+// "entering employee data only requires employeeData>=prepare, enforced by
+// profiles_insert's RLS -- no separate page-level check needed" -- but that
+// left the entire form (all 20+ fields, plus the account-creation section
+// when canManageUsers happened to be true) reachable and renderable by any
+// authenticated user, same bug class found in the audit that fixed
+// kpis/strategic-goals: relying solely on the write RLS instead of also
+// checking at render time. Now gated explicitly at employeeData>=prepare,
+// matching profiles_insert's own bar. Creating an actual LOGIN account
+// (mode='invite'|'direct') stays a separate userManagement action -- the
+// form itself only shows that section when canManageUsers is true, and
+// inviteEmployee re-checks it server-side too.
 export default async function EmployeeInvitePage() {
   const t = await getTranslations("EmployeeInvitePage");
   const supabase = await createClient();
 
-  const { data: canManageUsers } = await supabase.rpc("check_vpra", {
-    p_process_area: "userManagement",
-    p_min_level: "approve",
-  });
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const permissions = ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).reduce(
+    (acc, row) => ({ ...acc, [row.process_area]: row.vpra_level }),
+    {} as Partial<Record<ProcessArea, VpraLevel>>
+  );
+  const canEnterData = hasVpraAccess(permissions.employeeData ?? "none", "prepare");
+  const canManageUsers = hasVpraAccess(permissions.userManagement ?? "none", "approve");
+
+  if (!canEnterData) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+      </div>
+    );
+  }
 
   // RLS-scoped to the caller: org_units_select requires
   // check_vpra('employeeData','view', <unit id>) per unit, so this list is
@@ -59,7 +75,7 @@ export default async function EmployeeInvitePage() {
           orgUnits={orgUnits}
           roles={roles ?? []}
           jobTitles={jobTitles ?? []}
-          canManageUsers={!!canManageUsers}
+          canManageUsers={canManageUsers}
         />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
