@@ -10,8 +10,10 @@ const assignTargetSchema = z
     subGoalId: z.string().uuid().optional(),
     parentTargetId: z.string().uuid().optional(),
     titleAr: z.string().trim().min(1),
+    titleEn: z.string().trim().optional(),
     targetValue: z.coerce.number(),
     unitAr: z.string().trim().min(1),
+    unitEn: z.string().trim().optional(),
     weight: z.coerce.number().min(0.01).max(100).optional(),
     positionId: z.string().uuid().optional(),
     employeeId: z.string().uuid().optional(),
@@ -47,8 +49,10 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
     subGoalId: formData.get("subGoalId") || undefined,
     parentTargetId: formData.get("parentTargetId") || undefined,
     titleAr: formData.get("titleAr"),
+    titleEn: formData.get("titleEn") || undefined,
     targetValue: formData.get("targetValue"),
     unitAr: formData.get("unitAr"),
+    unitEn: formData.get("unitEn") || undefined,
     weight: formData.get("weight") || undefined,
     positionId: formData.get("positionId") || undefined,
     employeeId: formData.get("employeeId") || undefined,
@@ -67,7 +71,7 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { subGoalId, parentTargetId, titleAr, targetValue, unitAr, weight, positionId, employeeId } = parsed.data;
+  const { subGoalId, parentTargetId, titleAr, titleEn, targetValue, unitAr, unitEn, weight, positionId, employeeId } = parsed.data;
 
   // sub_goal_id is required on every row (a target always ultimately
   // belongs to one sub_goal, even several hops down) -- when cascading
@@ -93,8 +97,10 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
     assigned_employee_id: employeeId ?? null,
     created_by: myProfile?.id ?? null,
     title_ar: titleAr,
+    title_en: titleEn || null,
     target_value: targetValue,
     unit_ar: unitAr,
+    unit_en: unitEn || null,
     weight: weight ?? null,
   });
 

@@ -1097,3 +1097,12 @@ dialog.sru-modal::backdrop {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* ===== Back-link arrow direction (2026-07-29) =====
+   "Back" points toward the start of the reading direction: right in RTL
+   (the icon's natural orientation, so no rule needed there), left in LTR.
+   Flipping in CSS rather than swapping the icon component keeps the
+   Server Components that render it free of any locale branching. */
+html[dir="ltr"] .sru-back-arrow {
+  transform: rotate(180deg);
+}

@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { AssignTargetForm } from "@/components/AssignTargetForm";
+import { Link } from "@/i18n/navigation";
+import { ArrowRight } from "lucide-react";
 import { isLocale } from "@/i18n/config";
 
 // Auth is enforced centrally by (app)/layout.tsx — the real gate is
@@ -34,6 +36,14 @@ export default async function AssignTargetPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <Link
+        href="/kpis"
+        className="sru-btn"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
+      >
+        <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
+        {t("backButton")}
+      </Link>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>

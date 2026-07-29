@@ -70,10 +70,24 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
             <label>{t("titleLabel")}</label>
             <input type="text" name="titleAr" required dir="rtl" placeholder={t("titlePlaceholder")} />
           </div>
+          <div className="sru-field">
+            <label>{t("titleEnLabel")}</label>
+            <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("titleEnPlaceholder")} />
+          </div>
         </div>
         <div className="sru-field">
           <label>{t("descriptionLabel")}</label>
           <textarea name="descriptionAr" dir="rtl" rows={3} placeholder={t("descriptionPlaceholder")} />
+        </div>
+        <div className="sru-field">
+          <label>{t("descriptionEnLabel")}</label>
+          <textarea
+            name="descriptionEn"
+            dir="ltr"
+            rows={3}
+            style={{ textAlign: "left" }}
+            placeholder={t("descriptionEnPlaceholder")}
+          />
         </div>
       </section>
 
@@ -95,6 +109,10 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
           <div className="sru-field">
             <label>{t("unitLabel")}</label>
             <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("unitEnLabel")}</label>
+            <input type="text" name="unitEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("unitEnPlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("weightLabel")}</label>

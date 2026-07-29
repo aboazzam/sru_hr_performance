@@ -9,8 +9,11 @@ const createSubGoalSchema = z.object({
   strategicGoalId: z.string().uuid(),
   ownerPositionId: z.string().uuid(),
   titleAr: z.string().trim().min(1),
+  titleEn: z.string().trim().optional(),
   descriptionAr: z.string().trim().optional(),
+  descriptionEn: z.string().trim().optional(),
   unitAr: z.string().trim().min(1),
+  unitEn: z.string().trim().optional(),
   targetValue: z.coerce.number().optional(),
   weight: z.coerce.number().min(0.01).max(100).optional(),
 });
@@ -39,8 +42,11 @@ export async function createSubGoal(
     strategicGoalId: formData.get("strategicGoalId"),
     ownerPositionId: formData.get("ownerPositionId"),
     titleAr: formData.get("titleAr"),
+    titleEn: formData.get("titleEn") || undefined,
     descriptionAr: formData.get("descriptionAr") || undefined,
+    descriptionEn: formData.get("descriptionEn") || undefined,
     unitAr: formData.get("unitAr"),
+    unitEn: formData.get("unitEn") || undefined,
     targetValue: formData.get("targetValue") || undefined,
     weight: formData.get("weight") || undefined,
   });
@@ -58,7 +64,8 @@ export async function createSubGoal(
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { strategicGoalId, ownerPositionId, titleAr, descriptionAr, unitAr, targetValue, weight } = parsed.data;
+  const { strategicGoalId, ownerPositionId, titleAr, titleEn, descriptionAr, descriptionEn, unitAr, unitEn, targetValue, weight } =
+    parsed.data;
 
   // Self-row lookup (profiles_select always allows this regardless of
   // VPRA) — created_by references profiles(id), not auth.users(id).
@@ -68,8 +75,11 @@ export async function createSubGoal(
     strategic_goal_id: strategicGoalId,
     owner_position_id: ownerPositionId,
     title_ar: titleAr,
+    title_en: titleEn || null,
     description_ar: descriptionAr || null,
+    description_en: descriptionEn || null,
     unit_ar: unitAr,
+    unit_en: unitEn || null,
     target_value: targetValue ?? null,
     created_by: myProfile?.id ?? null,
     weight: weight ?? null,

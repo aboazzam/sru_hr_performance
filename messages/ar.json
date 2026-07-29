@@ -815,7 +815,12 @@
     "sectionTargetInfoTitle": "بيانات المستهدف",
     "sectionTargetInfoSubtitle": "العنوان والقيمة المستهدفة والوزن",
     "sectionRecipientTitle": "الجهة المستفيدة",
-    "sectionRecipientSubtitle": "منصب في الهيكل التنظيمي أو موظف بعينه"
+    "sectionRecipientSubtitle": "منصب في الهيكل التنظيمي أو موظف بعينه",
+    "backButton": "العودة",
+    "titleEnLabel": "عنوان المستهدف (إنجليزي) — اختياري",
+    "titleEnPlaceholder": "Target title in English",
+    "unitEnLabel": "وحدة القياس (إنجليزي) — اختياري",
+    "unitEnPlaceholder": "e.g. %, count, SAR"
   },
   "StrategicIdentityPage": {
     "title": "الرؤية والرسالة والقيم",
@@ -898,7 +903,14 @@
     "sectionIndicatorTitle": "المؤشر المستهدف",
     "sectionIndicatorSubtitle": "القيمة المستهدفة ووحدة القياس والوزن",
     "identityLinkButton": "الرؤية والرسالة والقيم",
-    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا."
+    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا.",
+    "backButton": "العودة إلى الأهداف الاستراتيجية",
+    "titleEnLabel": "عنوان الهدف (إنجليزي) — اختياري",
+    "titleEnPlaceholder": "e.g. Enhance institutional excellence",
+    "descriptionEnLabel": "الوصف (إنجليزي) — اختياري",
+    "descriptionEnPlaceholder": "Describe the strategic goal",
+    "unitEnLabel": "وحدة القياس (إنجليزي) — اختياري",
+    "unitEnPlaceholder": "e.g. %, count, SAR"
   },
   "NewSubGoalPage": {
     "title": "إضافة هدف فرعي",
@@ -925,7 +937,14 @@
     "sectionGoalTitle": "بيانات الهدف الفرعي",
     "sectionGoalSubtitle": "العنوان والوصف والمنصب المالك",
     "sectionIndicatorTitle": "المؤشر المستهدف",
-    "sectionIndicatorSubtitle": "القيمة المستهدفة ووحدة القياس والوزن"
+    "sectionIndicatorSubtitle": "القيمة المستهدفة ووحدة القياس والوزن",
+    "backButton": "العودة إلى الأهداف الاستراتيجية",
+    "titleEnLabel": "عنوان الهدف الفرعي (إنجليزي) — اختياري",
+    "titleEnPlaceholder": "Sub-goal title in English",
+    "descriptionEnLabel": "الوصف (إنجليزي) — اختياري",
+    "descriptionEnPlaceholder": "Describe the sub-goal",
+    "unitEnLabel": "وحدة القياس (إنجليزي) — اختياري",
+    "unitEnPlaceholder": "e.g. %, count, SAR"
   },
   "BauTasksPage": {
     "title": "المهام التشغيلية",

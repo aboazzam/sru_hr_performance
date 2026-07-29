@@ -74,12 +74,20 @@ export function AssignTargetForm({
             <input type="text" name="titleAr" required dir="rtl" placeholder={t("titlePlaceholder")} />
           </div>
           <div className="sru-field">
+            <label>{t("titleEnLabel")}</label>
+            <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("titleEnPlaceholder")} />
+          </div>
+          <div className="sru-field">
             <label>{t("targetLabel")}</label>
             <input type="number" name="targetValue" required step="0.01" placeholder={t("targetPlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("unitLabel")}</label>
             <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("unitEnLabel")}</label>
+            <input type="text" name="unitEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("unitEnPlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("weightLabel")}</label>
