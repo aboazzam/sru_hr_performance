@@ -131,18 +131,23 @@ export default async function KpisPage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
+      {/* "مؤشرات الأداء" section (2026-07-29 restructure): sub-goals only --
+          each one is directly linked to its strategic goal (columnStrategicGoal),
+          which is the literal "مرتبطة بالأهداف" request. Previously mixed
+          together with owned targets under one "ownedHeading" table; split
+          out here so KPIs and targets read as two distinct, clearly labeled
+          sections on this one page, in that order. */}
       <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
-        {t("ownedHeading")}
+        {t("kpiSectionHeading")}
       </h2>
-      {ownedSubGoals.length === 0 && ownedTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("ownedEmpty")}</p>
+      {ownedSubGoals.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("kpiSectionEmpty")}</p>
       ) : (
         <div className="sru-card" style={{ marginBottom: 32 }}>
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
                 <tr>
-                  <th>{t("columnType")}</th>
                   <th>{t("columnTitle")}</th>
                   <th>{t("columnStrategicGoal")}</th>
                   <th>{t("columnTarget")}</th>
@@ -154,8 +159,7 @@ export default async function KpisPage() {
               </thead>
               <tbody>
                 {ownedSubGoals.map((sg) => (
-                  <tr key={`sub-${sg.id}`}>
-                    <td>{t("typeSubGoal")}</td>
+                  <tr key={sg.id}>
                     <td>{sg.title_ar}</td>
                     <td>{strategicGoalTitleById.get(sg.strategic_goal_id) ?? "—"}</td>
                     <td>
@@ -173,9 +177,43 @@ export default async function KpisPage() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* "المستهدفات" section: everything target-related, after the KPI
+          section above per the explicit "وكذلك بعدها بنفس الصفحة
+          المستهدفات" request. The three existing sub-groupings (owned /
+          assigned-to-me / team) keep their distinct meaning, now nested
+          under this one umbrella heading instead of owned-targets being
+          mixed into the KPI table above. */}
+      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
+        {t("targetsSectionHeading")}
+      </h2>
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("ownedHeading")}</h3>
+      {ownedTargets.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("ownedEmpty")}</p>
+      ) : (
+        <div className="sru-card" style={{ marginBottom: 32 }}>
+          <div className="table-scroll">
+            <table className="admin-matrix">
+              <thead>
+                <tr>
+                  <th>{t("columnTitle")}</th>
+                  <th>{t("columnStrategicGoal")}</th>
+                  <th>{t("columnTarget")}</th>
+                  <th>{t("columnActual")}</th>
+                  <th>{t("columnAchievement")}</th>
+                  <th>{t("columnWeight")}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
                 {ownedTargets.map((tg) => (
-                  <tr key={`target-${tg.id}`}>
-                    <td>{t("typeTarget")}</td>
+                  <tr key={tg.id}>
                     <td>{tg.title_ar}</td>
                     <td>{strategicGoalTitleById.get(subGoals.find((sg) => sg.id === tg.sub_goal_id)?.strategic_goal_id ?? "") ?? "—"}</td>
                     <td>
@@ -203,9 +241,7 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
-        {t("assignedHeading")}
-      </h2>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("assignedHeading")}</h3>
       {assignedToMeTargets.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("assignedEmpty")}</p>
       ) : (
@@ -241,9 +277,7 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h2 className="sru-title" style={{ fontSize: 18, margin: "32px 0 12px" }}>
-        {t("teamHeading")}
-      </h2>
+      <h3 style={{ fontSize: 15, fontWeight: 700, margin: "32px 0 12px" }}>{t("teamHeading")}</h3>
       {teamTargets.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("teamEmpty")}</p>
       ) : (

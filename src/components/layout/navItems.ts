@@ -29,6 +29,7 @@ import {
   Gauge,
   Layers,
   Compass,
+  Flag,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -123,22 +124,31 @@ export const navGroups: NavGroup[] = [
     labelKey: "strategicPlan",
     icon: Compass,
     children: [
+      // "الرؤية والرسالة والقيم" (2026-07-29): the strategic foundation the
+      // goals below are built on -- gated at the page's own read bar
+      // (`strategicPlanning>=view`, broader than the 'approve' the goals
+      // screen itself needs) per the explicit "نريد ... تنعكس عند الآخرين
+      // كتاب" request, so ceo's existing read-only follow-up access also
+      // surfaces this tab, not just strategy_admin.
+      { segment: "kpis/strategic-identity", labelKey: "strategicIdentity", icon: Flag, access: [{ processArea: "strategicPlanning", minLevel: "view" }] },
       // The strategic-goals admin screen (create strategic goals + the
       // first sub_goal cascade to a position) stays genuinely gated --
       // strategy_admin is the sole 'approve' holder per the confirmed
       // design ("هو الأدمن لهذا الموديول").
       { segment: "kpis/strategic-goals", labelKey: "strategicGoals", icon: Layers, access: [{ processArea: "strategicPlanning", minLevel: "approve" }] },
-      // "مؤشرات الأداء" (2026-07-27, redesigned same day into a real
-      // strategic cascade): no `access` gate, same "reports" precedent --
-      // real access is entirely row-level (org_structure_assignments
-      // ownership / being the assigned employee via
-      // strategic_goals/sub_goals/targets RLS), not a flat
+      // "الأهداف المسندة" (renamed 2026-07-29, was "مؤشرات الأداء" -- the
+      // page's own content already matched this description exactly:
+      // goals/targets cascaded down TO the caller, which they in turn
+      // cascade further down to whoever reports to them). No `access` gate,
+      // same "reports" precedent -- real access is entirely row-level
+      // (org_structure_assignments ownership / being the assigned employee
+      // via strategic_goals/sub_goals/targets RLS), not a flat
       // role_permissions grant most roles never hold. Gating this on
       // `strategicPlanning` would hide it from everyone but
       // strategy_admin/ceo even though real position-holders genuinely
       // have their own cascaded data to see. Since this child has no
       // gate, the whole group is always visible to every logged-in user.
-      { segment: "kpis", labelKey: "kpis", icon: Gauge },
+      { segment: "kpis", labelKey: "assignedGoals", icon: Gauge },
       { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
     ],
   },

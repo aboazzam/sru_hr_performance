@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { StrategicIdentityForm } from "@/components/StrategicIdentityForm";
 import { StrategicValueRow } from "@/components/StrategicValueRow";
 import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
+import { GroupTabs } from "@/components/layout/GroupTabs";
+import { Star } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx. Real write authorization
@@ -46,18 +48,24 @@ export default async function StrategicIdentityPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <GroupTabs groupKey="strategicPlan" current="kpis/strategic-identity" />
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <div className="sru-card" style={{ padding: 20, marginBottom: 24 }}>
-        <StrategicIdentityForm canEdit={canEdit} identity={identity ?? null} />
-      </div>
+      <StrategicIdentityForm canEdit={canEdit} identity={identity ?? null} />
 
-      <div className="sru-card" style={{ padding: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("valuesHeading")}</h2>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Star size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("valuesHeading")}</h3>
+          </div>
+        </div>
         {values.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("valuesEmpty")}</p>
         ) : (
@@ -66,7 +74,7 @@ export default async function StrategicIdentityPage() {
           ))
         )}
         {canEdit && <AddStrategicValueForm />}
-      </div>
+      </section>
     </div>
   );
 }
