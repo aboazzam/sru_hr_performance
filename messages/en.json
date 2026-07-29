@@ -44,7 +44,9 @@
     "evaluationResults": "Evaluation Results",
     "reports": "Reports",
     "recommendations": "Recommendations",
-    "strategicPlan": "Strategic Plan"
+    "strategicPlan": "Strategic Plan",
+    "strategicIdentity": "Vision, Mission & Values",
+    "assignedGoals": "Assigned Goals"
   },
   "PrintButton": {
     "print": "Print"
@@ -715,7 +717,17 @@
     "columnJobFamily": "Job Family",
     "columnDefaultWeight": "Default Weight",
     "allJobFamilies": "General (all families)",
-    "assignGoal": "Assign Goal"
+    "assignGoal": "Assign Goal",
+    "strategicSectionHeading": "Strategic Goals",
+    "strategicSectionSubtitle": "A quick read-only view of the current strategic goals and their sub-goals — to edit, go to the Strategic Goals tab.",
+    "strategicGoalsEmpty": "No strategic goals yet.",
+    "subGoalsEmpty": "No sub-goals yet.",
+    "columnSubGoalTitle": "Sub-Goal",
+    "columnOwner": "Owner (Position)",
+    "columnTarget": "Target",
+    "columnActual": "Actual",
+    "columnWeight": "Weight",
+    "libraryHeading": "Library Templates"
   },
   "AssignGoalPage": {
     "title": "Assign Goal",
@@ -746,11 +758,11 @@
     "sectionGoalDetailsSubtitle": "From the goal library or a custom title, plus weight and target"
   },
   "KpisPage": {
-    "title": "KPIs",
+    "title": "Assigned Goals",
     "subtitle": "The strategic goals and targets cascaded onto you, and what you own and can cascade further.",
     "manageLink": "Manage Strategic Goals",
     "ownedHeading": "What You Currently Own",
-    "ownedEmpty": "You don't currently own any sub-goals or targets.",
+    "ownedEmpty": "No targets you currently own.",
     "assignedHeading": "Assigned Directly To You",
     "assignedEmpty": "No target assigned directly to you yet.",
     "teamHeading": "Your Team's Targets (you can follow up and update progress)",
@@ -769,7 +781,10 @@
     "cascadeButton": "Cascade Target",
     "updateProgressLabel": "Update Actual",
     "updateProgressButton": "Save",
-    "notReportedYet": "Not reported yet"
+    "notReportedYet": "Not reported yet",
+    "kpiSectionHeading": "KPIs",
+    "kpiSectionEmpty": "No sub-goals (KPIs) you currently own.",
+    "targetsSectionHeading": "Targets"
   },
   "AssignTargetPage": {
     "title": "Assign Target",
@@ -832,7 +847,11 @@
     "cancelButton": "Cancel",
     "saveButton": "Save",
     "deleteButton": "Delete",
-    "deleteValueConfirm": "Delete this value?"
+    "deleteValueConfirm": "Delete this value?",
+    "sectionVisionTitle": "Vision",
+    "sectionVisionSubtitle": "In Arabic and English",
+    "sectionMissionTitle": "Mission",
+    "sectionMissionSubtitle": "In Arabic and English"
   },
   "StrategicGoalsPage": {
     "title": "Strategic Goals",

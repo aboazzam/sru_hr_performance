@@ -44,7 +44,9 @@
     "evaluationResults": "نتائج التقييم",
     "reports": "التقارير",
     "recommendations": "التوصيات",
-    "strategicPlan": "الخطة الاستراتيجية"
+    "strategicPlan": "الخطة الاستراتيجية",
+    "strategicIdentity": "الرؤية والرسالة والقيم",
+    "assignedGoals": "الأهداف المسندة"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -715,7 +717,17 @@
     "columnJobFamily": "القطاع الوظيفي",
     "columnDefaultWeight": "الوزن الافتراضي",
     "allJobFamilies": "عام (كل القطاعات)",
-    "assignGoal": "إسناد هدف"
+    "assignGoal": "إسناد هدف",
+    "strategicSectionHeading": "الأهداف الاستراتيجية",
+    "strategicSectionSubtitle": "نظرة سريعة على الأهداف الاستراتيجية الحالية وأهدافها الفرعية — للتعديل انتقل إلى تبويب الأهداف الاستراتيجية.",
+    "strategicGoalsEmpty": "لا توجد أهداف استراتيجية بعد.",
+    "subGoalsEmpty": "لا توجد أهداف فرعية بعد.",
+    "columnSubGoalTitle": "الهدف الفرعي",
+    "columnOwner": "المالك (المنصب)",
+    "columnTarget": "المستهدف",
+    "columnActual": "المتحقق",
+    "columnWeight": "الوزن",
+    "libraryHeading": "قوالب البنك"
   },
   "AssignGoalPage": {
     "title": "إسناد هدف",
@@ -746,11 +758,11 @@
     "sectionGoalDetailsSubtitle": "من بنك الأهداف أو عنوان مخصص، مع الوزن والمستهدف"
   },
   "KpisPage": {
-    "title": "مؤشرات الأداء",
+    "title": "الأهداف المسندة",
     "subtitle": "الأهداف الاستراتيجية والمستهدفات المُسقطة عليك، وما تملكه وتقدر تُسنده لمن دونك.",
     "manageLink": "إدارة الأهداف الاستراتيجية",
     "ownedHeading": "ما تملكه حاليًا",
-    "ownedEmpty": "لا توجد أهداف فرعية أو مستهدفات تملكها حاليًا.",
+    "ownedEmpty": "لا توجد مستهدفات تملكها حاليًا.",
     "assignedHeading": "المُسند إليك مباشرة",
     "assignedEmpty": "لا يوجد مستهدف مُسند إليك مباشرة بعد.",
     "teamHeading": "مستهدفات فريقك (يمكنك متابعتها وتحديث تقدمها)",
@@ -769,7 +781,10 @@
     "cascadeButton": "تفريع مستهدف",
     "updateProgressLabel": "تحديث المتحقق",
     "updateProgressButton": "حفظ",
-    "notReportedYet": "لم يُدخَل بعد"
+    "notReportedYet": "لم يُدخَل بعد",
+    "kpiSectionHeading": "مؤشرات الأداء",
+    "kpiSectionEmpty": "لا توجد أهداف فرعية (مؤشرات أداء) تملكها حاليًا.",
+    "targetsSectionHeading": "المستهدفات"
   },
   "AssignTargetPage": {
     "title": "إسناد مستهدف",
@@ -832,7 +847,11 @@
     "cancelButton": "إلغاء",
     "saveButton": "حفظ",
     "deleteButton": "حذف",
-    "deleteValueConfirm": "هل تريد حذف هذه القيمة؟"
+    "deleteValueConfirm": "هل تريد حذف هذه القيمة؟",
+    "sectionVisionTitle": "الرؤية",
+    "sectionVisionSubtitle": "بالعربي والإنجليزي",
+    "sectionMissionTitle": "الرسالة",
+    "sectionMissionSubtitle": "بالعربي والإنجليزي"
   },
   "StrategicGoalsPage": {
     "title": "الأهداف الاستراتيجية",
