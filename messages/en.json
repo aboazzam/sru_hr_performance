@@ -727,7 +727,8 @@
     "columnTarget": "Target",
     "columnActual": "Actual",
     "columnWeight": "Weight",
-    "libraryHeading": "Library Templates"
+    "libraryHeading": "Library Templates",
+    "columnKpi": "KPIs"
   },
   "AssignGoalPage": {
     "title": "Assign Goal",
@@ -874,7 +875,12 @@
     "columnOwner": "Owner (Position)",
     "errorForbidden": "You don't have permission to view strategic goals.",
     "identityLinkButton": "Vision, Mission & Values",
-    "identityGateMessage": "Before adding any strategic goal, the vision, mission, and values must be set first."
+    "identityGateMessage": "Before adding any strategic goal, the vision, mission, and values must be set first.",
+    "kpisHeading": "KPIs",
+    "kpisEmpty": "No KPIs for this goal yet.",
+    "columnKpi": "KPI",
+    "columnPlanTarget": "Plan Target",
+    "manageKpisButton": "Manage KPIs"
   },
   "NewStrategicGoalPage": {
     "title": "Add Strategic Goal",
@@ -910,7 +916,11 @@
     "descriptionEnLabel": "Description (English) — optional",
     "descriptionEnPlaceholder": "Describe the strategic goal",
     "unitEnLabel": "Unit of Measure (English) — optional",
-    "unitEnPlaceholder": "e.g. %, count, SAR"
+    "unitEnPlaceholder": "e.g. %, count, SAR",
+    "planLabel": "Strategic Plan",
+    "planPlaceholder": "Select the strategic plan",
+    "noPlanMessage": "Before adding any strategic goal, a strategic plan must be defined first.",
+    "plansLinkButton": "Strategic Plans"
   },
   "NewSubGoalPage": {
     "title": "Add Sub-Goal",
@@ -1398,7 +1408,8 @@
     "feedback360CommentColumn": "Comment",
     "feedback360DepartmentHeading": "Your Department's Results",
     "feedback360OrganizationHeading": "Organization Results",
-    "feedback360DepartmentColumn": "Department"
+    "feedback360DepartmentColumn": "Department",
+    "strategyColumnKpis": "KPIs"
   },
   "RecommendationsPage": {
     "title": "Recommendations",
@@ -1493,6 +1504,29 @@
     "errorInvalidInput": "Check the fields — job title and org unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to add vacancies.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "StrategicPlansPage": {
+    "title": "Strategic Plans",
+    "subtitle": "A strategic plan is a multi-year container; goals and KPIs stay fixed across its years.",
+    "backButton": "Back to Strategic Goals",
+    "empty": "No strategic plans yet.",
+    "columnName": "Plan Name",
+    "columnYears": "Years",
+    "formHeading": "Add a Strategic Plan",
+    "formSubtitle": "Name and year range",
+    "nameArLabel": "Plan Name (Arabic)",
+    "nameArPlaceholder": "e.g. Strategic Plan 2026-2030",
+    "nameEnLabel": "Plan Name (English) — optional",
+    "nameEnPlaceholder": "e.g. Strategic Plan 2026-2030",
+    "startYearLabel": "Start Year",
+    "endYearLabel": "End Year",
+    "submit": "Add Plan",
+    "submitting": "Adding...",
+    "successMessage": "Plan added successfully.",
+    "errorInvalidInput": "Check the fields — name is required, and the end year cannot precede the start year.",
+    "errorUnauthenticated": "You must be logged in.",
+    "errorForbidden": "You do not have permission to add a strategic plan.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

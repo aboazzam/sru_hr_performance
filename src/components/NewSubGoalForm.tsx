@@ -2,7 +2,7 @@
 
 import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { AlertCircle, Gauge, Layers } from "lucide-react";
+import { AlertCircle, Layers } from "lucide-react";
 import { createSubGoal, type CreateSubGoalState } from "@/app/[locale]/(app)/kpis/strategic-goals/[id]/sub-goals/new/actions";
 import type { Locale } from "@/i18n/config";
 
@@ -78,6 +78,10 @@ export function NewSubGoalForm({
               ))}
             </select>
           </div>
+          <div className="sru-field">
+            <label>{t("weightLabel")}</label>
+            <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
+          </div>
         </div>
         <div className="sru-field">
           <label>{t("descriptionLabel")}</label>
@@ -95,35 +99,7 @@ export function NewSubGoalForm({
         </div>
       </section>
 
-      <section className="sru-formsection">
-        <div className="sru-formsection-head">
-          <span className="sru-formsection-badge">
-            <Gauge size={17} aria-hidden />
-          </span>
-          <div>
-            <h3>{t("sectionIndicatorTitle")}</h3>
-            <span>{t("sectionIndicatorSubtitle")}</span>
-          </div>
-        </div>
-        <div className="sru-formgrid">
-          <div className="sru-field">
-            <label>{t("targetLabel")}</label>
-            <input type="number" name="targetValue" step="0.01" placeholder={t("targetPlaceholder")} />
-          </div>
-          <div className="sru-field">
-            <label>{t("unitLabel")}</label>
-            <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitPlaceholder")} />
-          </div>
-          <div className="sru-field">
-            <label>{t("unitEnLabel")}</label>
-            <input type="text" name="unitEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("unitEnPlaceholder")} />
-          </div>
-          <div className="sru-field">
-            <label>{t("weightLabel")}</label>
-            <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
-          </div>
-        </div>
-      </section>
+
 
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">

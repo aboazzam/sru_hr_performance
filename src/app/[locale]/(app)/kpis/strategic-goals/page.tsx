@@ -7,9 +7,6 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 interface StrategicGoalRow {
   id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
-  unit_ar: string;
   weight: number | null;
 }
 
@@ -18,9 +15,19 @@ interface SubGoalRow {
   strategic_goal_id: string;
   owner_position_id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
+  weight: number | null;
+}
+
+// 2026-07-30: goals/sub-goals no longer carry an inline KPI -- their
+// indicators are `strategic_kpis` rows (many per goal), each with its own
+// plan-long target.
+interface KpiRow {
+  id: string;
+  strategic_goal_id: string | null;
+  sub_goal_id: string | null;
+  title_ar: string;
   unit_ar: string;
+  plan_target_value: number | null;
   weight: number | null;
 }
 
@@ -70,17 +77,35 @@ export default async function StrategicGoalsPage() {
 
   const { data: goalsData } = await supabase
     .from("strategic_goals")
-    .select("id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, title_ar, weight")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   const goals = (goalsData ?? []) as StrategicGoalRow[];
 
   const { data: subGoalsData } = await supabase
     .from("sub_goals")
-    .select("id, strategic_goal_id, owner_position_id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, strategic_goal_id, owner_position_id, title_ar, weight")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const subGoals = (subGoalsData ?? []) as SubGoalRow[];
+
+  const { data: kpisData } = await supabase
+    .from("strategic_kpis")
+    .select("id, strategic_goal_id, sub_goal_id, title_ar, unit_ar, plan_target_value, weight")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const kpis = (kpisData ?? []) as KpiRow[];
+
+  const kpisByGoal = new Map<string, KpiRow[]>();
+  const kpisBySubGoal = new Map<string, KpiRow[]>();
+  for (const k of kpis) {
+    const key = k.strategic_goal_id ?? k.sub_goal_id;
+    if (!key) continue;
+    const map = k.strategic_goal_id ? kpisByGoal : kpisBySubGoal;
+    const list = map.get(key) ?? [];
+    list.push(k);
+    map.set(key, list);
+  }
 
   // list_org_structure_positions(): SECURITY DEFINER RPC, since
   // org_structure_positions_select's own RLS (orgStructure=view) doesn't
@@ -139,16 +164,49 @@ export default async function StrategicGoalsPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
                   <strong style={{ fontSize: 16 }}>{goal.title_ar}</strong>
-                  <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
-                    {t("columnTarget")}: {goal.target_value ?? "—"} {goal.unit_ar} · {t("columnActual")}:{" "}
-                    {goal.actual_value ?? "—"} {goal.unit_ar}
-                    {goal.weight != null ? ` · ${t("columnWeight")}: ${goal.weight}%` : ""}
-                  </p>
+                  {goal.weight != null && (
+                    <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
+                      {t("columnWeight")}: {goal.weight}%
+                    </p>
+                  )}
                 </div>
-                <Link href={`/kpis/strategic-goals/${goal.id}/sub-goals/new`} className="sru-btn" style={{ fontSize: 13 }}>
-                  {t("addSubGoalButton")}
-                </Link>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <Link href={`/kpis/goals/${goal.id}/kpis`} className="sru-btn" style={{ fontSize: 13 }}>
+                    {t("manageKpisButton")}
+                  </Link>
+                  <Link href={`/kpis/strategic-goals/${goal.id}/sub-goals/new`} className="sru-btn" style={{ fontSize: 13 }}>
+                    {t("addSubGoalButton")}
+                  </Link>
+                </div>
               </div>
+
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("kpisHeading")}</h3>
+              {(kpisByGoal.get(goal.id) ?? []).length === 0 ? (
+                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("kpisEmpty")}</p>
+              ) : (
+                <div className="table-scroll">
+                  <table className="admin-matrix">
+                    <thead>
+                      <tr>
+                        <th>{t("columnKpi")}</th>
+                        <th>{t("columnUnit")}</th>
+                        <th>{t("columnPlanTarget")}</th>
+                        <th>{t("columnWeight")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(kpisByGoal.get(goal.id) ?? []).map((k) => (
+                        <tr key={k.id}>
+                          <td>{k.title_ar}</td>
+                          <td>{k.unit_ar}</td>
+                          <td>{k.plan_target_value ?? "—"}</td>
+                          <td>{k.weight != null ? `${k.weight}%` : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("subGoalsHeading")}</h3>
               {goalSubGoals.length === 0 ? (
@@ -160,8 +218,7 @@ export default async function StrategicGoalsPage() {
                       <tr>
                         <th>{t("columnTitle")}</th>
                         <th>{t("columnOwner")}</th>
-                        <th>{t("columnTarget")}</th>
-                        <th>{t("columnActual")}</th>
+                        <th>{t("columnKpi")}</th>
                         <th>{t("columnWeight")}</th>
                       </tr>
                     </thead>
@@ -171,10 +228,11 @@ export default async function StrategicGoalsPage() {
                           <td>{sg.title_ar}</td>
                           <td>{positionNameById.get(sg.owner_position_id) ?? "—"}</td>
                           <td>
-                            {sg.target_value ?? "—"} {sg.unit_ar}
-                          </td>
-                          <td>
-                            {sg.actual_value ?? "—"} {sg.unit_ar}
+                            {(kpisBySubGoal.get(sg.id) ?? []).length === 0
+                              ? "—"
+                              : (kpisBySubGoal.get(sg.id) ?? [])
+                                  .map((k) => `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`)
+                                  .join("، ")}
                           </td>
                           <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                         </tr>

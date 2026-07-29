@@ -5,15 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
 
+// 2026-07-30: a strategic goal now belongs to a multi-year PLAN, not to a
+// single evaluation cycle, and carries no inline KPI of its own -- its
+// KPIs are `strategic_kpis` rows added afterward (many per goal, each with
+// its own plan-long and annual targets).
 const createStrategicGoalSchema = z.object({
-  cycleId: z.string().uuid(),
+  planId: z.string().uuid(),
   titleAr: z.string().trim().min(1),
   titleEn: z.string().trim().optional(),
   descriptionAr: z.string().trim().optional(),
   descriptionEn: z.string().trim().optional(),
-  unitAr: z.string().trim().min(1),
-  unitEn: z.string().trim().optional(),
-  targetValue: z.coerce.number().optional(),
   weight: z.coerce.number().min(0.01).max(100).optional(),
 });
 
@@ -36,14 +37,11 @@ export async function createStrategicGoal(
   formData: FormData
 ): Promise<CreateStrategicGoalState> {
   const parsed = createStrategicGoalSchema.safeParse({
-    cycleId: formData.get("cycleId"),
+    planId: formData.get("planId"),
     titleAr: formData.get("titleAr"),
     titleEn: formData.get("titleEn") || undefined,
     descriptionAr: formData.get("descriptionAr") || undefined,
     descriptionEn: formData.get("descriptionEn") || undefined,
-    unitAr: formData.get("unitAr"),
-    unitEn: formData.get("unitEn") || undefined,
-    targetValue: formData.get("targetValue") || undefined,
     weight: formData.get("weight") || undefined,
   });
 
@@ -60,7 +58,7 @@ export async function createStrategicGoal(
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { cycleId, titleAr, titleEn, descriptionAr, descriptionEn, unitAr, unitEn, targetValue, weight } = parsed.data;
+  const { planId, titleAr, titleEn, descriptionAr, descriptionEn, weight } = parsed.data;
 
   // Business-rule guard, not a security boundary (the page itself already
   // hides this form when incomplete) — re-checked here per CLAUDE.md §5-A's
@@ -83,14 +81,11 @@ export async function createStrategicGoal(
   const { data: goal, error } = await supabase
     .from("strategic_goals")
     .insert({
-      cycle_id: cycleId,
+      plan_id: planId,
       title_ar: titleAr,
       title_en: titleEn || null,
       description_ar: descriptionAr || null,
       description_en: descriptionEn || null,
-      unit_ar: unitAr,
-      unit_en: unitEn || null,
-      target_value: targetValue ?? null,
       weight: weight ?? null,
       created_by: myProfile?.id ?? null,
     })

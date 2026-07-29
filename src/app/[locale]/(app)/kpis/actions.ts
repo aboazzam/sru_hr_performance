@@ -5,7 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 const updateProgressSchema = z.object({
-  nodeType: z.enum(["sub_goal", "target"]),
+  // "sub_goal" is gone as a progress-reporting node (2026-07-30): sub_goals
+  // no longer carry actual_value at all -- progress now lives either on a
+  // cascaded `targets` row (per department/employee) or on the
+  // organization-level `kpi_annual_targets` row for that KPI and cycle.
+  nodeType: z.enum(["target", "kpi_annual_target"]),
   id: z.string().uuid(),
   actualValue: z.coerce.number(),
 });
@@ -19,12 +23,14 @@ export type UpdateProgressState =
   | null;
 
 /**
- * Updates actual_value (progress) on a `sub_goals` or `targets` row through
- * the caller's own RLS-respecting client. `sub_goals_update`/
- * `targets_update` (20260727000005) require being the current owner of
- * that exact row (or, for a target, of its immediate parent — covers
- * reporting progress on an employee-assigned leaf on their behalf) —
- * enforced by Postgres itself, not this action's code.
+ * Updates actual_value (progress) on a `targets` or `kpi_annual_targets`
+ * row through the caller's own RLS-respecting client. `targets_update`
+ * (20260727000005) requires being the current owner of that exact row (or
+ * of its immediate parent — covers reporting progress on an
+ * employee-assigned leaf on their behalf); `kpi_annual_targets_update`
+ * (20260730000001) is approve-only, since the organization-level annual
+ * figure is a strategy_admin act. Both enforced by Postgres itself, not
+ * this action's code.
  */
 export async function updateProgress(_prevState: UpdateProgressState, formData: FormData): Promise<UpdateProgressState> {
   const parsed = updateProgressSchema.safeParse({
@@ -47,7 +53,7 @@ export async function updateProgress(_prevState: UpdateProgressState, formData: 
   }
 
   const { nodeType, id, actualValue } = parsed.data;
-  const table = nodeType === "sub_goal" ? "sub_goals" : "targets";
+  const table = nodeType === "kpi_annual_target" ? "kpi_annual_targets" : "targets";
 
   const { error, data } = await supabase.from(table).update({ actual_value: actualValue }).eq("id", id).select("id");
 

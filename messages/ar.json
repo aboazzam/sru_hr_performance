@@ -727,7 +727,8 @@
     "columnTarget": "المستهدف",
     "columnActual": "المتحقق",
     "columnWeight": "الوزن",
-    "libraryHeading": "قوالب البنك"
+    "libraryHeading": "قوالب البنك",
+    "columnKpi": "المؤشرات"
   },
   "AssignGoalPage": {
     "title": "إسناد هدف",
@@ -866,7 +867,7 @@
     "columnTitle": "الهدف الاستراتيجي",
     "columnTarget": "المستهدف",
     "columnActual": "المتحقق",
-    "columnUnit": "الوحدة",
+    "columnUnit": "وحدة القياس",
     "columnWeight": "الوزن",
     "subGoalsHeading": "الأهداف الفرعية",
     "subGoalsEmpty": "لا توجد أهداف فرعية بعد.",
@@ -874,7 +875,12 @@
     "columnOwner": "المالك (المنصب)",
     "errorForbidden": "ليست لديك صلاحية مشاهدة الأهداف الاستراتيجية.",
     "identityLinkButton": "الرؤية والرسالة والقيم",
-    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا."
+    "identityGateMessage": "قبل إضافة أي هدف استراتيجي، يجب تحديد الرؤية والرسالة والقيم أولًا.",
+    "kpisHeading": "مؤشرات الأداء",
+    "kpisEmpty": "لا توجد مؤشرات لهذا الهدف بعد.",
+    "columnKpi": "المؤشر",
+    "columnPlanTarget": "مستهدف الخطة",
+    "manageKpisButton": "إدارة المؤشرات"
   },
   "NewStrategicGoalPage": {
     "title": "إضافة هدف استراتيجي",
@@ -910,7 +916,11 @@
     "descriptionEnLabel": "الوصف (إنجليزي) — اختياري",
     "descriptionEnPlaceholder": "Describe the strategic goal",
     "unitEnLabel": "وحدة القياس (إنجليزي) — اختياري",
-    "unitEnPlaceholder": "e.g. %, count, SAR"
+    "unitEnPlaceholder": "e.g. %, count, SAR",
+    "planLabel": "الخطة الاستراتيجية",
+    "planPlaceholder": "اختر الخطة الاستراتيجية",
+    "noPlanMessage": "قبل إضافة أي هدف استراتيجي، يجب تعريف خطة استراتيجية أولًا.",
+    "plansLinkButton": "الخطط الاستراتيجية"
   },
   "NewSubGoalPage": {
     "title": "إضافة هدف فرعي",
@@ -1398,7 +1408,8 @@
     "feedback360CommentColumn": "التعليق",
     "feedback360DepartmentHeading": "نتائج إدارتك",
     "feedback360OrganizationHeading": "نتائج المنظمة",
-    "feedback360DepartmentColumn": "الإدارة"
+    "feedback360DepartmentColumn": "الإدارة",
+    "strategyColumnKpis": "عدد المؤشرات"
   },
   "RecommendationsPage": {
     "title": "التوصيات",
@@ -1493,6 +1504,29 @@
     "errorInvalidInput": "تحقق من الحقول — يجب اختيار المسمى الوظيفي والوحدة التنظيمية.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة شواغر.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "StrategicPlansPage": {
+    "title": "الخطط الاستراتيجية",
+    "subtitle": "الخطة الاستراتيجية وعاء متعدد السنوات؛ الأهداف والمؤشرات تبقى ثابتة طوال سنواتها.",
+    "backButton": "العودة إلى الأهداف الاستراتيجية",
+    "empty": "لا توجد خطط استراتيجية بعد.",
+    "columnName": "اسم الخطة",
+    "columnYears": "السنوات",
+    "formHeading": "إضافة خطة استراتيجية",
+    "formSubtitle": "الاسم ونطاق السنوات",
+    "nameArLabel": "اسم الخطة (عربي)",
+    "nameArPlaceholder": "مثال: الخطة الاستراتيجية 2026–2030",
+    "nameEnLabel": "اسم الخطة (إنجليزي) — اختياري",
+    "nameEnPlaceholder": "e.g. Strategic Plan 2026-2030",
+    "startYearLabel": "سنة البداية",
+    "endYearLabel": "سنة النهاية",
+    "submit": "إضافة الخطة",
+    "submitting": "جارٍ الإضافة...",
+    "successMessage": "تمت إضافة الخطة بنجاح.",
+    "errorInvalidInput": "تحقق من الحقول — الاسم مطلوب، وسنة النهاية يجب ألا تكون قبل سنة البداية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إضافة خطة استراتيجية.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }

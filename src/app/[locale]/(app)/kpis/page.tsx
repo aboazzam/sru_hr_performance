@@ -10,10 +10,18 @@ interface SubGoalRow {
   strategic_goal_id: string;
   owner_position_id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
-  unit_ar: string;
   weight: number | null;
+}
+
+// 2026-07-30: a sub-goal no longer carries its own inline KPI -- its
+// indicators are `strategic_kpis` rows (many per sub-goal), each with a
+// plan-long target; the annual figures live in kpi_annual_targets.
+interface KpiRow {
+  id: string;
+  sub_goal_id: string | null;
+  title_ar: string;
+  unit_ar: string;
+  plan_target_value: number | null;
 }
 
 interface TargetRow {
@@ -71,7 +79,7 @@ export default async function KpisPage() {
   // who deliberately see everything via check_vpra_global.
   const { data: subGoalsData } = await supabase
     .from("sub_goals")
-    .select("id, strategic_goal_id, owner_position_id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, strategic_goal_id, owner_position_id, title_ar, weight")
     .is("deleted_at", null);
   const subGoals = (subGoalsData ?? []) as SubGoalRow[];
 
@@ -80,6 +88,18 @@ export default async function KpisPage() {
     .select("id, sub_goal_id, assigned_position_id, assigned_employee_id, title_ar, target_value, actual_value, unit_ar, weight, status")
     .is("deleted_at", null);
   const targets = (targetsData ?? []) as TargetRow[];
+
+  const { data: kpisData } = await supabase
+    .from("strategic_kpis")
+    .select("id, sub_goal_id, title_ar, unit_ar, plan_target_value")
+    .is("deleted_at", null);
+  const kpisBySubGoal = new Map<string, KpiRow[]>();
+  for (const k of (kpisData ?? []) as KpiRow[]) {
+    if (!k.sub_goal_id) continue;
+    const list = kpisBySubGoal.get(k.sub_goal_id) ?? [];
+    list.push(k);
+    kpisBySubGoal.set(k.sub_goal_id, list);
+  }
 
   const strategicGoalIds = Array.from(new Set(subGoals.map((sg) => sg.strategic_goal_id)));
   const { data: strategicGoalsData } =
@@ -150,9 +170,7 @@ export default async function KpisPage() {
                 <tr>
                   <th>{t("columnTitle")}</th>
                   <th>{t("columnStrategicGoal")}</th>
-                  <th>{t("columnTarget")}</th>
-                  <th>{t("columnActual")}</th>
-                  <th>{t("columnAchievement")}</th>
+                  <th>{t("columnKpi")}</th>
                   <th>{t("columnWeight")}</th>
                   <th />
                 </tr>
@@ -163,12 +181,12 @@ export default async function KpisPage() {
                     <td>{sg.title_ar}</td>
                     <td>{strategicGoalTitleById.get(sg.strategic_goal_id) ?? "—"}</td>
                     <td>
-                      {sg.target_value ?? "—"} {sg.unit_ar}
+                      {(kpisBySubGoal.get(sg.id) ?? []).length === 0
+                        ? "—"
+                        : (kpisBySubGoal.get(sg.id) ?? [])
+                            .map((k) => `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`)
+                            .join("، ")}
                     </td>
-                    <td>
-                      <UpdateProgressForm nodeType="sub_goal" id={sg.id} currentActualValue={sg.actual_value} unitAr={sg.unit_ar} />
-                    </td>
-                    <td>{achievementPercent(sg) != null ? `${achievementPercent(sg)}%` : "—"}</td>
                     <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                     <td>
                       <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 12, padding: "4px 10px" }}>
