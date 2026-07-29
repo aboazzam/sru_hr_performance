@@ -111,26 +111,51 @@ export default async function KpisPage() {
   const ownedSubGoals = subGoals.filter((sg) => myPositionIds.has(sg.owner_position_id));
   const ownedTargets = targets.filter((t) => t.assigned_position_id != null && myPositionIds.has(t.assigned_position_id));
   const assignedToMeTargets = targets.filter((t) => t.assigned_employee_id === myProfileId);
-  // Employee-assigned targets that are neither owned-by-position nor
-  // assigned to me directly — a real gap found live: targets_update's RLS
-  // (20260727000005) lets whoever owns the IMMEDIATE PARENT report
-  // progress on an employee-leaf target on their behalf (there's no
-  // assigned_position_id on that row itself to match), but without this
-  // section that capability had no UI to invoke it at all. Broader than
-  // "immediate parent only" (RLS is the real, narrower gate; this list is
-  // scoped by is_in_my_strategic_subtree via the same visible `targets`
-  // fetch above, same "seeing an option doesn't guarantee it succeeds"
-  // convention as every other assign screen in this app).
-  const teamTargets = targets.filter(
-    (t) => t.assigned_employee_id != null && t.assigned_employee_id !== myProfileId
+  // The two halves the project owner asked for (2026-07-30, "نعم ما وصلني
+  // مقابل ما اسندته فعلا لمن دوني"): a non-overlapping partition, so no row
+  // appears twice.
+  //
+  //   RECEIVED  = cascaded onto me: sub-goals my position owns, targets
+  //               assigned to my position, and targets assigned to me
+  //               personally. (ownedSubGoals/ownedTargets/assignedToMeTargets
+  //               above.)
+  //   CASCADED  = what I actually pushed further down: every visible target
+  //               assigned to someone OTHER than me -- another position
+  //               (below mine, since `targets` is already RLS-scoped to my
+  //               own subtree) or another employee.
+  //
+  // The employee half was previously the only one shown ("مستهدفات فريقك");
+  // position-assigned children below me had no section at all, so a C2 owner
+  // who cascaded to C3 positions could not see that from this page.
+  const cascadedDownTargets = targets.filter(
+    (t) =>
+      (t.assigned_employee_id != null && t.assigned_employee_id !== myProfileId) ||
+      (t.assigned_position_id != null && !myPositionIds.has(t.assigned_position_id))
   );
-  const teamEmployeeIds = Array.from(new Set(teamTargets.map((t) => t.assigned_employee_id!)));
+  const teamTargets = cascadedDownTargets;
+  // Only the employee-assigned half has a profile to look up -- the
+  // position-assigned rows in this list have assigned_employee_id = NULL
+  // (targets_assignee_xor), so they must be filtered out before the .in()
+  // lookup rather than passed through as nulls.
+  const teamEmployeeIds = Array.from(
+    new Set(teamTargets.map((t) => t.assigned_employee_id).filter((id): id is string => id != null))
+  );
   const { data: teamEmployeesData } =
     teamEmployeeIds.length > 0
       ? await supabase.from("profiles").select("id, employee_number, full_name_ar").in("id", teamEmployeeIds)
       : { data: [] };
   const teamEmployeeById = new Map(
     ((teamEmployeesData ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>).map((p) => [p.id, p])
+  );
+
+  // list_org_structure_positions(): SECURITY DEFINER RPC -- a cascaded
+  // target can land on a POSITION rather than an employee, and this page now
+  // shows those too, so it needs position names. Same reason the strategic
+  // goals screen uses the RPC: org_structure_positions_select requires
+  // orgStructure=view, which the position-holders this page serves don't hold.
+  const { data: positionsData } = await supabase.rpc("list_org_structure_positions");
+  const positionNameById = new Map(
+    ((positionsData ?? []) as Array<{ id: string; name_ar: string }>).map((p) => [p.id, p.name_ar])
   );
 
   return (
@@ -157,9 +182,12 @@ export default async function KpisPage() {
           together with owned targets under one "ownedHeading" table; split
           out here so KPIs and targets read as two distinct, clearly labeled
           sections on this one page, in that order. */}
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
-        {t("kpiSectionHeading")}
+      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
+        {t("receivedHeading")}
       </h2>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("receivedSubtitle")}</p>
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("kpiSectionHeading")}</h3>
       {ownedSubGoals.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("kpiSectionEmpty")}</p>
       ) : (
@@ -207,10 +235,6 @@ export default async function KpisPage() {
           assigned-to-me / team) keep their distinct meaning, now nested
           under this one umbrella heading instead of owned-targets being
           mixed into the KPI table above. */}
-      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
-        {t("targetsSectionHeading")}
-      </h2>
-
       <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("ownedHeading")}</h3>
       {ownedTargets.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("ownedEmpty")}</p>
@@ -295,16 +319,19 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, fontWeight: 700, margin: "32px 0 12px" }}>{t("teamHeading")}</h3>
+      <h2 className="sru-title" style={{ fontSize: 20, margin: "36px 0 8px" }}>
+        {t("cascadedHeading")}
+      </h2>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("cascadedSubtitle")}</p>
       {teamTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("teamEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("cascadedEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
                 <tr>
-                  <th>{t("columnEmployee")}</th>
+                  <th>{t("columnAssignee")}</th>
                   <th>{t("columnTitle")}</th>
                   <th>{t("columnTarget")}</th>
                   <th>{t("columnActual")}</th>
@@ -314,10 +341,18 @@ export default async function KpisPage() {
               </thead>
               <tbody>
                 {teamTargets.map((tg) => {
-                  const employee = teamEmployeeById.get(tg.assigned_employee_id!);
+                  // A cascaded target lands on EITHER a position or an
+                  // employee (targets_assignee_xor), so this one column
+                  // resolves whichever of the two it actually is.
+                  const employee = tg.assigned_employee_id ? teamEmployeeById.get(tg.assigned_employee_id) : undefined;
+                  const assignee = employee
+                    ? `${employee.employee_number} — ${employee.full_name_ar}`
+                    : tg.assigned_position_id
+                      ? (positionNameById.get(tg.assigned_position_id) ?? "—")
+                      : "—";
                   return (
                     <tr key={tg.id}>
-                      <td>{employee ? `${employee.employee_number} — ${employee.full_name_ar}` : "—"}</td>
+                      <td>{assignee}</td>
                       <td>{tg.title_ar}</td>
                       <td>
                         {tg.target_value} {tg.unit_ar}

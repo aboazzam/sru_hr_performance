@@ -171,7 +171,7 @@ export default async function StrategicGoalsPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <Link href={`/kpis/goals/${goal.id}/kpis`} className="sru-btn" style={{ fontSize: 13 }}>
+                  <Link href={`/kpis/manage-kpis?goalId=${goal.id}`} className="sru-btn" style={{ fontSize: 13 }}>
                     {t("manageKpisButton")}
                   </Link>
                   <Link href={`/kpis/strategic-goals/${goal.id}/sub-goals/new`} className="sru-btn" style={{ fontSize: 13 }}>
@@ -220,6 +220,7 @@ export default async function StrategicGoalsPage() {
                         <th>{t("columnOwner")}</th>
                         <th>{t("columnKpi")}</th>
                         <th>{t("columnWeight")}</th>
+                        <th />
                       </tr>
                     </thead>
                     <tbody>
@@ -235,6 +236,15 @@ export default async function StrategicGoalsPage() {
                                   .join("، ")}
                           </td>
                           <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
+                          <td>
+                            <Link
+                              href={`/kpis/manage-kpis?subGoalId=${sg.id}`}
+                              className="sru-btn"
+                              style={{ fontSize: 12, padding: "4px 10px" }}
+                            >
+                              {t("manageKpisButton")}
+                            </Link>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
