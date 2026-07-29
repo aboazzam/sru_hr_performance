@@ -48,7 +48,9 @@ export type ProcessArea =
   | "systemSettings"
   | "strategicPlanning"
   | "performanceReports"
-  | "competencyReports";
+  | "competencyReports"
+  | "bauTasksReports"
+  | "feedback360Reports";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -71,6 +73,8 @@ export const processAreas: ProcessArea[] = [
   "strategicPlanning",
   "performanceReports",
   "competencyReports",
+  "bauTasksReports",
+  "feedback360Reports",
 ];
 
 /**
@@ -101,6 +105,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   strategicPlanning: "التخطيط الاستراتيجي",
   performanceReports: "تقارير الأداء",
   competencyReports: "تقارير الجدارات",
+  bauTasksReports: "تقارير الأعمال اليومية",
+  feedback360Reports: "تقارير تقييم 360",
 };
 
 export interface ProcessAreaSection {
@@ -143,6 +149,9 @@ export interface ProcessAreaSection {
  * invariant) rather than adding a third redundant area — that area's own
  * `view`-vs-`approve` split already separates read-only strategic
  * reporting from full module management (see /reports's own code comment).
+ * `bauTasksReports`/`feedback360Reports` (20260728000003/4) back two more
+ * /reports tabs, same pattern, requested directly ("تاب خاص بالاعمال
+ * اليومية وتاب آخر بتقييم 360").
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -160,7 +169,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "التقارير",
-    areas: ["performanceReports", "competencyReports"],
+    areas: ["performanceReports", "competencyReports", "bauTasksReports", "feedback360Reports"],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
