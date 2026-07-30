@@ -86,15 +86,64 @@ export default async function GoalLibraryPage() {
     .select("id, strategic_goal_id, sub_goal_id, title_ar, unit_ar, plan_target_value, weight")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+  const allKpis = (kpisData ?? []) as KpiRow[];
   const kpisByGoal = new Map<string, KpiRow[]>();
   const kpisBySubGoal = new Map<string, KpiRow[]>();
-  for (const k of (kpisData ?? []) as KpiRow[]) {
+  for (const k of allKpis) {
     const key = k.strategic_goal_id ?? k.sub_goal_id;
     if (!key) continue;
     const map = k.strategic_goal_id ? kpisByGoal : kpisBySubGoal;
     const list = map.get(key) ?? [];
     list.push(k);
     map.set(key, list);
+  }
+
+  // "المستهدفات على مستوى المنظمة" -- each KPI's annual target/actual per
+  // cycle, alongside the plan-long target already shown. Fetched for every
+  // visible KPI at once rather than per goal, so this stays one query
+  // regardless of how many goals the bank lists.
+  const kpiIds = allKpis.map((k) => k.id);
+  const { data: annualData } =
+    kpiIds.length > 0
+      ? await supabase
+          .from("kpi_annual_targets")
+          .select("kpi_id, cycle_id, target_value, actual_value")
+          .in("kpi_id", kpiIds)
+          .is("deleted_at", null)
+      : { data: [] };
+  const annualTargets = (annualData ?? []) as Array<{
+    kpi_id: string;
+    cycle_id: string;
+    target_value: number;
+    actual_value: number | null;
+  }>;
+
+  const { data: cyclesForBank } = await supabase
+    .from("evaluation_cycles")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("start_date", { ascending: false });
+  const cycleNameById = new Map(((cyclesForBank ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
+
+  const annualByKpi = new Map<string, typeof annualTargets>();
+  for (const a of annualTargets) {
+    const list = annualByKpi.get(a.kpi_id) ?? [];
+    list.push(a);
+    annualByKpi.set(a.kpi_id, list);
+  }
+
+  /** "<KPI> (plan target) — <cycle>: target/actual, …" for one owner row. */
+  function describeKpis(list: KpiRow[]): string {
+    if (list.length === 0) return "—";
+    return list
+      .map((k) => {
+        const head = `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`;
+        const annual = (annualByKpi.get(k.id) ?? [])
+          .map((a) => `${cycleNameById.get(a.cycle_id) ?? "—"}: ${a.target_value}/${a.actual_value ?? "—"}`)
+          .join("، ");
+        return annual ? `${head} — ${annual}` : head;
+      })
+      .join("؛ ");
   }
 
   // list_org_structure_positions(): SECURITY DEFINER RPC -- see
@@ -160,11 +209,7 @@ export default async function GoalLibraryPage() {
                 <strong style={{ fontSize: 14 }}>{goal.title_ar}</strong>
                 <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2, marginBottom: 10 }}>
                   {t("columnKpi")}:{" "}
-                  {(kpisByGoal.get(goal.id) ?? []).length === 0
-                    ? "—"
-                    : (kpisByGoal.get(goal.id) ?? [])
-                        .map((k) => `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`)
-                        .join("، ")}
+                  {describeKpis(kpisByGoal.get(goal.id) ?? [])}
                   {goal.weight != null ? ` · ${t("columnWeight")}: ${goal.weight}%` : ""}
                 </p>
                 {goalSubGoals.length === 0 ? (
@@ -185,13 +230,7 @@ export default async function GoalLibraryPage() {
                           <tr key={sg.id}>
                             <td>{sg.title_ar}</td>
                             <td>{positionNameById.get(sg.owner_position_id) ?? "—"}</td>
-                            <td>
-                              {(kpisBySubGoal.get(sg.id) ?? []).length === 0
-                                ? "—"
-                                : (kpisBySubGoal.get(sg.id) ?? [])
-                                    .map((k) => `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`)
-                                    .join("، ")}
-                            </td>
+                            <td>{describeKpis(kpisBySubGoal.get(sg.id) ?? [])}</td>
                             <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                           </tr>
                         ))}

@@ -791,7 +791,8 @@
     "cascadedHeading": "ما أسندته لمن دوني",
     "cascadedSubtitle": "المستهدفات التي أسندتها لمناصب أو موظفين تحتك — يمكنك متابعتها وتحديث تقدمها.",
     "cascadedEmpty": "لم تُسند أي مستهدف لمن دونك بعد.",
-    "columnAssignee": "الجهة المُسند إليها"
+    "columnAssignee": "الجهة المُسند إليها",
+    "columnKpi": "المؤشرات"
   },
   "AssignTargetPage": {
     "title": "إسناد مستهدف",
@@ -827,7 +828,13 @@
     "titleEnLabel": "عنوان المستهدف (إنجليزي) — اختياري",
     "titleEnPlaceholder": "Target title in English",
     "unitEnLabel": "وحدة القياس (إنجليزي) — اختياري",
-    "unitEnPlaceholder": "e.g. %, count, SAR"
+    "unitEnPlaceholder": "e.g. %, count, SAR",
+    "kpiLabel": "المؤشر",
+    "kpiPlaceholder": "اختر المؤشر",
+    "cycleLabel": "الدورة (السنة)",
+    "cyclePlaceholder": "اختر الدورة",
+    "noKpisMessage": "لا يمكن إسناد مستهدف قبل تعريف مؤشر لهذا الهدف الفرعي — أضف مؤشرًا أولًا من شاشة إدارة المؤشرات.",
+    "noCyclesMessage": "لا يمكن إسناد مستهدف قبل وجود دورة تقييم — أضف دورة أولًا."
   },
   "StrategicIdentityPage": {
     "title": "الرؤية والرسالة والقيم",

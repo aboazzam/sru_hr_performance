@@ -791,7 +791,8 @@
     "cascadedHeading": "What I Cascaded Down",
     "cascadedSubtitle": "Targets you assigned to positions or employees below you — you can follow up and update their progress.",
     "cascadedEmpty": "You have not cascaded any target downward yet.",
-    "columnAssignee": "Assigned To"
+    "columnAssignee": "Assigned To",
+    "columnKpi": "KPIs"
   },
   "AssignTargetPage": {
     "title": "Assign Target",
@@ -827,7 +828,13 @@
     "titleEnLabel": "Target Title (English) — optional",
     "titleEnPlaceholder": "Target title in English",
     "unitEnLabel": "Unit of Measure (English) — optional",
-    "unitEnPlaceholder": "e.g. %, count, SAR"
+    "unitEnPlaceholder": "e.g. %, count, SAR",
+    "kpiLabel": "KPI",
+    "kpiPlaceholder": "Select the KPI",
+    "cycleLabel": "Cycle (Year)",
+    "cyclePlaceholder": "Select the cycle",
+    "noKpisMessage": "A target cannot be cascaded before this sub-goal has a KPI — add one from the Manage KPIs screen first.",
+    "noCyclesMessage": "A target cannot be cascaded before an evaluation cycle exists — add a cycle first."
   },
   "StrategicIdentityPage": {
     "title": "Vision, Mission & Values",

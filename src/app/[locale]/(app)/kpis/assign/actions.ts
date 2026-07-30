@@ -9,6 +9,11 @@ const assignTargetSchema = z
   .object({
     subGoalId: z.string().uuid().optional(),
     parentTargetId: z.string().uuid().optional(),
+    // Which KPI this cascaded figure serves, and for which year. Required
+    // (2026-07-30): a target that doesn't state its indicator or its cycle
+    // can't be rolled up or evaluated -- "مستهدف سنوي وعليه يتم التقييم".
+    kpiId: z.string().uuid(),
+    cycleId: z.string().uuid(),
     titleAr: z.string().trim().min(1),
     titleEn: z.string().trim().optional(),
     targetValue: z.coerce.number(),
@@ -48,6 +53,8 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
   const parsed = assignTargetSchema.safeParse({
     subGoalId: formData.get("subGoalId") || undefined,
     parentTargetId: formData.get("parentTargetId") || undefined,
+    kpiId: formData.get("kpiId"),
+    cycleId: formData.get("cycleId"),
     titleAr: formData.get("titleAr"),
     titleEn: formData.get("titleEn") || undefined,
     targetValue: formData.get("targetValue"),
@@ -71,7 +78,8 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { subGoalId, parentTargetId, titleAr, titleEn, targetValue, unitAr, unitEn, weight, positionId, employeeId } = parsed.data;
+  const { subGoalId, parentTargetId, kpiId, cycleId, titleAr, titleEn, targetValue, unitAr, unitEn, weight, positionId, employeeId } =
+    parsed.data;
 
   // sub_goal_id is required on every row (a target always ultimately
   // belongs to one sub_goal, even several hops down) -- when cascading
@@ -92,6 +100,8 @@ export async function assignTarget(locale: Locale, _prevState: AssignTargetState
 
   const { error } = await supabase.from("targets").insert({
     sub_goal_id: resolvedSubGoalId,
+    kpi_id: kpiId,
+    cycle_id: cycleId,
     parent_target_id: parentTargetId ?? null,
     assigned_position_id: positionId ?? null,
     assigned_employee_id: employeeId ?? null,

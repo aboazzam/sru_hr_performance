@@ -30,12 +30,20 @@ export function AssignTargetForm({
   locale,
   subGoalId,
   parentTargetId,
+  kpis,
+  cycles,
+  inheritedKpiId,
   positions,
   employees,
 }: {
   locale: Locale;
   subGoalId?: string;
   parentTargetId?: string;
+  kpis: Array<{ id: string; title_ar: string; unit_ar: string }>;
+  cycles: Array<{ id: string; name_ar: string }>;
+  /** Set when cascading from another target: the child refines the SAME
+   *  indicator, so the KPI is fixed rather than chosen. */
+  inheritedKpiId: string | null;
   positions: PositionOption[];
   employees: EmployeeOption[];
 }) {
@@ -69,6 +77,42 @@ export function AssignTargetForm({
           </div>
         </div>
         <div className="sru-formgrid">
+          {inheritedKpiId ? (
+            <>
+              <input type="hidden" name="kpiId" value={inheritedKpiId} />
+              <div className="sru-field">
+                <label>{t("kpiLabel")}</label>
+                <input type="text" value={kpis[0]?.title_ar ?? ""} disabled readOnly dir="rtl" />
+              </div>
+            </>
+          ) : (
+            <div className="sru-field">
+              <label>{t("kpiLabel")}</label>
+              <select name="kpiId" required defaultValue="">
+                <option value="" disabled>
+                  {t("kpiPlaceholder")}
+                </option>
+                {kpis.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.title_ar} ({k.unit_ar})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="sru-field">
+            <label>{t("cycleLabel")}</label>
+            <select name="cycleId" required defaultValue="">
+              <option value="" disabled>
+                {t("cyclePlaceholder")}
+              </option>
+              {cycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="sru-field">
             <label>{t("titleLabel")}</label>
             <input type="text" name="titleAr" required dir="rtl" placeholder={t("titlePlaceholder")} />
