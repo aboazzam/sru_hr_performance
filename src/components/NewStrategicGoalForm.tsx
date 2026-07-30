@@ -2,15 +2,15 @@
 
 import { useActionState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { AlertCircle, Flag, Gauge } from "lucide-react";
+import { AlertCircle, Flag } from "lucide-react";
 import { createStrategicGoal, type CreateStrategicGoalState } from "@/app/[locale]/(app)/kpis/strategic-goals/new/actions";
 import type { Locale } from "@/i18n/config";
 
-interface CycleOption {
+interface PlanOption {
   id: string;
   name_ar: string;
-  start_date: string;
-  end_date: string;
+  start_year: number;
+  end_year: number;
 }
 
 type ErrorMessage = Extract<CreateStrategicGoalState, { status: "error" }>["message"];
@@ -23,7 +23,7 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   unknown: "errorUnknown",
 };
 
-export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycles: CycleOption[] }) {
+export function NewStrategicGoalForm({ locale, plans }: { locale: Locale; plans: PlanOption[] }) {
   const t = useTranslations("NewStrategicGoalPage");
   const [state, formAction, pending] = useActionState<CreateStrategicGoalState, FormData>(
     createStrategicGoal.bind(null, locale),
@@ -54,14 +54,14 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
         </div>
         <div className="sru-formgrid">
           <div className="sru-field">
-            <label>{t("cycleLabel")}</label>
-            <select name="cycleId" required defaultValue="">
+            <label>{t("planLabel")}</label>
+            <select name="planId" required defaultValue="">
               <option value="" disabled>
-                {t("cyclePlaceholder")}
+                {t("planPlaceholder")}
               </option>
-              {cycles.map((cycle) => (
-                <option key={cycle.id} value={cycle.id}>
-                  {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.name_ar} ({plan.start_year}–{plan.end_year})
                 </option>
               ))}
             </select>
@@ -70,38 +70,32 @@ export function NewStrategicGoalForm({ locale, cycles }: { locale: Locale; cycle
             <label>{t("titleLabel")}</label>
             <input type="text" name="titleAr" required dir="rtl" placeholder={t("titlePlaceholder")} />
           </div>
-        </div>
-        <div className="sru-field">
-          <label>{t("descriptionLabel")}</label>
-          <textarea name="descriptionAr" dir="rtl" rows={3} placeholder={t("descriptionPlaceholder")} />
-        </div>
-      </section>
-
-      <section className="sru-formsection">
-        <div className="sru-formsection-head">
-          <span className="sru-formsection-badge">
-            <Gauge size={17} aria-hidden />
-          </span>
-          <div>
-            <h3>{t("sectionIndicatorTitle")}</h3>
-            <span>{t("sectionIndicatorSubtitle")}</span>
-          </div>
-        </div>
-        <div className="sru-formgrid">
           <div className="sru-field">
-            <label>{t("targetLabel")}</label>
-            <input type="number" name="targetValue" step="0.01" placeholder={t("targetPlaceholder")} />
-          </div>
-          <div className="sru-field">
-            <label>{t("unitLabel")}</label>
-            <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitPlaceholder")} />
+            <label>{t("titleEnLabel")}</label>
+            <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("titleEnPlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("weightLabel")}</label>
             <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
           </div>
         </div>
+        <div className="sru-field">
+          <label>{t("descriptionLabel")}</label>
+          <textarea name="descriptionAr" dir="rtl" rows={3} placeholder={t("descriptionPlaceholder")} />
+        </div>
+        <div className="sru-field">
+          <label>{t("descriptionEnLabel")}</label>
+          <textarea
+            name="descriptionEn"
+            dir="ltr"
+            rows={3}
+            style={{ textAlign: "left" }}
+            placeholder={t("descriptionEnPlaceholder")}
+          />
+        </div>
       </section>
+
+
 
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">

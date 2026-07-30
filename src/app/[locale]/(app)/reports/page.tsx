@@ -208,31 +208,72 @@ export default async function ReportsPage() {
       .sort((a, b) => b.count - a.count);
   }
 
+  // 2026-07-30: a strategic goal no longer carries its own
+  // target/actual/unit -- those moved to `strategic_kpis` (many per goal,
+  // each with a plan-long target) and `kpi_annual_targets` (the annual
+  // figure that evaluation is measured against). This summary therefore
+  // reports per goal: how many KPIs it has, and the achievement rolled up
+  // across those KPIs' annual targets for the cycles that have one.
   interface StrategicGoalSummary {
     id: string;
     title_ar: string;
-    target_value: number | null;
-    actual_value: number | null;
-    unit_ar: string;
+    kpisCount: number;
+    annualTargetSum: number | null;
+    annualActualSum: number | null;
     subGoalsCount: number;
   }
   let strategicGoalsSummary: StrategicGoalSummary[] = [];
   let subGoalsTotal = 0;
   let targetsTotal = 0;
   if (showStrategy) {
-    const [{ data: goalsData }, { data: subGoalsData }, { count: targetsCount }] = await Promise.all([
-      supabase.from("strategic_goals").select("id, title_ar, target_value, actual_value, unit_ar").is("deleted_at", null),
-      supabase.from("sub_goals").select("id, strategic_goal_id").is("deleted_at", null),
-      supabase.from("targets").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    ]);
+    const [{ data: goalsData }, { data: subGoalsData }, { count: targetsCount }, { data: kpisData }, { data: annualData }] =
+      await Promise.all([
+        supabase.from("strategic_goals").select("id, title_ar").is("deleted_at", null),
+        supabase.from("sub_goals").select("id, strategic_goal_id").is("deleted_at", null),
+        supabase.from("targets").select("id", { count: "exact", head: true }).is("deleted_at", null),
+        supabase.from("strategic_kpis").select("id, strategic_goal_id, sub_goal_id").is("deleted_at", null),
+        supabase.from("kpi_annual_targets").select("kpi_id, target_value, actual_value").is("deleted_at", null),
+      ]);
+
     const subGoals = (subGoalsData ?? []) as Array<{ id: string; strategic_goal_id: string }>;
     const subGoalCountByGoal = new Map<string, number>();
+    const goalIdBySubGoal = new Map<string, string>();
     for (const sg of subGoals) {
       subGoalCountByGoal.set(sg.strategic_goal_id, (subGoalCountByGoal.get(sg.strategic_goal_id) ?? 0) + 1);
+      goalIdBySubGoal.set(sg.id, sg.strategic_goal_id);
     }
-    strategicGoalsSummary = (
-      (goalsData ?? []) as Array<{ id: string; title_ar: string; target_value: number | null; actual_value: number | null; unit_ar: string }>
-    ).map((g) => ({ ...g, subGoalsCount: subGoalCountByGoal.get(g.id) ?? 0 }));
+
+    // A KPI hangs off either a goal or a sub-goal (XOR) -- roll the
+    // sub-goal ones up to their parent goal so each goal's row reflects
+    // its whole subtree, matching how the module presents the cascade.
+    const kpis = (kpisData ?? []) as Array<{ id: string; strategic_goal_id: string | null; sub_goal_id: string | null }>;
+    const goalIdByKpi = new Map<string, string>();
+    const kpiCountByGoal = new Map<string, number>();
+    for (const k of kpis) {
+      const goalId = k.strategic_goal_id ?? (k.sub_goal_id ? goalIdBySubGoal.get(k.sub_goal_id) : undefined);
+      if (!goalId) continue;
+      goalIdByKpi.set(k.id, goalId);
+      kpiCountByGoal.set(goalId, (kpiCountByGoal.get(goalId) ?? 0) + 1);
+    }
+
+    const targetSumByGoal = new Map<string, number>();
+    const actualSumByGoal = new Map<string, number>();
+    for (const row of (annualData ?? []) as Array<{ kpi_id: string; target_value: number | null; actual_value: number | null }>) {
+      const goalId = goalIdByKpi.get(row.kpi_id);
+      if (!goalId || row.target_value == null) continue;
+      targetSumByGoal.set(goalId, (targetSumByGoal.get(goalId) ?? 0) + row.target_value);
+      if (row.actual_value != null) {
+        actualSumByGoal.set(goalId, (actualSumByGoal.get(goalId) ?? 0) + row.actual_value);
+      }
+    }
+
+    strategicGoalsSummary = ((goalsData ?? []) as Array<{ id: string; title_ar: string }>).map((g) => ({
+      ...g,
+      kpisCount: kpiCountByGoal.get(g.id) ?? 0,
+      annualTargetSum: targetSumByGoal.get(g.id) ?? null,
+      annualActualSum: actualSumByGoal.get(g.id) ?? null,
+      subGoalsCount: subGoalCountByGoal.get(g.id) ?? 0,
+    }));
     subGoalsTotal = subGoals.length;
     targetsTotal = targetsCount ?? 0;
   }
@@ -638,6 +679,7 @@ export default async function ReportsPage() {
               <thead>
                 <tr>
                   <th>{t("strategyColumnTitle")}</th>
+                  <th>{t("strategyColumnKpis")}</th>
                   <th>{t("strategyColumnTarget")}</th>
                   <th>{t("strategyColumnActual")}</th>
                   <th>{t("strategyColumnAchievement")}</th>
@@ -645,19 +687,22 @@ export default async function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {strategicGoalsSummary.map((goal) => (
-                  <tr key={goal.id}>
-                    <td>{goal.title_ar}</td>
-                    <td>
-                      {goal.target_value ?? "—"} {goal.unit_ar}
-                    </td>
-                    <td>
-                      {goal.actual_value ?? "—"} {goal.unit_ar}
-                    </td>
-                    <td>{achievementPercent(goal) != null ? `${achievementPercent(goal)}%` : "—"}</td>
-                    <td>{goal.subGoalsCount}</td>
-                  </tr>
-                ))}
+                {strategicGoalsSummary.map((goal) => {
+                  const pct = achievementPercent({
+                    target_value: goal.annualTargetSum,
+                    actual_value: goal.annualActualSum,
+                  });
+                  return (
+                    <tr key={goal.id}>
+                      <td>{goal.title_ar}</td>
+                      <td>{goal.kpisCount}</td>
+                      <td>{goal.annualTargetSum ?? "—"}</td>
+                      <td>{goal.annualActualSum ?? "—"}</td>
+                      <td>{pct != null ? `${pct}%` : "—"}</td>
+                      <td>{goal.subGoalsCount}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

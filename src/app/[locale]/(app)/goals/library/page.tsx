@@ -8,9 +8,6 @@ import { Flag } from "lucide-react";
 interface StrategicGoalRow {
   id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
-  unit_ar: string;
   weight: number | null;
 }
 
@@ -19,9 +16,20 @@ interface SubGoalRow {
   strategic_goal_id: string;
   owner_position_id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
+  weight: number | null;
+}
+
+// 2026-07-30: KPIs are their own rows now (many per goal or sub-goal), each
+// carrying the plan-long target; the annual figures live in
+// kpi_annual_targets. This is what "بنك الأهداف ... ومؤشراتها ومستهدفاتها"
+// asks the goal bank to show.
+interface KpiRow {
+  id: string;
+  strategic_goal_id: string | null;
+  sub_goal_id: string | null;
+  title_ar: string;
   unit_ar: string;
+  plan_target_value: number | null;
   weight: number | null;
 }
 
@@ -61,17 +69,82 @@ export default async function GoalLibraryPage() {
   // everywhere else in this app.
   const { data: strategicGoalsData } = await supabase
     .from("strategic_goals")
-    .select("id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, title_ar, weight")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   const strategicGoals = (strategicGoalsData ?? []) as StrategicGoalRow[];
 
   const { data: subGoalsData } = await supabase
     .from("sub_goals")
-    .select("id, strategic_goal_id, owner_position_id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, strategic_goal_id, owner_position_id, title_ar, weight")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const subGoals = (subGoalsData ?? []) as SubGoalRow[];
+
+  const { data: kpisData } = await supabase
+    .from("strategic_kpis")
+    .select("id, strategic_goal_id, sub_goal_id, title_ar, unit_ar, plan_target_value, weight")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const allKpis = (kpisData ?? []) as KpiRow[];
+  const kpisByGoal = new Map<string, KpiRow[]>();
+  const kpisBySubGoal = new Map<string, KpiRow[]>();
+  for (const k of allKpis) {
+    const key = k.strategic_goal_id ?? k.sub_goal_id;
+    if (!key) continue;
+    const map = k.strategic_goal_id ? kpisByGoal : kpisBySubGoal;
+    const list = map.get(key) ?? [];
+    list.push(k);
+    map.set(key, list);
+  }
+
+  // "المستهدفات على مستوى المنظمة" -- each KPI's annual target/actual per
+  // cycle, alongside the plan-long target already shown. Fetched for every
+  // visible KPI at once rather than per goal, so this stays one query
+  // regardless of how many goals the bank lists.
+  const kpiIds = allKpis.map((k) => k.id);
+  const { data: annualData } =
+    kpiIds.length > 0
+      ? await supabase
+          .from("kpi_annual_targets")
+          .select("kpi_id, cycle_id, target_value, actual_value")
+          .in("kpi_id", kpiIds)
+          .is("deleted_at", null)
+      : { data: [] };
+  const annualTargets = (annualData ?? []) as Array<{
+    kpi_id: string;
+    cycle_id: string;
+    target_value: number;
+    actual_value: number | null;
+  }>;
+
+  const { data: cyclesForBank } = await supabase
+    .from("evaluation_cycles")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("start_date", { ascending: false });
+  const cycleNameById = new Map(((cyclesForBank ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
+
+  const annualByKpi = new Map<string, typeof annualTargets>();
+  for (const a of annualTargets) {
+    const list = annualByKpi.get(a.kpi_id) ?? [];
+    list.push(a);
+    annualByKpi.set(a.kpi_id, list);
+  }
+
+  /** "<KPI> (plan target) — <cycle>: target/actual, …" for one owner row. */
+  function describeKpis(list: KpiRow[]): string {
+    if (list.length === 0) return "—";
+    return list
+      .map((k) => {
+        const head = `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`;
+        const annual = (annualByKpi.get(k.id) ?? [])
+          .map((a) => `${cycleNameById.get(a.cycle_id) ?? "—"}: ${a.target_value}/${a.actual_value ?? "—"}`)
+          .join("، ");
+        return annual ? `${head} — ${annual}` : head;
+      })
+      .join("؛ ");
+  }
 
   // list_org_structure_positions(): SECURITY DEFINER RPC -- see
   // StrategicGoalsPage's own comment (org_structure_positions_select's RLS
@@ -135,8 +208,8 @@ export default async function GoalLibraryPage() {
               <div key={goal.id} style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--sru-border)" }}>
                 <strong style={{ fontSize: 14 }}>{goal.title_ar}</strong>
                 <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2, marginBottom: 10 }}>
-                  {t("columnTarget")}: {goal.target_value ?? "—"} {goal.unit_ar} · {t("columnActual")}: {goal.actual_value ?? "—"}{" "}
-                  {goal.unit_ar}
+                  {t("columnKpi")}:{" "}
+                  {describeKpis(kpisByGoal.get(goal.id) ?? [])}
                   {goal.weight != null ? ` · ${t("columnWeight")}: ${goal.weight}%` : ""}
                 </p>
                 {goalSubGoals.length === 0 ? (
@@ -148,8 +221,7 @@ export default async function GoalLibraryPage() {
                         <tr>
                           <th>{t("columnSubGoalTitle")}</th>
                           <th>{t("columnOwner")}</th>
-                          <th>{t("columnTarget")}</th>
-                          <th>{t("columnActual")}</th>
+                          <th>{t("columnKpi")}</th>
                           <th>{t("columnWeight")}</th>
                         </tr>
                       </thead>
@@ -158,12 +230,7 @@ export default async function GoalLibraryPage() {
                           <tr key={sg.id}>
                             <td>{sg.title_ar}</td>
                             <td>{positionNameById.get(sg.owner_position_id) ?? "—"}</td>
-                            <td>
-                              {sg.target_value ?? "—"} {sg.unit_ar}
-                            </td>
-                            <td>
-                              {sg.actual_value ?? "—"} {sg.unit_ar}
-                            </td>
+                            <td>{describeKpis(kpisBySubGoal.get(sg.id) ?? [])}</td>
                             <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                           </tr>
                         ))}

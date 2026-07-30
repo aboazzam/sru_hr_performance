@@ -24,7 +24,12 @@ export default async function StrategicIdentityPage() {
       (row) => row.process_area === "strategicPlanning"
     )?.vpra_level ?? "none";
   const canView = hasVpraAccess(strategicPlanningLevel, "view");
-  const canEdit = hasVpraAccess(strategicPlanningLevel, "approve");
+  // 'prepare' (إعداد), not 'approve' -- the project owner confirmed
+  // (2026-07-30) that the middle tier means edit rights only, with no
+  // draft->approve workflow. Matches strategic_identity/strategic_values'
+  // own write policies, lowered to the same bar in 20260730000002 (without
+  // that migration this form's every submit would be rejected by Postgres).
+  const canEdit = hasVpraAccess(strategicPlanningLevel, "prepare");
 
   if (!canView) {
     return (

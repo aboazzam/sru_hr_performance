@@ -10,10 +10,18 @@ interface SubGoalRow {
   strategic_goal_id: string;
   owner_position_id: string;
   title_ar: string;
-  target_value: number | null;
-  actual_value: number | null;
-  unit_ar: string;
   weight: number | null;
+}
+
+// 2026-07-30: a sub-goal no longer carries its own inline KPI -- its
+// indicators are `strategic_kpis` rows (many per sub-goal), each with a
+// plan-long target; the annual figures live in kpi_annual_targets.
+interface KpiRow {
+  id: string;
+  sub_goal_id: string | null;
+  title_ar: string;
+  unit_ar: string;
+  plan_target_value: number | null;
 }
 
 interface TargetRow {
@@ -71,7 +79,7 @@ export default async function KpisPage() {
   // who deliberately see everything via check_vpra_global.
   const { data: subGoalsData } = await supabase
     .from("sub_goals")
-    .select("id, strategic_goal_id, owner_position_id, title_ar, target_value, actual_value, unit_ar, weight")
+    .select("id, strategic_goal_id, owner_position_id, title_ar, weight")
     .is("deleted_at", null);
   const subGoals = (subGoalsData ?? []) as SubGoalRow[];
 
@@ -80,6 +88,18 @@ export default async function KpisPage() {
     .select("id, sub_goal_id, assigned_position_id, assigned_employee_id, title_ar, target_value, actual_value, unit_ar, weight, status")
     .is("deleted_at", null);
   const targets = (targetsData ?? []) as TargetRow[];
+
+  const { data: kpisData } = await supabase
+    .from("strategic_kpis")
+    .select("id, sub_goal_id, title_ar, unit_ar, plan_target_value")
+    .is("deleted_at", null);
+  const kpisBySubGoal = new Map<string, KpiRow[]>();
+  for (const k of (kpisData ?? []) as KpiRow[]) {
+    if (!k.sub_goal_id) continue;
+    const list = kpisBySubGoal.get(k.sub_goal_id) ?? [];
+    list.push(k);
+    kpisBySubGoal.set(k.sub_goal_id, list);
+  }
 
   const strategicGoalIds = Array.from(new Set(subGoals.map((sg) => sg.strategic_goal_id)));
   const { data: strategicGoalsData } =
@@ -91,26 +111,51 @@ export default async function KpisPage() {
   const ownedSubGoals = subGoals.filter((sg) => myPositionIds.has(sg.owner_position_id));
   const ownedTargets = targets.filter((t) => t.assigned_position_id != null && myPositionIds.has(t.assigned_position_id));
   const assignedToMeTargets = targets.filter((t) => t.assigned_employee_id === myProfileId);
-  // Employee-assigned targets that are neither owned-by-position nor
-  // assigned to me directly — a real gap found live: targets_update's RLS
-  // (20260727000005) lets whoever owns the IMMEDIATE PARENT report
-  // progress on an employee-leaf target on their behalf (there's no
-  // assigned_position_id on that row itself to match), but without this
-  // section that capability had no UI to invoke it at all. Broader than
-  // "immediate parent only" (RLS is the real, narrower gate; this list is
-  // scoped by is_in_my_strategic_subtree via the same visible `targets`
-  // fetch above, same "seeing an option doesn't guarantee it succeeds"
-  // convention as every other assign screen in this app).
-  const teamTargets = targets.filter(
-    (t) => t.assigned_employee_id != null && t.assigned_employee_id !== myProfileId
+  // The two halves the project owner asked for (2026-07-30, "نعم ما وصلني
+  // مقابل ما اسندته فعلا لمن دوني"): a non-overlapping partition, so no row
+  // appears twice.
+  //
+  //   RECEIVED  = cascaded onto me: sub-goals my position owns, targets
+  //               assigned to my position, and targets assigned to me
+  //               personally. (ownedSubGoals/ownedTargets/assignedToMeTargets
+  //               above.)
+  //   CASCADED  = what I actually pushed further down: every visible target
+  //               assigned to someone OTHER than me -- another position
+  //               (below mine, since `targets` is already RLS-scoped to my
+  //               own subtree) or another employee.
+  //
+  // The employee half was previously the only one shown ("مستهدفات فريقك");
+  // position-assigned children below me had no section at all, so a C2 owner
+  // who cascaded to C3 positions could not see that from this page.
+  const cascadedDownTargets = targets.filter(
+    (t) =>
+      (t.assigned_employee_id != null && t.assigned_employee_id !== myProfileId) ||
+      (t.assigned_position_id != null && !myPositionIds.has(t.assigned_position_id))
   );
-  const teamEmployeeIds = Array.from(new Set(teamTargets.map((t) => t.assigned_employee_id!)));
+  const teamTargets = cascadedDownTargets;
+  // Only the employee-assigned half has a profile to look up -- the
+  // position-assigned rows in this list have assigned_employee_id = NULL
+  // (targets_assignee_xor), so they must be filtered out before the .in()
+  // lookup rather than passed through as nulls.
+  const teamEmployeeIds = Array.from(
+    new Set(teamTargets.map((t) => t.assigned_employee_id).filter((id): id is string => id != null))
+  );
   const { data: teamEmployeesData } =
     teamEmployeeIds.length > 0
       ? await supabase.from("profiles").select("id, employee_number, full_name_ar").in("id", teamEmployeeIds)
       : { data: [] };
   const teamEmployeeById = new Map(
     ((teamEmployeesData ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>).map((p) => [p.id, p])
+  );
+
+  // list_org_structure_positions(): SECURITY DEFINER RPC -- a cascaded
+  // target can land on a POSITION rather than an employee, and this page now
+  // shows those too, so it needs position names. Same reason the strategic
+  // goals screen uses the RPC: org_structure_positions_select requires
+  // orgStructure=view, which the position-holders this page serves don't hold.
+  const { data: positionsData } = await supabase.rpc("list_org_structure_positions");
+  const positionNameById = new Map(
+    ((positionsData ?? []) as Array<{ id: string; name_ar: string }>).map((p) => [p.id, p.name_ar])
   );
 
   return (
@@ -137,9 +182,12 @@ export default async function KpisPage() {
           together with owned targets under one "ownedHeading" table; split
           out here so KPIs and targets read as two distinct, clearly labeled
           sections on this one page, in that order. */}
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
-        {t("kpiSectionHeading")}
+      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
+        {t("receivedHeading")}
       </h2>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("receivedSubtitle")}</p>
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("kpiSectionHeading")}</h3>
       {ownedSubGoals.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("kpiSectionEmpty")}</p>
       ) : (
@@ -150,9 +198,7 @@ export default async function KpisPage() {
                 <tr>
                   <th>{t("columnTitle")}</th>
                   <th>{t("columnStrategicGoal")}</th>
-                  <th>{t("columnTarget")}</th>
-                  <th>{t("columnActual")}</th>
-                  <th>{t("columnAchievement")}</th>
+                  <th>{t("columnKpi")}</th>
                   <th>{t("columnWeight")}</th>
                   <th />
                 </tr>
@@ -163,12 +209,12 @@ export default async function KpisPage() {
                     <td>{sg.title_ar}</td>
                     <td>{strategicGoalTitleById.get(sg.strategic_goal_id) ?? "—"}</td>
                     <td>
-                      {sg.target_value ?? "—"} {sg.unit_ar}
+                      {(kpisBySubGoal.get(sg.id) ?? []).length === 0
+                        ? "—"
+                        : (kpisBySubGoal.get(sg.id) ?? [])
+                            .map((k) => `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})`)
+                            .join("، ")}
                     </td>
-                    <td>
-                      <UpdateProgressForm nodeType="sub_goal" id={sg.id} currentActualValue={sg.actual_value} unitAr={sg.unit_ar} />
-                    </td>
-                    <td>{achievementPercent(sg) != null ? `${achievementPercent(sg)}%` : "—"}</td>
                     <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                     <td>
                       <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 12, padding: "4px 10px" }}>
@@ -189,10 +235,6 @@ export default async function KpisPage() {
           assigned-to-me / team) keep their distinct meaning, now nested
           under this one umbrella heading instead of owned-targets being
           mixed into the KPI table above. */}
-      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
-        {t("targetsSectionHeading")}
-      </h2>
-
       <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("ownedHeading")}</h3>
       {ownedTargets.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("ownedEmpty")}</p>
@@ -277,16 +319,19 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, fontWeight: 700, margin: "32px 0 12px" }}>{t("teamHeading")}</h3>
+      <h2 className="sru-title" style={{ fontSize: 20, margin: "36px 0 8px" }}>
+        {t("cascadedHeading")}
+      </h2>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("cascadedSubtitle")}</p>
       {teamTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("teamEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("cascadedEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
                 <tr>
-                  <th>{t("columnEmployee")}</th>
+                  <th>{t("columnAssignee")}</th>
                   <th>{t("columnTitle")}</th>
                   <th>{t("columnTarget")}</th>
                   <th>{t("columnActual")}</th>
@@ -296,10 +341,18 @@ export default async function KpisPage() {
               </thead>
               <tbody>
                 {teamTargets.map((tg) => {
-                  const employee = teamEmployeeById.get(tg.assigned_employee_id!);
+                  // A cascaded target lands on EITHER a position or an
+                  // employee (targets_assignee_xor), so this one column
+                  // resolves whichever of the two it actually is.
+                  const employee = tg.assigned_employee_id ? teamEmployeeById.get(tg.assigned_employee_id) : undefined;
+                  const assignee = employee
+                    ? `${employee.employee_number} — ${employee.full_name_ar}`
+                    : tg.assigned_position_id
+                      ? (positionNameById.get(tg.assigned_position_id) ?? "—")
+                      : "—";
                   return (
                     <tr key={tg.id}>
-                      <td>{employee ? `${employee.employee_number} — ${employee.full_name_ar}` : "—"}</td>
+                      <td>{assignee}</td>
                       <td>{tg.title_ar}</td>
                       <td>
                         {tg.target_value} {tg.unit_ar}

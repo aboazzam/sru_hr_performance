@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { NewStrategicGoalForm } from "@/components/NewStrategicGoalForm";
 import { Link } from "@/i18n/navigation";
+import { ArrowRight } from "lucide-react";
 import { isLocale } from "@/i18n/config";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -68,21 +69,60 @@ export default async function NewStrategicGoalPage({
     );
   }
 
-  const { data: cycles } = await supabase
-    .from("evaluation_cycles")
-    .select("id, name_ar, start_date, end_date")
+  // A goal now belongs to a multi-year PLAN, not one evaluation cycle
+  // (20260730000001). With no plan defined yet there is nothing to attach a
+  // goal to, so the form is replaced by a pointer to the plans screen
+  // rather than rendering a create form that could never submit.
+  const { data: plans } = await supabase
+    .from("strategic_plans")
+    .select("id, name_ar, start_year, end_year")
     .is("deleted_at", null)
-    .order("start_date", { ascending: false });
+    .order("start_year", { ascending: false });
+
+  if (!plans || plans.length === 0) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <Link
+          href="/kpis/strategic-goals"
+          className="sru-btn"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
+        >
+          <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
+          {t("backButton")}
+        </Link>
+        <h1 className="sru-title" style={{ fontSize: 24 }}>
+          {t("title")}
+        </h1>
+        <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+        <div className="sru-card" style={{ padding: 16 }}>
+          <p style={{ fontSize: 14 }}>
+            {t("noPlanMessage")}{" "}
+            <Link href="/kpis/plans" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
+              {t("plansLinkButton")}
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <Link
+        href="/kpis/strategic-goals"
+        className="sru-btn"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
+      >
+        <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
+        {t("backButton")}
+      </Link>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
         {t("title")}
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <NewStrategicGoalForm locale={locale} cycles={cycles ?? []} />
+      <NewStrategicGoalForm locale={locale} plans={plans} />
     </div>
   );
 }
