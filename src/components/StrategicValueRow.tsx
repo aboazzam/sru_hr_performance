@@ -10,11 +10,17 @@ const inputClass =
   "px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 export function StrategicValueRow({
+  canEdit,
   valueId,
   initialTitleAr,
   initialTitleEn,
   initialDescriptionAr,
 }: {
+  // Read-only viewers (every authenticated user, since 20260730000004) get the
+  // text with no edit/delete affordances — the icons used to render for
+  // everyone who could reach this page, which was only ever three roles.
+  // The real gate stays strategic_values' own write RLS.
+  canEdit: boolean;
   valueId: string;
   initialTitleAr: string;
   initialTitleEn: string | null;
@@ -88,14 +94,16 @@ export function StrategicValueRow({
         {initialDescriptionAr && (
           <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>— {initialDescriptionAr}</span>
         )}
-        <div className="sru-icon-action-group">
-          <button type="button" onClick={handleEdit} className="sru-icon-action" title={t("editButton")} aria-label={t("editButton")}>
-            <Pencil size={14} />
-          </button>
-          <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
-            <Trash2 size={14} />
-          </button>
-        </div>
+        {canEdit && (
+          <div className="sru-icon-action-group">
+            <button type="button" onClick={handleEdit} className="sru-icon-action" title={t("editButton")} aria-label={t("editButton")}>
+              <Pencil size={14} />
+            </button>
+            <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
         {error && (
           <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
             {t(errorMessageKeys[error] ?? "errorUnknown")}

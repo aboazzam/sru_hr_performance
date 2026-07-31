@@ -838,7 +838,7 @@
   },
   "StrategicIdentityPage": {
     "title": "Vision, Mission & Values",
-    "subtitle": "The strategic foundation strategic goals are built on (Strategy Admin only).",
+    "subtitle": "The strategic foundation strategic goals are built on.",
     "errorForbidden": "You don't have permission to view this page.",
     "visionArLabel": "Vision (Arabic)",
     "visionArPlaceholder": "Enter the university's vision",
