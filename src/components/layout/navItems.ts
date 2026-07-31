@@ -124,13 +124,16 @@ export const navGroups: NavGroup[] = [
     labelKey: "strategicPlan",
     icon: Compass,
     children: [
-      // "الرؤية والرسالة والقيم" (2026-07-29): the strategic foundation the
-      // goals below are built on -- gated at the page's own read bar
-      // (`strategicPlanning>=view`, broader than the 'approve' the goals
-      // screen itself needs) per the explicit "نريد ... تنعكس عند الآخرين
-      // كتاب" request, so ceo's existing read-only follow-up access also
-      // surfaces this tab, not just strategy_admin.
-      { segment: "kpis/strategic-identity", labelKey: "strategicIdentity", icon: Flag, access: [{ processArea: "strategicPlanning", minLevel: "view" }] },
+      // "الرؤية والرسالة والقيم": no `access` gate at all, same "reports"
+      // precedent. This was gated at strategicPlanning>='view' until
+      // 2026-07-30, when the project owner reported live that an ordinary
+      // user saw no such tab -- only three roles hold ANY strategicPlanning
+      // grant, so the gate hid it from nearly everyone, contradicting the
+      // request that was explicitly about "بقية المستخدمين". The identity
+      // text is the published foundation every goal is built on; reading it
+      // is for all staff, while EDITING stays gated at 'prepare' on both the
+      // page and the table's own write policies.
+      { segment: "kpis/strategic-identity", labelKey: "strategicIdentity", icon: Flag },
       // The strategic-goals admin screen (create strategic goals + the
       // first sub_goal cascade to a position) stays genuinely gated --
       // strategy_admin is the sole 'approve' holder per the confirmed

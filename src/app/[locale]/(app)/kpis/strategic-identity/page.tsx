@@ -7,13 +7,17 @@ import { GroupTabs } from "@/components/layout/GroupTabs";
 import { Star } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// Auth is enforced centrally by (app)/layout.tsx. Real write authorization
-// is strategic_identity/strategic_values' own RLS
-// (check_vpra_global('strategicPlanning','approve'), strategy_admin only —
-// 20260728000002). This page requires 'view' to render at all, matching
-// strategic_identity_select/strategic_values_select's own bar (the same
-// audience that already sees /kpis/strategic-goals, including ceo's
-// read-only follow-up access).
+// Auth is enforced centrally by (app)/layout.tsx. Real write authorization is
+// strategic_identity/strategic_values' own RLS
+// (check_vpra_global('strategicPlanning','prepare') — 20260730000002).
+//
+// READING is deliberately open to every authenticated user (20260730000004):
+// this page used to require 'view', but only three roles hold any
+// strategicPlanning grant, so ordinary staff saw no tab at all — the project
+// owner reported that live on 2026-07-30, against their own instruction that
+// the tab exists for "بقية المستخدمين". The vision/mission/values are the
+// university's published identity, and the foundation every strategic goal
+// cascades from. Only the editing affordances are permission-gated below.
 export default async function StrategicIdentityPage() {
   const t = await getTranslations("StrategicIdentityPage");
   const supabase = await createClient();
@@ -23,21 +27,12 @@ export default async function StrategicIdentityPage() {
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
       (row) => row.process_area === "strategicPlanning"
     )?.vpra_level ?? "none";
-  const canView = hasVpraAccess(strategicPlanningLevel, "view");
   // 'prepare' (إعداد), not 'approve' -- the project owner confirmed
   // (2026-07-30) that the middle tier means edit rights only, with no
   // draft->approve workflow. Matches strategic_identity/strategic_values'
   // own write policies, lowered to the same bar in 20260730000002 (without
   // that migration this form's every submit would be rejected by Postgres).
   const canEdit = hasVpraAccess(strategicPlanningLevel, "prepare");
-
-  if (!canView) {
-    return (
-      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
-      </div>
-    );
-  }
 
   const { data: identity } = await supabase
     .from("strategic_identity")
@@ -75,7 +70,7 @@ export default async function StrategicIdentityPage() {
           <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("valuesEmpty")}</p>
         ) : (
           values.map((v) => (
-            <StrategicValueRow key={v.id} valueId={v.id} initialTitleAr={v.title_ar} initialTitleEn={v.title_en} initialDescriptionAr={v.description_ar} />
+            <StrategicValueRow key={v.id} canEdit={canEdit} valueId={v.id} initialTitleAr={v.title_ar} initialTitleEn={v.title_en} initialDescriptionAr={v.description_ar} />
           ))
         )}
         {canEdit && <AddStrategicValueForm />}
