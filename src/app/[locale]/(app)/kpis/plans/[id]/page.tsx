@@ -402,6 +402,7 @@ export default async function StrategicPlanDetailPage({
                   <th>{tKpis("columnStrategicGoal")}</th>
                   <th>{tKpis("columnKpi")}</th>
                   <th>{tKpis("columnWeight")}</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -411,6 +412,11 @@ export default async function StrategicPlanDetailPage({
                     <td>{strategicGoalTitleById.get(sg.strategic_goal_id) ?? "—"}</td>
                     <td>{describeKpis(kpisBySubGoal.get(sg.id) ?? [])}</td>
                     <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
+                    <td>
+                      <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 12, padding: "4px 10px" }}>
+                        {tKpis("cascadeButton")}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -434,6 +440,7 @@ export default async function StrategicPlanDetailPage({
                   <th>{tKpis("columnActual")}</th>
                   <th>{tKpis("columnAchievement")}</th>
                   <th>{tKpis("columnWeight")}</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -449,6 +456,15 @@ export default async function StrategicPlanDetailPage({
                     </td>
                     <td>{achievementPercent(tg) != null ? `${achievementPercent(tg)}%` : "—"}</td>
                     <td>{tg.weight != null ? `${tg.weight}%` : "—"}</td>
+                    <td>
+                      <Link
+                        href={`/kpis/assign?parentTargetId=${tg.id}`}
+                        className="sru-btn"
+                        style={{ fontSize: 12, padding: "4px 10px" }}
+                      >
+                        {tKpis("cascadeButton")}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
