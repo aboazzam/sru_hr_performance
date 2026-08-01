@@ -56,8 +56,8 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     ]);
   });
 
-  it("every child in every group declares an access requirement, except the two deliberately ungated strategicPlan tabs", () => {
-    // Two deliberate exceptions across all groups:
+  it("every child in every group declares an access requirement, except the three deliberately ungated strategicPlan tabs", () => {
+    // Three deliberate exceptions across all groups:
     //   "kpis" (الأهداف المسندة) — real access is entirely row-level via the
     //     strategic-goal cascade's own RLS, not a role_permissions grant.
     //   "kpis/strategic-identity" (الرؤية والرسالة والقيم) — ungated on
@@ -65,7 +65,10 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     //     users saw no such tab: only three roles hold any strategicPlanning
     //     grant. Reading the published institutional identity is for all
     //     staff; editing stays gated at 'prepare' on the page and in RLS.
-    const ungated = new Set(["kpis", "kpis/strategic-identity"]);
+    //   "kpis/plans" (قائمة الخطط) — ungated on 2026-08-01, same reasoning:
+    //     browsing which plans exist and opening one is for all staff; only
+    //     creating a new plan stays gated at 'approve' on the page itself.
+    const ungated = new Set(["kpis", "kpis/strategic-identity", "kpis/plans"]);
     for (const group of navGroups) {
       for (const child of group.children) {
         if (ungated.has(child.segment)) {
@@ -77,9 +80,10 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     }
   });
 
-  it("the strategicPlan group has its four children in order (2026-07-28 consolidation, 2026-07-29 identity tab)", () => {
+  it("the strategicPlan group has its five children in order (2026-07-28 consolidation, 2026-07-29 identity tab, 2026-08-01 plans list)", () => {
     const plan = navGroups.find((g) => g.groupKey === "strategicPlan")!;
     expect(plan.children.map((c) => c.segment)).toEqual([
+      "kpis/plans",
       "kpis/strategic-identity",
       "kpis/strategic-goals",
       "kpis",
@@ -177,34 +181,37 @@ describe("visibleNavItems", () => {
 });
 
 describe("visibleNavGroups", () => {
-  it("hides every group except strategicPlan (two ungated children) when no permissions are granted", () => {
+  it("hides every group except strategicPlan (three ungated children) when no permissions are granted", () => {
     // 2026-07-28: strategicPlan always has at least "kpis" visible (no
     // access gate), so it's never fully hidden the way the other groups are.
     // 2026-07-30: kpis/strategic-identity joined it as ungated, so a user
     // with zero grants still reaches the vision/mission/values text.
+    // 2026-08-01: kpis/plans (the plans list) joined it too, for the same
+    // reason -- browsing plans is for all staff.
     const groups = visibleNavGroups(navGroups, {});
     expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan"]);
-    expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/strategic-identity", "kpis"]);
+    expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans", "kpis/strategic-identity", "kpis"]);
   });
 
   it("hides only the ungranted children within the strategicPlan group (employee perms)", () => {
     // goalsLibrary=view is below the "prepare" bar goals/library requires;
     // no strategicPlanning grant at all still hides the strategy_admin-only
-    // kpis/strategic-goals screen -- but NOT kpis/strategic-identity, which
-    // every authenticated user reads (2026-07-30).
+    // kpis/strategic-goals screen -- but NOT kpis/plans or
+    // kpis/strategic-identity, which every authenticated user reads.
     const employeePermissions = { goalsLibrary: "view" } as const;
     const groups = visibleNavGroups(navGroups, employeePermissions);
     const plan = groups.find((g) => g.groupKey === "strategicPlan")!;
     const segments = plan.children.map((c) => c.segment);
-    expect(segments).toEqual(["kpis/strategic-identity", "kpis"]);
+    expect(segments).toEqual(["kpis/plans", "kpis/strategic-identity", "kpis"]);
   });
 
-  it("shows all four strategicPlan children for a strategy_admin-level permission set", () => {
+  it("shows all five strategicPlan children for a strategy_admin-level permission set", () => {
     // strategicPlanning='approve' clears both kpis/strategic-identity ('view')
     // and kpis/strategic-goals ('approve'), since approve satisfies view too.
     const groups = visibleNavGroups(navGroups, { strategicPlanning: "approve", goalsLibrary: "prepare" });
     const plan = groups.find((g) => g.groupKey === "strategicPlan")!;
     expect(plan.children.map((c) => c.segment)).toEqual([
+      "kpis/plans",
       "kpis/strategic-identity",
       "kpis/strategic-goals",
       "kpis",
@@ -212,14 +219,14 @@ describe("visibleNavGroups", () => {
     ]);
   });
 
-  it("shows only the strategicPlan identity tab (not the goals admin screen) for a ceo-level view-only grant", () => {
+  it("shows only the strategicPlan plans-list and identity tabs (not the goals admin screen) for a ceo-level view-only grant", () => {
     // Real report this covers: ceo holds strategicPlanning='view' (read-only
     // follow-up access per the page's own doc comment), not 'approve' --
-    // confirms the identity tab surfaces for that narrower grant while the
-    // strategy_admin-only goals-admin screen correctly stays hidden.
+    // confirms the identity/plans tabs surface for that narrower grant while
+    // the strategy_admin-only goals-admin screen correctly stays hidden.
     const groups = visibleNavGroups(navGroups, { strategicPlanning: "view" });
     const plan = groups.find((g) => g.groupKey === "strategicPlan")!;
-    expect(plan.children.map((c) => c.segment)).toEqual(["kpis/strategic-identity", "kpis"]);
+    expect(plan.children.map((c) => c.segment)).toEqual(["kpis/plans", "kpis/strategic-identity", "kpis"]);
   });
 
   it("hides only the ungranted children within an otherwise-visible group (employee perms)", () => {
