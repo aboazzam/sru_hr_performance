@@ -351,6 +351,7 @@ export default async function StrategicPlanDetailPage({
                         <th>{tGoals("columnOwner")}</th>
                         <th>{tGoals("columnKpi")}</th>
                         <th>{tGoals("columnWeight")}</th>
+                        {canManageGoals && <th />}
                       </tr>
                     </thead>
                     <tbody>
@@ -360,6 +361,17 @@ export default async function StrategicPlanDetailPage({
                           <td>{positionNameById.get(sg.owner_position_id) ?? "—"}</td>
                           <td>{describeKpis(kpisBySubGoal.get(sg.id) ?? [])}</td>
                           <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
+                          {canManageGoals && (
+                            <td>
+                              <Link
+                                href={`/kpis/manage-kpis?subGoalId=${sg.id}`}
+                                className="sru-btn"
+                                style={{ fontSize: 12, padding: "4px 10px" }}
+                              >
+                                {tGoals("manageKpisButton")}
+                              </Link>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -577,11 +589,15 @@ export default async function StrategicPlanDetailPage({
     </div>
   );
 
+  // Order requested directly (2026-08-01): vision/mission first (the
+  // foundation), then strategic goals (main + sub-goals + KPIs), then
+  // assigned goals (deferred follow-up work per the same request), then the
+  // goal library last.
   const tabs: ProfileTab[] = [
-    { id: "library", label: tLibrary("title"), content: libraryContent },
-    { id: "assigned", label: tKpis("title"), content: assignedContent },
-    { id: "goals", label: tGoals("title"), content: goalsContent },
     { id: "identity", label: tIdentity("title"), content: identityContent },
+    { id: "goals", label: tGoals("title"), content: goalsContent },
+    { id: "assigned", label: tKpis("title"), content: assignedContent },
+    { id: "library", label: tLibrary("title"), content: libraryContent },
   ];
 
   return (

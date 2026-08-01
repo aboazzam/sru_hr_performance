@@ -10,7 +10,6 @@ import {
   Users,
   Route,
   Wallet,
-  Target,
   ListChecks,
   ClipboardList,
   Award,
@@ -27,9 +26,7 @@ import {
   Activity,
   Settings,
   Gauge,
-  Layers,
   Compass,
-  Flag,
   CalendarRange,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -132,21 +129,6 @@ export const navGroups: NavGroup[] = [
       // plans exist and opening one is for all staff; only creating a new
       // plan stays gated at strategicPlanning>='approve' on the page itself.
       { segment: "kpis/plans", labelKey: "strategicPlans", icon: CalendarRange },
-      // "الرؤية والرسالة والقيم": no `access` gate at all, same "reports"
-      // precedent. This was gated at strategicPlanning>='view' until
-      // 2026-07-30, when the project owner reported live that an ordinary
-      // user saw no such tab -- only three roles hold ANY strategicPlanning
-      // grant, so the gate hid it from nearly everyone, contradicting the
-      // request that was explicitly about "بقية المستخدمين". The identity
-      // text is the published foundation every goal is built on; reading it
-      // is for all staff, while EDITING stays gated at 'prepare' on both the
-      // page and the table's own write policies.
-      { segment: "kpis/strategic-identity", labelKey: "strategicIdentity", icon: Flag },
-      // The strategic-goals admin screen (create strategic goals + the
-      // first sub_goal cascade to a position) stays genuinely gated --
-      // strategy_admin is the sole 'approve' holder per the confirmed
-      // design ("هو الأدمن لهذا الموديول").
-      { segment: "kpis/strategic-goals", labelKey: "strategicGoals", icon: Layers, access: [{ processArea: "strategicPlanning", minLevel: "approve" }] },
       // "الأهداف المسندة" (renamed 2026-07-29, was "مؤشرات الأداء" -- the
       // page's own content already matched this description exactly:
       // goals/targets cascaded down TO the caller, which they in turn
@@ -159,8 +141,18 @@ export const navGroups: NavGroup[] = [
       // strategy_admin/ceo even though real position-holders genuinely
       // have their own cascaded data to see. Since this child has no
       // gate, the whole group is always visible to every logged-in user.
+      //
+      // 2026-08-01: "الرؤية والرسالة والقيم" / "الأهداف الاستراتيجية" /
+      // "بنك الأهداف" were removed from this top-level tab bar per direct
+      // feedback ("لا تظهر العناوين الاخرى ... لأن لكل لها عناوينها الخاص
+      // بها") -- each now lives ONLY as a tab inside the per-plan detail
+      // page (`/kpis/plans/[id]`), which can't be represented as a static
+      // NavItem segment here (GroupTabs has no notion of the current plan
+      // id). Their standalone routes (`kpis/strategic-identity`,
+      // `kpis/strategic-goals`, `goals/library`) still exist and are still
+      // linked to directly from other screens (e.g. the manage-KPIs flow),
+      // just no longer as a top-level tab in this group.
       { segment: "kpis", labelKey: "assignedGoals", icon: Gauge },
-      { segment: "goals/library", labelKey: "goalLibrary", icon: Target, access: [{ processArea: "goalsLibrary", minLevel: "prepare" }] },
     ],
   },
   {
