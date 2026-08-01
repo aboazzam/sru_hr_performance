@@ -45,6 +45,7 @@
     "reports": "Reports",
     "recommendations": "Recommendations",
     "strategicPlan": "Strategic Plan",
+    "strategicPlans": "Plans List",
     "strategicIdentity": "Vision, Mission & Values",
     "assignedGoals": "Assigned Goals"
   },
@@ -1541,6 +1542,10 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You do not have permission to add a strategic plan.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "StrategicPlanDetailPage": {
+    "backToList": "Back to Plans List",
+    "errorNotFound": "This strategic plan could not be found."
   },
   "ManageKpisPage": {
     "title": "Manage KPIs & Targets",

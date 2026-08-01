@@ -45,6 +45,7 @@
     "reports": "التقارير",
     "recommendations": "التوصيات",
     "strategicPlan": "الخطة الاستراتيجية",
+    "strategicPlans": "قائمة الخطط",
     "strategicIdentity": "الرؤية والرسالة والقيم",
     "assignedGoals": "الأهداف المسندة"
   },
@@ -1541,6 +1542,10 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة خطة استراتيجية.",
     "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "StrategicPlanDetailPage": {
+    "backToList": "العودة إلى قائمة الخطط",
+    "errorNotFound": "لم يتم العثور على هذه الخطة الاستراتيجية."
   },
   "ManageKpisPage": {
     "title": "إدارة المؤشرات والمستهدفات",

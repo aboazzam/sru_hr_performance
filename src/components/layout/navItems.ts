@@ -30,6 +30,7 @@ import {
   Layers,
   Compass,
   Flag,
+  CalendarRange,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -124,6 +125,13 @@ export const navGroups: NavGroup[] = [
     labelKey: "strategicPlan",
     icon: Compass,
     children: [
+      // "قائمة الخطط" (2026-08-01): the plans-list + per-plan detail page,
+      // the new landing point for this group ("اذا ضغطت زر الخطة
+      // الاستراتيجية في سايدبار تطلع لي قائمة بالخطط الاستراتيجية"). No
+      // `access` gate, same "reports"/identity precedent -- browsing which
+      // plans exist and opening one is for all staff; only creating a new
+      // plan stays gated at strategicPlanning>='approve' on the page itself.
+      { segment: "kpis/plans", labelKey: "strategicPlans", icon: CalendarRange },
       // "الرؤية والرسالة والقيم": no `access` gate at all, same "reports"
       // precedent. This was gated at strategicPlanning>='view' until
       // 2026-07-30, when the project owner reported live that an ordinary
