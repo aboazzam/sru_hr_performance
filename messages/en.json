@@ -456,6 +456,8 @@
     "removeEdge": "Remove",
     "edgeDirectionLabel": "Direction",
     "edgeTargetLabel": "Other Job Title",
+    "edgeTargetSearchPlaceholder": "Search for a job title...",
+    "edgeTargetNoMatches": "No matching job titles",
     "edgeRequirementsLabel": "Requirements to Advance",
     "addEdge": "Add Link",
     "aiSuggestButton": "✨ Suggest with AI",

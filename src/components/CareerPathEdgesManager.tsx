@@ -51,14 +51,29 @@ export function CareerPathEdgesManager({
   const [direction, setDirection] = useState<"predecessor" | "successor">("successor");
   const [requirementsAr, setRequirementsAr] = useState("");
 
+  // "اضف خاصية البحث بحيث اضع الحروف الاولى فيعطيني الوظائف المطابقة" --
+  // otherOptions can run into the hundreds (this is a company-wide job
+  // title list, not scoped to one family), making the plain select below
+  // impractical to scroll through. A search box narrows the SAME select's
+  // own option list rather than replacing it with a custom combobox, same
+  // "substring, not startsWith" convention as the Employees list's own
+  // search (2026-07-24). Derived fresh on every render rather than tracked
+  // in a separate effect, matching this app's established
+  // derive-during-render precedent for keeping a selection valid as its
+  // candidate set changes.
+  const [targetSearch, setTargetSearch] = useState("");
+  const trimmedSearch = targetSearch.trim();
+  const filteredOptions = trimmedSearch === "" ? otherOptions : otherOptions.filter((jt) => jt.nameAr.includes(trimmedSearch));
+  const effectiveTargetId = filteredOptions.some((jt) => jt.id === targetId) ? targetId : (filteredOptions[0]?.id ?? "");
+
   const inputClass =
     "px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   function handleAdd() {
-    if (!targetId) return;
+    if (!effectiveTargetId) return;
     setError(null);
     startTransition(async () => {
-      const [fromId, toId] = direction === "successor" ? [jobTitleId, targetId] : [targetId, jobTitleId];
+      const [fromId, toId] = direction === "successor" ? [jobTitleId, effectiveTargetId] : [effectiveTargetId, jobTitleId];
       const res = await createCareerPathEdge(fromId, toId, requirementsAr);
       if (res.status === "success") {
         setRequirementsAr("");
@@ -131,12 +146,30 @@ export function CareerPathEdgesManager({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t("edgeTargetLabel")}</label>
-            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={inputClass}>
-              {otherOptions.map((jt) => (
-                <option key={jt.id} value={jt.id}>
-                  {jt.nameAr} ({t("gradeLabel", { grade: jt.gradeLevel })})
-                </option>
-              ))}
+            <input
+              type="text"
+              value={targetSearch}
+              onChange={(e) => setTargetSearch(e.target.value)}
+              placeholder={t("edgeTargetSearchPlaceholder")}
+              dir="rtl"
+              className={inputClass}
+              style={{ display: "block", marginBottom: 6, width: "100%" }}
+            />
+            <select
+              value={effectiveTargetId}
+              onChange={(e) => setTargetId(e.target.value)}
+              className={inputClass}
+              disabled={filteredOptions.length === 0}
+            >
+              {filteredOptions.length === 0 ? (
+                <option value="">{t("edgeTargetNoMatches")}</option>
+              ) : (
+                filteredOptions.map((jt) => (
+                  <option key={jt.id} value={jt.id}>
+                    {jt.nameAr} ({t("gradeLabel", { grade: jt.gradeLevel })})
+                  </option>
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -148,7 +181,7 @@ export function CareerPathEdgesManager({
               className={inputClass}
             />
           </div>
-          <button type="button" disabled={isPending} onClick={handleAdd} className="sru-btn sru-btn-primary">
+          <button type="button" disabled={isPending || !effectiveTargetId} onClick={handleAdd} className="sru-btn sru-btn-primary">
             {isPending ? t("adding") : t("addEdge")}
           </button>
         </div>

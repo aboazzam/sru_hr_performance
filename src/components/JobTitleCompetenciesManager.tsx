@@ -21,6 +21,7 @@ interface AssignedRow {
   id: string;
   competencyId: string;
   nameAr: string;
+  pillarAr: string;
   requiredLevel: BehavioralLevel;
 }
 
@@ -55,6 +56,19 @@ export function JobTitleCompetenciesManager({
     if (list) list.push(opt);
     else byPillar.set(opt.pillarAr, [opt]);
   }
+
+  // "ضع الجدارات حسب التصنيف" (2026-08-02): group the assigned list by
+  // pillar too, matching the ADD dropdown's own optgroup grouping right
+  // below it instead of a flat unordered list. Sorted alphabetically for a
+  // stable, deterministic order (no separate display_order column exists on
+  // competency_pillars to order by).
+  const assignedByPillar = new Map<string, AssignedRow[]>();
+  for (const row of assigned) {
+    const list = assignedByPillar.get(row.pillarAr);
+    if (list) list.push(row);
+    else assignedByPillar.set(row.pillarAr, [row]);
+  }
+  const sortedPillars = [...assignedByPillar.keys()].sort((a, b) => a.localeCompare(b, "ar"));
 
   const [selectedCompetencyId, setSelectedCompetencyId] = useState<string | null>(null);
   const competencyId = selectedCompetencyId ?? availableOptions[0]?.id ?? "";
@@ -91,35 +105,42 @@ export function JobTitleCompetenciesManager({
       {assigned.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noCompetenciesYet")}</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
-          {assigned.map((row) => (
-            <li
-              key={row.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 0",
-                borderBottom: "1px solid var(--sru-border)",
-              }}
-            >
-              <span style={{ flex: 1 }}>{row.nameAr}</span>
-              <span className="sru-chip">{behavioralLevelLabels[row.requiredLevel]}</span>
-              {canEdit && (
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => handleRemove(row.id)}
-                  className="sru-icon-action danger"
-                  title={t("removeCompetency")}
-                  aria-label={t("removeCompetency")}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </li>
+        <div style={{ marginBottom: 16 }}>
+          {sortedPillars.map((pillar) => (
+            <div key={pillar} style={{ marginBottom: 12 }}>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{pillar}</h4>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {assignedByPillar.get(pillar)!.map((row) => (
+                  <li
+                    key={row.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "8px 0",
+                      borderBottom: "1px solid var(--sru-border)",
+                    }}
+                  >
+                    <span style={{ flex: 1 }}>{row.nameAr}</span>
+                    <span className="sru-chip">{behavioralLevelLabels[row.requiredLevel]}</span>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleRemove(row.id)}
+                        className="sru-icon-action danger"
+                        title={t("removeCompetency")}
+                        aria-label={t("removeCompetency")}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       {canEdit && availableOptions.length > 0 && (

@@ -77,32 +77,11 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
     );
   }
 
-  const { data: assignedData } = await supabase
-    .from("job_title_competencies")
-    .select("id, competency_id, required_level, competencies(name_ar)")
-    .eq("job_title_id", id)
-    .is("deleted_at", null);
-
-  const assigned = (
-    (assignedData as unknown as Array<{
-      id: string;
-      competency_id: string;
-      required_level: BehavioralLevel;
-      competencies: { name_ar: string } | null;
-    }> | null) ?? []
-  )
-    .filter((row) => row.competencies)
-    .map((row) => ({
-      id: row.id,
-      competencyId: row.competency_id,
-      nameAr: row.competencies!.name_ar,
-      requiredLevel: row.required_level,
-    }));
-
   // Two flat queries + a JS join, rather than a 2-level PostgREST embed
   // (competencies -> competency_domains -> competency_pillars) — keeps the
-  // picker's pillar grouping without adding an unverified multi-level embed
-  // shape, matching this app's habit of assembling small lookups in code.
+  // pillar grouping (both for the picker AND, since 2026-08-02, the assigned
+  // list itself) without adding an unverified multi-level embed shape,
+  // matching this app's habit of assembling small lookups in code.
   const { data: domainsData } = await supabase.from("competency_domains").select("id, competency_pillars(name_ar)");
   const domainPillar = new Map(
     ((domainsData as unknown as Array<{ id: string; competency_pillars: { name_ar: string } | null }>) ?? []).map(
@@ -119,6 +98,34 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
   const allCompetencies = ((allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string }>) ?? []).map(
     (c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" })
   );
+
+  // "ضع الجدارات حسب التصنيف" (2026-08-02): the assigned list used to render
+  // flat, with no pillar grouping at all, even though the ADD dropdown right
+  // below it already grouped its own options by pillar via optgroups --
+  // extending the query to also carry domain_id lets the assigned list use
+  // the same domainPillar lookup for a consistent grouping on both sides.
+  const { data: assignedData } = await supabase
+    .from("job_title_competencies")
+    .select("id, competency_id, required_level, competencies(name_ar, domain_id)")
+    .eq("job_title_id", id)
+    .is("deleted_at", null);
+
+  const assigned = (
+    (assignedData as unknown as Array<{
+      id: string;
+      competency_id: string;
+      required_level: BehavioralLevel;
+      competencies: { name_ar: string; domain_id: string } | null;
+    }> | null) ?? []
+  )
+    .filter((row) => row.competencies)
+    .map((row) => ({
+      id: row.id,
+      competencyId: row.competency_id,
+      nameAr: row.competencies!.name_ar,
+      pillarAr: domainPillar.get(row.competencies!.domain_id) ?? "—",
+      requiredLevel: row.required_level,
+    }));
 
   const { data: jobFamiliesData } = await supabase.from("job_families").select("id, name_ar").order("name_ar");
   const jobFamilies = ((jobFamiliesData as unknown as Array<{ id: string; name_ar: string }>) ?? []).map((f) => ({

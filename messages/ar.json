@@ -456,6 +456,8 @@
     "removeEdge": "إزالة",
     "edgeDirectionLabel": "الاتجاه",
     "edgeTargetLabel": "الوظيفة الأخرى",
+    "edgeTargetSearchPlaceholder": "ابحث عن مسمى وظيفي...",
+    "edgeTargetNoMatches": "لا توجد نتائج مطابقة",
     "edgeRequirementsLabel": "متطلبات الانتقال",
     "addEdge": "إضافة ربط",
     "aiSuggestButton": "✨ اقترح بالذكاء الاصطناعي",
