@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition, startTransition, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, CheckCircle2, Gauge, Trash2 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
@@ -143,6 +143,16 @@ export function ManageKpisPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleting] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Clear the add-KPI form after a successful submit, same pattern as
+  // AssignGoalForm/BauTaskForm/Feedback360Form -- otherwise the previously
+  // typed values (title, unit, plan target, weight) stay sitting in the
+  // uncontrolled inputs, making it look like the KPI wasn't actually added
+  // and risking an accidental duplicate resubmit.
+  useEffect(() => {
+    if (state?.status === "success") formRef.current?.reset();
+  }, [state]);
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
@@ -242,7 +252,7 @@ export function ManageKpisPanel({
       )}
 
       {canEdit && (
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <input type="hidden" name={parentKind === "goal" ? "goalId" : "subGoalId"} value={parentId} />
           <section className="sru-formsection">
             <div className="sru-formsection-head">
