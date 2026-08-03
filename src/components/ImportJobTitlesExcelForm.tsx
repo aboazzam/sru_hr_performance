@@ -121,7 +121,11 @@ export function ImportJobTitlesExcelForm() {
         {state?.status === "success" && (
           <div style={{ marginTop: 12, fontSize: 12.5 }}>
             <p role="status" style={{ color: "var(--sru-success, #15803d)", marginBottom: 8 }}>
-              {t("importSuccess", { created: state.summary.created, updated: state.summary.updated })}
+              {t("importSuccess", {
+                created: state.summary.created,
+                updated: state.summary.updated,
+                competencies: state.summary.competenciesSet,
+              })}
             </p>
             {state.summary.rowErrors.length > 0 && (
               <details>
