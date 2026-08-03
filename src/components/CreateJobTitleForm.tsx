@@ -7,6 +7,7 @@ import { createJobTitle } from "@/app/[locale]/(app)/career-path/job-titles/acti
 import { StagedCompetenciesPicker, type StagedCompetency } from "@/components/StagedCompetenciesPicker";
 import { SuggestDescriptionButton } from "@/components/SuggestDescriptionButton";
 import type { Locale } from "@/i18n/config";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -78,7 +79,9 @@ export function CreateJobTitleForm({
   const [linkSearch, setLinkSearch] = useState("");
   const trimmedLinkSearch = linkSearch.trim();
   const filteredLinkOptions =
-    trimmedLinkSearch === "" ? allJobTitles : allJobTitles.filter((jt) => jt.nameAr.includes(trimmedLinkSearch));
+    trimmedLinkSearch === ""
+      ? allJobTitles
+      : allJobTitles.filter((jt) => includesIgnoringHamza(jt.nameAr, trimmedLinkSearch));
   const effectiveLinkJobTitleId = filteredLinkOptions.some((jt) => jt.id === linkJobTitleId)
     ? linkJobTitleId
     : (filteredLinkOptions[0]?.id ?? "");

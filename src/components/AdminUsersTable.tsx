@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 interface RoleOption {
   id: string;
@@ -51,7 +52,7 @@ export function AdminUsersTable({
   const filtered = useMemo(() => {
     const q = query.trim();
     if (!q) return users;
-    return users.filter((u) => u.full_name_ar.includes(q) || u.employee_number.includes(q));
+    return users.filter((u) => includesIgnoringHamza(u.full_name_ar, q) || u.employee_number.includes(q));
   }, [users, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

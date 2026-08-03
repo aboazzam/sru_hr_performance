@@ -7,6 +7,7 @@ import {
   type ProposePromotionState,
 } from "@/app/[locale]/(app)/promotions/new/actions";
 import type { Locale } from "@/i18n/config";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 interface EmployeeOption {
   id: string;
@@ -69,12 +70,14 @@ export function ProposePromotionForm({
 
   const trimmedFromSearch = fromSearch.trim();
   const filteredFromJobTitles =
-    trimmedFromSearch === "" ? jobTitles : jobTitles.filter((title) => title.name_ar.includes(trimmedFromSearch));
+    trimmedFromSearch === ""
+      ? jobTitles
+      : jobTitles.filter((title) => includesIgnoringHamza(title.name_ar, trimmedFromSearch));
   const effectiveFromJobTitleId = filteredFromJobTitles.some((title) => title.id === fromJobTitleId) ? fromJobTitleId : "";
 
   const trimmedToSearch = toSearch.trim();
   const filteredToJobTitles =
-    trimmedToSearch === "" ? jobTitles : jobTitles.filter((title) => title.name_ar.includes(trimmedToSearch));
+    trimmedToSearch === "" ? jobTitles : jobTitles.filter((title) => includesIgnoringHamza(title.name_ar, trimmedToSearch));
   const effectiveToJobTitleId = filteredToJobTitles.some((title) => title.id === toJobTitleId) ? toJobTitleId : "";
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every

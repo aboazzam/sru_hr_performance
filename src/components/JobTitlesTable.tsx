@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 interface JobTitleRow {
   id: string;
@@ -31,7 +32,9 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
   const filtered = useMemo(() => {
     const q = query.trim();
     if (!q) return rows;
-    return rows.filter((r) => r.name_ar.includes(q) || (r.job_families?.name_ar.includes(q) ?? false));
+    return rows.filter(
+      (r) => includesIgnoringHamza(r.name_ar, q) || (r.job_families ? includesIgnoringHamza(r.job_families.name_ar, q) : false)
+    );
   }, [rows, query]);
 
   return (

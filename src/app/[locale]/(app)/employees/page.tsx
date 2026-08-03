@@ -7,6 +7,7 @@ import { EmployeesExportMenu } from "@/components/EmployeesExportMenu";
 import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
 import { EmployeeApprovalActions } from "@/components/EmployeeApprovalActions";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 const statusMessageKeys = {
   active: "statusActive",
@@ -104,8 +105,8 @@ export default async function EmployeesPage({
     const needle = q.trim().toLowerCase();
     approvedEmployees = approvedEmployees.filter(
       (e) =>
-        e.full_name_ar.toLowerCase().includes(needle) ||
-        e.full_name_en?.toLowerCase().includes(needle) ||
+        includesIgnoringHamza(e.full_name_ar.toLowerCase(), needle) ||
+        (e.full_name_en ? e.full_name_en.toLowerCase().includes(needle) : false) ||
         e.employee_number.toLowerCase().includes(needle)
     );
   }
