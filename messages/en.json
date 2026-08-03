@@ -1287,6 +1287,8 @@
     "fromJobTitlePlaceholder": "-- None --",
     "toJobTitleLabel": "Proposed Job Title",
     "toJobTitlePlaceholder": "Select job title",
+    "jobTitleSearchPlaceholder": "Type to search...",
+    "jobTitleNoMatches": "No matching results",
     "gradeLabel": "Grade {grade}",
     "submit": "Propose Promotion",
     "submitting": "Submitting...",

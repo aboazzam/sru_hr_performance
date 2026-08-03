@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, startTransition, type FormEvent } from "react";
+import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   proposePromotion,
@@ -56,6 +56,27 @@ export function ProposePromotionForm({
   const inputClass =
     "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
+  // Job-title lists here run into the hundreds of rows (real seeded data), making
+  // a bare <select> impractical to scan — same problem already fixed for
+  // CareerPathEdgesManager/CreateJobTitleForm's job-title selects: a text filter
+  // narrows the <select>'s own option list rather than replacing it with a
+  // custom combobox, with a derived-during-render fallback so the current
+  // selection stays valid as the filtered set shrinks.
+  const [fromSearch, setFromSearch] = useState("");
+  const [toSearch, setToSearch] = useState("");
+  const [fromJobTitleId, setFromJobTitleId] = useState("");
+  const [toJobTitleId, setToJobTitleId] = useState("");
+
+  const trimmedFromSearch = fromSearch.trim();
+  const filteredFromJobTitles =
+    trimmedFromSearch === "" ? jobTitles : jobTitles.filter((title) => title.name_ar.includes(trimmedFromSearch));
+  const effectiveFromJobTitleId = filteredFromJobTitles.some((title) => title.id === fromJobTitleId) ? fromJobTitleId : "";
+
+  const trimmedToSearch = toSearch.trim();
+  const filteredToJobTitles =
+    trimmedToSearch === "" ? jobTitles : jobTitles.filter((title) => title.name_ar.includes(trimmedToSearch));
+  const effectiveToJobTitleId = filteredToJobTitles.some((title) => title.id === toJobTitleId) ? toJobTitleId : "";
+
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -98,23 +119,59 @@ export function ProposePromotionForm({
 
       <div>
         <label className="block text-sm font-medium mb-1">{t("fromJobTitleLabel")}</label>
-        <select name="fromJobTitleId" className={inputClass} defaultValue="">
+        <input
+          type="text"
+          value={fromSearch}
+          onChange={(e) => setFromSearch(e.target.value)}
+          placeholder={t("jobTitleSearchPlaceholder")}
+          dir="rtl"
+          className={inputClass}
+          style={{ marginBottom: 6 }}
+        />
+        <select
+          name="fromJobTitleId"
+          className={inputClass}
+          value={effectiveFromJobTitleId}
+          onChange={(e) => setFromJobTitleId(e.target.value)}
+        >
           <option value="">{t("fromJobTitlePlaceholder")}</option>
-          {jobTitles.map((title) => (
-            <option key={title.id} value={title.id}>
-              {title.name_ar} ({t("gradeLabel", { grade: title.grade_level })})
+          {filteredFromJobTitles.length === 0 ? (
+            <option value="" disabled>
+              {t("jobTitleNoMatches")}
             </option>
-          ))}
+          ) : (
+            filteredFromJobTitles.map((title) => (
+              <option key={title.id} value={title.id}>
+                {title.name_ar} ({t("gradeLabel", { grade: title.grade_level })})
+              </option>
+            ))
+          )}
         </select>
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-1">{t("toJobTitleLabel")}</label>
-        <select name="toJobTitleId" required className={inputClass} defaultValue="">
+        <input
+          type="text"
+          value={toSearch}
+          onChange={(e) => setToSearch(e.target.value)}
+          placeholder={t("jobTitleSearchPlaceholder")}
+          dir="rtl"
+          className={inputClass}
+          style={{ marginBottom: 6 }}
+        />
+        <select
+          name="toJobTitleId"
+          required
+          className={inputClass}
+          value={effectiveToJobTitleId}
+          onChange={(e) => setToJobTitleId(e.target.value)}
+          disabled={filteredToJobTitles.length === 0}
+        >
           <option value="" disabled>
-            {t("toJobTitlePlaceholder")}
+            {filteredToJobTitles.length === 0 ? t("jobTitleNoMatches") : t("toJobTitlePlaceholder")}
           </option>
-          {jobTitles.map((title) => (
+          {filteredToJobTitles.map((title) => (
             <option key={title.id} value={title.id}>
               {title.name_ar} ({t("gradeLabel", { grade: title.grade_level })})
             </option>

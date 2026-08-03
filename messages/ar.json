@@ -1287,6 +1287,8 @@
     "fromJobTitlePlaceholder": "-- لا يوجد --",
     "toJobTitleLabel": "المسمى الوظيفي المقترح",
     "toJobTitlePlaceholder": "اختر المسمى الوظيفي",
+    "jobTitleSearchPlaceholder": "ابحث بكتابة أول الحروف...",
+    "jobTitleNoMatches": "لا توجد نتائج مطابقة",
     "gradeLabel": "درجة {grade}",
     "submit": "اقتراح الترقية",
     "submitting": "جارٍ الإرسال...",
