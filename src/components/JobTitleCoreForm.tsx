@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, CheckCircle2, IdCard } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { updateJobTitleCore } from "@/app/[locale]/(app)/career-path/job-titles/actions";
 
@@ -14,6 +15,10 @@ const errorMessageKeys: Record<string, string> = {
 
 const categories = ["leadership", "academic", "admin", "technical", "labor"] as const;
 
+// Restyled (2026-08-03, "ضبط لي النموذج ليكون مثل نموذج اضافة موظف") to the
+// same sru-formsection/sru-formgrid/sru-field pattern EmployeeInviteForm and
+// every other multi-field form in this app already use, instead of this
+// screen's own one-off plain labels/inputs.
 export function JobTitleCoreForm({
   jobTitleId,
   initial,
@@ -52,9 +57,6 @@ export function JobTitleCoreForm({
     category !== initial.category ||
     qualificationRequired !== (initial.qualificationRequired ?? "");
 
-  const inputClass =
-    "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   function handleSave() {
     setError(null);
     setSaved(false);
@@ -78,28 +80,37 @@ export function JobTitleCoreForm({
   }
 
   return (
-    <div style={{ display: "grid", gap: 12, maxWidth: 640 }}>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("coreNameArLabel")}</label>
-        <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} disabled={!canEdit} dir="rtl" className={inputClass} />
+    <section className="sru-formsection">
+      <div className="sru-formsection-head">
+        <span className="sru-formsection-badge">
+          <IdCard size={17} aria-hidden />
+        </span>
+        <div>
+          <h3>{t("coreHeading")}</h3>
+          <span>{t("coreSubtitle")}</span>
+        </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("coreNameEnLabel")}</label>
-        <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} disabled={!canEdit} dir="ltr" className={inputClass} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("coreFamilyLabel")}</label>
-        <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)} disabled={!canEdit} className={inputClass}>
-          {jobFamilies.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.nameAr}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <label className="block text-sm font-medium mb-1">{t("coreGradeLabel")}</label>
+      <div className="sru-formgrid">
+        <div className="sru-field">
+          <label>{t("coreNameArLabel")}</label>
+          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} disabled={!canEdit} dir="rtl" />
+        </div>
+        <div className="sru-field">
+          <label>{t("coreNameEnLabel")}</label>
+          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} disabled={!canEdit} dir="ltr" style={{ textAlign: "left" }} />
+        </div>
+        <div className="sru-field">
+          <label>{t("coreFamilyLabel")}</label>
+          <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)} disabled={!canEdit}>
+            {jobFamilies.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nameAr}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="sru-field">
+          <label>{t("coreGradeLabel")}</label>
           <input
             type="number"
             min={1}
@@ -108,12 +119,11 @@ export function JobTitleCoreForm({
             onChange={(e) => setGradeLevel(e.target.value)}
             disabled={!canEdit}
             dir="ltr"
-            className={inputClass}
           />
         </div>
-        <div style={{ flex: 1 }}>
-          <label className="block text-sm font-medium mb-1">{t("coreCategoryLabel")}</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!canEdit} className={inputClass}>
+        <div className="sru-field">
+          <label>{t("coreCategoryLabel")}</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!canEdit}>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {t(`category_${c}`)}
@@ -121,39 +131,42 @@ export function JobTitleCoreForm({
             ))}
           </select>
         </div>
+        <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+          <label>{t("coreQualificationLabel")}</label>
+          <textarea
+            value={qualificationRequired}
+            onChange={(e) => setQualificationRequired(e.target.value)}
+            disabled={!canEdit}
+            dir="rtl"
+            rows={2}
+          />
+        </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("coreQualificationLabel")}</label>
-        <textarea
-          value={qualificationRequired}
-          onChange={(e) => setQualificationRequired(e.target.value)}
-          disabled={!canEdit}
-          dir="rtl"
-          rows={2}
-          className={inputClass}
-        />
-      </div>
+
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
       {saved && !isDirty && (
-        <p role="status" className="text-sm text-green-700">
+        <p role="status" className="sru-auth-alert success">
+          <CheckCircle2 size={15} aria-hidden />
           {t("saveSuccess")}
         </p>
       )}
       {canEdit && (
-        <button
-          type="button"
-          disabled={isPending || !isDirty || nameAr.trim().length === 0}
-          onClick={handleSave}
-          className="sru-btn sru-btn-primary"
-          style={{ alignSelf: "flex-start" }}
-        >
-          {isPending ? t("saving") : t("save")}
-        </button>
+        <div className="sru-form-submitrow">
+          <button
+            type="button"
+            disabled={isPending || !isDirty || nameAr.trim().length === 0}
+            onClick={handleSave}
+            className="sru-btn sru-btn-primary"
+          >
+            {isPending ? t("saving") : t("save")}
+          </button>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

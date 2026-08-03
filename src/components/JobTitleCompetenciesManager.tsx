@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Award } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { assignJobTitleCompetency, removeJobTitleCompetency } from "@/app/[locale]/(app)/career-path/job-titles/[id]/actions";
@@ -31,14 +31,122 @@ interface CompetencyOption {
   pillarAr: string;
 }
 
+/** One row of the "الجدارات المؤسسية" list -- either already assigned (shows
+ * its level + a delete icon) or still pending (shows a level picker that
+ * assigns the moment a level is chosen, no separate "add" click). */
+function CoreCompetencyRow({
+  jobTitleId,
+  competencyId,
+  nameAr,
+  assignedRow,
+  canEdit,
+}: {
+  jobTitleId: string;
+  competencyId: string;
+  nameAr: string;
+  assignedRow: AssignedRow | undefined;
+  canEdit: boolean;
+}) {
+  const t = useTranslations("CareerPathJobTitleDetailPage");
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSetLevel(level: BehavioralLevel) {
+    setError(null);
+    startTransition(async () => {
+      const res = await assignJobTitleCompetency(jobTitleId, competencyId, level);
+      if (res.status === "success") router.refresh();
+      else setError(res.message);
+    });
+  }
+
+  function handleRemove() {
+    if (!assignedRow) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await removeJobTitleCompetency(assignedRow.id);
+      if (res.status === "success") router.refresh();
+      else setError(res.message);
+    });
+  }
+
+  return (
+    <li
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 0",
+        borderBottom: "1px solid var(--sru-border)",
+      }}
+    >
+      <span style={{ flex: 1 }}>{nameAr}</span>
+      {assignedRow ? (
+        <>
+          <span className="sru-chip">{behavioralLevelLabels[assignedRow.requiredLevel]}</span>
+          {canEdit && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleRemove}
+              className="sru-icon-action danger"
+              title={t("removeCompetency")}
+              aria-label={t("removeCompetency")}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </>
+      ) : canEdit ? (
+        <select
+          value=""
+          disabled={isPending}
+          onChange={(e) => handleSetLevel(e.target.value as BehavioralLevel)}
+          style={{ fontSize: 13 }}
+        >
+          <option value="" disabled>
+            {t("selectLevelPlaceholder")}
+          </option>
+          {levels.map((level) => (
+            <option key={level} value={level}>
+              {behavioralLevelLabels[level]}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span className="sru-chip" style={{ color: "var(--sru-muted)" }}>
+          {t("coreLevelNotSet")}
+        </span>
+      )}
+      {error && (
+        <span role="alert" style={{ fontSize: 11, color: "#b91c1c" }}>
+          {t(errorMessageKeys[error] ?? "errorUnknown")}
+        </span>
+      )}
+    </li>
+  );
+}
+
+// "الجدارات الأساسية تظهر بشكل تلقائي والمطلوب مني تحديد المستوى وإضافة
+// الجدارات الاخرى مثل التخصصية" (2026-08-03): institutional (type='core')
+// competencies are common to every job title, so they're now always listed
+// here regardless of whether they've been assigned yet -- picking a level
+// for a not-yet-assigned one assigns it immediately (CoreCompetencyRow
+// above), instead of requiring the admin to find and add all ~11 of them one
+// at a time through the same dropdown used for specialized ones. The ADD
+// dropdown below is scoped to specialized competencies only now, since core
+// ones are always already listed above.
 export function JobTitleCompetenciesManager({
   jobTitleId,
   assigned,
+  coreCompetencies,
   allCompetencies,
   canEdit,
 }: {
   jobTitleId: string;
   assigned: AssignedRow[];
+  coreCompetencies: CompetencyOption[];
   allCompetencies: CompetencyOption[];
   canEdit: boolean;
 }) {
@@ -47,28 +155,31 @@ export function JobTitleCompetenciesManager({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const assignedCompetencyIds = new Set(assigned.map((a) => a.competencyId));
-  const availableOptions = allCompetencies.filter((c) => !assignedCompetencyIds.has(c.id));
+  const assignedByCompetencyId = new Map(assigned.map((a) => [a.competencyId, a]));
+  const coreIds = new Set(coreCompetencies.map((c) => c.id));
 
+  // "الجدارات التخصصية" -- assigned rows that are NOT core, grouped by
+  // pillar (2026-08-02 "ضع الجدارات حسب التصنيف"), sorted alphabetically for
+  // a stable order (no display_order column on competency_pillars).
+  const specializedAssigned = assigned.filter((row) => !coreIds.has(row.competencyId));
+  const specializedByPillar = new Map<string, AssignedRow[]>();
+  for (const row of specializedAssigned) {
+    const list = specializedByPillar.get(row.pillarAr);
+    if (list) list.push(row);
+    else specializedByPillar.set(row.pillarAr, [row]);
+  }
+  const sortedPillars = [...specializedByPillar.keys()].sort((a, b) => a.localeCompare(b, "ar"));
+
+  // ADD dropdown: specialized competencies only, not yet assigned -- core
+  // ones are always already listed above and never belong in this dropdown.
+  const assignedCompetencyIds = new Set(assigned.map((a) => a.competencyId));
+  const availableOptions = allCompetencies.filter((c) => !coreIds.has(c.id) && !assignedCompetencyIds.has(c.id));
   const byPillar = new Map<string, CompetencyOption[]>();
   for (const opt of availableOptions) {
     const list = byPillar.get(opt.pillarAr);
     if (list) list.push(opt);
     else byPillar.set(opt.pillarAr, [opt]);
   }
-
-  // "ضع الجدارات حسب التصنيف" (2026-08-02): group the assigned list by
-  // pillar too, matching the ADD dropdown's own optgroup grouping right
-  // below it instead of a flat unordered list. Sorted alphabetically for a
-  // stable, deterministic order (no separate display_order column exists on
-  // competency_pillars to order by).
-  const assignedByPillar = new Map<string, AssignedRow[]>();
-  for (const row of assigned) {
-    const list = assignedByPillar.get(row.pillarAr);
-    if (list) list.push(row);
-    else assignedByPillar.set(row.pillarAr, [row]);
-  }
-  const sortedPillars = [...assignedByPillar.keys()].sort((a, b) => a.localeCompare(b, "ar"));
 
   const [selectedCompetencyId, setSelectedCompetencyId] = useState<string | null>(null);
   const competencyId = selectedCompetencyId ?? availableOptions[0]?.id ?? "";
@@ -101,16 +212,42 @@ export function JobTitleCompetenciesManager({
   }
 
   return (
-    <div>
-      {assigned.length === 0 ? (
+    <section className="sru-formsection">
+      <div className="sru-formsection-head">
+        <span className="sru-formsection-badge">
+          <Award size={17} aria-hidden />
+        </span>
+        <div>
+          <h3>{t("competenciesHeading")}</h3>
+          <span>{t("competenciesSubtitle")}</span>
+        </div>
+      </div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("coreCompetenciesHeading")}</h4>
+      <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: 8 }}>{t("coreCompetenciesNote")}</p>
+      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px" }}>
+        {coreCompetencies.map((c) => (
+          <CoreCompetencyRow
+            key={c.id}
+            jobTitleId={jobTitleId}
+            competencyId={c.id}
+            nameAr={c.nameAr}
+            assignedRow={assignedByCompetencyId.get(c.id)}
+            canEdit={canEdit}
+          />
+        ))}
+      </ul>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("specializedCompetenciesHeading")}</h4>
+      {specializedAssigned.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noCompetenciesYet")}</p>
       ) : (
         <div style={{ marginBottom: 16 }}>
           {sortedPillars.map((pillar) => (
             <div key={pillar} style={{ marginBottom: 12 }}>
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{pillar}</h4>
+              <h5 style={{ fontSize: 12.5, fontWeight: 700, margin: "0 0 4px" }}>{pillar}</h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {assignedByPillar.get(pillar)!.map((row) => (
+                {specializedByPillar.get(pillar)!.map((row) => (
                   <li
                     key={row.id}
                     style={{
@@ -184,10 +321,10 @@ export function JobTitleCompetenciesManager({
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 8 }}>
+        <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
-    </div>
+    </section>
   );
 }
