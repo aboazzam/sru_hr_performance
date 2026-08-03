@@ -6,6 +6,7 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { getSelfScopedCareerTree } from "@/lib/careerPathData";
 import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
 import { CareerPathTracksExplorer } from "@/components/CareerPathTracksExplorer";
+import { ImportCareerPathExcelForm } from "@/components/ImportCareerPathExcelForm";
 import { findCareerPathTrackRoots } from "@/lib/careerPathTracks";
 import type { CareerPathEdge } from "@/lib/careerPathTree";
 
@@ -151,10 +152,11 @@ export default async function CareerPathPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link href="/career-path/job-titles" className="sru-btn">
             {t("manageJobTitles")}
           </Link>
+          <ImportCareerPathExcelForm />
           <PrintButton />
         </div>
       </div>

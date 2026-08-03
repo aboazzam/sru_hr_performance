@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, ArrowRight, ArrowLeft, ChevronLeft } from "lucide-react";
+import { Search, ArrowRight, ChevronLeft, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buildForwardCareerTree, type CareerPathEdge, type CareerTreeNode } from "@/lib/careerPathTree";
 import type { CareerPathTrackRoot } from "@/lib/careerPathTracks";
@@ -46,7 +46,6 @@ export function CareerPathTracksExplorer({
   const t = useTranslations("CareerPathPage");
   const [search, setSearch] = useState("");
   const [selectedRootId, setSelectedRootId] = useState<string | null>(null);
-  const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
 
   const treesByRootId = useMemo(() => {
     const map = new Map<string, CareerTreeNode>();
@@ -74,10 +73,7 @@ export function CareerPathTracksExplorer({
       <div>
         <button
           type="button"
-          onClick={() => {
-            setSelectedRootId(null);
-            setExpandedNodeId(null);
-          }}
+          onClick={() => setSelectedRootId(null)}
           className="sru-btn no-print"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16 }}
         >
@@ -88,14 +84,7 @@ export function CareerPathTracksExplorer({
         <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{selectedRoot.nameAr}</h2>
         <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("timelineSubtitle")}</p>
 
-        <CareerPathTimelineBranch
-          node={selectedTree}
-          jobTitleInfo={jobTitleInfo}
-          t={t}
-          expandedNodeId={expandedNodeId}
-          setExpandedNodeId={setExpandedNodeId}
-          isRoot
-        />
+        <TimelineAccordionNode node={selectedTree} jobTitleInfo={jobTitleInfo} t={t} isRoot />
       </div>
     );
   }
@@ -164,120 +153,40 @@ export function CareerPathTracksExplorer({
 }
 
 /**
- * Fixes a real, explicitly-reported layout problem with the old flat table
- * (still visible before this component existed): a job title fanning out
- * to more than one next step — e.g. "محلل أعمال مساعد" leading to both
- * "محلل بيانات" and "محلل أعمال" — showed up as TWO separate rows, each
- * repeating the same "from" job title. The fix threads an ordinary
- * (single-child) chain as one continuous horizontal row — walking forward
- * without ever branching — and only at a REAL fan-out point does the
- * parent's row also carry all of its children beside each other in that
- * same row (never one row per child). Only children that themselves branch
- * further start a new, indented row below (recursing this same logic from
- * that child) — a plain single-path continuation never repeats a node or
- * starts a nested row, so a normal (non-branching) ladder still renders as
- * one clean vertical sequence of horizontal rows, exactly like before.
+ * Fixes a real, explicitly-reported problem with the previous always-fully-
+ * expanded horizontal-thread design: a job title fanning out to more than
+ * one next step — e.g. "محلل أعمال مساعد" leading to both "محلل بيانات"
+ * and "محلل أعمال" — read as confusing/duplicated once several branch
+ * points were visible on screen at once ("محلل أعمال مساعد ذكرت مرتين").
+ * Rebuilt as a plain click-to-expand accordion: every node (the root
+ * included) starts collapsed as ONE card; clicking it reveals its own
+ * requirements (skipped for the root, which shows a "start of track" note
+ * instead) and, if it has any, its next-step options — stacked directly
+ * below it, one per row ("فوق بعضهم", not side-by-side), each itself a
+ * collapsed card the caller can drill into the same way. A single-path
+ * (non-branching) job just reveals one card below it; a real fan-out
+ * reveals several — the same recursion handles both without special-casing
+ * either, and nothing is ever rendered twice.
  */
-function CareerPathTimelineBranch({
+function TimelineAccordionNode({
   node,
   jobTitleInfo,
   t,
-  expandedNodeId,
-  setExpandedNodeId,
   isRoot = false,
 }: {
   node: CareerTreeNode;
   jobTitleInfo: Record<string, JobTitleBasicInfo>;
   t: ReturnType<typeof useTranslations>;
-  expandedNodeId: string | null;
-  setExpandedNodeId: (id: string | null) => void;
   isRoot?: boolean;
 }) {
-  // Follow single-child links to build the flat, non-branching part of this
-  // segment (`node` itself always included) before hitting a leaf or a real
-  // fan-out point.
-  const chain: CareerTreeNode[] = [node];
-  let tail = node;
-  while (tail.children.length === 1) {
-    tail = tail.children[0];
-    chain.push(tail);
-  }
-  const branches = tail.children.length > 1 ? tail.children : [];
+  const [expanded, setExpanded] = useState(false);
+  const info = jobTitleInfo[node.jobTitleId];
 
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-        {chain.map((n, i) => (
-          <div key={n.jobTitleId} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            {i > 0 && <ArrowLeft size={16} style={{ color: "var(--sru-muted)", marginTop: 14, flexShrink: 0 }} aria-hidden />}
-            <TimelineNodeChip
-              node={n}
-              info={jobTitleInfo[n.jobTitleId]}
-              t={t}
-              expandedNodeId={expandedNodeId}
-              setExpandedNodeId={setExpandedNodeId}
-              isRoot={isRoot && n === node}
-            />
-          </div>
-        ))}
-        {branches.length > 0 && (
-          <>
-            <ArrowLeft size={16} style={{ color: "var(--sru-muted)", marginTop: 14, flexShrink: 0 }} aria-hidden />
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {branches.map((child) => (
-                <TimelineNodeChip
-                  key={child.jobTitleId}
-                  node={child}
-                  info={jobTitleInfo[child.jobTitleId]}
-                  t={t}
-                  expandedNodeId={expandedNodeId}
-                  setExpandedNodeId={setExpandedNodeId}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {branches
-        .filter((child) => child.children.length > 0)
-        .map((child) => (
-          <div key={child.jobTitleId} style={{ marginInlineStart: 28, marginTop: 10 }}>
-            <CareerPathTimelineBranch
-              node={child}
-              jobTitleInfo={jobTitleInfo}
-              t={t}
-              expandedNodeId={expandedNodeId}
-              setExpandedNodeId={setExpandedNodeId}
-            />
-          </div>
-        ))}
-    </div>
-  );
-}
-
-function TimelineNodeChip({
-  node,
-  info,
-  t,
-  expandedNodeId,
-  setExpandedNodeId,
-  isRoot = false,
-}: {
-  node: CareerTreeNode;
-  info: JobTitleBasicInfo | undefined;
-  t: ReturnType<typeof useTranslations>;
-  expandedNodeId: string | null;
-  setExpandedNodeId: (id: string | null) => void;
-  isRoot?: boolean;
-}) {
-  const isExpanded = expandedNodeId === node.jobTitleId;
-
-  return (
-    <div style={{ minWidth: 200 }}>
+    <div style={{ marginBottom: 10 }}>
       <button
         type="button"
-        onClick={() => !isRoot && setExpandedNodeId(isExpanded ? null : node.jobTitleId)}
+        onClick={() => setExpanded((e) => !e)}
         className="sru-card"
         style={{
           display: "flex",
@@ -286,37 +195,44 @@ function TimelineNodeChip({
           gap: 10,
           padding: 14,
           textAlign: "start",
-          cursor: isRoot ? "default" : "pointer",
+          cursor: "pointer",
           width: "100%",
         }}
-        aria-expanded={isRoot ? undefined : isExpanded}
+        aria-expanded={expanded}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <strong>{info?.nameAr ?? "—"}</strong>
           {info && <span className="sru-chip sru-en">{t("gradeLabel", { grade: info.gradeLevel })}</span>}
         </div>
-        {!isRoot && (
-          <ChevronLeft
-            size={15}
-            style={{
-              color: "var(--sru-muted)",
-              transform: isExpanded ? "rotate(-90deg)" : "none",
-              transition: "transform 0.15s",
-              flexShrink: 0,
-            }}
-            aria-hidden
-          />
-        )}
+        <ChevronDown
+          size={15}
+          style={{
+            color: "var(--sru-muted)",
+            transform: expanded ? "rotate(180deg)" : "none",
+            transition: "transform 0.15s",
+            flexShrink: 0,
+          }}
+          aria-hidden
+        />
       </button>
-      {isRoot ? (
-        <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginTop: 6 }}>{t("trackStartLabel")}</p>
-      ) : (
-        isExpanded && (
-          <p style={{ fontSize: 13, padding: "8px 4px", color: "var(--sru-muted)" }}>
-            <b style={{ color: "var(--foreground)" }}>{t("columnRequirements")}: </b>
-            {node.requirementsAr ?? t("noRequirements")}
-          </p>
-        )
+
+      {expanded && (
+        <div style={{ marginInlineStart: 24, marginTop: 8 }}>
+          {isRoot ? (
+            <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
+              {t("trackStartLabel")}
+            </p>
+          ) : (
+            <p style={{ fontSize: 13, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
+              <b style={{ color: "var(--foreground)" }}>{t("columnRequirements")}: </b>
+              {node.requirementsAr ?? t("noRequirements")}
+            </p>
+          )}
+
+          {node.children.map((child) => (
+            <TimelineAccordionNode key={child.jobTitleId} node={child} jobTitleInfo={jobTitleInfo} t={t} />
+          ))}
+        </div>
       )}
     </div>
   );
