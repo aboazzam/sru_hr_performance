@@ -5,6 +5,9 @@ import { PrintButton } from "@/components/PrintButton";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { getSelfScopedCareerTree } from "@/lib/careerPathData";
 import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
+import { CareerPathTracksExplorer } from "@/components/CareerPathTracksExplorer";
+import { findCareerPathTrackRoots } from "@/lib/careerPathTracks";
+import type { CareerPathEdge } from "@/lib/careerPathTree";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 //
@@ -88,17 +91,45 @@ export default async function CareerPathPage() {
   const { data } = await supabase
     .from("career_path")
     .select(
-      "id, requirements_ar, requirements_en, from_job_title:job_titles!from_job_title_id(name_ar,grade_level), to_job_title:job_titles!to_job_title_id(name_ar,grade_level)"
+      "id, requirements_ar, from_job_title_id, to_job_title_id, from_job_title:job_titles!from_job_title_id(name_ar,grade_level), to_job_title:job_titles!to_job_title_id(name_ar,grade_level)"
     )
     .is("deleted_at", null);
 
-  const careerPaths = data as unknown as Array<{
+  const careerPathRows = data as unknown as Array<{
     id: string;
     requirements_ar: string | null;
-    requirements_en: string | null;
+    from_job_title_id: string;
+    to_job_title_id: string;
     from_job_title: { name_ar: string; grade_level: number } | null;
     to_job_title: { name_ar: string; grade_level: number } | null;
   }> | null;
+
+  // The project owner explicitly rejected the previous flat "من / إلى /
+  // المتطلبات" table (every edge shown as its own row, with no sense of
+  // which rows chain into the same specialty ladder): "لا اريد الصفحة تظهر
+  // بهذا الشكل وانما اريدها تظهر اسم المسار وعند الضغط عليه يطلع له مسار
+  // زمني". Each "مسار" (track) is one entry point into the career_path
+  // graph (findCareerPathTracks.ts); CareerPathTracksExplorer walks forward
+  // from each root via the same buildForwardCareerTree already built for
+  // the self-scoped employee view.
+  const edges: CareerPathEdge[] = (careerPathRows ?? []).map((r) => ({
+    id: r.id,
+    requirementsAr: r.requirements_ar,
+    fromJobTitleId: r.from_job_title_id,
+    toJobTitleId: r.to_job_title_id,
+  }));
+
+  const jobTitleInfo: Record<string, { nameAr: string; gradeLevel: number }> = {};
+  for (const row of careerPathRows ?? []) {
+    if (row.from_job_title) {
+      jobTitleInfo[row.from_job_title_id] = { nameAr: row.from_job_title.name_ar, gradeLevel: row.from_job_title.grade_level };
+    }
+    if (row.to_job_title) {
+      jobTitleInfo[row.to_job_title_id] = { nameAr: row.to_job_title.name_ar, gradeLevel: row.to_job_title.grade_level };
+    }
+  }
+
+  const roots = findCareerPathTrackRoots(edges, new Map(Object.entries(jobTitleInfo)));
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -129,45 +160,10 @@ export default async function CareerPathPage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {!careerPaths || careerPaths.length === 0 ? (
+      {roots.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnFrom")}</th>
-                  <th>{t("columnTo")}</th>
-                  <th>{t("columnRequirements")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {careerPaths.map((path) => (
-                  <tr key={path.id}>
-                    <td>
-                      {path.from_job_title?.name_ar ?? "—"}
-                      {path.from_job_title && (
-                        <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                          {t("gradeLabel", { grade: path.from_job_title.grade_level })}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {path.to_job_title?.name_ar ?? "—"}
-                      {path.to_job_title && (
-                        <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                          {t("gradeLabel", { grade: path.to_job_title.grade_level })}
-                        </span>
-                      )}
-                    </td>
-                    <td>{path.requirements_ar ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CareerPathTracksExplorer roots={roots} edges={edges} jobTitleInfo={jobTitleInfo} />
       )}
     </div>
   );

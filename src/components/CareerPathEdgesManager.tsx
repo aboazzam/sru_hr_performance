@@ -5,6 +5,7 @@ import { Trash2, Route } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createCareerPathEdge, removeCareerPathEdge } from "@/app/[locale]/(app)/career-path/job-titles/actions";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -56,7 +57,8 @@ export function CareerPathEdgesManager({
 
   const [targetSearch, setTargetSearch] = useState("");
   const trimmedSearch = targetSearch.trim();
-  const filteredOptions = trimmedSearch === "" ? otherOptions : otherOptions.filter((jt) => jt.nameAr.includes(trimmedSearch));
+  const filteredOptions =
+    trimmedSearch === "" ? otherOptions : otherOptions.filter((jt) => includesIgnoringHamza(jt.nameAr, trimmedSearch));
   const effectiveTargetId = filteredOptions.some((jt) => jt.id === targetId) ? targetId : (filteredOptions[0]?.id ?? "");
 
   function handleAdd() {
