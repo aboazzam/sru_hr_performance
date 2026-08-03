@@ -84,7 +84,7 @@ export function StagedCompetenciesPicker({
               <select
                 value={row.requiredLevel}
                 onChange={(e) => updateLevel(row.competencyId, e.target.value as BehavioralLevel)}
-                className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)]"
+                style={{ fontSize: 13 }}
               >
                 <option value="" disabled>
                   {t("selectLevelPlaceholder")}
@@ -110,14 +110,10 @@ export function StagedCompetenciesPicker({
       )}
 
       {available.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("competencyLabel")}</label>
-            <select
-              value={effectiveSelectedToAdd}
-              onChange={(e) => setSelectedToAdd(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
-            >
+        <div className="sru-formgrid" style={{ alignItems: "flex-end" }}>
+          <div className="sru-field">
+            <label>{t("competencyLabel")}</label>
+            <select value={effectiveSelectedToAdd} onChange={(e) => setSelectedToAdd(e.target.value)}>
               {[...byPillar.entries()].map(([pillar, opts]) => (
                 <optgroup key={pillar} label={pillar}>
                   {opts.map((opt) => (
@@ -129,7 +125,7 @@ export function StagedCompetenciesPicker({
               ))}
             </select>
           </div>
-          <button type="button" onClick={addFromLibrary} className="sru-btn">
+          <button type="button" onClick={addFromLibrary} className="sru-btn" style={{ height: 42 }}>
             {t("addCompetency")}
           </button>
         </div>

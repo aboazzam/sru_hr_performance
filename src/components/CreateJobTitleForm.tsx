@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, IdCard, FileText, Award, Route } from "lucide-react";
 import { createJobTitle } from "@/app/[locale]/(app)/career-path/job-titles/actions";
 import { StagedCompetenciesPicker, type StagedCompetency } from "@/components/StagedCompetenciesPicker";
 import { SuggestDescriptionButton } from "@/components/SuggestDescriptionButton";
@@ -32,6 +33,9 @@ interface JobTitleOption {
   gradeLevel: number;
 }
 
+// Restyled (2026-08-03, "ضبط لي النموذج ليكون مثل نموذج اضافة موظف") to the
+// same sru-formsection pattern as EmployeeInviteForm — see JobTitleCoreForm's
+// comment on the existing job-title detail page for the same change.
 export function CreateJobTitleForm({
   locale,
   jobFamilies,
@@ -65,6 +69,20 @@ export function CreateJobTitleForm({
   const [linkDirection, setLinkDirection] = useState<"predecessor" | "successor">("predecessor");
   const [linkRequirementsAr, setLinkRequirementsAr] = useState("");
 
+  // "اضف خاصية البحث بحيث اضع الحروف الاولى فيعطيني الوظائف المطابقة"
+  // (2026-08-03): the same gap already fixed once for the EXISTING job
+  // title's own career-path-link select (CareerPathEdgesManager, 2026-08-01)
+  // — this is a separate, never-touched select for the SAME kind of
+  // company-wide job-title list, used only when creating a brand new job
+  // title with an optional initial link. Same substring-search technique.
+  const [linkSearch, setLinkSearch] = useState("");
+  const trimmedLinkSearch = linkSearch.trim();
+  const filteredLinkOptions =
+    trimmedLinkSearch === "" ? allJobTitles : allJobTitles.filter((jt) => jt.nameAr.includes(trimmedLinkSearch));
+  const effectiveLinkJobTitleId = filteredLinkOptions.some((jt) => jt.id === linkJobTitleId)
+    ? linkJobTitleId
+    : (filteredLinkOptions[0]?.id ?? "");
+
   const familyNameAr = jobFamilies.find((f) => f.id === jobFamilyId)?.nameAr ?? "";
   const parsedGrade = Number(gradeLevel);
   const allLevelsChosen = competencies.every((c) => c.requiredLevel !== "");
@@ -79,9 +97,6 @@ export function CreateJobTitleForm({
     competencies.length > 0 &&
     allLevelsChosen;
 
-  const inputClass =
-    "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   function handleSubmit() {
     if (!canSubmit) return;
     setError(null);
@@ -95,7 +110,7 @@ export function CreateJobTitleForm({
         qualificationRequired: qualificationRequired || undefined,
         descriptionAr: descriptionAr || undefined,
         competencies: competencies.map((c) => ({ competencyId: c.competencyId, requiredLevel: c.requiredLevel })),
-        linkJobTitleId: linkEnabled ? linkJobTitleId : undefined,
+        linkJobTitleId: linkEnabled ? effectiveLinkJobTitleId : undefined,
         linkDirection: linkEnabled ? linkDirection : undefined,
         linkRequirementsAr: linkEnabled ? linkRequirementsAr || undefined : undefined,
       });
@@ -105,21 +120,29 @@ export function CreateJobTitleForm({
   }
 
   return (
-    <div style={{ display: "grid", gap: 28, maxWidth: 720 }}>
-      <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("basicHeading")}</h2>
-        <div className="sru-card" style={{ padding: 16, display: "grid", gap: 12 }}>
+    <div>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <IdCard size={17} aria-hidden />
+          </span>
           <div>
-            <label className="block text-sm font-medium mb-1">{t("nameArLabel")}</label>
-            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" className={inputClass} />
+            <h3>{t("basicHeading")}</h3>
+            <span>{t("basicSubtitle")}</span>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("nameEnLabel")}</label>
-            <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />
+        </div>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("nameArLabel")}</label>
+            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("familyLabel")}</label>
-            <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)} className={inputClass}>
+          <div className="sru-field">
+            <label>{t("nameEnLabel")}</label>
+            <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" style={{ textAlign: "left" }} />
+          </div>
+          <div className="sru-field">
+            <label>{t("familyLabel")}</label>
+            <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)}>
               {jobFamilies.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.nameAr}
@@ -127,134 +150,139 @@ export function CreateJobTitleForm({
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <label className="block text-sm font-medium mb-1">{t("gradeLabelInput")}</label>
-              <input
-                type="number"
-                min={1}
-                max={16}
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                dir="ltr"
-                className={inputClass}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="block text-sm font-medium mb-1">{t("categoryLabel")}</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {t(`category_${c}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="sru-field">
+            <label>{t("gradeLabelInput")}</label>
+            <input type="number" min={1} max={16} value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} dir="ltr" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("qualificationLabel")}</label>
-            <textarea
-              value={qualificationRequired}
-              onChange={(e) => setQualificationRequired(e.target.value)}
-              dir="rtl"
-              rows={2}
-              className={inputClass}
-            />
+          <div className="sru-field">
+            <label>{t("categoryLabel")}</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {t(`category_${c}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <label>{t("qualificationLabel")}</label>
+            <textarea value={qualificationRequired} onChange={(e) => setQualificationRequired(e.target.value)} dir="rtl" rows={2} />
           </div>
         </div>
       </section>
 
-      <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("descriptionHeading")}</h2>
-        <div className="sru-card" style={{ padding: 16, display: "grid", gap: 10 }}>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <FileText size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("descriptionHeading")}</h3>
+            <span>{t("descriptionSubtitle")}</span>
+          </div>
+        </div>
+        <div className="sru-field">
           <textarea
             value={descriptionAr}
             onChange={(e) => setDescriptionAr(e.target.value)}
             dir="rtl"
             rows={6}
             placeholder={t("descriptionPlaceholder")}
-            className={inputClass}
-          />
-          <SuggestDescriptionButton
-            nameAr={nameAr}
-            familyNameAr={familyNameAr}
-            gradeLevel={parsedGrade || null}
-            category={category}
-            qualificationRequired={qualificationRequired || undefined}
-            onSuggested={setDescriptionAr}
           />
         </div>
+        <SuggestDescriptionButton
+          nameAr={nameAr}
+          familyNameAr={familyNameAr}
+          gradeLevel={parsedGrade || null}
+          category={category}
+          qualificationRequired={qualificationRequired || undefined}
+          onSuggested={setDescriptionAr}
+        />
       </section>
 
-      <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("competenciesHeading")}</h2>
-        <div className="sru-card" style={{ padding: 16 }}>
-          <StagedCompetenciesPicker value={competencies} onChange={setCompetencies} allCompetencies={allCompetencies} />
-          {!allLevelsChosen && (
-            <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginTop: 8 }}>{t("levelsRequiredNote")}</p>
-          )}
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Award size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("competenciesHeading")}</h3>
+            <span>{t("competenciesSubtitle")}</span>
+          </div>
         </div>
+        <StagedCompetenciesPicker value={competencies} onChange={setCompetencies} allCompetencies={allCompetencies} />
+        {!allLevelsChosen && <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginTop: 8 }}>{t("levelsRequiredNote")}</p>}
       </section>
 
-      <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("linkHeading")}</h2>
-        <div className="sru-card" style={{ padding: 16, display: "grid", gap: 10 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-            <input type="checkbox" checked={linkEnabled} onChange={(e) => setLinkEnabled(e.target.checked)} />
-            {t("linkEnableLabel")}
-          </label>
-          {linkEnabled && allJobTitles.length > 0 && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("linkDirectionLabel")}</label>
-                <select
-                  value={linkDirection}
-                  onChange={(e) => setLinkDirection(e.target.value as "predecessor" | "successor")}
-                  className={inputClass}
-                >
-                  <option value="predecessor">{t("linkDirectionPredecessor")}</option>
-                  <option value="successor">{t("linkDirectionSuccessor")}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("linkTargetLabel")}</label>
-                <select value={linkJobTitleId} onChange={(e) => setLinkJobTitleId(e.target.value)} className={inputClass}>
-                  {allJobTitles.map((jt) => (
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Route size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("linkHeading")}</h3>
+            <span>{t("linkSubtitle")}</span>
+          </div>
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, marginBottom: linkEnabled ? 12 : 0 }}>
+          <input type="checkbox" checked={linkEnabled} onChange={(e) => setLinkEnabled(e.target.checked)} />
+          {t("linkEnableLabel")}
+        </label>
+        {linkEnabled && allJobTitles.length > 0 && (
+          <div className="sru-formgrid">
+            <div className="sru-field">
+              <label>{t("linkDirectionLabel")}</label>
+              <select value={linkDirection} onChange={(e) => setLinkDirection(e.target.value as "predecessor" | "successor")}>
+                <option value="predecessor">{t("linkDirectionPredecessor")}</option>
+                <option value="successor">{t("linkDirectionSuccessor")}</option>
+              </select>
+            </div>
+            <div className="sru-field">
+              <label>{t("linkTargetLabel")}</label>
+              <input
+                type="text"
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                placeholder={t("linkTargetSearchPlaceholder")}
+                dir="rtl"
+                style={{ marginBottom: 6 }}
+              />
+              <select
+                value={effectiveLinkJobTitleId}
+                onChange={(e) => setLinkJobTitleId(e.target.value)}
+                disabled={filteredLinkOptions.length === 0}
+              >
+                {filteredLinkOptions.length === 0 ? (
+                  <option value="">{t("linkTargetNoMatches")}</option>
+                ) : (
+                  filteredLinkOptions.map((jt) => (
                     <option key={jt.id} value={jt.id}>
                       {jt.nameAr} ({t("gradeLabel", { grade: jt.gradeLevel })})
                     </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label className="block text-sm font-medium mb-1">{t("linkRequirementsLabel")}</label>
-                <input
-                  value={linkRequirementsAr}
-                  onChange={(e) => setLinkRequirementsAr(e.target.value)}
-                  dir="rtl"
-                  className={inputClass}
-                />
-              </div>
+                  ))
+                )}
+              </select>
             </div>
-          )}
-        </div>
+            <div className="sru-field">
+              <label>{t("linkRequirementsLabel")}</label>
+              <input value={linkRequirementsAr} onChange={(e) => setLinkRequirementsAr(e.target.value)} dir="rtl" />
+            </div>
+          </div>
+        )}
       </section>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={!canSubmit || isPending}
-        onClick={handleSubmit}
-        className="sru-btn sru-btn-primary"
-        style={{ alignSelf: "flex-start" }}
-      >
-        {isPending ? t("creating") : t("createButton")}
-      </button>
+      <div className="sru-form-submitrow">
+        <button type="button" disabled={!canSubmit || isPending} onClick={handleSubmit} className="sru-btn sru-btn-primary">
+          {isPending ? t("creating") : t("createButton")}
+        </button>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, CheckCircle2, FileText } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { updateJobTitleDescription } from "@/app/[locale]/(app)/career-path/job-titles/[id]/actions";
 import { SuggestDescriptionButton } from "@/components/SuggestDescriptionButton";
@@ -13,6 +14,8 @@ const errorMessageKeys: Record<string, string> = {
   unknown: "errorUnknown",
 };
 
+// Restyled (2026-08-03) to the same sru-formsection pattern as the rest of
+// this screen — see JobTitleCoreForm's own comment.
 export function JobTitleDescriptionForm({
   jobTitleId,
   descriptionAr,
@@ -40,9 +43,6 @@ export function JobTitleDescriptionForm({
   const [saved, setSaved] = useState(false);
   const isDirty = value !== (descriptionAr ?? "");
 
-  const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   function handleSave() {
     setError(null);
     setSaved(false);
@@ -58,16 +58,26 @@ export function JobTitleDescriptionForm({
   }
 
   return (
-    <div className="space-y-3" style={{ maxWidth: 640 }}>
-      <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        dir="rtl"
-        rows={6}
-        disabled={!canEdit}
-        placeholder={t("descriptionPlaceholder")}
-        className={inputClass}
-      />
+    <section className="sru-formsection">
+      <div className="sru-formsection-head">
+        <span className="sru-formsection-badge">
+          <FileText size={17} aria-hidden />
+        </span>
+        <div>
+          <h3>{t("descriptionHeading")}</h3>
+          <span>{t("descriptionSubtitle")}</span>
+        </div>
+      </div>
+      <div className="sru-field">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          dir="rtl"
+          rows={6}
+          disabled={!canEdit}
+          placeholder={t("descriptionPlaceholder")}
+        />
+      </div>
       {canEdit && (
         <SuggestDescriptionButton
           nameAr={nameAr}
@@ -79,27 +89,31 @@ export function JobTitleDescriptionForm({
         />
       )}
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
       {saved && !isDirty && (
-        <p role="status" className="text-sm text-green-700">
+        <p role="status" className="sru-auth-alert success">
+          <CheckCircle2 size={15} aria-hidden />
           {t("saveSuccess")}
         </p>
       )}
       {canEdit ? (
-        <button
-          type="button"
-          disabled={isPending || !isDirty || value.trim().length === 0}
-          onClick={handleSave}
-          className="sru-btn sru-btn-primary"
-        >
-          {isPending ? t("saving") : t("save")}
-        </button>
+        <div className="sru-form-submitrow">
+          <button
+            type="button"
+            disabled={isPending || !isDirty || value.trim().length === 0}
+            onClick={handleSave}
+            className="sru-btn sru-btn-primary"
+          >
+            {isPending ? t("saving") : t("save")}
+          </button>
+        </div>
       ) : (
         <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("viewOnlyNote")}</p>
       )}
-    </div>
+    </section>
   );
 }

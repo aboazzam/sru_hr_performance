@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Route } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createCareerPathEdge, removeCareerPathEdge } from "@/app/[locale]/(app)/career-path/job-titles/actions";
@@ -30,6 +30,9 @@ interface JobTitleOption {
   gradeLevel: number;
 }
 
+// Restyled (2026-08-03) to the same sru-formsection pattern as the rest of
+// this screen — see JobTitleCoreForm's own comment. The job-title search box
+// itself (2026-08-01) is unchanged, just re-laid-out inside sru-field.
 export function CareerPathEdgesManager({
   jobTitleId,
   edges,
@@ -51,23 +54,10 @@ export function CareerPathEdgesManager({
   const [direction, setDirection] = useState<"predecessor" | "successor">("successor");
   const [requirementsAr, setRequirementsAr] = useState("");
 
-  // "اضف خاصية البحث بحيث اضع الحروف الاولى فيعطيني الوظائف المطابقة" --
-  // otherOptions can run into the hundreds (this is a company-wide job
-  // title list, not scoped to one family), making the plain select below
-  // impractical to scroll through. A search box narrows the SAME select's
-  // own option list rather than replacing it with a custom combobox, same
-  // "substring, not startsWith" convention as the Employees list's own
-  // search (2026-07-24). Derived fresh on every render rather than tracked
-  // in a separate effect, matching this app's established
-  // derive-during-render precedent for keeping a selection valid as its
-  // candidate set changes.
   const [targetSearch, setTargetSearch] = useState("");
   const trimmedSearch = targetSearch.trim();
   const filteredOptions = trimmedSearch === "" ? otherOptions : otherOptions.filter((jt) => jt.nameAr.includes(trimmedSearch));
   const effectiveTargetId = filteredOptions.some((jt) => jt.id === targetId) ? targetId : (filteredOptions[0]?.id ?? "");
-
-  const inputClass =
-    "px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   function handleAdd() {
     if (!effectiveTargetId) return;
@@ -94,7 +84,17 @@ export function CareerPathEdgesManager({
   }
 
   return (
-    <div>
+    <section className="sru-formsection">
+      <div className="sru-formsection-head">
+        <span className="sru-formsection-badge">
+          <Route size={17} aria-hidden />
+        </span>
+        <div>
+          <h3>{t("edgesHeading")}</h3>
+          <span>{t("edgesSubtitle")}</span>
+        </div>
+      </div>
+
       {edges.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noEdgesYet")}</p>
       ) : (
@@ -136,31 +136,25 @@ export function CareerPathEdgesManager({
       )}
 
       {canEdit && otherOptions.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("edgeDirectionLabel")}</label>
-            <select value={direction} onChange={(e) => setDirection(e.target.value as "predecessor" | "successor")} className={inputClass}>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("edgeDirectionLabel")}</label>
+            <select value={direction} onChange={(e) => setDirection(e.target.value as "predecessor" | "successor")}>
               <option value="successor">{t("edgeLeadsTo")}</option>
               <option value="predecessor">{t("edgeComesFrom")}</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("edgeTargetLabel")}</label>
+          <div className="sru-field">
+            <label>{t("edgeTargetLabel")}</label>
             <input
               type="text"
               value={targetSearch}
               onChange={(e) => setTargetSearch(e.target.value)}
               placeholder={t("edgeTargetSearchPlaceholder")}
               dir="rtl"
-              className={inputClass}
-              style={{ display: "block", marginBottom: 6, width: "100%" }}
+              style={{ marginBottom: 6 }}
             />
-            <select
-              value={effectiveTargetId}
-              onChange={(e) => setTargetId(e.target.value)}
-              className={inputClass}
-              disabled={filteredOptions.length === 0}
-            >
+            <select value={effectiveTargetId} onChange={(e) => setTargetId(e.target.value)} disabled={filteredOptions.length === 0}>
               {filteredOptions.length === 0 ? (
                 <option value="">{t("edgeTargetNoMatches")}</option>
               ) : (
@@ -172,26 +166,26 @@ export function CareerPathEdgesManager({
               )}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("edgeRequirementsLabel")}</label>
-            <input
-              value={requirementsAr}
-              onChange={(e) => setRequirementsAr(e.target.value)}
-              dir="rtl"
-              className={inputClass}
-            />
+          <div className="sru-field">
+            <label>{t("edgeRequirementsLabel")}</label>
+            <input value={requirementsAr} onChange={(e) => setRequirementsAr(e.target.value)} dir="rtl" />
           </div>
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>
+          {t(errorMessageKeys[error] ?? "errorUnknown")}
+        </p>
+      )}
+
+      {canEdit && otherOptions.length > 0 && (
+        <div className="sru-form-submitrow">
           <button type="button" disabled={isPending || !effectiveTargetId} onClick={handleAdd} className="sru-btn sru-btn-primary">
             {isPending ? t("adding") : t("addEdge")}
           </button>
         </div>
       )}
-
-      {error && (
-        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 8 }}>
-          {t(errorMessageKeys[error] ?? "errorUnknown")}
-        </p>
-      )}
-    </div>
+    </section>
   );
 }

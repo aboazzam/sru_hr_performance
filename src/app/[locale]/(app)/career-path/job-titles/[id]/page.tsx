@@ -91,13 +91,20 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
 
   const { data: allCompetenciesData } = await supabase
     .from("competencies")
-    .select("id, name_ar, domain_id")
+    .select("id, name_ar, domain_id, type")
     .is("deleted_at", null)
     .order("name_ar");
+  const allCompetenciesRows =
+    (allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string; type: string }> | null) ?? [];
 
-  const allCompetencies = ((allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string }>) ?? []).map(
-    (c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" })
-  );
+  const allCompetencies = allCompetenciesRows.map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
+  // "الجدارات الأساسية تظهر بشكل تلقائي" (2026-08-03): every type='core'
+  // competency is always listed on the detail page regardless of whether
+  // it's been assigned to this job title yet, same source as the new-job-title
+  // creation flow's own coreCompetencies (StagedCompetenciesPicker).
+  const coreCompetencies = allCompetenciesRows
+    .filter((c) => c.type === "core")
+    .map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
 
   // "ضع الجدارات حسب التصنيف" (2026-08-02): the assigned list used to render
   // flat, with no pillar grouping at all, even though the ADD dropdown right
@@ -208,51 +215,40 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("coreHeading")}</h2>
-      <div className="sru-card" style={{ padding: 16, marginBottom: 28 }}>
-        <JobTitleCoreForm
-          jobTitleId={jt.id}
-          initial={{
-            nameAr: jt.name_ar,
-            nameEn: jt.name_en,
-            jobFamilyId: jt.job_family_id,
-            gradeLevel: jt.grade_level,
-            category: jt.category,
-            qualificationRequired: jt.qualification_required,
-          }}
-          jobFamilies={jobFamilies}
-          canEdit={canEdit}
-        />
-      </div>
+      <JobTitleCoreForm
+        jobTitleId={jt.id}
+        initial={{
+          nameAr: jt.name_ar,
+          nameEn: jt.name_en,
+          jobFamilyId: jt.job_family_id,
+          gradeLevel: jt.grade_level,
+          category: jt.category,
+          qualificationRequired: jt.qualification_required,
+        }}
+        jobFamilies={jobFamilies}
+        canEdit={canEdit}
+      />
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("descriptionHeading")}</h2>
-      <div className="sru-card" style={{ padding: 16, marginBottom: 28 }}>
-        <JobTitleDescriptionForm
-          jobTitleId={jt.id}
-          descriptionAr={jt.description_ar}
-          canEdit={canEdit}
-          nameAr={jt.name_ar}
-          familyNameAr={jt.job_families?.name_ar ?? ""}
-          gradeLevel={jt.grade_level}
-          category={jt.category}
-          qualificationRequired={jt.qualification_required}
-        />
-      </div>
+      <JobTitleDescriptionForm
+        jobTitleId={jt.id}
+        descriptionAr={jt.description_ar}
+        canEdit={canEdit}
+        nameAr={jt.name_ar}
+        familyNameAr={jt.job_families?.name_ar ?? ""}
+        gradeLevel={jt.grade_level}
+        category={jt.category}
+        qualificationRequired={jt.qualification_required}
+      />
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("competenciesHeading")}</h2>
-      <div className="sru-card" style={{ padding: 16, marginBottom: 28 }}>
-        <JobTitleCompetenciesManager
-          jobTitleId={jt.id}
-          assigned={assigned}
-          allCompetencies={allCompetencies}
-          canEdit={canEdit}
-        />
-      </div>
+      <JobTitleCompetenciesManager
+        jobTitleId={jt.id}
+        assigned={assigned}
+        coreCompetencies={coreCompetencies}
+        allCompetencies={allCompetencies}
+        canEdit={canEdit}
+      />
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t("edgesHeading")}</h2>
-      <div className="sru-card" style={{ padding: 16 }}>
-        <CareerPathEdgesManager jobTitleId={jt.id} edges={edges} allJobTitles={allJobTitles} canEdit={canEdit} />
-      </div>
+      <CareerPathEdgesManager jobTitleId={jt.id} edges={edges} allJobTitles={allJobTitles} canEdit={canEdit} />
     </div>
   );
 }

@@ -86,7 +86,14 @@ export async function suggestJobDescription(input: {
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-8",
+      // "claude-opus-4-8" is not a real model id -- confirmed live (2026-08-03)
+      // that this made every single suggestion request fail (silently mapped
+      // to the generic ai_error/"تعذّر توليد اقتراح حاليًا" message). Using the
+      // real current Opus model id; a short, low-effort single-paragraph
+      // description generation doesn't need Opus's top tier, but no cheaper
+      // model was specifically requested, so keeping the same tier rather
+      // than silently downgrading capability as part of an unrelated bug fix.
+      model: "claude-opus-5",
       max_tokens: 500,
       output_config: { effort: "low" },
       system:
