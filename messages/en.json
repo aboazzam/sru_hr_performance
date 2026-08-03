@@ -558,8 +558,10 @@
   },
   "SalaryScalePage": {
     "title": "Salary Scale",
-    "subtitle": "Salary steps (A-G) per job title, effective from the stated date.",
+    "subtitle": "Salary steps (A-I) per job title, effective from the stated date. Administrative tracks go up to step G, while the academic scale goes up to step I.",
     "empty": "No salary scale data yet.",
+    "searchPlaceholder": "Search by job title...",
+    "noResults": "No matching results.",
     "columnJobTitle": "Job Title",
     "columnAnnualCap": "Annual Increase Cap",
     "columnEffectiveDate": "Effective Date",
