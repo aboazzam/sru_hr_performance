@@ -406,7 +406,21 @@
     "createNew": "Create New Job Title",
     "columnStatus": "Status",
     "statusApproved": "Approved",
-    "statusDraft": "Draft"
+    "statusDraft": "Draft",
+    "downloadTemplateButton": "Download Empty Template",
+    "importTriggerButton": "Import from Excel",
+    "importHeading": "Import Job Titles from Excel",
+    "importNote": "Choose an .xlsx file matching the empty template's format. New job titles are added; matching ones (same name and job family) are updated with the file's data.",
+    "closeButton": "Close",
+    "chooseFileButton": "Choose File",
+    "noFileChosen": "No file chosen",
+    "importButton": "Import File",
+    "importing": "Importing...",
+    "importErrorInvalid": "The file is invalid or missing required columns (Job Title Name, Job Family, Grade, Category).",
+    "importErrorForbidden": "You must be logged in.",
+    "importErrorUnknown": "An unexpected error occurred during import.",
+    "importSuccess": "Imported: {created} new, {updated} updated.",
+    "importWarnings": "{count} row(s) skipped or with an error"
   },
   "CareerPathJobTitleDetailPage": {
     "noPermission": "You don't have permission to manage job titles & competencies.",
