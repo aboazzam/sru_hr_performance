@@ -1556,7 +1556,21 @@
     "columnOrgUnit": "Org Unit",
     "columnStatus": "Status",
     "columnRequirements": "Requirements",
-    "gradeLabel": "Grade {grade}"
+    "gradeLabel": "Grade {grade}",
+    "downloadTemplateButton": "Download Empty Template",
+    "importTriggerButton": "Import from Excel",
+    "importHeading": "Import Vacancies from Excel",
+    "importNote": "Choose an .xlsx file matching the empty template. Each row is one vacancy: job title and org unit (matched by exact name), with optional status and requirements. New vacancies are added; matching ones (same job title and org unit) have their status and requirements updated. Fill the job family column only when a job title name exists in more than one family.",
+    "closeButton": "Close",
+    "chooseFileButton": "Choose File",
+    "noFileChosen": "No file chosen",
+    "importButton": "Import File",
+    "importing": "Importing...",
+    "importErrorInvalid": "The file is invalid or missing required columns (Job Title, Org Unit).",
+    "importErrorForbidden": "You must be logged in.",
+    "importErrorUnknown": "An unexpected error occurred during import.",
+    "importSuccess": "Imported: {created} new, {updated} updated.",
+    "importWarnings": "{count} row(s) skipped or with an error"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",

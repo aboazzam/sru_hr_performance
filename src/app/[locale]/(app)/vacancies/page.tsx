@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { ImportVacanciesExcelForm } from "@/components/ImportVacanciesExcelForm";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function VacanciesPage() {
@@ -48,9 +49,16 @@ export default async function VacanciesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Link href="/vacancies/new" className="sru-btn sru-btn-primary">
-          {t("newVacancy")}
-        </Link>
+        {/* Import buttons live in the always-visible header, NOT behind the
+            empty-list check — bootstrapping data when no vacancy exists yet is
+            the main reason to use them (same placement decision as the
+            career-path page's own import). */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <ImportVacanciesExcelForm />
+          <Link href="/vacancies/new" className="sru-btn sru-btn-primary">
+            {t("newVacancy")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

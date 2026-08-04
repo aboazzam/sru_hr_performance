@@ -1556,7 +1556,21 @@
     "columnOrgUnit": "الوحدة التنظيمية",
     "columnStatus": "الحالة",
     "columnRequirements": "المتطلبات",
-    "gradeLabel": "درجة {grade}"
+    "gradeLabel": "درجة {grade}",
+    "downloadTemplateButton": "تحميل نموذج فارغ",
+    "importTriggerButton": "استيراد من إكسل",
+    "importHeading": "استيراد الشواغر من إكسل",
+    "importNote": "اختر ملف إكسل بصيغة .xlsx مطابقًا لتنسيق النموذج الفارغ. كل صف يمثل شاغرًا واحدًا: المسمى الوظيفي والوحدة التنظيمية (يُطابَقان بالاسم الدقيق) مع حالة ومتطلبات اختيارية. الشواغر الجديدة تُضاف، والمطابقة (نفس المسمى والوحدة) تُحدَّث حالتها ومتطلباتها. أضف عمود العائلة الوظيفية فقط عند تكرار المسمى في أكثر من عائلة.",
+    "closeButton": "إغلاق",
+    "chooseFileButton": "اختيار ملف",
+    "noFileChosen": "لم يتم اختيار ملف",
+    "importButton": "استيراد الملف",
+    "importing": "جارٍ الاستيراد...",
+    "importErrorInvalid": "الملف غير صالح أو لا يحتوي الأعمدة المطلوبة (المسمى الوظيفي، الوحدة التنظيمية).",
+    "importErrorForbidden": "يجب تسجيل الدخول أولًا.",
+    "importErrorUnknown": "حدث خطأ غير متوقع أثناء الاستيراد.",
+    "importSuccess": "تم الاستيراد: {created} شاغر جديد، {updated} شاغر محدَّث.",
+    "importWarnings": "{count} صف تم تجاوزه أو به خطأ"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",
