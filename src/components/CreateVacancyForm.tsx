@@ -14,15 +14,17 @@ interface JobTitleOption {
   id: string;
   name_ar: string;
   grade_level: number;
-  /** The job title's own recorded requirements (job_titles.qualification_required)
-   * — the source this form prefills the vacancy requirements from. */
-  qualification_required: string | null;
 }
 
 interface OrgUnitOption {
   id: string;
   name_ar: string;
 }
+
+/** career_path's own "متطلبات الانتقال", keyed by the job title an edge leads
+ * TO — i.e. what's required to move into that job. Resolved server-side in
+ * vacancies/new/page.tsx. */
+type TransitionRequirements = Record<string, { fromName: string; text: string }[]>;
 
 type ErrorMessage = Extract<CreateVacancyState, { status: "error" }>["message"];
 
@@ -37,10 +39,12 @@ export function CreateVacancyForm({
   locale,
   jobTitles,
   orgUnits,
+  transitionRequirements,
 }: {
   locale: Locale;
   jobTitles: JobTitleOption[];
   orgUnits: OrgUnitOption[];
+  transitionRequirements: TransitionRequirements;
 }) {
   const t = useTranslations("CreateVacancyPage");
   const [state, formAction, pending] = useActionState<CreateVacancyState, FormData>(
@@ -66,11 +70,22 @@ export function CreateVacancyForm({
     : "";
 
   const selectedJobTitle = jobTitles.find((title) => title.id === effectiveJobTitleId);
-  const sourceRequirements = selectedJobTitle?.qualification_required?.trim() ?? "";
 
-  // Requirements are prefilled from the selected job title's own record and stay
-  // editable. State is adjusted during render (React's documented pattern for
-  // deriving from a changed value) rather than in an effect, which this repo's
+  // Every career-path edge leading INTO the selected job title carries its own
+  // "متطلبات الانتقال". In the real data those texts agree wherever a title has
+  // more than one predecessor, but that's a property of today's rows, not a
+  // constraint — so distinct texts are all kept (joined), never silently
+  // reduced to whichever edge happened to come first.
+  const sources = effectiveJobTitleId ? (transitionRequirements[effectiveJobTitleId] ?? []) : [];
+  const distinctTexts = [...new Set(sources.map((source) => source.text))];
+  const sourceRequirements = distinctTexts.join("\n");
+  const sourceTitles = [...new Set(sources.map((source) => source.fromName).filter(Boolean))].join(
+    "، "
+  );
+
+  // Requirements are prefilled from that career-path text and stay editable.
+  // State is adjusted during render (React's documented pattern for deriving
+  // from a changed value) rather than in an effect, which this repo's
   // react-hooks/set-state-in-effect rule rejects.
   const [requirements, setRequirements] = useState("");
   const [autoFilledText, setAutoFilledText] = useState("");
@@ -189,7 +204,7 @@ export function CreateVacancyForm({
                 {!sourceRequirements ? (
                   t("requirementsNoSource")
                 ) : requirements === sourceRequirements ? (
-                  t("requirementsFromJobTitle", { jobTitle: selectedJobTitle.name_ar })
+                  t("requirementsFromCareerPath", { fromTitles: sourceTitles })
                 ) : (
                   <button
                     type="button"
