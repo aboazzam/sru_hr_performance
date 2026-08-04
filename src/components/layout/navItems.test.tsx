@@ -61,16 +61,21 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
   // 2026-08-04: the "التوظيف" module — خطة التوظيف (its own new
   // `recruitmentPlan` area) + الترقيات + الشواغر (both reusing the areas
   // that already gate their real tables' RLS).
-  it("the recruitment group has exactly the three requested tabs, each gated on its own area", () => {
+  // 2026-08-04: a fourth tab, "الوظائف المعلن عنها", was added — fed from
+  // the الشواغر tab's own advertise action, so it shares the `vacancies`
+  // grant rather than introducing a process area of its own.
+  it("the recruitment group has the four tabs, each gated on its own area", () => {
     const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
     expect(recruitment.children.map((c) => c.segment)).toEqual([
       "recruitment/plan",
       "promotions",
       "vacancies",
+      "recruitment/announced",
     ]);
     expect(recruitment.children.map((c) => c.access?.[0].processArea)).toEqual([
       "recruitmentPlan",
       "promotions",
+      "vacancies",
       "vacancies",
     ]);
   });
@@ -240,15 +245,16 @@ describe("visibleNavGroups", () => {
 
   // 2026-08-04: a plain employee genuinely holds `vacancies=view` (internal
   // job postings are documented as visible to all staff) but no promotions or
-  // recruitmentPlan grant -- so the التوظيف group appears with ONLY الشواغر,
-  // which is where "vacancies" now lives after moving out of the flat list.
-  it("shows the recruitment group with only الشواغر for the real employee permission set", () => {
+  // recruitmentPlan grant -- so the التوظيف group appears with only the two
+  // vacancy-gated tabs (الشواغر and, since 2026-08-04, الوظائف المعلن عنها,
+  // which is fed from it and gated on the same grant).
+  it("shows the recruitment group's vacancy tabs for the real employee permission set", () => {
     const groups = visibleNavGroups(navGroups, { vacancies: "view" });
     const recruitment = groups.find((g) => g.groupKey === "recruitment");
     expect(recruitment).toBeDefined();
-    expect(recruitment!.children.map((c) => c.segment)).toEqual(["vacancies"]);
-    // One visible child -> the sidebar row uses that child's own label.
-    expect(sidebarGroupLabelKey(recruitment!)).toBe("vacancies");
+    expect(recruitment!.children.map((c) => c.segment)).toEqual(["vacancies", "recruitment/announced"]);
+    // More than one visible child -> the sidebar row keeps the group label.
+    expect(sidebarGroupLabelKey(recruitment!)).toBe("recruitment");
   });
 
   it("hides the recruitment group entirely with none of its three grants", () => {

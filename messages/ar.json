@@ -49,7 +49,8 @@
     "strategicIdentity": "الرؤية والرسالة والقيم",
     "assignedGoals": "الأهداف المسندة",
     "recruitment": "التوظيف",
-    "recruitmentPlan": "خطة التوظيف"
+    "recruitmentPlan": "خطة التوظيف",
+    "announcedJobs": "الوظائف المعلن عنها"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -1080,7 +1081,18 @@
     "errorInvalidInput": "تحقق من الحقول — الاسم والتواريخ مطلوبة، ويجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة دورات تقييم.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "sectionBasicTitle": "بيانات الدورة",
+    "sectionBasicSubtitle": "نوع الفترة واسم الدورة كما سيظهر في باقي الشاشات.",
+    "sectionPeriodTitle": "الفترة الزمنية",
+    "sectionPeriodSubtitle": "مدة الدورة وتاريخا بدايتها ونهايتها.",
+    "periodNeedsCycleType": "اختر نوع الفترة أولًا لتفعيل حقول المدة والتواريخ.",
+    "durationLabel": "مدة الفترة",
+    "durationMonths": "{months, plural, few {# أشهر} many {# شهرًا} other {# شهر}}",
+    "durationCustom": "مدة مخصصة",
+    "periodSummaryMonths": "المدة: {months, plural, few {# أشهر} many {# شهرًا} other {# شهر}} ({days, plural, few {# أيام} many {# يومًا} other {# يوم}}).",
+    "periodSummaryDays": "المدة: {days, plural, few {# أيام} many {# يومًا} other {# يوم}}.",
+    "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية."
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",
@@ -1600,7 +1612,12 @@
     "actionErrorInvalid": "قيمة غير صالحة.",
     "actionErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "actionErrorForbidden": "لا تملك صلاحية تعديل هذا الشاغر.",
-    "actionErrorUnknown": "حدث خطأ غير متوقع."
+    "actionErrorUnknown": "حدث خطأ غير متوقع.",
+    "announceButton": "أعلن عن الوظيفة",
+    "unannounceButton": "إلغاء الإعلان عن الوظيفة",
+    "unannounceConfirm": "هل تريد إلغاء الإعلان عن هذه الوظيفة؟ ستختفي من تاب الوظائف المعلن عنها.",
+    "announcedBadge": "معلن عنها",
+    "announcedBadgeTitle": "تظهر في تاب الوظائف المعلن عنها"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",
@@ -1774,5 +1791,18 @@
     "errorAlreadyPosted": "تم نشر هذا البند كشاغر من قبل.",
     "errorItemNeedsJobTitle": "لا يمكن نشر بند بلا مسمى وظيفي — حدّد المسمى أولًا.",
     "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "AnnouncedJobsPage": {
+    "title": "الوظائف المعلن عنها",
+    "subtitle": "الشواغر التي أُعلن عنها للموظفين — تُضاف من أيقونة «أعلن عن الوظيفة» في تاب الشواغر.",
+    "forbidden": "لا تملك صلاحية مشاهدة الوظائف المعلن عنها.",
+    "empty": "لا توجد وظائف معلن عنها بعد — أعلن عن أي شاغر من تاب «الشواغر» بأيقونة «أعلن عن الوظيفة» ليظهر هنا.",
+    "columnJobTitle": "المسمى الوظيفي",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnRequirements": "المتطلبات",
+    "columnAnnouncedAt": "تاريخ الإعلان",
+    "columnStatus": "حالة الشاغر",
+    "gradeLabel": "درجة {grade}",
+    "notOpenNote": "الشاغر لم يعد مفتوحًا رغم بقاء الإعلان."
   }
 }

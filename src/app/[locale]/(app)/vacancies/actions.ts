@@ -74,6 +74,68 @@ export async function updateVacancyStatus(vacancyId: string, status: string): Pr
 }
 
 /**
+ * Advertises a vacancy ("أعلن عن الوظيفة") so it appears in the التوظيف
+ * module's "الوظائف المعلن عنها" tab, or withdraws that advertisement.
+ *
+ * `announced_at IS NOT NULL` is the advertised flag (20260804000003) —
+ * deliberately independent of `status`, so advertising doesn't silently
+ * reopen a closed posting and closing one doesn't silently pull the ad.
+ * `announced_by` is taken from the caller's own profile, never from the
+ * client. Authorization is `vacancies_update`'s existing RLS
+ * (`vacancies>=recommend`, hr_admin + manager, per org unit) — no second
+ * gate here, and a zero-row UPDATE (RLS denial) is reported as "forbidden"
+ * rather than a silent success.
+ */
+export async function setVacancyAnnouncement(
+  vacancyId: string,
+  announced: boolean
+): Promise<VacancyActionState> {
+  if (!z.string().uuid().safeParse(vacancyId).success) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  let announcedBy: string | null = null;
+  if (announced) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("auth_user_id", actor.id)
+      .maybeSingle();
+    announcedBy = profile?.id ?? null;
+  }
+
+  const { data: updated, error } = await supabase
+    .from("vacancies")
+    .update({
+      announced_at: announced ? new Date().toISOString() : null,
+      announced_by: announcedBy,
+    })
+    .eq("id", vacancyId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) return mapError(error);
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: announced ? "vacancy_announced" : "vacancy_unannounced",
+    entity: "vacancies",
+    entity_id: vacancyId,
+    after_data: { announced },
+  });
+
+  return { status: "success" };
+}
+
+/**
  * Soft-delete (CLAUDE.md §5-A rule 7) — `vacancies` has no DELETE policy at
  * all, so this is an UPDATE setting `deleted_at`, gated by the same
  * `vacancies_update` policy as a status change.

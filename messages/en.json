@@ -49,7 +49,8 @@
     "strategicIdentity": "Vision, Mission & Values",
     "assignedGoals": "Assigned Goals",
     "recruitment": "Recruitment",
-    "recruitmentPlan": "Recruitment Plan"
+    "recruitmentPlan": "Recruitment Plan",
+    "announcedJobs": "Advertised Jobs"
   },
   "PrintButton": {
     "print": "Print"
@@ -1080,7 +1081,18 @@
     "errorInvalidInput": "Check the fields — name and dates are required, and the end date must be after the start date.",
     "errorUnauthenticated": "You must sign in first.",
     "errorForbidden": "You don't have permission to create evaluation cycles.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionBasicTitle": "Cycle Details",
+    "sectionBasicSubtitle": "The period type and the cycle name as it will appear elsewhere.",
+    "sectionPeriodTitle": "Period",
+    "sectionPeriodSubtitle": "The cycle duration and its start and end dates.",
+    "periodNeedsCycleType": "Choose a period type first to enable the duration and date fields.",
+    "durationLabel": "Duration",
+    "durationMonths": "{months, plural, one {# month} other {# months}}",
+    "durationCustom": "Custom duration",
+    "periodSummaryMonths": "Duration: {months, plural, one {# month} other {# months}} ({days, plural, one {# day} other {# days}}).",
+    "periodSummaryDays": "Duration: {days, plural, one {# day} other {# days}}.",
+    "periodInvalidRange": "The end date must be after the start date."
   },
   "MyProfilePage": {
     "title": "My Profile",
@@ -1600,7 +1612,12 @@
     "actionErrorInvalid": "Invalid value.",
     "actionErrorUnauthenticated": "You must be logged in.",
     "actionErrorForbidden": "You do not have permission to modify this vacancy.",
-    "actionErrorUnknown": "An unexpected error occurred."
+    "actionErrorUnknown": "An unexpected error occurred.",
+    "announceButton": "Advertise this job",
+    "unannounceButton": "Withdraw the advertisement",
+    "unannounceConfirm": "Withdraw the advertisement for this job? It will disappear from the Advertised Jobs tab.",
+    "announcedBadge": "Advertised",
+    "announcedBadgeTitle": "Shown in the Advertised Jobs tab"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",
@@ -1774,5 +1791,18 @@
     "errorAlreadyPosted": "This item was already published as a vacancy.",
     "errorItemNeedsJobTitle": "An item with no job title cannot be published — set a job title first.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "AnnouncedJobsPage": {
+    "title": "Advertised Jobs",
+    "subtitle": "Vacancies advertised to staff — added with the \"Advertise this job\" icon on the Vacancies tab.",
+    "forbidden": "You do not have permission to view advertised jobs.",
+    "empty": "No advertised jobs yet — advertise any vacancy from the Vacancies tab with the \"Advertise this job\" icon and it will appear here.",
+    "columnJobTitle": "Job title",
+    "columnOrgUnit": "Org unit",
+    "columnRequirements": "Requirements",
+    "columnAnnouncedAt": "Advertised on",
+    "columnStatus": "Vacancy status",
+    "gradeLabel": "Grade {grade}",
+    "notOpenNote": "This vacancy is no longer open, though the advertisement remains."
   }
 }
