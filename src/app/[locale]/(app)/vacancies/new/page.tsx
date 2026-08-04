@@ -41,10 +41,7 @@ export default async function CreateVacancyPage({
   // the real authorization boundary is vacancies_insert's own RLS.
   const { data: jobTitles } = await supabase
     .from("job_titles")
-    // qualification_required is the job title's own recorded requirements —
-    // the form prefills the vacancy requirements from it instead of making
-    // the admin retype what the career-path record already holds.
-    .select("id, name_ar, grade_level, qualification_required")
+    .select("id, name_ar, grade_level")
     .is("deleted_at", null)
     .order("grade_level");
 
@@ -52,6 +49,30 @@ export default async function CreateVacancyPage({
     .from("org_units")
     .select("id, name_ar")
     .order("name_ar");
+
+  // The vacancy's requirements are prefilled from the career path's own
+  // "متطلبات الانتقال" — the requirements recorded on every edge leading INTO
+  // the selected job title (2026-08-04, the project owner's own choice over
+  // job_titles.qualification_required). The from-side title's name is resolved
+  // from `jobTitles` above rather than a PostgREST embed: career_path has two
+  // FKs to job_titles, which needs explicit disambiguation hints, and every
+  // job title is already loaded here for the select anyway.
+  const { data: careerPathEdges } = await supabase
+    .from("career_path")
+    .select("from_job_title_id, to_job_title_id, requirements_ar")
+    .is("deleted_at", null)
+    .not("requirements_ar", "is", null);
+
+  const jobTitleNames = new Map((jobTitles ?? []).map((title) => [title.id, title.name_ar]));
+  const transitionRequirements: Record<string, { fromName: string; text: string }[]> = {};
+  for (const edge of careerPathEdges ?? []) {
+    const text = edge.requirements_ar?.trim();
+    if (!text) continue;
+    (transitionRequirements[edge.to_job_title_id] ??= []).push({
+      fromName: jobTitleNames.get(edge.from_job_title_id) ?? "",
+      text,
+    });
+  }
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -64,7 +85,12 @@ export default async function CreateVacancyPage({
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {jobTitles && jobTitles.length > 0 && orgUnits && orgUnits.length > 0 ? (
-        <CreateVacancyForm locale={locale} jobTitles={jobTitles} orgUnits={orgUnits} />
+        <CreateVacancyForm
+          locale={locale}
+          jobTitles={jobTitles}
+          orgUnits={orgUnits}
+          transitionRequirements={transitionRequirements}
+        />
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}

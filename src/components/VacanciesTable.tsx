@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Megaphone, MegaphoneOff } from "lucide-react";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import {
   countVacancyStatuses,
@@ -14,6 +14,7 @@ import {
 import {
   updateVacancyStatus,
   deleteVacancy,
+  setVacancyAnnouncement,
   type VacancyActionState,
 } from "@/app/[locale]/(app)/vacancies/actions";
 
@@ -26,6 +27,8 @@ export interface VacancyRowView {
   requirementsAr: string | null;
   /** "خطة التوظيف {year}" when this posting came from a plan item, else null. */
   planYear: number | null;
+  /** Advertised in the "الوظائف المعلن عنها" tab (announced_at IS NOT NULL). */
+  announced: boolean;
 }
 
 const errorKeys: Record<string, string> = {
@@ -172,6 +175,15 @@ export function VacanciesTable({
                           {t("gradeLabel", { grade: vacancy.gradeLevel })}
                         </span>
                       )}
+                      {vacancy.announced && (
+                        <span
+                          className="pill"
+                          style={{ marginInlineStart: 8, fontSize: 11 }}
+                          title={t("announcedBadgeTitle")}
+                        >
+                          {t("announcedBadge")}
+                        </span>
+                      )}
                       {vacancy.planYear != null && (
                         <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>
                           {t("fromPlan", { year: vacancy.planYear })}
@@ -208,6 +220,26 @@ export function VacanciesTable({
                     <td>{vacancy.requirementsAr ?? "—"}</td>
                     {canManage && (
                       <td>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {/* Announce / withdraw — the single icon toggles, so a
+                            row can never show both actions at once. */}
+                        <button
+                          type="button"
+                          className="sru-icon-action"
+                          title={vacancy.announced ? t("unannounceButton") : t("announceButton")}
+                          aria-label={vacancy.announced ? t("unannounceButton") : t("announceButton")}
+                          disabled={pending}
+                          onClick={() => {
+                            if (vacancy.announced && !window.confirm(t("unannounceConfirm"))) return;
+                            run(() => setVacancyAnnouncement(vacancy.id, !vacancy.announced));
+                          }}
+                        >
+                          {vacancy.announced ? (
+                            <MegaphoneOff size={15} aria-hidden />
+                          ) : (
+                            <Megaphone size={15} aria-hidden />
+                          )}
+                        </button>
                         <button
                           type="button"
                           className="sru-icon-action"
@@ -221,6 +253,7 @@ export function VacanciesTable({
                         >
                           <Trash2 size={15} aria-hidden />
                         </button>
+                        </div>
                       </td>
                     )}
                   </tr>
