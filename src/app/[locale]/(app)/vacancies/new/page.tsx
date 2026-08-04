@@ -41,7 +41,10 @@ export default async function CreateVacancyPage({
   // the real authorization boundary is vacancies_insert's own RLS.
   const { data: jobTitles } = await supabase
     .from("job_titles")
-    .select("id, name_ar, grade_level")
+    // qualification_required is the job title's own recorded requirements —
+    // the form prefills the vacancy requirements from it instead of making
+    // the admin retype what the career-path record already holds.
+    .select("id, name_ar, grade_level, qualification_required")
     .is("deleted_at", null)
     .order("grade_level");
 
