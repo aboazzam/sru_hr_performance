@@ -158,12 +158,21 @@ export default async function OrgStructureStaffingPage() {
                       <OrgStructurePositionRow
                         key={position.id}
                         levelName={levelNameById.get(position.level_id) ?? "—"}
+                        levelId={position.level_id}
                         parentName={position.parent_id ? positionNameById.get(position.parent_id) ?? "—" : t("rootChip")}
                         positionId={position.id}
                         initialNameAr={position.name_ar}
                         initialNameEn={position.name_en}
                         initialOrgUnitId={position.org_unit_id}
+                        initialParentId={position.parent_id}
                         orgUnits={orgUnits}
+                        levels={levels}
+                        positions={positions.map((p) => ({
+                          id: p.id,
+                          name_ar: p.name_ar,
+                          level_id: p.level_id,
+                          parent_id: p.parent_id,
+                        }))}
                         jobTitle={position.job_title_id ? jobTitleNameById.get(position.job_title_id) ?? null : null}
                         assignments={positionAssignments}
                         orgUnitEmployeeLabels={

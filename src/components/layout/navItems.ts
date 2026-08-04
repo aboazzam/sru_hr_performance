@@ -28,6 +28,9 @@ import {
   Gauge,
   Compass,
   CalendarRange,
+  UserPlus,
+  TrendingUp,
+  Megaphone,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -91,7 +94,9 @@ export const navItems: NavItem[] = [
   // careerPath=view (like `employee`) isn't enough to surface this as a top-level tab.
   { segment: "salary-scale", labelKey: "salaryScale", icon: Wallet, access: [{ processArea: "employeeData", minLevel: "view" }] },
   { segment: "calibration", labelKey: "calibration", icon: BarChart3, access: [{ processArea: "calibration", minLevel: "view" }] },
-  { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
+  // 2026-08-04: "vacancies" moved out of this flat list into the new
+  // "التوظيف" group below ("والثالث اسمه الشواغر — وهذا تضع فيه الجزء
+  // الجاهز من شواغر"); the page itself is unchanged.
 ];
 
 export interface NavGroup {
@@ -185,6 +190,28 @@ export const navGroups: NavGroup[] = [
       { segment: "competencies", labelKey: "competencies", icon: Award, access: [{ processArea: "competencyFramework", minLevel: "view" }] },
       { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: [{ processArea: "bauTasks", minLevel: "prepare" }] },
       { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: [{ processArea: "evaluation", minLevel: "prepare" }] },
+    ],
+  },
+  // "التوظيف" (2026-08-04): a new module bundling the hiring lifecycle —
+  // the (not yet designed) recruitment plan, promotions, and the already-
+  // built vacancies screen ("وهذا تضع فيه الجزء الجاهز من شواغر"). Only
+  // the first tab needed a new process area (`recruitmentPlan`); the other
+  // two reuse `promotions`/`vacancies`, which already gate their own real
+  // tables' RLS — see 20260804000001's header for the promotions/rewards/
+  // recommendations coupling that reuse implies.
+  {
+    groupKey: "recruitment",
+    labelKey: "recruitment",
+    icon: UserPlus,
+    children: [
+      { segment: "recruitment/plan", labelKey: "recruitmentPlan", icon: CalendarRange, access: [{ processArea: "recruitmentPlan", minLevel: "view" }] },
+      { segment: "promotions", labelKey: "promotions", icon: TrendingUp, access: [{ processArea: "promotions", minLevel: "view" }] },
+      { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
+      // 2026-08-04: vacancies advertised from the الشواغر tab's megaphone
+      // icon (`vacancies.announced_at`). Same `vacancies>=view` gate as the
+      // tab it is fed from — internal postings are documented as visible to
+      // all staff, so an advertised one certainly is.
+      { segment: "recruitment/announced", labelKey: "announcedJobs", icon: Megaphone, access: [{ processArea: "vacancies", minLevel: "view" }] },
     ],
   },
   {

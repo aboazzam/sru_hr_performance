@@ -425,26 +425,44 @@ const updatePositionSchema = z.object({
   nameAr: z.string().trim().min(1),
   nameEn: z.string().trim().optional(),
   orgUnitId: z.string().uuid().nullable(),
+  parentId: z.string().uuid().nullable(),
 });
 
 /**
- * Edits an existing position's name and org-unit link — the "خاصية التعديل"
- * (edit capability) the project owner asked for on the staffing screen.
- * Real authorization is `org_structure_positions_update`'s RLS
+ * Edits an existing position's name, org-unit link, and reporting line
+ * ("التبعية") — the "خاصية التعديل" (edit capability) the project owner
+ * asked for on the staffing screen, extended 2026-08-05 to also let an
+ * existing position's parent be changed after creation (previously only
+ * settable at `addPosition` time, with no way to fix a mistake or reflect a
+ * real reorg afterward). Real authorization is
+ * `org_structure_positions_update`'s RLS
  * (`check_vpra_global('orgStructure','approve')`).
  *
- * `orgUnitId` (2026-07-26) is `string | null`, not optional — unlike
- * `addPosition`'s optional param, an edit form always resends the current
+ * `orgUnitId`/`parentId` are `string | null`, not optional — unlike
+ * `addPosition`'s optional params, an edit form always resends the current
  * selection, and `null` explicitly means "clear the link" (same
  * null-vs-undefined convention `updateLevel`'s `color` already uses).
+ * `parentId` must be `null` for a root-level position and a real position id
+ * otherwise — this action does not re-derive that itself (it has no opinion
+ * on which level is "root"); `validate_org_structure_position_parent()`
+ * (20260723000001/20260724000001) remains the single source of truth for
+ * the invariant (root-must-be-null, no self-parent, no cycles), same as
+ * `addPosition` already trusts it rather than duplicating the rule here.
  */
 export async function updatePosition(
   positionId: string,
   nameAr: string,
   nameEn: string,
-  orgUnitId: string | null
+  orgUnitId: string | null,
+  parentId: string | null
 ): Promise<OrgStructureActionState> {
-  const parsed = updatePositionSchema.safeParse({ positionId, nameAr, nameEn: nameEn || undefined, orgUnitId });
+  const parsed = updatePositionSchema.safeParse({
+    positionId,
+    nameAr,
+    nameEn: nameEn || undefined,
+    orgUnitId,
+    parentId,
+  });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
   }
@@ -459,7 +477,12 @@ export async function updatePosition(
 
   const { error } = await supabase
     .from("org_structure_positions")
-    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, org_unit_id: parsed.data.orgUnitId })
+    .update({
+      name_ar: parsed.data.nameAr,
+      name_en: parsed.data.nameEn ?? null,
+      org_unit_id: parsed.data.orgUnitId,
+      parent_id: parsed.data.parentId,
+    })
     .eq("id", parsed.data.positionId);
 
   if (error) return mapError(error);
@@ -470,7 +493,12 @@ export async function updatePosition(
     action: "org_structure_position_updated",
     entity: "org_structure_positions",
     entity_id: parsed.data.positionId,
-    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, org_unit_id: parsed.data.orgUnitId },
+    after_data: {
+      name_ar: parsed.data.nameAr,
+      name_en: parsed.data.nameEn ?? null,
+      org_unit_id: parsed.data.orgUnitId,
+      parent_id: parsed.data.parentId,
+    },
   });
 
   return { status: "success" };

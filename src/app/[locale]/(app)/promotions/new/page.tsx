@@ -39,9 +39,12 @@ export default async function ProposePromotionPage({
   // RLS-scoped to the caller, same "seeing an option here doesn't
   // guarantee the insert succeeds" caveat as every other create screen —
   // the real authorization boundary is promotions_insert's own RLS.
+  // job_title_id comes along so the form can prefill "from" with the title
+  // already recorded on the employee's own profile instead of asking the
+  // proposer to retype what the database already knows.
   const { data: employees } = await supabase
     .from("profiles")
-    .select("id, employee_number, full_name_ar")
+    .select("id, employee_number, full_name_ar, job_title_id")
     .is("deleted_at", null)
     .order("employee_number");
 
@@ -57,6 +60,19 @@ export default async function ProposePromotionPage({
     .is("deleted_at", null)
     .order("grade_level");
 
+  // The real career ladder, so the "to" list can be narrowed to the moves it
+  // actually defines out of the employee's current title. Read through the
+  // caller's own client — no edges (e.g. no `careerPath` grant) simply means
+  // no narrowing offered, never a broken form.
+  const { data: careerEdgeRows } = await supabase
+    .from("career_path")
+    .select("from_job_title_id, to_job_title_id")
+    .is("deleted_at", null);
+  const careerEdges = (careerEdgeRows ?? []).map((edge) => ({
+    fromJobTitleId: edge.from_job_title_id,
+    toJobTitleId: edge.to_job_title_id,
+  }));
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 24 }}>
@@ -67,13 +83,24 @@ export default async function ProposePromotionPage({
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {employees && employees.length > 0 && jobTitles && jobTitles.length > 0 ? (
+      {employees && employees.length > 0 && jobTitles && jobTitles.length > 0 && cycles && cycles.length > 0 ? (
         <ProposePromotionForm
           locale={locale}
           employees={employees}
-          cycles={cycles ?? []}
+          cycles={cycles}
           jobTitles={jobTitles}
+          careerEdges={careerEdges}
         />
+      ) : cycles && cycles.length === 0 ? (
+        // `cycleId` is required (`proposePromotionSchema`/the form's own
+        // <select required>) — with zero real evaluation_cycles rows, the
+        // form used to render anyway with an empty, unselectable cycle
+        // dropdown, silently blocking every submission behind a raw,
+        // unlocalized native browser validation message. Same root cause
+        // (zero evaluation_cycles) as the calibration create-session fix,
+        // a distinct honest message instead of pretending it's a
+        // permission problem.
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNoData")}</p>
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}
