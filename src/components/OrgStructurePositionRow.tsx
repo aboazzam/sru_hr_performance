@@ -5,6 +5,7 @@ import { Check, Trash2, UserMinus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { updatePosition, unassignEmployee, deletePosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
+import { computeEligibleParentPositions, isRootLevelOrder } from "@/lib/orgStructurePositions";
 
 const inputClass =
   "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
@@ -19,25 +20,45 @@ interface OrgUnitOption {
   name_ar: string;
 }
 
+interface LevelOption {
+  id: string;
+  level_order: number;
+}
+
+interface PositionOption {
+  id: string;
+  name_ar: string;
+  level_id: string;
+  parent_id: string | null;
+}
+
 export function OrgStructurePositionRow({
   levelName,
+  levelId,
   parentName,
   positionId,
   initialNameAr,
   initialNameEn,
   initialOrgUnitId,
+  initialParentId,
   orgUnits,
+  levels,
+  positions,
   jobTitle,
   assignments,
   orgUnitEmployeeLabels,
 }: {
   levelName: string;
+  levelId: string;
   parentName: string;
   positionId: string;
   initialNameAr: string;
   initialNameEn: string | null;
   initialOrgUnitId: string | null;
+  initialParentId: string | null;
   orgUnits: OrgUnitOption[];
+  levels: LevelOption[];
+  positions: PositionOption[];
   /** 2026-07-27: position's linked job_titles.name_ar, when set. Read-only here (no edit UI yet), same as the org chart. */
   jobTitle: string | null;
   assignments: Assignment[];
@@ -59,10 +80,23 @@ export function OrgStructurePositionRow({
   const [nameAr, setNameAr] = useState(initialNameAr);
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
   const [orgUnitId, setOrgUnitId] = useState(initialOrgUnitId ?? "");
+  const [parentId, setParentId] = useState(initialParentId ?? "");
   const [unassigningId, setUnassigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isDirty = nameAr !== initialNameAr || nameEn !== (initialNameEn ?? "") || orgUnitId !== (initialOrgUnitId ?? "");
+  const isDirty =
+    nameAr !== initialNameAr ||
+    nameEn !== (initialNameEn ?? "") ||
+    orgUnitId !== (initialOrgUnitId ?? "") ||
+    parentId !== (initialParentId ?? "");
+
+  // Same rule/exclusions as OrgStructurePositionMiniRow -- see
+  // src/lib/orgStructurePositions.ts for the full rationale
+  // (2026-08-05 "اضف خاصية تغيير التبعية").
+  const levelOrderById = new Map(levels.map((l) => [l.id, l.level_order]));
+  const ownLevelOrder = levelOrderById.get(levelId);
+  const isRootLevel = isRootLevelOrder(ownLevelOrder, levels);
+  const parentOptions = computeEligibleParentPositions(positionId, ownLevelOrder, levels, positions);
 
   const errorMessageKeys: Record<string, string> = {
     invalid_input: "errorInvalid",
@@ -75,7 +109,7 @@ export function OrgStructurePositionRow({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null);
+      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null, isRootLevel ? null : parentId || null);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -113,7 +147,21 @@ export function OrgStructurePositionRow({
   return (
     <tr>
       <td style={{ verticalAlign: "top", fontSize: 13 }}>{levelName}</td>
-      <td style={{ verticalAlign: "top", fontSize: 13 }}>{parentName}</td>
+      <td style={{ verticalAlign: "top", fontSize: 13 }}>
+        {isRootLevel ? (
+          parentName
+        ) : parentOptions.length === 0 ? (
+          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noParentOptions")}</span>
+        ) : (
+          <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={inputClass} aria-label={t("positionParentLabel")}>
+            {parentOptions.map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.name_ar}
+              </option>
+            ))}
+          </select>
+        )}
+      </td>
       <td>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ marginBottom: 4 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ marginBottom: 4 }} />
@@ -165,7 +213,14 @@ export function OrgStructurePositionRow({
       </td>
       <td>
         <div className="sru-icon-action-group">
-          <button type="button" disabled={isSaving || !isDirty} onClick={handleSave} className="sru-icon-action primary" title={t("saveButton")} aria-label={t("saveButton")}>
+          <button
+            type="button"
+            disabled={isSaving || !isDirty || (!isRootLevel && parentOptions.length === 0)}
+            onClick={handleSave}
+            className="sru-icon-action primary"
+            title={t("saveButton")}
+            aria-label={t("saveButton")}
+          >
             <Check size={15} />
           </button>
           <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
