@@ -14,6 +14,9 @@ interface JobTitleOption {
   id: string;
   name_ar: string;
   grade_level: number;
+  /** The title's own recorded requirements — the fallback source, used only
+   * when the career path records no transition into this title. */
+  qualification_required: string | null;
 }
 
 interface OrgUnitOption {
@@ -78,10 +81,22 @@ export function CreateVacancyForm({
   // reduced to whichever edge happened to come first.
   const sources = effectiveJobTitleId ? (transitionRequirements[effectiveJobTitleId] ?? []) : [];
   const distinctTexts = [...new Set(sources.map((source) => source.text))];
-  const sourceRequirements = distinctTexts.join("\n");
+  const careerPathRequirements = distinctTexts.join("\n");
   const sourceTitles = [...new Set(sources.map((source) => source.fromName).filter(Boolean))].join(
     "، "
   );
+
+  // Fallback for the ~211 titles the career path records no transition into
+  // (2026-08-04, requested after the career-path source shipped): the title's
+  // own recorded requirements. Which source was used is always stated in the
+  // hint below — the two are never silently blended under one label.
+  const ownRequirements = selectedJobTitle?.qualification_required?.trim() ?? "";
+  const sourceRequirements = careerPathRequirements || ownRequirements;
+  const sourceKind: "careerPath" | "jobTitle" | "none" = careerPathRequirements
+    ? "careerPath"
+    : ownRequirements
+      ? "jobTitle"
+      : "none";
 
   // Requirements are prefilled from that career-path text and stay editable.
   // State is adjusted during render (React's documented pattern for deriving
@@ -201,10 +216,14 @@ export function CreateVacancyForm({
             />
             {selectedJobTitle && (
               <p style={{ fontSize: 12, color: "var(--sru-muted)", marginTop: 6 }}>
-                {!sourceRequirements ? (
+                {sourceKind === "none" ? (
                   t("requirementsNoSource")
                 ) : requirements === sourceRequirements ? (
-                  t("requirementsFromCareerPath", { fromTitles: sourceTitles })
+                  sourceKind === "careerPath" ? (
+                    t("requirementsFromCareerPath", { fromTitles: sourceTitles })
+                  ) : (
+                    t("requirementsFromJobTitle", { jobTitle: selectedJobTitle.name_ar })
+                  )
                 ) : (
                   <button
                     type="button"
@@ -220,7 +239,9 @@ export function CreateVacancyForm({
                       cursor: "pointer",
                     }}
                   >
-                    {t("requirementsUseSource")}
+                    {sourceKind === "careerPath"
+                      ? t("requirementsUseSource")
+                      : t("requirementsUseJobTitleSource")}
                   </button>
                 )}
               </p>

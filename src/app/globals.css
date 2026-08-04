@@ -629,6 +629,92 @@ dialog.sru-modal::backdrop {
   cursor: not-allowed;
 }
 
+/* ===== Position edit card (2026-08-05) =====
+   Real feedback on OrgStructurePositionMiniRow/OrgStructurePositionRow's
+   edit mode: once a parent/reporting-line select joined the existing
+   name/name/org-unit fields, the row became one unlabeled, same-styled
+   flex line -- nothing distinguished the position's own name from which
+   field controlled its reporting line versus its org-unit link. Replaces
+   that flat row with a bordered "now editing" card, split into two named
+   groups (the position's own identity vs. its two organizational links),
+   each field carrying a real label -- same underlying .sru-field
+   label/input look as every other form in this app, just applied here for
+   the first time to an inline row-level editor instead of a page form. */
+.sru-position-edit-card {
+  background: var(--sru-purple-light);
+  border: 1.5px solid var(--sru-purple);
+  border-radius: 12px;
+  padding: 14px 16px 12px;
+  margin: 6px 0;
+}
+.sru-position-edit-group + .sru-position-edit-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--sru-border);
+}
+.sru-position-edit-grouplabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--sru-purple);
+  margin-bottom: 8px;
+}
+.sru-position-edit-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+@media (max-width: 560px) {
+  .sru-position-edit-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.sru-position-edit-field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  margin-bottom: 4px;
+}
+.sru-position-edit-field input,
+.sru-position-edit-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--sru-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: #fff;
+  color: var(--sru-ink);
+}
+.sru-position-edit-field input:focus,
+.sru-position-edit-field select:focus {
+  outline: 2px solid var(--sru-blue);
+  border-color: var(--sru-blue);
+}
+.sru-position-edit-field p {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--sru-muted);
+  padding: 8px 0 2px;
+}
+.sru-position-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sru-border);
+}
+.sru-position-edit-actions-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--sru-border);
+  margin: 0 4px;
+}
+
 /* ===== Drag-and-drop level reordering (2026-07-25) ===== */
 .sru-draggable-item {
   display: flex;

@@ -1655,10 +1655,12 @@
     "sectionDetailsTitle": "بيانات الشاغر",
     "sectionDetailsSubtitle": "المسمى الوظيفي والوحدة التنظيمية التي يتبع لها الشاغر.",
     "sectionRequirementsTitle": "المتطلبات",
-    "sectionRequirementsSubtitle": "تُعبّأ تلقائيًا من متطلبات الانتقال في المسار الوظيفي، ويمكنك تعديلها.",
+    "sectionRequirementsSubtitle": "تُعبّأ تلقائيًا من متطلبات الانتقال في المسار الوظيفي، أو من متطلبات المسمى نفسه إن لم يوجد رابط انتقال — ويمكنك تعديلها.",
     "requirementsUseSource": "استعادة متطلبات الانتقال من المسار الوظيفي",
-    "requirementsNoSource": "لا توجد متطلبات انتقال مسجّلة لهذا المسمى في المسار الوظيفي — اكتبها يدويًا.",
-    "requirementsFromCareerPath": "مأخوذة من متطلبات الانتقال في المسار الوظيفي (الانتقال من: {fromTitles})."
+    "requirementsNoSource": "لا توجد متطلبات مسجّلة لهذا المسمى — لا في المسار الوظيفي ولا في بيانات المسمى نفسه، اكتبها يدويًا.",
+    "requirementsFromCareerPath": "مأخوذة من متطلبات الانتقال في المسار الوظيفي (الانتقال من: {fromTitles}).",
+    "requirementsFromJobTitle": "لا يوجد رابط انتقال لهذا المسمى — مأخوذة من متطلبات المسمى الوظيفي «{jobTitle}» نفسه.",
+    "requirementsUseJobTitleSource": "استعادة متطلبات المسمى الوظيفي"
   },
   "StrategicPlansPage": {
     "title": "الخطط الاستراتيجية",
