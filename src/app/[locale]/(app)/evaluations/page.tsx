@@ -3,14 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { EvaluationCycleRow, type EvaluationCycleRowData } from "@/components/EvaluationCycleRow";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { cycleDependentTables, todayInTimezone } from "@/lib/evaluationCycle";
 import type { EvaluationCycleType } from "./cycles/new/actions";
-
-const cycleTypeLabelKeys: Record<EvaluationCycleType, string> = {
-  academic: "cycleTypeAcademic",
-  calendar: "cycleTypeCalendar",
-  fiscal: "cycleTypeFiscal",
-};
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationCyclesPage() {
@@ -22,7 +19,10 @@ export default async function EvaluationCyclesPage() {
   const permissions = Object.fromEntries(
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).map((row) => [row.process_area, row.vpra_level])
   ) as Partial<Record<ProcessArea, VpraLevel>>;
-  const canCreateCycle = hasVpraAccess(permissions.evaluation ?? "none", "approve");
+  // Mirrors evaluation_cycles_insert/update's own RLS bar
+  // (check_vpra_global('evaluation','approve') — ceo/hr_admin/super_admin
+  // today). Hiding the controls is presentation; Postgres stays the gate.
+  const canManageCycles = hasVpraAccess(permissions.evaluation ?? "none", "approve");
 
   // RLS-scoped to the caller (evaluation_cycles_select:
   // check_vpra('evaluation','view')) — every role holding any grant on
@@ -30,17 +30,62 @@ export default async function EvaluationCyclesPage() {
   // cycles are university-wide metadata, not per-employee/org-unit scoped.
   const { data } = await supabase
     .from("evaluation_cycles")
-    .select("id, name_ar, cycle_type, start_date, end_date")
+    .select("id, name_ar, name_en, cycle_type, start_date, end_date")
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
 
   const cycles = data as Array<{
     id: string;
     name_ar: string;
+    name_en: string | null;
     cycle_type: EvaluationCycleType;
     start_date: string;
     end_date: string;
   }> | null;
+
+  // How many real records depend on each cycle, across every table with a
+  // cycle_id FK. One small query per table (10 total, each returning just
+  // the cycle_id column) rather than 10 x N per-cycle counts — the delete
+  // guard and this column then read the same numbers. All RLS-scoped, so a
+  // caller only ever counts what they can genuinely see.
+  const usageByCycle = new Map<string, number>();
+  if (cycles && cycles.length > 0) {
+    const cycleIds = cycles.map((c) => c.id);
+    await Promise.all(
+      cycleDependentTables.map(async (table) => {
+        const { data: rows } = await supabase
+          .from(table)
+          .select("cycle_id")
+          .in("cycle_id", cycleIds)
+          .is("deleted_at", null);
+        for (const row of rows ?? []) {
+          usageByCycle.set(row.cycle_id, (usageByCycle.get(row.cycle_id) ?? 0) + 1);
+        }
+      })
+    );
+  }
+
+  // "Today" for the derived status column, in the configured display
+  // timezone rather than the server's — the same setting the user-activity
+  // and promotions-history screens already respect.
+  const timezone = await getDisplayTimezone(supabase);
+  const today = todayInTimezone(timezone);
+
+  const typeLabels = {
+    cycleTypeAcademic: tType("cycleTypeAcademic"),
+    cycleTypeCalendar: tType("cycleTypeCalendar"),
+    cycleTypeFiscal: tType("cycleTypeFiscal"),
+  };
+
+  const rows: EvaluationCycleRowData[] = (cycles ?? []).map((cycle) => ({
+    id: cycle.id,
+    nameAr: cycle.name_ar,
+    nameEn: cycle.name_en,
+    cycleType: cycle.cycle_type,
+    startDate: cycle.start_date,
+    endDate: cycle.end_date,
+    usageCount: usageByCycle.get(cycle.id) ?? 0,
+  }));
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -63,19 +108,19 @@ export default async function EvaluationCyclesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {canCreateCycle && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {canManageCycles && (
             <Link href="/evaluations/cycles/new" className="sru-btn sru-btn-primary">
               {t("addCycle")}
             </Link>
           )}
-          <Link href="/evaluations/mine" className="sru-btn sru-btn-primary">
+          <Link href="/evaluations/mine" className="sru-btn">
             {t("myEvaluations")}
           </Link>
-          <Link href="/evaluations/team" className="sru-btn sru-btn-primary">
+          <Link href="/evaluations/team" className="sru-btn">
             {t("myTeamEvaluations")}
           </Link>
-          <Link href="/evaluations/review" className="sru-btn sru-btn-primary">
+          <Link href="/evaluations/review" className="sru-btn">
             {t("needsMyReview")}
           </Link>
           <PrintButton />
@@ -83,8 +128,17 @@ export default async function EvaluationCyclesPage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {!cycles || cycles.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+      {rows.length === 0 ? (
+        <div>
+          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+          {/* Zero cycles is not a cosmetic empty state: `cycle_id` is NOT
+              NULL on promotions/rewards/calibration/goals/BAU tasks/targets,
+              so those modules cannot be used at all until one exists. Say so
+              here, where the fix is one click away. */}
+          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 8, lineHeight: 1.9 }}>
+            {canManageCycles ? t("emptyBlocksModulesManager") : t("emptyBlocksModules")}
+          </p>
+        </div>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -95,26 +149,20 @@ export default async function EvaluationCyclesPage() {
                   <th>{t("columnType")}</th>
                   <th>{t("columnStartDate")}</th>
                   <th>{t("columnEndDate")}</th>
+                  <th>{t("columnStatus")}</th>
+                  <th>{t("columnUsage")}</th>
                   <th className="no-print">{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>
-                {cycles.map((cycle) => (
-                  <tr key={cycle.id}>
-                    <td>{cycle.name_ar}</td>
-                    <td>{tType(cycleTypeLabelKeys[cycle.cycle_type])}</td>
-                    <td>{cycle.start_date}</td>
-                    <td>{cycle.end_date}</td>
-                    <td className="no-print">
-                      <Link
-                        href={`/evaluations/new?cycleId=${cycle.id}`}
-                        className="sru-btn sru-btn-primary"
-                        style={{ fontSize: 13, padding: "6px 12px" }}
-                      >
-                        {t("createEvaluation")}
-                      </Link>
-                    </td>
-                  </tr>
+                {rows.map((cycle) => (
+                  <EvaluationCycleRow
+                    key={cycle.id}
+                    cycle={cycle}
+                    canManage={canManageCycles}
+                    today={today}
+                    typeLabels={typeLabels}
+                  />
                 ))}
               </tbody>
             </table>
