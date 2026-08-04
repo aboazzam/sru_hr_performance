@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { createRecommendation, type CreateRecommendationState } from "@/app/[locale]/(app)/recommendations/actions";
 
 interface EmployeeOption {
@@ -25,12 +26,16 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
 
 export function CreateRecommendationForm({ employees, cycles }: { employees: EmployeeOption[]; cycles: CycleOption[] }) {
   const t = useTranslations("RecommendationsPage");
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<CreateRecommendationState, FormData>(createRecommendation, null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state?.status === "success") formRef.current?.reset();
-  }, [state]);
+    if (state?.status === "success") {
+      formRef.current?.reset();
+      router.refresh();
+    }
+  }, [state, router]);
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
