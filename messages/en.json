@@ -1640,10 +1640,12 @@
     "sectionDetailsTitle": "Vacancy Details",
     "sectionDetailsSubtitle": "The job title and the org unit this vacancy belongs to.",
     "sectionRequirementsTitle": "Requirements",
-    "sectionRequirementsSubtitle": "Prefilled from the career path transition requirements — editable.",
+    "sectionRequirementsSubtitle": "Prefilled from the career path transition requirements, or from the job title own requirements when no transition exists — editable.",
     "requirementsUseSource": "Restore the career path transition requirements",
-    "requirementsNoSource": "No transition requirements are recorded for this job title in the career path — type them manually.",
-    "requirementsFromCareerPath": "Taken from the career path transition requirements (moving from: {fromTitles})."
+    "requirementsNoSource": "No requirements are recorded for this job title — neither in the career path nor on the title itself; type them manually.",
+    "requirementsFromCareerPath": "Taken from the career path transition requirements (moving from: {fromTitles}).",
+    "requirementsFromJobTitle": "No career path transition leads to this title — taken from job title \"{jobTitle}\" own requirements.",
+    "requirementsUseJobTitleSource": "Restore the job title requirements"
   },
   "StrategicPlansPage": {
     "title": "Strategic Plans",

@@ -41,7 +41,9 @@ export default async function CreateVacancyPage({
   // the real authorization boundary is vacancies_insert's own RLS.
   const { data: jobTitles } = await supabase
     .from("job_titles")
-    .select("id, name_ar, grade_level")
+    // qualification_required is the FALLBACK requirements source, used only
+    // when the career path records no transition into this title (see below).
+    .select("id, name_ar, grade_level, qualification_required")
     .is("deleted_at", null)
     .order("grade_level");
 
@@ -53,7 +55,9 @@ export default async function CreateVacancyPage({
   // The vacancy's requirements are prefilled from the career path's own
   // "متطلبات الانتقال" — the requirements recorded on every edge leading INTO
   // the selected job title (2026-08-04, the project owner's own choice over
-  // job_titles.qualification_required). The from-side title's name is resolved
+  // job_titles.qualification_required, which is now the explicit fallback for
+  // the ~211 titles the career path records no transition into). The from-side
+  // title's name is resolved
   // from `jobTitles` above rather than a PostgREST embed: career_path has two
   // FKs to job_titles, which needs explicit disambiguation hints, and every
   // job title is already loaded here for the select anyway.
