@@ -1572,7 +1572,22 @@
     "importErrorForbidden": "يجب تسجيل الدخول أولًا.",
     "importErrorUnknown": "حدث خطأ غير متوقع أثناء الاستيراد.",
     "importSuccess": "تم الاستيراد: {created} شاغر جديد، {updated} شاغر محدَّث.",
-    "importWarnings": "{count} صف تم تجاوزه أو به خطأ"
+    "importWarnings": "{count} صف تم تجاوزه أو به خطأ",
+    "columnActions": "إجراءات",
+    "summaryTotal": "إجمالي الشواغر",
+    "summaryOther": "حالات أخرى",
+    "searchPlaceholder": "ابحث بالمسمى أو الوحدة أو المتطلبات...",
+    "filterByStatus": "تصفية بالحالة",
+    "allStatuses": "كل الحالات",
+    "resetFilters": "إعادة تعيين",
+    "noMatches": "لا توجد شواغر مطابقة.",
+    "fromPlan": "من خطة التوظيف {year}",
+    "deleteButton": "حذف الشاغر",
+    "deleteConfirm": "هل تريد حذف هذا الشاغر؟",
+    "actionErrorInvalid": "قيمة غير صالحة.",
+    "actionErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "actionErrorForbidden": "لا تملك صلاحية تعديل هذا الشاغر.",
+    "actionErrorUnknown": "حدث خطأ غير متوقع."
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",

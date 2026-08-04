@@ -1572,7 +1572,22 @@
     "importErrorForbidden": "You must be logged in.",
     "importErrorUnknown": "An unexpected error occurred during import.",
     "importSuccess": "Imported: {created} new, {updated} updated.",
-    "importWarnings": "{count} row(s) skipped or with an error"
+    "importWarnings": "{count} row(s) skipped or with an error",
+    "columnActions": "Actions",
+    "summaryTotal": "Total vacancies",
+    "summaryOther": "Other statuses",
+    "searchPlaceholder": "Search by job title, org unit, or requirements...",
+    "filterByStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "resetFilters": "Reset",
+    "noMatches": "No matching vacancies.",
+    "fromPlan": "From the {year} recruitment plan",
+    "deleteButton": "Delete vacancy",
+    "deleteConfirm": "Delete this vacancy?",
+    "actionErrorInvalid": "Invalid value.",
+    "actionErrorUnauthenticated": "You must be logged in.",
+    "actionErrorForbidden": "You do not have permission to modify this vacancy.",
+    "actionErrorUnknown": "An unexpected error occurred."
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",
