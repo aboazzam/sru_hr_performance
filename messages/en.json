@@ -1561,6 +1561,8 @@
     "subtitle": "Add a new job vacancy for a specific job title and org unit.",
     "jobTitleLabel": "Job Title",
     "jobTitlePlaceholder": "Select job title",
+    "jobTitleSearchPlaceholder": "Search job titles...",
+    "jobTitleNoMatches": "No matching results",
     "orgUnitLabel": "Org Unit",
     "orgUnitPlaceholder": "Select org unit",
     "requirementsLabel": "Requirements — optional",
