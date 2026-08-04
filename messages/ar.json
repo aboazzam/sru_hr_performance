@@ -267,6 +267,8 @@
     "positionColumnAssigned": "الموظفون المسكَّنون",
     "positionColumnOrgUnitEmployees": "موظفو الوحدة التنظيمية المرتبطة ووحداتها الفرعية",
     "rootChip": "جذر",
+    "positionParentLabel": "المنصب الأعلى (أي مستوى أعلى)",
+    "noParentOptions": "لا توجد مناصب في أي مستوى أعلى بعد — أضف منصبًا هناك أولًا.",
     "noPositions": "لا توجد مناصب بعد — أضف مستويات ومناصب أولًا من شاشة الهيكل التنظيمي.",
     "assignHeading": "تسكين موظف على منصب",
     "employeeLabel": "الموظف",

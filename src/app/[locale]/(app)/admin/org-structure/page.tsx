@@ -226,10 +226,19 @@ export default async function OrgStructurePage() {
                               <OrgStructurePositionMiniRow
                                 key={position.id}
                                 positionId={position.id}
+                                levelId={position.level_id}
                                 initialNameAr={position.name_ar}
                                 initialNameEn={position.name_en}
                                 initialOrgUnitId={position.org_unit_id}
+                                initialParentId={position.parent_id}
                                 orgUnits={orgUnits}
+                                levels={levels.map((l) => ({ id: l.id, level_order: l.level_order }))}
+                                positions={positions.map((p) => ({
+                                  id: p.id,
+                                  name_ar: p.name_ar,
+                                  level_id: p.level_id,
+                                  parent_id: p.parent_id,
+                                }))}
                                 parentLabel={
                                   position.parent_id ? `${t("parentLabel")}: ${positionNameById.get(position.parent_id) ?? "—"}` : t("rootChip")
                                 }
