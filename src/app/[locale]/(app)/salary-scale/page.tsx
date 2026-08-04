@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isLocale } from "@/i18n/config";
 import { PrintButton } from "@/components/PrintButton";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { SalaryScaleTable } from "@/components/SalaryScaleTable";
 
 // salary_scale_select's own RLS (check_vpra_global('careerPath','view') OR
 // check_vpra_global('employeeData','view')) would let any careerPath=view
@@ -45,10 +46,17 @@ export default async function SalaryScalePage({
   // Single FK to job_titles (job_title_id) -> no dual-embed disambiguation
   // needed here, unlike career_path. Verified directly against the REST API
   // before writing this that the embed returns a single object, not an array.
+  //
+  // step_h/step_i (2026-08-04 fix): the 20260720000001 data migration added
+  // these two nullable columns for academic titles' real 9-step scale (A-I,
+  // vs admin's 7-step A-G) and populated them for 9 real rows (e.g. "أستاذ"),
+  // but this page's query and table never fetched or rendered either column
+  // — a real, silent data-completeness gap found while checking this page,
+  // not something the migration itself got wrong.
   const { data } = await supabase
     .from("salary_scale")
     .select(
-      "id, step_a, step_b, step_c, step_d, step_e, step_f, step_g, annual_increase_cap, effective_date, job_titles(name_ar,grade_level)"
+      "id, step_a, step_b, step_c, step_d, step_e, step_f, step_g, step_h, step_i, annual_increase_cap, effective_date, job_titles(name_ar,grade_level)"
     )
     .is("deleted_at", null)
     .order("effective_date", { ascending: false });
@@ -62,12 +70,12 @@ export default async function SalaryScalePage({
     step_e: number;
     step_f: number;
     step_g: number;
+    step_h: number | null;
+    step_i: number | null;
     annual_increase_cap: number | null;
     effective_date: string;
     job_titles: { name_ar: string; grade_level: number } | null;
   }> | null;
-
-  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -96,49 +104,7 @@ export default async function SalaryScalePage({
       {!rows || rows.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnJobTitle")}</th>
-                  <th>A</th>
-                  <th>B</th>
-                  <th>C</th>
-                  <th>D</th>
-                  <th>E</th>
-                  <th>F</th>
-                  <th>G</th>
-                  <th>{t("columnAnnualCap")}</th>
-                  <th>{t("columnEffectiveDate")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      {row.job_titles?.name_ar ?? "—"}
-                      {row.job_titles && (
-                        <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                          {t("gradeLabel", { grade: row.job_titles.grade_level })}
-                        </span>
-                      )}
-                    </td>
-                    <td>{formatNumber(row.step_a)}</td>
-                    <td>{formatNumber(row.step_b)}</td>
-                    <td>{formatNumber(row.step_c)}</td>
-                    <td>{formatNumber(row.step_d)}</td>
-                    <td>{formatNumber(row.step_e)}</td>
-                    <td>{formatNumber(row.step_f)}</td>
-                    <td>{formatNumber(row.step_g)}</td>
-                    <td>{row.annual_increase_cap != null ? formatNumber(row.annual_increase_cap) : "—"}</td>
-                    <td>{row.effective_date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SalaryScaleTable rows={rows} locale={locale} />
       )}
     </div>
   );
