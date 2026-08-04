@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // This route existed in NavBar already (pointing at /calibration) but had
@@ -9,6 +10,20 @@ import { Link } from "@/i18n/navigation";
 export default async function CalibrationSessionsPage() {
   const t = await getTranslations("CalibrationSessionsPage");
   const supabase = await createClient();
+
+  // 2026-08-05: "جلسة جديدة" was shown unconditionally to everyone who can
+  // reach this list at all, even though calibration_sessions_insert (and
+  // /calibration/new's own page-level gate) require calibration>=approve
+  // (hr_admin-only per the real seeded matrix) -- the same
+  // show-an-action-the-caller-cant-actually-do pattern already fixed for
+  // /vacancies' and /employees' create/import buttons. Hidden here rather
+  // than shown-then-rejected on the next page.
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const calibrationLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "calibration"
+    )?.vpra_level ?? "none";
+  const canCreate = hasVpraAccess(calibrationLevel, "approve");
 
   // RLS-scoped to the caller (calibration_sessions_select:
   // check_vpra('calibration','view', org_unit_id)) — org-unit-scoped
@@ -50,9 +65,11 @@ export default async function CalibrationSessionsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Link href="/calibration/new" className="sru-btn sru-btn-primary">
-          {t("newSession")}
-        </Link>
+        {canCreate && (
+          <Link href="/calibration/new" className="sru-btn sru-btn-primary">
+            {t("newSession")}
+          </Link>
+        )}
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
