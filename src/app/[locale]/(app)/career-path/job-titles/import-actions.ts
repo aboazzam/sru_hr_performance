@@ -10,6 +10,7 @@ export type JobTitlesImportResult =
       summary: {
         created: number;
         updated: number;
+        competenciesSet: number;
         rowErrors: string[];
       };
     }
@@ -26,6 +27,17 @@ const CATEGORY_LABELS: Record<string, "leadership" | "academic" | "admin" | "tec
   admin: "admin",
   technical: "technical",
   labor: "labor",
+};
+
+const LEVEL_LABELS: Record<string, "basic" | "practitioner" | "advanced" | "professional"> = {
+  "أساسي": "basic",
+  "ممارس": "practitioner",
+  "متقدم": "advanced",
+  "محترف": "professional",
+  basic: "basic",
+  practitioner: "practitioner",
+  advanced: "advanced",
+  professional: "professional",
 };
 
 function cellText(value: ExcelJS.CellValue): string | null {
@@ -60,18 +72,32 @@ const BATCH_SIZE = 50;
  * Bulk import for `job_titles` — one sheet, one row per job title. Column
  * set mirrors the fields `CreateJobTitleForm`/`JobTitleCoreForm` already
  * expose (name_ar/name_en/family/grade/category/qualification/description),
- * not job_title_competencies or career_path edges — those stay per-job-title
- * screens, same scoping choice already made for the org-structure import
- * (staffing there is embedded, but role/competency assignment on this table
- * would need a separate matching problem this sheet shape can't express
- * cleanly without a source file to design against).
+ * plus (2026-08-04 follow-up, per direct feedback that the first version
+ * "لم يتطرق الى الجدارات" — didn't address competencies) one OPTIONAL extra
+ * column per real INSTITUTIONAL (type='core') competency, named after that
+ * competency's own name_ar, holding a required_level label (أساسي/ممارس/
+ * متقدم/محترف). Deliberately scoped to core competencies only, not
+ * specialized ones — the same 11 apply to every job title (matching
+ * `JobTitleCompetenciesManager`'s own core-vs-specialized split), so a fixed
+ * column set works, whereas specialized competencies vary per pillar/domain
+ * and would need a fundamentally different sheet shape (e.g. one row per
+ * job-title+competency pair) that wasn't asked for here. `career_path`
+ * edges still stay out of scope, same reasoning as before (no clean flat
+ * representation without a dedicated edge-shaped sheet, already served by
+ * the separate career_path import).
+ *
+ * A blank competency cell is skipped entirely (an existing assignment is
+ * left untouched, not cleared) — this import only ever adds or updates a
+ * level, never removes one, matching org_structure_assignments' own
+ * "add/update only" import discipline.
  *
  * Every write goes through the caller's own RLS-respecting client, exactly
  * like importOrgStructureExcel — real authorization is job_titles_insert/
- * update's own `careerPath>=prepare` RLS, not this action's code. A row that
- * RLS rejects surfaces as a per-row error in the summary rather than
- * aborting the whole import, same discipline as every other bulk-error
- * collection in this app.
+ * update's own `careerPath>=prepare` RLS (job_title_competencies_insert/
+ * update share the identical bar), not this action's code. A row that RLS
+ * rejects surfaces as a per-row error in the summary rather than aborting
+ * the whole import, same discipline as every other bulk-error collection in
+ * this app.
  *
  * job_titles has a PLAIN `UNIQUE(job_family_id, name_ar)` (not a partial
  * index, unlike org_structure_positions.external_code/evaluation_scores/
@@ -80,6 +106,10 @@ const BATCH_SIZE = 50;
  * existing rows first is still needed to (a) know create-vs-update counts,
  * and (b) reset career_content_status to 'draft' on an update, mirroring
  * updateJobTitleCore's own behavior for any manual edit.
+ * `job_title_competencies` DOES have a partial unique index
+ * (`(job_title_id, competency_id) WHERE deleted_at IS NULL`), so its own
+ * assignment pass uses the same select-then-insert-or-update workaround
+ * already established for evaluation_scores/calibration_results.
  */
 export async function importJobTitlesExcel(
   _prevState: JobTitlesImportResult | null,
@@ -123,6 +153,11 @@ export async function importJobTitlesExcel(
 
   const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
 
+  // Core competencies whose columns (if present in the sheet) carry a
+  // required_level per job title — see the function-level doc comment.
+  const { data: coreCompetenciesData } = await supabase.from("competencies").select("id, name_ar").eq("type", "core");
+  const coreCompetencyColumns = (coreCompetenciesData ?? []).filter((c) => cols.has(c.name_ar));
+
   interface ParsedRow {
     rowNumber: number;
     nameAr: string;
@@ -132,6 +167,7 @@ export async function importJobTitlesExcel(
     category: "leadership" | "academic" | "admin" | "technical" | "labor";
     qualificationRequired: string | null;
     descriptionAr: string | null;
+    competencyLevels: Array<{ competencyId: string; competencyNameAr: string; levelText: string }>;
   }
 
   const parsedRows: ParsedRow[] = [];
@@ -163,6 +199,12 @@ export async function importJobTitlesExcel(
       continue;
     }
 
+    const competencyLevels: ParsedRow["competencyLevels"] = [];
+    for (const c of coreCompetencyColumns) {
+      const levelText = cellText(get(row, c.name_ar));
+      if (levelText) competencyLevels.push({ competencyId: c.id, competencyNameAr: c.name_ar, levelText });
+    }
+
     parsedRows.push({
       rowNumber: r,
       nameAr,
@@ -172,6 +214,7 @@ export async function importJobTitlesExcel(
       category,
       qualificationRequired: cellText(get(row, "المؤهل المطلوب")),
       descriptionAr: cellText(get(row, "الوصف الوظيفي")),
+      competencyLevels,
     });
   }
 
@@ -249,13 +292,82 @@ export async function importJobTitlesExcel(
     }
   }
 
+  // Competency assignment pass — re-fetch job_titles by (family, name) AFTER
+  // the insert/update above, since a batch INSERT's returned row order isn't
+  // safe to match back against `toInsert` one-to-one.
+  let competenciesSet = 0;
+  const rowsNeedingCompetencies = parsedRows.filter((r) => r.competencyLevels.length > 0);
+  if (rowsNeedingCompetencies.length > 0) {
+    const { data: refreshedTitles } = await supabase
+      .from("job_titles")
+      .select("id, job_family_id, name_ar")
+      .is("deleted_at", null);
+    const idByKeyAfter = new Map((refreshedTitles ?? []).map((t) => [`${t.job_family_id}::${t.name_ar}`, t.id]));
+
+    const resolvedJobTitleIds: string[] = [];
+    const assignments: { jobTitleId: string; competencyId: string; requiredLevel: string; rowNumber: number; competencyNameAr: string }[] =
+      [];
+    for (const row of rowsNeedingCompetencies) {
+      const familyId = familyIdByName.get(row.familyNameAr.trim());
+      const jobTitleId = familyId ? idByKeyAfter.get(`${familyId}::${row.nameAr}`) : undefined;
+      if (!jobTitleId) continue; // the job_titles row itself already failed and was reported above
+      resolvedJobTitleIds.push(jobTitleId);
+      for (const c of row.competencyLevels) {
+        const level = LEVEL_LABELS[c.levelText.trim()];
+        if (!level) {
+          rowErrors.push(
+            `الصف ${row.rowNumber} ("${row.nameAr}"): مستوى غير معروف "${c.levelText}" لجدارة "${c.competencyNameAr}" — تم تجاوز هذه الجدارة`
+          );
+          continue;
+        }
+        assignments.push({ jobTitleId, competencyId: c.competencyId, requiredLevel: level, rowNumber: row.rowNumber, competencyNameAr: c.competencyNameAr });
+      }
+    }
+
+    if (assignments.length > 0) {
+      const { data: existingJtc } = await supabase
+        .from("job_title_competencies")
+        .select("id, job_title_id, competency_id")
+        .is("deleted_at", null)
+        .in("job_title_id", [...new Set(resolvedJobTitleIds)]);
+      const existingIdByPair = new Map((existingJtc ?? []).map((x) => [`${x.job_title_id}::${x.competency_id}`, x.id]));
+
+      const toInsertJtc: { job_title_id: string; competency_id: string; required_level: string }[] = [];
+      for (const a of assignments) {
+        const existingId = existingIdByPair.get(`${a.jobTitleId}::${a.competencyId}`);
+        if (existingId) {
+          const { error } = await supabase
+            .from("job_title_competencies")
+            .update({ required_level: a.requiredLevel })
+            .eq("id", existingId);
+          if (error) {
+            rowErrors.push(`الصف ${a.rowNumber} ("${a.competencyNameAr}"): ${error.message}`);
+          } else {
+            competenciesSet += 1;
+          }
+        } else {
+          toInsertJtc.push({ job_title_id: a.jobTitleId, competency_id: a.competencyId, required_level: a.requiredLevel });
+        }
+      }
+
+      if (toInsertJtc.length > 0) {
+        const { data: insertedJtc, error } = await supabase.from("job_title_competencies").insert(toInsertJtc).select("id");
+        if (error) {
+          rowErrors.push(`إدراج الجدارات: ${error.message}`);
+        } else {
+          competenciesSet += insertedJtc?.length ?? 0;
+        }
+      }
+    }
+  }
+
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
     actor_id: actor.id,
     action: "job_titles_excel_imported",
     entity: "job_titles",
-    after_data: { created, updated, rowErrorCount: rowErrors.length },
+    after_data: { created, updated, competenciesSet, rowErrorCount: rowErrors.length },
   });
 
-  return { status: "success", summary: { created, updated, rowErrors } };
+  return { status: "success", summary: { created, updated, competenciesSet, rowErrors } };
 }

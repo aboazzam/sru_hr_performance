@@ -428,7 +428,7 @@
     "downloadTemplateButton": "Download Empty Template",
     "importTriggerButton": "Import from Excel",
     "importHeading": "Import Job Titles from Excel",
-    "importNote": "Choose an .xlsx file matching the empty template's format. New job titles are added; matching ones (same name and job family) are updated with the file's data.",
+    "importNote": "Choose an .xlsx file matching the empty template's format. New job titles are added; matching ones (same name and job family) are updated with the file's data. Institutional competency levels (11 competencies) can also be set via optional columns named after each competency.",
     "closeButton": "Close",
     "chooseFileButton": "Choose File",
     "noFileChosen": "No file chosen",
@@ -437,7 +437,7 @@
     "importErrorInvalid": "The file is invalid or missing required columns (Job Title Name, Job Family, Grade, Category).",
     "importErrorForbidden": "You must be logged in.",
     "importErrorUnknown": "An unexpected error occurred during import.",
-    "importSuccess": "Imported: {created} new, {updated} updated.",
+    "importSuccess": "Imported: {created} new, {updated} updated, {competencies} competencies set.",
     "importWarnings": "{count} row(s) skipped or with an error"
   },
   "CareerPathJobTitleDetailPage": {
