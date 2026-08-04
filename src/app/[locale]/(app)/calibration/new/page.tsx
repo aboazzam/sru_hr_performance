@@ -65,7 +65,7 @@ export default async function CreateCalibrationSessionPage({
       {cycles && cycles.length > 0 && orgUnits && orgUnits.length > 0 ? (
         <CreateCalibrationSessionForm locale={locale} cycles={cycles} orgUnits={orgUnits} />
       ) : (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNoData")}</p>
       )}
     </div>
   );

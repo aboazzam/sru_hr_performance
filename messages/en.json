@@ -1287,6 +1287,7 @@
     "errorInvalidInput": "Check the fields — cycle and org unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to create calibration sessions.",
+    "errorNoData": "No evaluation cycles or org units are available yet — create an evaluation cycle first before starting a calibration session.",
     "errorUnknown": "An unexpected error occurred."
   },
   "PromotionsPage": {
@@ -1561,6 +1562,8 @@
     "subtitle": "Add a new job vacancy for a specific job title and org unit.",
     "jobTitleLabel": "Job Title",
     "jobTitlePlaceholder": "Select job title",
+    "jobTitleSearchPlaceholder": "Search by the first letters of the title...",
+    "jobTitleNoMatches": "No matching results",
     "orgUnitLabel": "Org Unit",
     "orgUnitPlaceholder": "Select org unit",
     "requirementsLabel": "Requirements — optional",
@@ -1576,8 +1579,6 @@
     "sectionDetailsSubtitle": "The job title and the org unit this vacancy belongs to.",
     "sectionRequirementsTitle": "Requirements",
     "sectionRequirementsSubtitle": "Prefilled from the job title's own requirements — editable.",
-    "jobTitleSearchPlaceholder": "Search by the first letters of the title...",
-    "jobTitleNoMatches": "No matching results",
     "requirementsFromJobTitle": "Taken from the requirements of job title \"{jobTitle}\".",
     "requirementsUseSource": "Restore the job title's requirements",
     "requirementsNoSource": "This job title has no recorded requirements — type them manually."
