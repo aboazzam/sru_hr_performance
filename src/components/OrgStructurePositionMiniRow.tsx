@@ -7,9 +7,6 @@ import { useRouter } from "@/i18n/navigation";
 import { updatePosition, deletePosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
 import { computeEligibleParentPositions, isRootLevelOrder } from "@/lib/orgStructurePositions";
 
-const inputClass =
-  "px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
 interface OrgUnitOption {
   id: string;
   name_ar: string;
@@ -154,44 +151,68 @@ export function OrgStructurePositionMiniRow({
     );
   }
 
+  // Real feedback (2026-08-05): once the parent/reporting-line select
+  // joined the pre-existing name/name/org-unit fields, this was one flat,
+  // unlabeled flex row -- nothing distinguished the position's own name
+  // from its reporting line from its org-unit link. Rebuilt as a bordered
+  // "now editing" card split into two named, individually-labeled groups
+  // (see the .sru-position-edit-* rules in globals.css).
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "6px 0", borderBottom: "1px solid var(--sru-border)" }}>
-      <span style={{ color: "var(--sru-muted)", fontSize: 11.5, minWidth: 80 }}>{parentLabel}</span>
-      <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 180 }} autoFocus />
-      <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 180 }} />
-      {!isRootLevel &&
-        (parentOptions.length === 0 ? (
-          <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noParentOptions")}</span>
-        ) : (
-          <select
-            value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-            className={inputClass}
-            style={{ maxWidth: 200 }}
-            aria-label={t("positionParentLabel")}
-          >
-            {parentOptions.map((position) => (
-              <option key={position.id} value={position.id}>
-                {position.name_ar}
-              </option>
-            ))}
-          </select>
-        ))}
-      <select
-        value={orgUnitId}
-        onChange={(e) => setOrgUnitId(e.target.value)}
-        className={inputClass}
-        style={{ maxWidth: 180 }}
-        aria-label={t("positionOrgUnitLabel")}
-      >
-        <option value="">{t("positionOrgUnitNone")}</option>
-        {orgUnits.map((unit) => (
-          <option key={unit.id} value={unit.id}>
-            {unit.name_ar}
-          </option>
-        ))}
-      </select>
-      <div className="sru-icon-action-group">
+    <div className="sru-position-edit-card">
+      <div className="sru-position-edit-group">
+        <span className="sru-position-edit-grouplabel">{t("positionEditIdentityGroup")}</span>
+        <div className="sru-position-edit-fields">
+          <div className="sru-position-edit-field">
+            <label htmlFor={`nameAr-${positionId}`}>{t("positionNameArLabel")}</label>
+            <input id={`nameAr-${positionId}`} value={nameAr} onChange={(e) => setNameAr(e.target.value)} autoFocus />
+          </div>
+          <div className="sru-position-edit-field">
+            <label htmlFor={`nameEn-${positionId}`}>{t("positionNameEnLabel")}</label>
+            <input id={`nameEn-${positionId}`} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+          </div>
+        </div>
+      </div>
+
+      <div className="sru-position-edit-group">
+        <span className="sru-position-edit-grouplabel">{t("positionEditLinksGroup")}</span>
+        <div className="sru-position-edit-fields">
+          <div className="sru-position-edit-field">
+            <label htmlFor={`parent-${positionId}`}>{t("positionParentLabel")}</label>
+            {isRootLevel ? (
+              <p>{t("rootChip")}</p>
+            ) : parentOptions.length === 0 ? (
+              <p>{t("noParentOptions")}</p>
+            ) : (
+              <select id={`parent-${positionId}`} value={parentId} onChange={(e) => setParentId(e.target.value)}>
+                {parentOptions.map((position) => (
+                  <option key={position.id} value={position.id}>
+                    {position.name_ar}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="sru-position-edit-field">
+            <label htmlFor={`orgUnit-${positionId}`}>{t("positionOrgUnitLabel")}</label>
+            <select id={`orgUnit-${positionId}`} value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)}>
+              <option value="">{t("positionOrgUnitNone")}</option>
+              {orgUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10, fontSize: 12 }}>
+          {t(errorMessageKeys[error] ?? "errorUnknown")}
+        </p>
+      )}
+
+      <div className="sru-position-edit-actions">
         <button
           type="button"
           disabled={isSaving || (!isRootLevel && parentOptions.length === 0)}
@@ -205,15 +226,11 @@ export function OrgStructurePositionMiniRow({
         <button type="button" disabled={isSaving} onClick={handleCancel} className="sru-icon-action" title={t("cancelButton")} aria-label={t("cancelButton")}>
           <X size={14} />
         </button>
+        <span className="sru-position-edit-actions-divider" aria-hidden="true" />
         <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
           <Trash2 size={14} />
         </button>
       </div>
-      {error && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
-          {t(errorMessageKeys[error] ?? "errorUnknown")}
-        </span>
-      )}
     </div>
   );
 }
