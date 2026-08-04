@@ -2,11 +2,18 @@
 
 import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { CalendarRange, Tag } from "lucide-react";
 import {
   createEvaluationCycle,
   type CreateEvaluationCycleState,
   type EvaluationCycleType,
 } from "@/app/[locale]/(app)/evaluations/cycles/new/actions";
+import {
+  CYCLE_DURATION_PRESETS,
+  computeEndDate,
+  describeCycleDuration,
+  type CycleDurationPreset,
+} from "@/lib/cyclePeriod";
 import type { Locale } from "@/i18n/config";
 
 type ErrorMessage = Extract<CreateEvaluationCycleState, { status: "error" }>["message"];
@@ -32,12 +39,47 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
     createEvaluationCycle.bind(null, locale),
     null
   );
-  // Progressive disclosure: the date fields only make sense once a period
-  // type is chosen (requested directly — pick the type first, then dates).
+
+  // The period type is still chosen first (an earlier explicit request), but
+  // the period fields are now always visible — disabled with an explanatory
+  // note until a type is picked, instead of not rendering at all, so it's
+  // obvious the cycle has a duration to fill in.
   const [cycleType, setCycleType] = useState<EvaluationCycleType | "">("");
 
-  const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  // There is no `duration` column on evaluation_cycles — the duration is the
+  // span between the two dates. The preset just computes the end date from the
+  // start; picking dates by hand switches it to "custom" rather than fighting
+  // the user's own choice.
+  const [duration, setDuration] = useState<CycleDurationPreset | "custom">(12);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  function applyStartDate(value: string) {
+    setStartDate(value);
+    if (duration !== "custom") {
+      setEndDate(computeEndDate(value, duration) ?? "");
+    }
+  }
+
+  function applyDuration(value: CycleDurationPreset | "custom") {
+    setDuration(value);
+    if (value !== "custom" && startDate) {
+      setEndDate(computeEndDate(startDate, value) ?? "");
+    }
+  }
+
+  function applyEndDate(value: string) {
+    setEndDate(value);
+    // An end date that no longer matches the selected preset means the period
+    // is hand-picked — say so rather than silently leaving a stale preset.
+    if (duration !== "custom" && startDate && computeEndDate(startDate, duration) !== value) {
+      setDuration("custom");
+    }
+  }
+
+  const periodDisabled = cycleType === "";
+  const span = describeCycleDuration(startDate, endDate);
+  const invalidRange = startDate !== "" && endDate !== "" && span === null;
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
@@ -50,63 +92,149 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("cycleTypeLabel")}</label>
-        <select
-          name="cycleType"
-          required
-          className={inputClass}
-          value={cycleType}
-          onChange={(event) => setCycleType(event.target.value as EvaluationCycleType)}
-        >
-          <option value="" disabled>
-            {t("cycleTypePlaceholder")}
-          </option>
-          {cycleTypeOptions.map((type) => (
-            <option key={type} value={type}>
-              {t(cycleTypeLabelKeys[type])}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("nameArLabel")}</label>
-        <input type="text" name="nameAr" required dir="rtl" className={inputClass} placeholder={t("nameArPlaceholder")} />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("nameEnLabel")}</label>
-        <input type="text" name="nameEn" dir="ltr" className={inputClass} placeholder={t("nameEnPlaceholder")} />
-      </div>
-
-      {cycleType !== "" && (
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <label className="block text-sm font-medium mb-1">{t("startDateLabel")}</label>
-            <input type="date" name="startDate" required dir="ltr" className={inputClass} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="block text-sm font-medium mb-1">{t("endDateLabel")}</label>
-            <input type="date" name="endDate" required dir="ltr" className={inputClass} />
+    <form onSubmit={handleSubmit}>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Tag size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionBasicTitle")}</h3>
+            <span>{t("sectionBasicSubtitle")}</span>
           </div>
         </div>
-      )}
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("cycleTypeLabel")}</label>
+            <select
+              name="cycleType"
+              required
+              value={cycleType}
+              onChange={(event) => setCycleType(event.target.value as EvaluationCycleType)}
+            >
+              <option value="" disabled>
+                {t("cycleTypePlaceholder")}
+              </option>
+              {cycleTypeOptions.map((type) => (
+                <option key={type} value={type}>
+                  {t(cycleTypeLabelKeys[type])}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sru-field">
+            <label>{t("nameArLabel")}</label>
+            <input type="text" name="nameAr" required dir="rtl" placeholder={t("nameArPlaceholder")} />
+          </div>
+
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <label>{t("nameEnLabel")}</label>
+            <input
+              type="text"
+              name="nameEn"
+              dir="ltr"
+              style={{ textAlign: "left" }}
+              placeholder={t("nameEnPlaceholder")}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <CalendarRange size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionPeriodTitle")}</h3>
+            <span>{t("sectionPeriodSubtitle")}</span>
+          </div>
+        </div>
+
+        {periodDisabled && (
+          <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: 12 }}>
+            {t("periodNeedsCycleType")}
+          </p>
+        )}
+
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("durationLabel")}</label>
+            <select
+              value={duration}
+              disabled={periodDisabled}
+              onChange={(event) =>
+                applyDuration(
+                  event.target.value === "custom"
+                    ? "custom"
+                    : (Number(event.target.value) as CycleDurationPreset)
+                )
+              }
+            >
+              {CYCLE_DURATION_PRESETS.map((months) => (
+                <option key={months} value={months}>
+                  {t("durationMonths", { months })}
+                </option>
+              ))}
+              <option value="custom">{t("durationCustom")}</option>
+            </select>
+          </div>
+
+          <div className="sru-field">
+            <label>{t("startDateLabel")}</label>
+            <input
+              type="date"
+              name="startDate"
+              required
+              dir="ltr"
+              disabled={periodDisabled}
+              value={startDate}
+              onChange={(event) => applyStartDate(event.target.value)}
+            />
+          </div>
+
+          <div className="sru-field">
+            <label>{t("endDateLabel")}</label>
+            <input
+              type="date"
+              name="endDate"
+              required
+              dir="ltr"
+              disabled={periodDisabled}
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => applyEndDate(event.target.value)}
+            />
+          </div>
+
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            {invalidRange ? (
+              <p role="alert" style={{ fontSize: 12.5, color: "#b91c1c" }}>
+                {t("periodInvalidRange")}
+              </p>
+            ) : span ? (
+              <p style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
+                {span.months
+                  ? t("periodSummaryMonths", { months: span.months, days: span.days })
+                  : t("periodSummaryDays", { days: span.days })}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
       {state?.status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
           {t(errorMessageKeys[state.message])}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
-        {pending ? t("submitting") : t("submit")}
-      </button>
+      <div className="sru-form-submitrow">
+        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+          {pending ? t("submitting") : t("submit")}
+        </button>
+      </div>
     </form>
   );
 }

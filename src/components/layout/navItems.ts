@@ -30,6 +30,7 @@ import {
   CalendarRange,
   UserPlus,
   TrendingUp,
+  Megaphone,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -206,6 +207,11 @@ export const navGroups: NavGroup[] = [
       { segment: "recruitment/plan", labelKey: "recruitmentPlan", icon: CalendarRange, access: [{ processArea: "recruitmentPlan", minLevel: "view" }] },
       { segment: "promotions", labelKey: "promotions", icon: TrendingUp, access: [{ processArea: "promotions", minLevel: "view" }] },
       { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
+      // 2026-08-04: vacancies advertised from the الشواغر tab's megaphone
+      // icon (`vacancies.announced_at`). Same `vacancies>=view` gate as the
+      // tab it is fed from — internal postings are documented as visible to
+      // all staff, so an advertised one certainly is.
+      { segment: "recruitment/announced", labelKey: "announcedJobs", icon: Megaphone, access: [{ processArea: "vacancies", minLevel: "view" }] },
     ],
   },
   {
