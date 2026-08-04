@@ -67,13 +67,23 @@ export default async function ProposePromotionPage({
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {employees && employees.length > 0 && jobTitles && jobTitles.length > 0 ? (
+      {employees && employees.length > 0 && jobTitles && jobTitles.length > 0 && cycles && cycles.length > 0 ? (
         <ProposePromotionForm
           locale={locale}
           employees={employees}
-          cycles={cycles ?? []}
+          cycles={cycles}
           jobTitles={jobTitles}
         />
+      ) : cycles && cycles.length === 0 ? (
+        // `cycleId` is required (`proposePromotionSchema`/the form's own
+        // <select required>) — with zero real evaluation_cycles rows, the
+        // form used to render anyway with an empty, unselectable cycle
+        // dropdown, silently blocking every submission behind a raw,
+        // unlocalized native browser validation message. Same root cause
+        // (zero evaluation_cycles) as the calibration create-session fix,
+        // a distinct honest message instead of pretending it's a
+        // permission problem.
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNoData")}</p>
       ) : (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
       )}
