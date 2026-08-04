@@ -1311,7 +1311,16 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorNotFound": "This promotion doesn't exist or you don't have permission to view it.",
     "errorForbidden": "You don't have permission to review this promotion.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "summaryTotal": "Total promotions",
+    "summaryOther": "Other statuses",
+    "searchPlaceholder": "Search by employee name/number or job title...",
+    "filterByStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "resetFilters": "Reset",
+    "noMatches": "No matching promotions.",
+    "onCareerPath": "On the approved career path",
+    "offCareerPath": "Off the approved career path"
   },
   "ProposePromotionPage": {
     "title": "Propose Promotion",
@@ -1333,7 +1342,9 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to propose promotions.",
     "errorNoData": "No evaluation cycles are available yet — create an evaluation cycle first before proposing a promotion.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "onlyCareerPathSteps": "Show only job titles on the approved career path ({count})",
+    "noCareerPathSteps": "No approved career path is defined for this job title — all titles are shown."
   },
   "RewardsPage": {
     "title": "Rewards",

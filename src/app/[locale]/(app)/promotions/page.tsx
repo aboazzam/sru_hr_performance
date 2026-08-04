@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { PromotionReviewActions } from "@/components/PromotionReviewActions";
 import { GroupTabs } from "@/components/layout/GroupTabs";
+import { PromotionsTable, type PromotionRowView } from "@/components/PromotionsTable";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { classifyPromotionAgainstCareerPath } from "@/lib/promotionStatus";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // This route existed in NavBar already (pointing at /promotions) but had
@@ -22,7 +24,7 @@ export default async function PromotionsPage() {
   const { data } = await supabase
     .from("promotions")
     .select(
-      "id, status, employee:profiles!promotions_employee_id_fkey(employee_number,full_name_ar), evaluation_cycles(name_ar), from_job_title:job_titles!from_job_title_id(name_ar,grade_level), to_job_title:job_titles!to_job_title_id(name_ar,grade_level)"
+      "id, status, from_job_title_id, to_job_title_id, employee:profiles!promotions_employee_id_fkey(employee_number,full_name_ar), evaluation_cycles(name_ar), from_job_title:job_titles!from_job_title_id(name_ar,grade_level), to_job_title:job_titles!to_job_title_id(name_ar,grade_level)"
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -30,11 +32,53 @@ export default async function PromotionsPage() {
   const promotions = data as unknown as Array<{
     id: string;
     status: string;
+    from_job_title_id: string | null;
+    to_job_title_id: string;
     employee: { employee_number: string; full_name_ar: string } | null;
     evaluation_cycles: { name_ar: string } | null;
     from_job_title: { name_ar: string; grade_level: number } | null;
     to_job_title: { name_ar: string; grade_level: number } | null;
   }> | null;
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const promotionsLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "promotions"
+    )?.vpra_level ?? "none";
+  // Mirrors promotions_update's own RLS bar; hiding the buttons is
+  // presentation only — Postgres remains the gate, and reviewPromotion
+  // still returns "forbidden" for anyone who slips past the UI.
+  const canReview = hasVpraAccess(promotionsLevel, "recommend");
+  const canPropose = canReview;
+
+  // The real career ladder (155+ edges built from the university's own
+  // Career Path workbook, 20260720000002 onwards), read through the
+  // caller's own client — a caller without `careerPath>=view` simply gets
+  // no edges and therefore no badge, rather than an error.
+  const { data: careerEdges } = await supabase
+    .from("career_path")
+    .select("from_job_title_id, to_job_title_id")
+    .is("deleted_at", null);
+  const edges = (careerEdges ?? []).map((e) => ({
+    fromJobTitleId: e.from_job_title_id,
+    toJobTitleId: e.to_job_title_id,
+  }));
+
+  const rows: PromotionRowView[] = (promotions ?? []).map((promotion) => ({
+    id: promotion.id,
+    employeeNumber: promotion.employee?.employee_number ?? null,
+    employeeName: promotion.employee?.full_name_ar ?? null,
+    cycleName: promotion.evaluation_cycles?.name_ar ?? null,
+    fromTitleName: promotion.from_job_title?.name_ar ?? null,
+    fromGrade: promotion.from_job_title?.grade_level ?? null,
+    toTitleName: promotion.to_job_title?.name_ar ?? null,
+    toGrade: promotion.to_job_title?.grade_level ?? null,
+    status: promotion.status,
+    careerPathMatch:
+      edges.length === 0
+        ? "unknown"
+        : classifyPromotionAgainstCareerPath(promotion.from_job_title_id, promotion.to_job_title_id, edges),
+  }));
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -56,12 +100,17 @@ export default async function PromotionsPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <Link href="/promotions/history" className="sru-btn sru-btn-primary">
+          <Link href="/promotions/history" className="sru-btn">
             {t("approvalHistory")}
           </Link>
-          <Link href="/promotions/new" className="sru-btn sru-btn-primary">
-            {t("newPromotion")}
-          </Link>
+          {/* /promotions/new already blocks anyone below `recommend` with a
+              forbidden message; hiding it here just stops offering an action
+              that Postgres would refuse. */}
+          {canPropose && (
+            <Link href="/promotions/new" className="sru-btn sru-btn-primary">
+              {t("newPromotion")}
+            </Link>
+          )}
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
@@ -70,52 +119,7 @@ export default async function PromotionsPage() {
       <GroupTabs groupKey="recruitment" current="promotions" />
       <div style={{ height: 20 }} />
 
-      {!promotions || promotions.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnEmployee")}</th>
-                  <th>{t("columnCycle")}</th>
-                  <th>{t("columnFrom")}</th>
-                  <th>{t("columnTo")}</th>
-                  <th>{t("columnStatus")}</th>
-                  <th>{t("columnActions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {promotions.map((promotion) => (
-                  <tr key={promotion.id}>
-                    <td>
-                      {promotion.employee?.employee_number} — {promotion.employee?.full_name_ar}
-                    </td>
-                    <td>{promotion.evaluation_cycles?.name_ar ?? "—"}</td>
-                    <td>
-                      {promotion.from_job_title
-                        ? `${promotion.from_job_title.name_ar} (${t("gradeLabel", { grade: promotion.from_job_title.grade_level })})`
-                        : "—"}
-                    </td>
-                    <td>
-                      {promotion.to_job_title
-                        ? `${promotion.to_job_title.name_ar} (${t("gradeLabel", { grade: promotion.to_job_title.grade_level })})`
-                        : "—"}
-                    </td>
-                    <td>{promotion.status}</td>
-                    <td>
-                      {promotion.status === "pending" && (
-                        <PromotionReviewActions promotionId={promotion.id} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <PromotionsTable promotions={rows} canReview={canReview} />
     </div>
   );
 }
