@@ -50,7 +50,8 @@ export type ProcessArea =
   | "performanceReports"
   | "competencyReports"
   | "bauTasksReports"
-  | "feedback360Reports";
+  | "feedback360Reports"
+  | "recruitmentPlan";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -75,6 +76,7 @@ export const processAreas: ProcessArea[] = [
   "competencyReports",
   "bauTasksReports",
   "feedback360Reports",
+  "recruitmentPlan",
 ];
 
 /**
@@ -107,6 +109,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   competencyReports: "تقارير الجدارات",
   bauTasksReports: "تقارير الأعمال اليومية",
   feedback360Reports: "تقارير تقييم 360",
+  recruitmentPlan: "خطة التوظيف",
 };
 
 export interface ProcessAreaSection {
@@ -151,7 +154,14 @@ export interface ProcessAreaSection {
  * reporting from full module management (see /reports's own code comment).
  * `bauTasksReports`/`feedback360Reports` (20260728000003/4) back two more
  * /reports tabs, same pattern, requested directly ("تاب خاص بالاعمال
- * اليومية وتاب آخر بتقييم 360").
+ * اليومية وتاب آخر بتقييم 360"). `recruitmentPlan` (20260804000001) backs
+ * the new "التوظيف" module's first tab and its own section below; the
+ * module's other two tabs REUSE `promotions`/`vacancies` rather than
+ * duplicating them, so those two areas MOVED here out of "الموارد البشرية
+ * والمسار الوظيفي" (the one-section-per-area invariant means an area can
+ * only be listed once). Known coupling, deliberate: `promotions` also
+ * gates `rewards` and `recommendations`, so a grant made under this
+ * section reaches those too — see that migration's header.
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -173,7 +183,11 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
-    areas: ["employeeData", "employeeDataSubordinates", "careerPath", "promotions", "vacancies"],
+    areas: ["employeeData", "employeeDataSubordinates", "careerPath"],
+  },
+  {
+    titleAr: "التوظيف",
+    areas: ["recruitmentPlan", "promotions", "vacancies"],
   },
   {
     titleAr: "الإدارة والنظام",

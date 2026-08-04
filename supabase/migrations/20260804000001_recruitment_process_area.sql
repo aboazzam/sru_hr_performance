@@ -1,0 +1,65 @@
+-- ============================================================================
+-- Adds ONE new process_area value backing the new "التوظيف" (Recruitment)
+-- module, per direct request: "اعمل على انشاء موديول باسم (التوظيف) وله
+-- عدة تابات أحدها اسمه خطة التوظيف والثاني اسمه الترقيات والثالث اسمه
+-- الشواغر ... ويكون له سكشن خاص في الصلاحيات باسم التوظيف وتحته عدة
+-- صلاحيات على حسب التابات".
+--
+-- Three tabs, but only ONE new area -- same reuse-don't-duplicate
+-- discipline already applied when "تقارير الاستراتيجية" reused
+-- `strategicPlanning` (20260727000006), `feedback_360` reused
+-- `evaluation`, and `rewards` reused `promotions`:
+--
+--   خطة التوظيف  -> `recruitmentPlan`  (NEW -- nothing in the existing 21
+--                   areas answers "can this person see/prepare the
+--                   university's hiring plan"; no table backs it yet
+--                   either, the tab itself is deliberately a scaffold
+--                   until its design is agreed -- "بمجرد تنتهي سنبدأ
+--                   بتصميم كل تاب لوحده")
+--   الترقيات     -> `promotions`  (EXISTING, unchanged -- the real
+--                   `promotions` table's own RLS already gates on it)
+--   الشواغر      -> `vacancies`   (EXISTING, unchanged -- likewise for
+--                   the real `vacancies` table)
+--
+-- KNOWN COUPLING, flagged rather than worked around: `promotions` is also
+-- the area gating `rewards` (20260719000006) and `recommendations`
+-- (20260724000005), i.e. the whole "التوصيات" module. Granting a role
+-- "الترقيات" under the new التوظيف section therefore also grants it
+-- rewards/recommendations access at the same level. Splitting them would
+-- mean a second area for the same real tables' RLS, which is exactly the
+-- fragmentation this project's precedent avoids -- if the project owner
+-- wants them genuinely separate, that's a deliberate follow-up migration
+-- (new area + rewriting those tables' policies), not a silent choice made
+-- here.
+--
+-- No role_permissions rows seeded for `recruitmentPlan` -- CLAUDE.md §4-B
+-- ("new roles inherit none on all Process Areas by default") and the same
+-- precedent as `performanceReports`/`competencyReports`: access is granted
+-- deliberately through the already-built /admin role editor. `promotions`
+-- and `vacancies` keep every grant they already hold -- this migration
+-- does not touch role_permissions at all, so no role gains or loses any
+-- existing capability.
+--
+-- `ALTER TYPE ... ADD VALUE` is deliberately alone in this file: Postgres
+-- forbids USING a value added by ALTER TYPE inside the same transaction
+-- that added it, the same two-step pattern every prior process_area
+-- addition in this project used (orgStructure, staffing/identity,
+-- systemSettings, strategicPlanning, the reports pair).
+-- ============================================================================
+
+ALTER TYPE process_area ADD VALUE 'recruitmentPlan';
+
+-- ============================================================================
+-- Verification -- run AFTER applying, per PROJECT_STRICT.md rule 10.
+-- ============================================================================
+
+-- Expect the new value present in the enum's labels.
+-- SELECT enumlabel FROM pg_enum
+--   WHERE enumtypid = 'process_area'::regtype AND enumlabel = 'recruitmentPlan';
+
+-- Expect zero role_permissions rows for it -- deliberately unseeded.
+-- SELECT count(*) FROM role_permissions WHERE process_area = 'recruitmentPlan';
+
+-- Expect promotions/vacancies grants completely unchanged by this migration.
+-- SELECT process_area, count(*) FROM role_permissions
+--   WHERE process_area IN ('promotions', 'vacancies') GROUP BY process_area;

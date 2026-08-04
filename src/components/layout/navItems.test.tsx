@@ -27,8 +27,9 @@ describe("navItems (top-level, ungrouped)", () => {
     // 2026-07-28: "goals/library", "kpis", and "kpis/strategic-goals" moved
     // OUT of this flat list into the new "الخطة الاستراتيجية" group (see
     // navGroups below) per the explicit "اجمعها كلها في موديول واحد" request.
-    expect(navItems).toHaveLength(7);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(7);
+    // 2026-08-04: "vacancies" moved OUT into the new "التوظيف" group, 6 left.
+    expect(navItems).toHaveLength(6);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(6);
   });
 
   it("has exactly one home item (empty segment)", () => {
@@ -47,12 +48,30 @@ describe("navItems (top-level, ungrouped)", () => {
 });
 
 describe("navGroups (2026-07-24 grouped nav)", () => {
-  it("has exactly 4 groups: strategicPlan, administration, evaluationMethods, evaluationResults", () => {
+  it("has exactly 5 groups: strategicPlan, administration, evaluationMethods, recruitment, evaluationResults", () => {
     expect(navGroups.map((g) => g.groupKey)).toEqual([
       "strategicPlan",
       "administration",
       "evaluationMethods",
+      "recruitment",
       "evaluationResults",
+    ]);
+  });
+
+  // 2026-08-04: the "التوظيف" module — خطة التوظيف (its own new
+  // `recruitmentPlan` area) + الترقيات + الشواغر (both reusing the areas
+  // that already gate their real tables' RLS).
+  it("the recruitment group has exactly the three requested tabs, each gated on its own area", () => {
+    const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
+    expect(recruitment.children.map((c) => c.segment)).toEqual([
+      "recruitment/plan",
+      "promotions",
+      "vacancies",
+    ]);
+    expect(recruitment.children.map((c) => c.access?.[0].processArea)).toEqual([
+      "recruitmentPlan",
+      "promotions",
+      "vacancies",
     ]);
   });
 
@@ -152,7 +171,10 @@ describe("visibleNavItems", () => {
     // Still meaningful for a plain employee.
     expect(segments).toContain("");
     expect(segments).toContain("career-path");
-    expect(segments).toContain("vacancies");
+    // "vacancies" moved into the recruitment group (2026-08-04) -- an
+    // employee's real `vacancies=view` grant still surfaces it there, asserted
+    // in the visibleNavGroups tests below rather than here.
+    expect(segments).not.toContain("vacancies");
     // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
     expect(segments).toContain("reports");
 
@@ -214,6 +236,24 @@ describe("visibleNavGroups", () => {
 
     // administration group: no orgStructure/userManagement grant at all -> fully hidden.
     expect(groups.find((g) => g.groupKey === "administration")).toBeUndefined();
+  });
+
+  // 2026-08-04: a plain employee genuinely holds `vacancies=view` (internal
+  // job postings are documented as visible to all staff) but no promotions or
+  // recruitmentPlan grant -- so the التوظيف group appears with ONLY الشواغر,
+  // which is where "vacancies" now lives after moving out of the flat list.
+  it("shows the recruitment group with only الشواغر for the real employee permission set", () => {
+    const groups = visibleNavGroups(navGroups, { vacancies: "view" });
+    const recruitment = groups.find((g) => g.groupKey === "recruitment");
+    expect(recruitment).toBeDefined();
+    expect(recruitment!.children.map((c) => c.segment)).toEqual(["vacancies"]);
+    // One visible child -> the sidebar row uses that child's own label.
+    expect(sidebarGroupLabelKey(recruitment!)).toBe("vacancies");
+  });
+
+  it("hides the recruitment group entirely with none of its three grants", () => {
+    const groups = visibleNavGroups(navGroups, { evaluation: "prepare" });
+    expect(groups.find((g) => g.groupKey === "recruitment")).toBeUndefined();
   });
 
   it("shows every group and every child for a full-access permission set", () => {

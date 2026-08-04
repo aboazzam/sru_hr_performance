@@ -47,7 +47,9 @@
     "strategicPlan": "Strategic Plan",
     "strategicPlans": "Plans List",
     "strategicIdentity": "Vision, Mission & Values",
-    "assignedGoals": "Assigned Goals"
+    "assignedGoals": "Assigned Goals",
+    "recruitment": "Recruitment",
+    "recruitmentPlan": "Recruitment Plan"
   },
   "PrintButton": {
     "print": "Print"
@@ -1556,7 +1558,21 @@
     "columnOrgUnit": "Org Unit",
     "columnStatus": "Status",
     "columnRequirements": "Requirements",
-    "gradeLabel": "Grade {grade}"
+    "gradeLabel": "Grade {grade}",
+    "downloadTemplateButton": "Download Empty Template",
+    "importTriggerButton": "Import from Excel",
+    "importHeading": "Import Vacancies from Excel",
+    "importNote": "Choose an .xlsx file matching the empty template. Each row is one vacancy: job title and org unit (matched by exact name), with optional status and requirements. New vacancies are added; matching ones (same job title and org unit) have their status and requirements updated. Fill the job family column only when a job title name exists in more than one family.",
+    "closeButton": "Close",
+    "chooseFileButton": "Choose File",
+    "noFileChosen": "No file chosen",
+    "importButton": "Import File",
+    "importing": "Importing...",
+    "importErrorInvalid": "The file is invalid or missing required columns (Job Title, Org Unit).",
+    "importErrorForbidden": "You must be logged in.",
+    "importErrorUnknown": "An unexpected error occurred during import.",
+    "importSuccess": "Imported: {created} new, {updated} updated.",
+    "importWarnings": "{count} row(s) skipped or with an error"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",
@@ -1655,5 +1671,12 @@
     "errorForbidden": "You do not have permission to edit KPIs.",
     "errorDuplicate": "An annual target already exists for this cycle.",
     "errorUnknown": "An unexpected error occurred."
+  },
+  "RecruitmentPlanPage": {
+    "title": "Recruitment Plan",
+    "subtitle": "The university's annual recruitment plan — hiring needs and timing.",
+    "forbidden": "You do not have permission to view the recruitment plan.",
+    "comingSoonTitle": "Design in progress",
+    "comingSoonBody": "This tab was created as part of the Recruitment module with its own permission (Recruitment Plan) in the permissions matrix; its content will be designed in a later step. No recruitment-plan table exists yet."
   }
 }
