@@ -1571,7 +1571,16 @@
     "errorInvalidInput": "تحقق من الحقول — يجب اختيار المسمى الوظيفي والوحدة التنظيمية.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة شواغر.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "sectionDetailsTitle": "بيانات الشاغر",
+    "sectionDetailsSubtitle": "المسمى الوظيفي والوحدة التنظيمية التي يتبع لها الشاغر.",
+    "sectionRequirementsTitle": "المتطلبات",
+    "sectionRequirementsSubtitle": "تُعبّأ تلقائيًا من متطلبات المسمى الوظيفي، ويمكنك تعديلها.",
+    "jobTitleSearchPlaceholder": "ابحث بالحروف الأولى من المسمى...",
+    "jobTitleNoMatches": "لا توجد نتائج مطابقة",
+    "requirementsFromJobTitle": "مأخوذة من متطلبات المسمى الوظيفي «{jobTitle}».",
+    "requirementsUseSource": "استعادة متطلبات المسمى الوظيفي",
+    "requirementsNoSource": "لا توجد متطلبات مسجّلة لهذا المسمى الوظيفي — اكتبها يدويًا."
   },
   "StrategicPlansPage": {
     "title": "الخطط الاستراتيجية",

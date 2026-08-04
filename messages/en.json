@@ -1571,7 +1571,16 @@
     "errorInvalidInput": "Check the fields — job title and org unit are required.",
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You don't have permission to add vacancies.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "sectionDetailsTitle": "Vacancy Details",
+    "sectionDetailsSubtitle": "The job title and the org unit this vacancy belongs to.",
+    "sectionRequirementsTitle": "Requirements",
+    "sectionRequirementsSubtitle": "Prefilled from the job title's own requirements — editable.",
+    "jobTitleSearchPlaceholder": "Search by the first letters of the title...",
+    "jobTitleNoMatches": "No matching results",
+    "requirementsFromJobTitle": "Taken from the requirements of job title \"{jobTitle}\".",
+    "requirementsUseSource": "Restore the job title's requirements",
+    "requirementsNoSource": "This job title has no recorded requirements — type them manually."
   },
   "StrategicPlansPage": {
     "title": "Strategic Plans",
