@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, startTransition, type FormEvent } from "react";
+import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   createVacancy,
   type CreateVacancyState,
 } from "@/app/[locale]/(app)/vacancies/new/actions";
 import type { Locale } from "@/i18n/config";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
 interface JobTitleOption {
   id: string;
@@ -46,6 +47,20 @@ export function CreateVacancyForm({
   const inputClass =
     "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
+  // Same gap already fixed on the job-titles list, career-path pages, and
+  // promotions form: 336+ job titles in one bare <select> with no way to
+  // narrow it. A text filter narrows the <select>'s own option list, with a
+  // derived-during-render fallback keeping the selection valid as the
+  // filtered set shrinks.
+  const [jobTitleSearch, setJobTitleSearch] = useState("");
+  const [jobTitleId, setJobTitleId] = useState("");
+  const trimmedJobTitleSearch = jobTitleSearch.trim();
+  const filteredJobTitles =
+    trimmedJobTitleSearch === ""
+      ? jobTitles
+      : jobTitles.filter((title) => includesIgnoringHamza(title.name_ar, trimmedJobTitleSearch));
+  const effectiveJobTitleId = filteredJobTitles.some((t) => t.id === jobTitleId) ? jobTitleId : "";
+
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -60,11 +75,26 @@ export function CreateVacancyForm({
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <div>
         <label className="block text-sm font-medium mb-1">{t("jobTitleLabel")}</label>
-        <select name="jobTitleId" required className={inputClass} defaultValue="">
+        <input
+          type="text"
+          value={jobTitleSearch}
+          onChange={(e) => setJobTitleSearch(e.target.value)}
+          className={inputClass}
+          placeholder={t("jobTitleSearchPlaceholder")}
+          style={{ marginBottom: 8 }}
+        />
+        <select
+          name="jobTitleId"
+          required
+          className={inputClass}
+          value={effectiveJobTitleId}
+          onChange={(e) => setJobTitleId(e.target.value)}
+          disabled={filteredJobTitles.length === 0}
+        >
           <option value="" disabled>
-            {t("jobTitlePlaceholder")}
+            {filteredJobTitles.length === 0 ? t("jobTitleNoMatches") : t("jobTitlePlaceholder")}
           </option>
-          {jobTitles.map((title) => (
+          {filteredJobTitles.map((title) => (
             <option key={title.id} value={title.id}>
               {title.name_ar} ({t("gradeLabel", { grade: title.grade_level })})
             </option>
