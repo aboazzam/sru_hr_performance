@@ -13,6 +13,13 @@ interface EmployeeOption {
   id: string;
   employee_number: string;
   full_name_ar: string;
+  /** The employee's own recorded job title — used to prefill "from". */
+  job_title_id: string | null;
+}
+
+export interface CareerEdgeOption {
+  fromJobTitleId: string;
+  toJobTitleId: string;
 }
 
 interface CycleOption {
@@ -42,11 +49,13 @@ export function ProposePromotionForm({
   employees,
   cycles,
   jobTitles,
+  careerEdges,
 }: {
   locale: Locale;
   employees: EmployeeOption[];
   cycles: CycleOption[];
   jobTitles: JobTitleOption[];
+  careerEdges: CareerEdgeOption[];
 }) {
   const t = useTranslations("ProposePromotionPage");
   const [state, formAction, pending] = useActionState<ProposePromotionState, FormData>(
@@ -67,6 +76,8 @@ export function ProposePromotionForm({
   const [toSearch, setToSearch] = useState("");
   const [fromJobTitleId, setFromJobTitleId] = useState("");
   const [toJobTitleId, setToJobTitleId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [onlyCareerPath, setOnlyCareerPath] = useState(true);
 
   const trimmedFromSearch = fromSearch.trim();
   const filteredFromJobTitles =
@@ -75,10 +86,38 @@ export function ProposePromotionForm({
       : jobTitles.filter((title) => includesIgnoringHamza(title.name_ar, trimmedFromSearch));
   const effectiveFromJobTitleId = filteredFromJobTitles.some((title) => title.id === fromJobTitleId) ? fromJobTitleId : "";
 
+  // The moves the university's own career ladder defines out of the chosen
+  // current title (`career_path`, 155+ real edges). Used to narrow the "to"
+  // list — never to block: an off-ladder promotion is a real managerial
+  // decision, so the restriction is an opt-out checkbox, and it silently
+  // does nothing when the ladder defines no next step for this title.
+  const nextStepIds = new Set(
+    careerEdges.filter((e) => e.fromJobTitleId === effectiveFromJobTitleId).map((e) => e.toJobTitleId)
+  );
+  const careerPathFilterActive = onlyCareerPath && nextStepIds.size > 0;
+
   const trimmedToSearch = toSearch.trim();
+  const toCandidates = careerPathFilterActive ? jobTitles.filter((title) => nextStepIds.has(title.id)) : jobTitles;
   const filteredToJobTitles =
-    trimmedToSearch === "" ? jobTitles : jobTitles.filter((title) => includesIgnoringHamza(title.name_ar, trimmedToSearch));
+    trimmedToSearch === ""
+      ? toCandidates
+      : toCandidates.filter((title) => includesIgnoringHamza(title.name_ar, trimmedToSearch));
   const effectiveToJobTitleId = filteredToJobTitles.some((title) => title.id === toJobTitleId) ? toJobTitleId : "";
+
+  /**
+   * Picking an employee prefills "from" with the job title actually recorded
+   * on their profile — previously it was typed by hand even though the data
+   * was already there. Any explicit later change to "from" still wins, since
+   * this only fires on employee change.
+   */
+  function handleEmployeeChange(nextEmployeeId: string) {
+    setEmployeeId(nextEmployeeId);
+    const employee = employees.find((e) => e.id === nextEmployeeId);
+    setFromSearch("");
+    setFromJobTitleId(employee?.job_title_id ?? "");
+    setToSearch("");
+    setToJobTitleId("");
+  }
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike.
@@ -94,7 +133,13 @@ export function ProposePromotionForm({
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <div>
         <label className="block text-sm font-medium mb-1">{t("employeeLabel")}</label>
-        <select name="employeeId" required className={inputClass} defaultValue="">
+        <select
+          name="employeeId"
+          required
+          className={inputClass}
+          value={employeeId}
+          onChange={(e) => handleEmployeeChange(e.target.value)}
+        >
           <option value="" disabled>
             {t("employeePlaceholder")}
           </option>
@@ -154,6 +199,20 @@ export function ProposePromotionForm({
 
       <div>
         <label className="block text-sm font-medium mb-1">{t("toJobTitleLabel")}</label>
+        {nextStepIds.size > 0 ? (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 6 }}>
+            <input
+              type="checkbox"
+              checked={onlyCareerPath}
+              onChange={(e) => setOnlyCareerPath(e.target.checked)}
+            />
+            <span>{t("onlyCareerPathSteps", { count: nextStepIds.size })}</span>
+          </label>
+        ) : (
+          effectiveFromJobTitleId !== "" && (
+            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 6 }}>{t("noCareerPathSteps")}</p>
+          )
+        )}
         <input
           type="text"
           value={toSearch}

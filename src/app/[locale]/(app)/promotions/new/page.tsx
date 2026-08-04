@@ -39,9 +39,12 @@ export default async function ProposePromotionPage({
   // RLS-scoped to the caller, same "seeing an option here doesn't
   // guarantee the insert succeeds" caveat as every other create screen —
   // the real authorization boundary is promotions_insert's own RLS.
+  // job_title_id comes along so the form can prefill "from" with the title
+  // already recorded on the employee's own profile instead of asking the
+  // proposer to retype what the database already knows.
   const { data: employees } = await supabase
     .from("profiles")
-    .select("id, employee_number, full_name_ar")
+    .select("id, employee_number, full_name_ar, job_title_id")
     .is("deleted_at", null)
     .order("employee_number");
 
@@ -56,6 +59,19 @@ export default async function ProposePromotionPage({
     .select("id, name_ar, grade_level")
     .is("deleted_at", null)
     .order("grade_level");
+
+  // The real career ladder, so the "to" list can be narrowed to the moves it
+  // actually defines out of the employee's current title. Read through the
+  // caller's own client — no edges (e.g. no `careerPath` grant) simply means
+  // no narrowing offered, never a broken form.
+  const { data: careerEdgeRows } = await supabase
+    .from("career_path")
+    .select("from_job_title_id, to_job_title_id")
+    .is("deleted_at", null);
+  const careerEdges = (careerEdgeRows ?? []).map((edge) => ({
+    fromJobTitleId: edge.from_job_title_id,
+    toJobTitleId: edge.to_job_title_id,
+  }));
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -73,6 +89,7 @@ export default async function ProposePromotionPage({
           employees={employees}
           cycles={cycles}
           jobTitles={jobTitles}
+          careerEdges={careerEdges}
         />
       ) : cycles && cycles.length === 0 ? (
         // `cycleId` is required (`proposePromotionSchema`/the form's own

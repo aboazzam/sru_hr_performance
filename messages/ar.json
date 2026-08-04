@@ -1311,7 +1311,16 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorNotFound": "هذه الترقية غير موجودة أو ليست لديك صلاحية الوصول إليها.",
     "errorForbidden": "ليست لديك صلاحية مراجعة هذه الترقية.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "summaryTotal": "إجمالي الترقيات",
+    "summaryOther": "حالات أخرى",
+    "searchPlaceholder": "ابحث باسم الموظف أو رقمه أو المسمى...",
+    "filterByStatus": "تصفية بالحالة",
+    "allStatuses": "كل الحالات",
+    "resetFilters": "إعادة تعيين",
+    "noMatches": "لا توجد ترقيات مطابقة.",
+    "onCareerPath": "ضمن المسار الوظيفي المعتمد",
+    "offCareerPath": "خارج المسار الوظيفي المعتمد"
   },
   "ProposePromotionPage": {
     "title": "اقتراح ترقية",
@@ -1333,7 +1342,9 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية اقتراح ترقيات.",
     "errorNoData": "لا توجد دورات تقييم متاحة حاليًا — يجب إنشاء دورة تقييم أولًا قبل اقتراح ترقية.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "onlyCareerPathSteps": "عرض الوظائف ضمن المسار الوظيفي المعتمد فقط ({count})",
+    "noCareerPathSteps": "لا يوجد مسار وظيفي معتمد محدد لهذه الوظيفة — كل المسميات معروضة."
   },
   "RewardsPage": {
     "title": "المكافآت",
