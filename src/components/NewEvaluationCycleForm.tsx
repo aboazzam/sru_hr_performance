@@ -40,10 +40,11 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
     null
   );
 
-  // The period type is still chosen first (an earlier explicit request), but
-  // the period fields are now always visible — disabled with an explanatory
-  // note until a type is picked, instead of not rendering at all, so it's
-  // obvious the cycle has a duration to fill in.
+  // The period fields are always enabled (2026-08-05, requested directly).
+  // They first rendered only after a period type was chosen, then briefly
+  // rendered disabled with an explanatory note; both gates are gone. The type
+  // select stays `required`, so the browser still blocks submission until it
+  // is filled in, whichever field the admin starts from.
   const [cycleType, setCycleType] = useState<EvaluationCycleType | "">("");
 
   // There is no `duration` column on evaluation_cycles — the duration is the
@@ -77,7 +78,6 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
     }
   }
 
-  const periodDisabled = cycleType === "";
   const span = describeCycleDuration(startDate, endDate);
   const invalidRange = startDate !== "" && endDate !== "" && span === null;
 
@@ -152,18 +152,11 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        {periodDisabled && (
-          <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: 12 }}>
-            {t("periodNeedsCycleType")}
-          </p>
-        )}
-
         <div className="sru-formgrid">
           <div className="sru-field">
             <label>{t("durationLabel")}</label>
             <select
               value={duration}
-              disabled={periodDisabled}
               onChange={(event) =>
                 applyDuration(
                   event.target.value === "custom"
@@ -188,7 +181,6 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
               name="startDate"
               required
               dir="ltr"
-              disabled={periodDisabled}
               value={startDate}
               onChange={(event) => applyStartDate(event.target.value)}
             />
@@ -201,7 +193,6 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
               name="endDate"
               required
               dir="ltr"
-              disabled={periodDisabled}
               value={endDate}
               min={startDate || undefined}
               onChange={(event) => applyEndDate(event.target.value)}
