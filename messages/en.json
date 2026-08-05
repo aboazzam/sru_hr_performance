@@ -1106,7 +1106,6 @@
     "sectionBasicSubtitle": "The period type and the cycle name as it will appear elsewhere.",
     "sectionPeriodTitle": "Period",
     "sectionPeriodSubtitle": "The cycle duration and its start and end dates.",
-    "periodNeedsCycleType": "Choose a period type first to enable the duration and date fields.",
     "durationLabel": "Duration",
     "durationMonths": "{months, plural, one {# month} other {# months}}",
     "durationCustom": "Custom duration",
