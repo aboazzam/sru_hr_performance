@@ -7,9 +7,6 @@ import { useRouter } from "@/i18n/navigation";
 import { updatePosition, unassignEmployee, deletePosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
 import { computeEligibleParentPositions, isRootLevelOrder } from "@/lib/orgStructurePositions";
 
-const inputClass =
-  "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
 interface Assignment {
   id: string;
   label: string;
@@ -147,32 +144,44 @@ export function OrgStructurePositionRow({
   return (
     <tr>
       <td style={{ verticalAlign: "top", fontSize: 13 }}>{levelName}</td>
-      <td style={{ verticalAlign: "top", fontSize: 13 }}>
+      <td style={{ verticalAlign: "top" }}>
         {isRootLevel ? (
-          parentName
+          <span style={{ fontSize: 13 }}>{parentName}</span>
         ) : parentOptions.length === 0 ? (
           <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noParentOptions")}</span>
         ) : (
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={inputClass} aria-label={t("positionParentLabel")}>
-            {parentOptions.map((position) => (
-              <option key={position.id} value={position.id}>
-                {position.name_ar}
-              </option>
-            ))}
-          </select>
+          <div className="sru-position-edit-field">
+            <label htmlFor={`row-parent-${positionId}`}>{t("positionParentLabel")}</label>
+            <select id={`row-parent-${positionId}`} value={parentId} onChange={(e) => setParentId(e.target.value)}>
+              {parentOptions.map((position) => (
+                <option key={position.id} value={position.id}>
+                  {position.name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </td>
       <td>
-        <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ marginBottom: 4 }} />
-        <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ marginBottom: 4 }} />
-        <select value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)} className={inputClass} aria-label={t("positionOrgUnitLabel")}>
-          <option value="">{t("positionOrgUnitNone")}</option>
-          {orgUnits.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.name_ar}
-            </option>
-          ))}
-        </select>
+        <div className="sru-position-edit-field" style={{ marginBottom: 8 }}>
+          <label htmlFor={`row-nameAr-${positionId}`}>{t("positionNameArLabel")}</label>
+          <input id={`row-nameAr-${positionId}`} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
+        </div>
+        <div className="sru-position-edit-field" style={{ marginBottom: 8 }}>
+          <label htmlFor={`row-nameEn-${positionId}`}>{t("positionNameEnLabel")}</label>
+          <input id={`row-nameEn-${positionId}`} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+        </div>
+        <div className="sru-position-edit-field">
+          <label htmlFor={`row-orgUnit-${positionId}`}>{t("positionOrgUnitLabel")}</label>
+          <select id={`row-orgUnit-${positionId}`} value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)}>
+            <option value="">{t("positionOrgUnitNone")}</option>
+            {orgUnits.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name_ar}
+              </option>
+            ))}
+          </select>
+        </div>
       </td>
       <td style={{ verticalAlign: "top", fontSize: 13 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>
       <td>
@@ -223,6 +232,7 @@ export function OrgStructurePositionRow({
           >
             <Check size={15} />
           </button>
+          <span className="sru-position-edit-actions-divider" aria-hidden="true" />
           <button type="button" disabled={isDeleting} onClick={handleDelete} className="sru-icon-action danger" title={t("deleteButton")} aria-label={t("deleteButton")}>
             <Trash2 size={15} />
           </button>
