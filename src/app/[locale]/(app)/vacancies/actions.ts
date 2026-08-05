@@ -172,3 +172,89 @@ export async function deleteVacancy(vacancyId: string): Promise<VacancyActionSta
 
   return { status: "success" };
 }
+
+const announcementDetailsSchema = z
+  .object({
+    vacancyId: z.string().uuid(),
+    openingsCount: z.number().int().min(1).max(9999),
+    announcementStartDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable(),
+    applicationDeadline: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable(),
+  })
+  .refine(
+    (d) => !d.announcementStartDate || !d.applicationDeadline || d.applicationDeadline >= d.announcementStartDate,
+    { message: "deadline must not be before the announcement start" }
+  );
+
+/**
+ * Saves the announcement details behind a job in "الوظائف المعلن عنها":
+ * how many seats it covers, when the ad starts appearing on بوابة التوظيف,
+ * and the application deadline after which it disappears (20260805000002).
+ *
+ * Dates are validated here as well as by the DB CHECK, so an invalid window
+ * is reported as a clear message instead of a raw constraint error. Both are
+ * optional: no start means the ad is live from the moment it was advertised,
+ * no deadline means open-ended — the fallbacks the portal itself applies.
+ *
+ * Authorization is `vacancies_update`'s existing RLS
+ * (`vacancies>=recommend`, hr_admin + manager, per org unit) — no second gate
+ * here, and a zero-row UPDATE is reported as "forbidden" rather than silently
+ * succeeding.
+ */
+export async function updateVacancyAnnouncementDetails(input: {
+  vacancyId: string;
+  openingsCount: number;
+  announcementStartDate: string | null;
+  applicationDeadline: string | null;
+}): Promise<VacancyActionState> {
+  const parsed = announcementDetailsSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: before } = await supabase
+    .from("vacancies")
+    .select("openings_count, announcement_start_date, application_deadline")
+    .eq("id", parsed.data.vacancyId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  const { data: updated, error } = await supabase
+    .from("vacancies")
+    .update({
+      openings_count: parsed.data.openingsCount,
+      announcement_start_date: parsed.data.announcementStartDate,
+      application_deadline: parsed.data.applicationDeadline,
+    })
+    .eq("id", parsed.data.vacancyId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) return mapError(error);
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "vacancy_announcement_details_updated",
+    entity: "vacancies",
+    entity_id: parsed.data.vacancyId,
+    before_data: before ?? null,
+    after_data: {
+      openings_count: parsed.data.openingsCount,
+      announcement_start_date: parsed.data.announcementStartDate,
+      application_deadline: parsed.data.applicationDeadline,
+    },
+  });
+
+  return { status: "success" };
+}

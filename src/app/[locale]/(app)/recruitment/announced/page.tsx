@@ -1,9 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { vacancyStatusLabel } from "@/lib/vacancyStatus";
 import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
+import { vacancyPortalState, portalStateLabels } from "@/lib/vacancyPortal";
 import type { Locale } from "@/i18n/config";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -34,7 +37,7 @@ export default async function AnnouncedJobsPage({
     ? await supabase
         .from("vacancies")
         .select(
-          "id, status, requirements_ar, announced_at, job_titles(name_ar,grade_level), org_units(name_ar)"
+          "id, status, requirements_ar, announced_at, openings_count, announcement_start_date, application_deadline, job_titles(name_ar,grade_level), org_units(name_ar)"
         )
         .not("announced_at", "is", null)
         .is("deleted_at", null)
@@ -46,6 +49,9 @@ export default async function AnnouncedJobsPage({
     status: string;
     requirements_ar: string | null;
     announced_at: string;
+    openings_count: number;
+    announcement_start_date: string | null;
+    application_deadline: string | null;
     job_titles: { name_ar: string; grade_level: number } | null;
     org_units: { name_ar: string } | null;
   }>;
@@ -55,6 +61,7 @@ export default async function AnnouncedJobsPage({
   const timezone = await getDisplayTimezone(supabase);
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { timeZone: timezone });
+  const today = todayInTimezone(timezone);
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -79,15 +86,22 @@ export default async function AnnouncedJobsPage({
                   <th>{t("columnJobTitle")}</th>
                   <th>{t("columnOrgUnit")}</th>
                   <th>{t("columnRequirements")}</th>
+                  <th>{t("columnOpenings")}</th>
                   <th>{t("columnAnnouncedAt")}</th>
+                  <th>{t("columnDeadline")}</th>
                   <th>{t("columnStatus")}</th>
+                  <th>{t("portalStateLabel")}</th>
                 </tr>
               </thead>
               <tbody>
                 {jobs.map((job) => (
                   <tr key={job.id}>
                     <td>
-                      {job.job_titles?.name_ar ?? "—"}
+                      {/* The whole job opens its announcement form (openings,
+                          publish date, application deadline). */}
+                      <Link href={`/recruitment/announced/${job.id}`} style={{ fontWeight: 600 }}>
+                        {job.job_titles?.name_ar ?? t("untitledJob")}
+                      </Link>
                       {job.job_titles && (
                         <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
                           {t("gradeLabel", { grade: job.job_titles.grade_level })}
@@ -96,7 +110,9 @@ export default async function AnnouncedJobsPage({
                     </td>
                     <td>{job.org_units?.name_ar ?? "—"}</td>
                     <td>{job.requirements_ar ?? "—"}</td>
+                    <td className="sru-en">{job.openings_count}</td>
                     <td>{formatDate(job.announced_at)}</td>
+                    <td className="sru-en">{job.application_deadline ?? "—"}</td>
                     <td>
                       <span className="pill">{vacancyStatusLabel(job.status)}</span>
                       {/* Advertising is independent of status (20260804000003):
@@ -107,6 +123,25 @@ export default async function AnnouncedJobsPage({
                           {t("notOpenNote")}
                         </div>
                       )}
+                    </td>
+                    <td>
+                      {/* Why an ad is or isn't live on بوابة التوظيف — the
+                          management view never lets one silently vanish. */}
+                      <span className="pill">
+                        {
+                          portalStateLabels[
+                            vacancyPortalState(
+                              {
+                                status: job.status,
+                                announcedAt: job.announced_at,
+                                announcementStartDate: job.announcement_start_date,
+                                applicationDeadline: job.application_deadline,
+                              },
+                              today
+                            )
+                          ]
+                        }
+                      </span>
                     </td>
                   </tr>
                 ))}

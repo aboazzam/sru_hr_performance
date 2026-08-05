@@ -50,7 +50,8 @@
     "assignedGoals": "Assigned Goals",
     "recruitment": "Recruitment",
     "recruitmentPlan": "Recruitment Plan",
-    "announcedJobs": "Advertised Jobs"
+    "announcedJobs": "Advertised Jobs",
+    "recruitmentPortal": "Recruitment Portal"
   },
   "PrintButton": {
     "print": "Print"
@@ -1824,6 +1825,40 @@
     "columnAnnouncedAt": "Advertised on",
     "columnStatus": "Vacancy status",
     "gradeLabel": "Grade {grade}",
-    "notOpenNote": "This vacancy is no longer open, though the advertisement remains."
+    "notOpenNote": "This vacancy is no longer open, though the advertisement remains.",
+    "columnOpenings": "Openings",
+    "columnDeadline": "Application deadline",
+    "portalStateLabel": "Portal status",
+    "untitledJob": "No job title",
+    "backToList": "Back to advertised jobs",
+    "formHeading": "Advertisement details",
+    "formNote": "How many openings this posting covers, when it starts appearing on the recruitment portal, and the application deadline after which it disappears. With no start date the ad is live from the moment it was advertised; with no deadline it stays open-ended.",
+    "fieldOpenings": "Number of openings",
+    "fieldStartDate": "Advertisement start",
+    "fieldStartDateHint": "When the ad appears on the recruitment portal",
+    "fieldDeadline": "Application deadline",
+    "fieldDeadlineHint": "After this the ad leaves the portal",
+    "saveButton": "Save advertisement details",
+    "saving": "Saving...",
+    "saved": "Advertisement details saved.",
+    "windowInvalid": "The application deadline must not be before the advertisement start date.",
+    "readOnlyNote": "View only — you do not have permission to edit the advertisement details.",
+    "formErrorInvalid": "Check the fields — openings must be 1 or more, and dates must be valid.",
+    "formErrorUnauthenticated": "You must be logged in.",
+    "formErrorForbidden": "You do not have permission to edit the advertisement details.",
+    "formErrorUnknown": "An unexpected error occurred."
+  },
+  "RecruitmentPortalPage": {
+    "title": "Recruitment Portal",
+    "subtitle": "Currently published advertisements — a job appears from its start date until the application deadline.",
+    "forbidden": "You do not have permission to view the recruitment portal.",
+    "emptyNoAds": "No advertised jobs yet — advertise a vacancy from the Vacancies tab, then set its publication dates.",
+    "emptyNoneLive": "Nothing is published right now — existing ads have either not started, passed their deadline, or their vacancy is no longer open. See the Advertised Jobs tab for each ad's status.",
+    "untitledJob": "No job title",
+    "gradeLabel": "Grade {grade}",
+    "openingsLabel": "Openings",
+    "requirementsLabel": "Requirements",
+    "deadlineLabel": "Application deadline",
+    "noDeadline": "Open-ended"
   }
 }

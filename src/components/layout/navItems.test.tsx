@@ -64,17 +64,21 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
   // 2026-08-04: a fourth tab, "الوظائف المعلن عنها", was added — fed from
   // the الشواغر tab's own advertise action, so it shares the `vacancies`
   // grant rather than introducing a process area of its own.
-  it("the recruitment group has the four tabs, each gated on its own area", () => {
+  // 2026-08-05: a fifth tab, "بوابة التوظيف" — the outward-facing list of ads
+  // whose publication window is currently open. Also `vacancies`-gated.
+  it("the recruitment group has the five tabs, each gated on its own area", () => {
     const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
     expect(recruitment.children.map((c) => c.segment)).toEqual([
       "recruitment/plan",
       "promotions",
       "vacancies",
       "recruitment/announced",
+      "recruitment/portal",
     ]);
     expect(recruitment.children.map((c) => c.access?.[0].processArea)).toEqual([
       "recruitmentPlan",
       "promotions",
+      "vacancies",
       "vacancies",
       "vacancies",
     ]);
@@ -252,7 +256,11 @@ describe("visibleNavGroups", () => {
     const groups = visibleNavGroups(navGroups, { vacancies: "view" });
     const recruitment = groups.find((g) => g.groupKey === "recruitment");
     expect(recruitment).toBeDefined();
-    expect(recruitment!.children.map((c) => c.segment)).toEqual(["vacancies", "recruitment/announced"]);
+    expect(recruitment!.children.map((c) => c.segment)).toEqual([
+      "vacancies",
+      "recruitment/announced",
+      "recruitment/portal",
+    ]);
     // More than one visible child -> the sidebar row keeps the group label.
     expect(sidebarGroupLabelKey(recruitment!)).toBe("recruitment");
   });
