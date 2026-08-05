@@ -31,6 +31,7 @@ import {
   UserPlus,
   TrendingUp,
   Megaphone,
+  Globe,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -212,6 +213,10 @@ export const navGroups: NavGroup[] = [
       // tab it is fed from — internal postings are documented as visible to
       // all staff, so an advertised one certainly is.
       { segment: "recruitment/announced", labelKey: "announcedJobs", icon: Megaphone, access: [{ processArea: "vacancies", minLevel: "view" }] },
+      // 2026-08-05: the outward-facing list — advertised vacancies whose
+      // publication window is actually open right now. Same `vacancies>=view`
+      // gate as the tab that feeds it.
+      { segment: "recruitment/portal", labelKey: "recruitmentPortal", icon: Globe, access: [{ processArea: "vacancies", minLevel: "view" }] },
     ],
   },
   {
