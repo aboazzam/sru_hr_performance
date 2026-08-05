@@ -1105,7 +1105,6 @@
     "sectionBasicSubtitle": "نوع الفترة واسم الدورة كما سيظهر في باقي الشاشات.",
     "sectionPeriodTitle": "الفترة الزمنية",
     "sectionPeriodSubtitle": "مدة الدورة وتاريخا بدايتها ونهايتها.",
-    "periodNeedsCycleType": "اختر نوع الفترة أولًا لتفعيل حقول المدة والتواريخ.",
     "durationLabel": "مدة الفترة",
     "durationMonths": "{months, plural, few {# أشهر} many {# شهرًا} other {# شهر}}",
     "durationCustom": "مدة مخصصة",
