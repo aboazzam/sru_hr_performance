@@ -1821,7 +1821,7 @@
     "columnJobTitle": "المسمى الوظيفي",
     "columnOrgUnit": "الوحدة التنظيمية",
     "columnRequirements": "المتطلبات",
-    "columnAnnouncedAt": "تاريخ الإعلان",
+    "columnAnnouncedAt": "أُعلن في",
     "columnStatus": "حالة الشاغر",
     "gradeLabel": "درجة {grade}",
     "notOpenNote": "الشاغر لم يعد مفتوحًا رغم بقاء الإعلان.",
@@ -1833,7 +1833,7 @@
     "formHeading": "بيانات الإعلان",
     "formNote": "عدد الوظائف المطلوبة بهذا المسمى، وتاريخ بدء النشر في بوابة التوظيف، وآخر موعد للتقديم الذي تختفي بعده من البوابة. إن تُرك تاريخ البدء فارغًا يُنشر الإعلان من لحظة الإعلان عنه، وإن تُرك آخر موعد فارغًا يبقى منشورًا بلا نهاية.",
     "fieldOpenings": "عدد الوظائف بهذا المسمى",
-    "fieldStartDate": "بداية الإعلان",
+    "fieldStartDate": "بداية النشر في البوابة",
     "fieldStartDateHint": "تاريخ ظهور الإعلان في بوابة التوظيف",
     "fieldDeadline": "آخر موعد للتقديم",
     "fieldDeadlineHint": "بعده يختفي الإعلان من البوابة",
@@ -1845,7 +1845,12 @@
     "formErrorInvalid": "تحقق من الحقول — عدد الوظائف يجب أن يكون 1 فأكثر، والتواريخ بصيغة صحيحة.",
     "formErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "formErrorForbidden": "لا تملك صلاحية تعديل بيانات الإعلان.",
-    "formErrorUnknown": "حدث خطأ غير متوقع."
+    "formErrorUnknown": "حدث خطأ غير متوقع.",
+    "columnStartDate": "بداية النشر",
+    "startFromAnnouncement": "من لحظة الإعلان",
+    "noDeadlineShort": "بلا موعد نهائي",
+    "scheduledFrom": "يبدأ النشر في {date}",
+    "expiredOn": "انتهى في {date}"
   },
   "RecruitmentPortalPage": {
     "title": "بوابة التوظيف",
