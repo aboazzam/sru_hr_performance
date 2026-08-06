@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { UserActivityRangeFields } from "@/components/UserActivityRangeFields";
 
 type Period = "day" | "week" | "custom";
 
@@ -156,26 +157,13 @@ export default async function UserActivityPage({
             <option value="custom">{t("periodCustom")}</option>
           </select>
         </div>
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{t("fromLabel")}</label>
-          <input
-            type="date"
-            name="from"
-            dir="ltr"
-            defaultValue={from ?? toDateInputValue(start)}
-            style={{ padding: "8px 10px", borderRadius: "var(--sru-radius)", border: "1px solid var(--sru-border)" }}
-          />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{t("toLabel")}</label>
-          <input
-            type="date"
-            name="to"
-            dir="ltr"
-            defaultValue={to ?? toDateInputValue(end)}
-            style={{ padding: "8px 10px", borderRadius: "var(--sru-radius)", border: "1px solid var(--sru-border)" }}
-          />
-        </div>
+        {/* Day / month-name / year, like every other date field in the app.
+            The control submits through its own hidden inputs, so this plain
+            GET form keeps sending the same `from`/`to` params as before. */}
+        <UserActivityRangeFields
+          defaultFrom={from ?? toDateInputValue(start)}
+          defaultTo={to ?? toDateInputValue(end)}
+        />
         <button type="submit" className="sru-btn sru-btn-primary">
           {t("applyButton")}
         </button>

@@ -14,6 +14,7 @@ import {
   describeCycleDuration,
   type CycleDurationPreset,
 } from "@/lib/cyclePeriod";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
 import type { Locale } from "@/i18n/config";
 
 type ErrorMessage = Extract<CreateEvaluationCycleState, { status: "error" }>["message"];
@@ -176,26 +177,21 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
 
           <div className="sru-field">
             <label>{t("startDateLabel")}</label>
-            <input
-              type="date"
+            <DateFieldDmy
               name="startDate"
-              required
-              dir="ltr"
               value={startDate}
-              onChange={(event) => applyStartDate(event.target.value)}
+              onChange={applyStartDate}
+              ariaLabel={t("startDateLabel")}
             />
           </div>
 
           <div className="sru-field">
             <label>{t("endDateLabel")}</label>
-            <input
-              type="date"
+            <DateFieldDmy
               name="endDate"
-              required
-              dir="ltr"
               value={endDate}
-              min={startDate || undefined}
-              onChange={(event) => applyEndDate(event.target.value)}
+              onChange={applyEndDate}
+              ariaLabel={t("endDateLabel")}
             />
           </div>
 
@@ -222,7 +218,14 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
       )}
 
       <div className="sru-form-submitrow">
-        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+        {/* The dates now submit through hidden inputs, which browsers do not
+            validate — so the guarantee the old  attributes gave is
+            kept here instead of being quietly lost. */}
+        <button
+          type="submit"
+          disabled={pending || startDate === "" || endDate === ""}
+          className="sru-btn sru-btn-primary"
+        >
           {pending ? t("submitting") : t("submit")}
         </button>
       </div>

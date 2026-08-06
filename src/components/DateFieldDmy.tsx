@@ -28,16 +28,30 @@ import {
 export function DateFieldDmy({
   value,
   onChange,
+  defaultValue = "",
+  name,
   disabled = false,
   ariaLabel,
 }: {
-  value: string;
-  onChange: (nextValue: string) => void;
+  /** Controlled use: pass both `value` and `onChange`. */
+  value?: string;
+  onChange?: (nextValue: string) => void;
+  /** Uncontrolled use (plain `name`-based forms): the starting value. */
+  defaultValue?: string;
+  /**
+   * When set, a hidden input carries the `YYYY-MM-DD` value under this name —
+   * so the control drops into FormData-based forms (employee invite/edit) and
+   * plain `method="get"` filter forms exactly like the native input it
+   * replaces, with no change to what the server receives.
+   */
+  name?: string;
   disabled?: boolean;
   ariaLabel?: string;
 }) {
   const locale = useLocale();
   const names = monthNames(locale);
+  const isControlled = value !== undefined;
+  const externalValue = isControlled ? value : defaultValue;
 
   // The parts live in local state, NOT derived from `value` alone. Found live:
   // deriving them purely from the prop makes a date impossible to enter —
@@ -46,14 +60,16 @@ export function DateFieldDmy({
   // can never accumulate. Local state holds the in-progress entry; `value`
   // still wins whenever the parent changes it from outside (initial load, or
   // the form resetting after a save).
-  const initial = parseDateParts(value);
+  const initial = parseDateParts(externalValue);
   const [draft, setDraft] = useState({
     day: initial?.day ?? 0,
     month: initial?.month ?? 0,
     year: initial?.year ?? 0,
   });
-  const [syncedValue, setSyncedValue] = useState(value);
-  if (value !== syncedValue) {
+  const [syncedValue, setSyncedValue] = useState(externalValue);
+  // Only a controlled parent can move the value from outside; in uncontrolled
+  // use `defaultValue` is a starting point, not a continuing source of truth.
+  if (isControlled && value !== syncedValue) {
     setSyncedValue(value);
     const incoming = parseDateParts(value);
     // Adopt a real external value; ignore the "" this component itself emits
@@ -85,8 +101,10 @@ export function DateFieldDmy({
     setSyncedValue(formatDateValue(candidate));
     // A part still unchosen (or cleared back to "—") means no date yet: the
     // parent gets "", never a half-set value.
-    onChange(formatDateValue(candidate));
+    onChange?.(formatDateValue(candidate));
   }
+
+  const isoValue = formatDateValue(draft);
 
   const selectStyle: React.CSSProperties = { minWidth: 0 };
 
@@ -96,6 +114,9 @@ export function DateFieldDmy({
       role="group"
       aria-label={ariaLabel}
     >
+      {/* Carries the same `YYYY-MM-DD` the native input used to submit, so
+          FormData-based and plain GET forms need no other change. */}
+      {name && <input type="hidden" name={name} value={isoValue} />}
       <select
         value={day || ""}
         disabled={disabled}

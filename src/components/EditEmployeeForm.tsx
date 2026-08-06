@@ -6,6 +6,7 @@ import { Briefcase, IdCard, ShieldCheck, User, AlertCircle } from "lucide-react"
 import { useRouter } from "@/i18n/navigation";
 import { updateEmployee, type EditEmployeeState } from "@/app/[locale]/(app)/employees/[id]/edit/actions";
 import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
 
 interface OrgUnitOption {
   id: string;
@@ -156,7 +157,7 @@ export function EditEmployeeForm({
         <div className="sru-formgrid">
           <div className="sru-field">
             <label>{t("dateOfBirthLabel")}</label>
-            <input type="date" name="dateOfBirth" dir="ltr" defaultValue={profile.date_of_birth ?? ""} />
+            <DateFieldDmy name="dateOfBirth" defaultValue={profile.date_of_birth ?? ""} ariaLabel={t("dateOfBirthLabel")} />
           </div>
           <div className="sru-field">
             <label>{t("nationalityLabel")}</label>
@@ -228,7 +229,7 @@ export function EditEmployeeForm({
           </div>
           <div className="sru-field">
             <label>{t("hireDateLabel")}</label>
-            <input type="date" name="hireDate" dir="ltr" defaultValue={profile.hire_date ?? ""} />
+            <DateFieldDmy name="hireDate" defaultValue={profile.hire_date ?? ""} ariaLabel={t("hireDateLabel")} />
           </div>
           <div className="sru-field">
             <label>{t("mobileLabel")}</label>
