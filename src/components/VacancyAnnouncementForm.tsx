@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Megaphone } from "lucide-react";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
 import {
   updateVacancyAnnouncementDetails,
   type VacancyActionState,
@@ -88,28 +89,28 @@ export function VacancyAnnouncementForm({
             onChange={(e) => setOpenings(e.target.value)}
           />
         </label>
-        <label className="sru-field">
+        {/* Day / month-name / year, not the browser's own `08 / 09 / 2026` —
+            see DateFieldDmy for why a native date input can't be reformatted. */}
+        <div className="sru-field">
           <span>{t("fieldStartDate")}</span>
-          <input
-            type="date"
-            dir="ltr"
+          <DateFieldDmy
             value={start}
+            onChange={setStart}
             disabled={!canManage || pending}
-            onChange={(e) => setStart(e.target.value)}
+            ariaLabel={t("fieldStartDate")}
           />
           <small style={{ color: "var(--sru-muted)" }}>{t("fieldStartDateHint")}</small>
-        </label>
-        <label className="sru-field">
+        </div>
+        <div className="sru-field">
           <span>{t("fieldDeadline")}</span>
-          <input
-            type="date"
-            dir="ltr"
+          <DateFieldDmy
             value={deadline}
+            onChange={setDeadline}
             disabled={!canManage || pending}
-            onChange={(e) => setDeadline(e.target.value)}
+            ariaLabel={t("fieldDeadline")}
           />
           <small style={{ color: "var(--sru-muted)" }}>{t("fieldDeadlineHint")}</small>
-        </label>
+        </div>
       </div>
 
       {canManage ? (

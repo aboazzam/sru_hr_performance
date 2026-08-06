@@ -1,0 +1,96 @@
+import { describe, it, expect } from "vitest";
+import {
+  daysInMonth,
+  parseDateParts,
+  formatDateValue,
+  formatDateDmy,
+  monthNames,
+  monthNamesAr,
+  monthNamesEn,
+  yearOptions,
+} from "./dateParts";
+
+describe("daysInMonth", () => {
+  it("knows the ordinary month lengths", () => {
+    expect(daysInMonth(2026, 1)).toBe(31);
+    expect(daysInMonth(2026, 4)).toBe(30);
+    expect(daysInMonth(2026, 9)).toBe(30);
+    expect(daysInMonth(2026, 12)).toBe(31);
+  });
+
+  it("applies the real leap-year rule to February", () => {
+    expect(daysInMonth(2026, 2)).toBe(28);
+    expect(daysInMonth(2028, 2)).toBe(29);
+    expect(daysInMonth(2100, 2)).toBe(28); // divisible by 100, not by 400
+    expect(daysInMonth(2000, 2)).toBe(29); // divisible by 400
+  });
+});
+
+describe("parseDateParts", () => {
+  it("splits a well-formed value", () => {
+    expect(parseDateParts("2026-10-03")).toEqual({ year: 2026, month: 10, day: 3 });
+  });
+
+  it("returns null for empty, malformed, or impossible values", () => {
+    expect(parseDateParts("")).toBeNull();
+    expect(parseDateParts(null)).toBeNull();
+    expect(parseDateParts("2026-10-3")).toBeNull();
+    expect(parseDateParts("2026-13-01")).toBeNull();
+    expect(parseDateParts("2026-02-29")).toBeNull(); // 2026 is not a leap year
+    expect(parseDateParts("2028-02-29")).toEqual({ year: 2028, month: 2, day: 29 });
+  });
+});
+
+describe("formatDateValue", () => {
+  it("builds a zero-padded ISO value", () => {
+    expect(formatDateValue({ year: 2026, month: 10, day: 3 })).toBe("2026-10-03");
+  });
+
+  it("returns an empty string while any part is still unchosen", () => {
+    expect(formatDateValue({ year: 2026, month: 10 })).toBe("");
+    expect(formatDateValue({ year: 2026, day: 3 })).toBe("");
+    expect(formatDateValue({})).toBe("");
+  });
+
+  it("clamps the day to the month's real length instead of producing an impossible date", () => {
+    // Picking 31 and then switching to a 30-day month must not yield 31/09.
+    expect(formatDateValue({ year: 2026, month: 9, day: 31 })).toBe("2026-09-30");
+    expect(formatDateValue({ year: 2026, month: 2, day: 30 })).toBe("2026-02-28");
+    expect(formatDateValue({ year: 2028, month: 2, day: 30 })).toBe("2028-02-29");
+  });
+});
+
+describe("formatDateDmy", () => {
+  it("renders `5 أغسطس 2026` — day, month name, year, no leading zero, no slashes", () => {
+    expect(formatDateDmy("2026-08-05", "ar")).toBe("5 أغسطس 2026");
+    expect(formatDateDmy("2026-08-05", "en")).toBe("5 August 2026");
+    expect(formatDateDmy("2026-10-03", "ar")).toBe("3 أكتوبر 2026");
+  });
+
+  it("keeps two-digit days as they are", () => {
+    expect(formatDateDmy("2026-11-15", "ar")).toBe("15 نوفمبر 2026");
+  });
+
+  it("shows a dash rather than a broken value when there is no date", () => {
+    expect(formatDateDmy(null, "ar")).toBe("—");
+    expect(formatDateDmy("", "en")).toBe("—");
+  });
+});
+
+describe("month names", () => {
+  it("has twelve names per locale", () => {
+    expect(monthNamesAr).toHaveLength(12);
+    expect(monthNamesEn).toHaveLength(12);
+    expect(monthNames("ar")).toBe(monthNamesAr);
+    expect(monthNames("en")).toBe(monthNamesEn);
+  });
+});
+
+describe("yearOptions", () => {
+  it("spans last year through ten years ahead", () => {
+    const years = yearOptions(2026);
+    expect(years[0]).toBe(2025);
+    expect(years[years.length - 1]).toBe(2036);
+    expect(years).toContain(2026);
+  });
+});

@@ -7,6 +7,7 @@ import { vacancyStatusLabel } from "@/lib/vacancyStatus";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { todayInTimezone } from "@/lib/evaluationCycle";
 import { vacancyPortalState, portalStateLabels } from "@/lib/vacancyPortal";
+import { formatDateDmy } from "@/lib/dateParts";
 import type { Locale } from "@/i18n/config";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -59,8 +60,19 @@ export default async function AnnouncedJobsPage({
   // Announcement dates render in the configured display timezone, like every
   // other timestamp in this app (system settings, 2026-07-26).
   const timezone = await getDisplayTimezone(supabase);
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { timeZone: timezone });
+  // Dates read as day / month-name / year everywhere (03/أكتوبر/2026), so a
+  // value is never ambiguous between day-month and month-day order. The
+  // announcement timestamp is reduced to its calendar day in the configured
+  // display timezone first, then formatted the same way as the plain `date`
+  // columns.
+  const announcedDay = (iso: string) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(iso));
+  const formatDate = (iso: string) => formatDateDmy(announcedDay(iso), locale);
   const today = todayInTimezone(timezone);
 
   return (
@@ -112,7 +124,7 @@ export default async function AnnouncedJobsPage({
                     <td>{job.requirements_ar ?? "—"}</td>
                     <td className="sru-en">{job.openings_count}</td>
                     <td>{formatDate(job.announced_at)}</td>
-                    <td className="sru-en">{job.application_deadline ?? "—"}</td>
+                    <td>{formatDateDmy(job.application_deadline, locale)}</td>
                     <td>
                       <span className="pill">{vacancyStatusLabel(job.status)}</span>
                       {/* Advertising is independent of status (20260804000003):
