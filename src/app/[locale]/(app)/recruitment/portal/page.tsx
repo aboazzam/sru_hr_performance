@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { vacancyPortalState } from "@/lib/vacancyPortal";
+import { formatDateDmy } from "@/lib/dateParts";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { todayInTimezone } from "@/lib/evaluationCycle";
 import type { Locale } from "@/i18n/config";
@@ -76,8 +77,8 @@ export default async function RecruitmentPortalPage({
       ) === "live"
   );
 
-  const formatDate = (value: string) =>
-    new Date(`${value}T00:00:00`).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US");
+  // Day / month-name / year, the same unambiguous shape used everywhere else.
+  const formatDate = (value: string) => formatDateDmy(value, locale);
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
