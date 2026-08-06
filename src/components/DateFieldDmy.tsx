@@ -104,9 +104,10 @@ export function DateFieldDmy({
         style={{ ...selectStyle, flex: "0 0 auto" }}
       >
         <option value="">—</option>
+        {/* Unpadded, matching how the value reads back: `5 أغسطس 2026`. */}
         {Array.from({ length: dayCount }, (_, i) => i + 1).map((d) => (
           <option key={d} value={d}>
-            {String(d).padStart(2, "0")}
+            {d}
           </option>
         ))}
       </select>

@@ -61,9 +61,14 @@ describe("formatDateValue", () => {
 });
 
 describe("formatDateDmy", () => {
-  it("renders day / month name / year, the shape that removes the 08/09 ambiguity", () => {
-    expect(formatDateDmy("2026-10-03", "en")).toBe("03/October/2026");
-    expect(formatDateDmy("2026-10-03", "ar")).toBe("03/أكتوبر/2026");
+  it("renders `5 أغسطس 2026` — day, month name, year, no leading zero, no slashes", () => {
+    expect(formatDateDmy("2026-08-05", "ar")).toBe("5 أغسطس 2026");
+    expect(formatDateDmy("2026-08-05", "en")).toBe("5 August 2026");
+    expect(formatDateDmy("2026-10-03", "ar")).toBe("3 أكتوبر 2026");
+  });
+
+  it("keeps two-digit days as they are", () => {
+    expect(formatDateDmy("2026-11-15", "ar")).toBe("15 نوفمبر 2026");
   });
 
   it("shows a dash rather than a broken value when there is no date", () => {

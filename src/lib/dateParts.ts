@@ -93,15 +93,16 @@ export function formatDateValue(parts: Partial<DateParts>): string {
 }
 
 /**
- * Human display: `03/أكتوبر/2026` — the shape the project owner asked for
- * (day / month name / year), with the parts kept in that order in both
- * locales so the value never reads ambiguously.
+ * Human display: `5 أغسطس 2026` — the exact shape the project owner asked
+ * for: day, month NAME, year, separated by spaces, with no leading zero and
+ * no slashes (an earlier `03/أكتوبر/2026` draft was superseded by this).
+ * Same part order in both locales, so a value never reads ambiguously.
  */
 export function formatDateDmy(value: string | null | undefined, locale: string): string {
   const parts = parseDateParts(value);
   if (!parts) return "—";
   const names = monthNames(locale);
-  return `${String(parts.day).padStart(2, "0")}/${names[parts.month - 1]}/${parts.year}`;
+  return `${parts.day} ${names[parts.month - 1]} ${parts.year}`;
 }
 
 /** Selectable years for the pickers: last year through ten years ahead. */
