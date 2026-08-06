@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition, type Form
 import { useTranslations } from "next-intl";
 import { Briefcase, IdCard, ShieldCheck, User, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles } from "lucide-react";
 import { inviteEmployee, type InviteEmployeeState, type InviteFieldError } from "@/app/[locale]/(app)/employees/new/actions";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
 
 /** Client-side only — never sent anywhere until the admin actually submits the form. */
 function generateSuggestedPassword(): string {
@@ -164,7 +165,7 @@ export function EmployeeInviteForm({
         <div className="sru-formgrid">
           <div className="sru-field">
             <label>{t("dateOfBirthLabel")}</label>
-            <input type="date" name="dateOfBirth" dir="ltr" />
+            <DateFieldDmy name="dateOfBirth" ariaLabel={t("dateOfBirthLabel")} />
           </div>
           <div className="sru-field">
             <label>{t("nationalityLabel")}</label>
@@ -228,7 +229,7 @@ export function EmployeeInviteForm({
           </div>
           <div className="sru-field">
             <label>{t("hireDateLabel")}</label>
-            <input type="date" name="hireDate" dir="ltr" />
+            <DateFieldDmy name="hireDate" ariaLabel={t("hireDateLabel")} />
           </div>
           <div className="sru-field">
             <label>{t("mobileLabel")}</label>

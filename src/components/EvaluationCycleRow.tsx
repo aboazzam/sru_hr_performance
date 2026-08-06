@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { Pencil, Save, X, Trash2 } from "lucide-react";
 import {
@@ -10,6 +10,8 @@ import {
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
 import { cycleStatus, cycleStatusLabels } from "@/lib/evaluationCycle";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
+import { formatDateDmy } from "@/lib/dateParts";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "manageErrorInvalid",
@@ -55,6 +57,7 @@ export function EvaluationCycleRow({
   typeLabels: Record<string, string>;
 }) {
   const t = useTranslations("EvaluationCyclesPage");
+  const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -137,16 +140,16 @@ export function EvaluationCycleRow({
 
       <td className="sru-en">
         {editing ? (
-          <input type="date" dir="ltr" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <DateFieldDmy value={startDate} onChange={setStartDate} ariaLabel={t("columnStartDate")} />
         ) : (
-          cycle.startDate
+          formatDateDmy(cycle.startDate, locale)
         )}
       </td>
       <td className="sru-en">
         {editing ? (
-          <input type="date" dir="ltr" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <DateFieldDmy value={endDate} onChange={setEndDate} ariaLabel={t("columnEndDate")} />
         ) : (
-          cycle.endDate
+          formatDateDmy(cycle.endDate, locale)
         )}
       </td>
 
