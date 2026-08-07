@@ -174,6 +174,17 @@ export default async function RecruitmentPlanDetailPage({
               {t("consolidateRequests")}
             </Link>
           )}
+          {/* Export goes through a Route Handler under /api (not a [locale]
+              route), so it is a plain <a>, not the locale-aware <Link>. */}
+          <a href={`/api/recruitment/plan/${plan.id}/export?format=xlsx`} className="sru-btn">
+            {t("exportExcel")}
+          </a>
+          <a href={`/api/recruitment/plan/${plan.id}/export?format=csv`} className="sru-btn">
+            {t("exportCsv")}
+          </a>
+          <Link href={`/recruitment/plan/${plan.id}/print`} className="sru-btn">
+            {t("printView")}
+          </Link>
           <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn">
             {t("compareTab")}
           </Link>

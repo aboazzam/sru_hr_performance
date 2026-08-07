@@ -1192,3 +1192,35 @@ dialog.sru-modal::backdrop {
 html[dir="ltr"] .sru-back-arrow {
   transform: rotate(180deg);
 }
+/* ===== Printing an app-shell page (2026-08-07) =====
+   `sru-print.css` (the SRU kit) already hides `.no-print`/`.sru-print-btn`,
+   sets A4 with margins, and keeps cards from breaking across pages — but it
+   predates this app shell, so it knows nothing about the topbar/sidebar and
+   would print them on every page.
+
+   Added here rather than in `sru-print.css` for the same reason every other
+   addition is: the kit files are never edited, only extended additively from
+   the bottom of this file (CLAUDE.md §7).
+
+   Hiding the chrome here is what lets a printable page live UNDER the
+   `(app)` route group and keep the single centralized auth gate in
+   `(app)/layout.tsx`, instead of sitting outside it and re-implementing that
+   check — the exact duplication this codebase deliberately moved away from.
+
+   The shell's own `height:100dvh; overflow:hidden` must also be released, or
+   the browser prints only the first viewport-worth of a long plan. */
+@media print {
+  .sru-topbar,
+  .sru-sidebar {
+    display: none !important;
+  }
+
+  .sru-app-shell,
+  .sru-app-body,
+  .sru-app-shell main {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+}

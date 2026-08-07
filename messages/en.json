@@ -1835,7 +1835,10 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "auditTab": "Audit log",
-    "compareTab": "Compare with last year"
+    "compareTab": "Compare with last year",
+    "exportExcel": "Export Excel",
+    "exportCsv": "Export CSV",
+    "printView": "Print view"
   },
   "AnnouncedJobsPage": {
     "title": "Advertised Jobs",
@@ -2028,5 +2031,25 @@
     "columnCostPrev": "Previous cost",
     "columnCostCurrent": "Current cost",
     "columnCostDelta": "Cost change"
+  },
+  "RecruitmentPrintPage": {
+    "documentTitle": "Annual Recruitment Plan",
+    "forbidden": "You do not have permission to view this plan.",
+    "backToPlan": "Back to the plan",
+    "totalHeadcount": "Total headcount",
+    "totalAnnualCost": "Estimated annual cost",
+    "approvedBudget": "Approved budget",
+    "variance": "Variance",
+    "itemsWithoutCostNote": "{count} item(s) have no estimated cost — the total above excludes them.",
+    "columnJobTitle": "Job title",
+    "columnOrgUnit": "Org unit",
+    "columnHeadcount": "Headcount",
+    "columnQuarter": "Quarter",
+    "columnMonthlyCost": "Monthly cost",
+    "columnAnnualCost": "Annual cost",
+    "hrRecommendation": "HR recommendation:",
+    "financeNote": "Finance note:",
+    "approvalNote": "Approval note:",
+    "footerOrg": "Sulaiman Alrajhi University — Human Capital"
   }
 }

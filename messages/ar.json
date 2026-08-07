@@ -1835,7 +1835,10 @@
     "confirm": "تأكيد",
     "cancel": "إلغاء",
     "auditTab": "سجل التدقيق",
-    "compareTab": "مقارنة بالسنة السابقة"
+    "compareTab": "مقارنة بالسنة السابقة",
+    "exportExcel": "تصدير Excel",
+    "exportCsv": "تصدير CSV",
+    "printView": "عرض للطباعة"
   },
   "AnnouncedJobsPage": {
     "title": "الوظائف المعلن عنها",
@@ -2028,5 +2031,25 @@
     "columnCostPrev": "تكلفة سابقة",
     "columnCostCurrent": "تكلفة حالية",
     "columnCostDelta": "فرق التكلفة"
+  },
+  "RecruitmentPrintPage": {
+    "documentTitle": "خطة التوظيف السنوية",
+    "forbidden": "لا تملك صلاحية مشاهدة هذه الخطة.",
+    "backToPlan": "العودة للخطة",
+    "totalHeadcount": "إجمالي الوظائف المطلوبة",
+    "totalAnnualCost": "التكلفة السنوية التقديرية",
+    "approvedBudget": "الميزانية المعتمدة",
+    "variance": "الفرق",
+    "itemsWithoutCostNote": "{count} بند بلا تكلفة مقدَّرة — الإجمالي أعلاه لا يشملها.",
+    "columnJobTitle": "المسمى الوظيفي",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnHeadcount": "العدد",
+    "columnQuarter": "الربع",
+    "columnMonthlyCost": "التكلفة الشهرية",
+    "columnAnnualCost": "التكلفة السنوية",
+    "hrRecommendation": "توصية الموارد البشرية:",
+    "financeNote": "ملاحظة الشؤون المالية:",
+    "approvalNote": "ملاحظة الاعتماد:",
+    "footerOrg": "جامعة سليمان الراجحي — إدارة رأس المال البشري"
   }
 }
