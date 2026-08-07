@@ -21,7 +21,7 @@ export default async function VacanciesPage() {
   // the REST API with a real temporary row before writing this query.
   const { data } = await supabase
     .from("vacancies")
-    .select("id, status, requirements_ar, announced_at, job_titles(name_ar,grade_level), org_units(name_ar)")
+    .select("id, status, requirements_ar, announced_at, posting_scope, job_titles(name_ar,grade_level), org_units(name_ar)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -30,6 +30,7 @@ export default async function VacanciesPage() {
     status: string;
     requirements_ar: string | null;
     announced_at: string | null;
+    posting_scope: string;
     job_titles: { name_ar: string; grade_level: number } | null;
     org_units: { name_ar: string } | null;
   }> | null;
@@ -71,6 +72,7 @@ export default async function VacanciesPage() {
     requirementsAr: vacancy.requirements_ar,
     planYear: planYearByVacancy.get(vacancy.id) ?? null,
     announced: vacancy.announced_at !== null,
+    postingScope: vacancy.posting_scope,
   }));
 
   return (

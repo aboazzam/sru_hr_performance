@@ -211,7 +211,7 @@ export const navGroups: NavGroup[] = [
       // its own requests via `recruitmentPlan`, while a finance reviewer
       // reaches them through `recruitmentBudget` alone, holding no
       // `recruitmentPlan` grant at all (mirrors the SELECT policy exactly).
-      { segment: "recruitment/requests", labelKey: "recruitmentRequests", icon: ClipboardList, access: [{ processArea: "recruitmentPlan", minLevel: "view" }, { processArea: "recruitmentBudget", minLevel: "view" }] },
+      { segment: "recruitment/requests", labelKey: "recruitmentRequests", icon: ClipboardList, access: [{ processArea: "recruitmentRequests", minLevel: "view" }, { processArea: "recruitmentBudget", minLevel: "view" }] },
       { segment: "promotions", labelKey: "promotions", icon: TrendingUp, access: [{ processArea: "promotions", minLevel: "view" }] },
       { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
       // 2026-08-04: vacancies advertised from the الشواغر tab's megaphone
@@ -222,7 +222,11 @@ export const navGroups: NavGroup[] = [
       // 2026-08-05: the outward-facing list — advertised vacancies whose
       // publication window is actually open right now. Same `vacancies>=view`
       // gate as the tab that feeds it.
-      { segment: "recruitment/portal", labelKey: "recruitmentPortal", icon: Globe, access: [{ processArea: "vacancies", minLevel: "view" }] },
+      // 2026-08-07: البوابة صارت بوابتين — داخلية للمنسوبين وخارجية
+      // للمتقدّمين من الخارج — ولها مجالها `recruitmentPortal` بدل
+      // `vacancies`، فيمكن منح تصفّح البوابة دون إدارة الشواغر.
+      { segment: "recruitment/portal", labelKey: "recruitmentPortalInternal", icon: Globe, access: [{ processArea: "recruitmentPortal", minLevel: "view" }] },
+      { segment: "recruitment/portal/external", labelKey: "recruitmentPortalExternal", icon: Globe, access: [{ processArea: "recruitmentPortal", minLevel: "view" }] },
     ],
   },
   {

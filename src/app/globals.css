@@ -1224,3 +1224,24 @@ html[dir="ltr"] .sru-back-arrow {
     display: block !important;
   }
 }
+
+/* ===== .sru-en inside a table cell (2026-08-07) =====
+   `sru-ui.css` defines `.sru-en{...;display:inline-block}` — correct for the
+   inline spans it was written for, but destructive on a `<td>`: an
+   inline-block element stops being a table cell, so the browser wraps the
+   run of them into a single anonymous cell and every following column
+   shifts. Reported as "the 7000 landed under الربع and مسودة under التكلفة
+   الشهرية", and confirmed by measuring cell edges: columns 6-8 were sitting
+   in columns 5-7's boxes while the last column's box stayed empty.
+
+   Affects every table in the app that marks a numeric cell `.sru-en`
+   (10 files at the time of writing), not just the screen it was noticed on.
+
+   Restored to `table-cell` here rather than by editing the kit (CLAUDE.md
+   §7 — `sru-ui.css` is never modified, only extended additively from the
+   bottom of this file). `direction`/`unicode-bidi` are deliberately left
+   alone: those are what the class exists for, and they work fine on a cell. */
+td.sru-en,
+th.sru-en {
+  display: table-cell;
+}

@@ -13,6 +13,15 @@ import {
   type RecruitmentRequestActionState,
 } from "@/app/[locale]/(app)/recruitment/requests/actions";
 
+/** Action-level failures (not workflow refusals) → their own message key. */
+const actionErrorKeys: Record<string, string> = {
+  not_found: "errorRequestGone",
+  unauthenticated: "errorUnauthenticated",
+  no_profile: "errorNoProfile",
+  invalid_input: "errorInvalid",
+  duplicate: "errorDuplicate",
+};
+
 /**
  * The action buttons for one request row. Which buttons exist comes straight
  * from the transition table — this component holds no workflow knowledge of
@@ -121,8 +130,13 @@ export function RecruitmentRequestActions({
 
       {state?.status === "error" && (
         <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12 }}>
+          {/* Two error families reach here: refusals from the workflow guard,
+              which carry their own Arabic wording, and action-level failures.
+              The latter used to fall through to a bare "تعذر إتمام العملية" —
+              reported live when a stale page tried to submit a request that
+              no longer existed, leaving no hint that reloading would help. */}
           {transitionRefusalMessages[state.message as keyof typeof transitionRefusalMessages] ??
-            t("errorUnknown")}
+            t(actionErrorKeys[state.message] ?? "errorUnknown")}
         </span>
       )}
     </div>

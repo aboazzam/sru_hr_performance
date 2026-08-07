@@ -29,6 +29,8 @@ export interface VacancyRowView {
   planYear: number | null;
   /** Advertised in the "الوظائف المعلن عنها" tab (announced_at IS NOT NULL). */
   announced: boolean;
+  /** أي بوابة يظهر عليها الإعلان: داخلية | خارجية | كلتاهما. */
+  postingScope: string;
 }
 
 const errorKeys: Record<string, string> = {
@@ -58,6 +60,8 @@ export function VacanciesTable({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [actionState, setActionState] = useState<VacancyActionState | null>(null);
+  /** اختيار بوابة النشر لكل صف قبل الإعلان (داخلي افتراضًا). */
+  const [scopeChoice, setScopeChoice] = useState<Record<string, string>>({});
 
   const counts = useMemo(() => countVacancyStatuses(vacancies.map((v) => v.status)), [vacancies]);
 
@@ -221,6 +225,28 @@ export function VacanciesTable({
                     {canManage && (
                       <td>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {/* اختيار البوابة قبل الإعلان — يظهر فقط قبله، لأن
+                            سحب الإعلان لا يحتاج نطاقًا. الافتراضي "داخلي"
+                            مطابقًا لافتراض قاعدة البيانات، فلا يُنشر شيء
+                            خارجيًا بضغطة واحدة غير مقصودة. */}
+                        {!vacancy.announced && (
+                          <select
+                            aria-label={t("scopeSelectLabel")}
+                            style={{ fontSize: 12, padding: "2px 4px" }}
+                            value={scopeChoice[vacancy.id] ?? "internal"}
+                            disabled={pending}
+                            onChange={(event) =>
+                              setScopeChoice((current) => ({
+                                ...current,
+                                [vacancy.id]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="internal">{t("scopeInternal")}</option>
+                            <option value="external">{t("scopeExternal")}</option>
+                            <option value="both">{t("scopeBoth")}</option>
+                          </select>
+                        )}
                         {/* Announce / withdraw — the single icon toggles, so a
                             row can never show both actions at once. */}
                         <button
@@ -231,7 +257,16 @@ export function VacanciesTable({
                           disabled={pending}
                           onClick={() => {
                             if (vacancy.announced && !window.confirm(t("unannounceConfirm"))) return;
-                            run(() => setVacancyAnnouncement(vacancy.id, !vacancy.announced));
+                            run(() =>
+                              setVacancyAnnouncement(
+                                vacancy.id,
+                                !vacancy.announced,
+                                (scopeChoice[vacancy.id] ?? "internal") as
+                                  | "internal"
+                                  | "external"
+                                  | "both"
+                              )
+                            );
                           }}
                         >
                           {vacancy.announced ? (
