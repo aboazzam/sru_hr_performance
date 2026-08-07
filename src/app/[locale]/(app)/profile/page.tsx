@@ -19,16 +19,25 @@ export default async function MyProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // `user` can be null here even though (app)/layout.tsx's own getUser() call
+  // already gated this route -- the exact same class of crash already found
+  // and fixed on /reports for a background/prefetch request that reached the
+  // page before the layout's redirect took effect. Treat it the same as "no
+  // linked profile" (the existing `!p` branch below) rather than crash on
+  // `user!.id`.
+  //
   // Self-row is always visible on profiles regardless of VPRA (profiles_select).
   // org_units/job_titles embeds work too: employee holds careerPath=view, and
   // both tables' SELECT policies accept careerPath as one of their OR-branches.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, org_units(name_ar), job_titles(name_ar, grade_level)"
-    )
-    .eq("auth_user_id", user!.id)
-    .maybeSingle();
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select(
+          "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, org_units(name_ar), job_titles(name_ar, grade_level)"
+        )
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
   const p = profile as unknown as
     | {
