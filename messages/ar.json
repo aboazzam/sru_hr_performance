@@ -1952,7 +1952,12 @@
     "errorForbidden": "لا تملك صلاحية تنفيذ هذا الإجراء.",
     "errorNoProfile": "لا يوجد ملف موظف مرتبط بحسابك.",
     "errorDuplicate": "هذا الطلب موجود بالفعل.",
-    "errorUnknown": "تعذر إتمام العملية."
+    "errorUnknown": "تعذر إتمام العملية.",
+    "qualificationsFromJobTitle": "مأخوذة من المؤهلات المسجّلة للمسمى «{title}» — يمكنك تعديلها.",
+    "noQualificationsOnJobTitle": "لا توجد مؤهلات مسجّلة لهذا المسمى — اكتبها يدويًا.",
+    "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
+    "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
+    "restoreFromJobTitle": "استعادة من المسمى الوظيفي"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

@@ -36,10 +36,31 @@ export default async function NewRecruitmentRequestPage() {
           p_process_area: "recruitmentPlan",
           p_min_level: "prepare",
         }),
-        supabase.from("job_titles").select("id, name_ar, grade_level").order("name_ar"),
+        // `qualification_required` and the title's own competency links feed
+        // the form's prefill: picking a job title fills the qualifications box
+        // and ticks that title's competencies, both left editable.
+        supabase
+          .from("job_titles")
+          .select("id, name_ar, grade_level, qualification_required")
+          .order("name_ar"),
         supabase.from("competencies").select("id, name_ar, type").order("name_ar"),
       ])
     : [{ data: null }, { data: null }, { data: null }];
+
+  // job_title_competencies is read separately rather than as an embed: this is
+  // a plain lookup table with no ambiguity, and fetching it flat avoids the
+  // array-vs-object embed inference trap this project has hit before.
+  const { data: titleCompetencyRows } = canRaise
+    ? await supabase
+        .from("job_title_competencies")
+        .select("job_title_id, competency_id")
+        .is("deleted_at", null)
+    : { data: null };
+
+  const competencyIdsByJobTitle: Record<string, string[]> = {};
+  for (const row of titleCompetencyRows ?? []) {
+    (competencyIdsByJobTitle[row.job_title_id] ??= []).push(row.competency_id);
+  }
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -63,6 +84,7 @@ export default async function NewRecruitmentRequestPage() {
             orgUnits={orgUnits ?? []}
             jobTitles={jobTitles ?? []}
             competencies={competencies ?? []}
+            competencyIdsByJobTitle={competencyIdsByJobTitle}
           />
         )}
       </div>
