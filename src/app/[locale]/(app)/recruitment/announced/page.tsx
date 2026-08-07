@@ -100,6 +100,7 @@ export default async function AnnouncedJobsPage({
                   <th>{t("columnRequirements")}</th>
                   <th>{t("columnOpenings")}</th>
                   <th>{t("columnAnnouncedAt")}</th>
+                  <th>{t("columnStartDate")}</th>
                   <th>{t("columnDeadline")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("portalStateLabel")}</th>
@@ -123,8 +124,26 @@ export default async function AnnouncedJobsPage({
                     <td>{job.org_units?.name_ar ?? "—"}</td>
                     <td>{job.requirements_ar ?? "—"}</td>
                     <td className="sru-en">{job.openings_count}</td>
+                    {/* Two different facts that read alike, and were being
+                        confused: "أُعلن في" is WHEN the advertise action was
+                        taken, while "بداية النشر" is what actually governs
+                        whether the portal shows it. Both are now shown, and
+                        the empty case says which rule applies. */}
                     <td>{formatDate(job.announced_at)}</td>
-                    <td>{formatDateDmy(job.application_deadline, locale)}</td>
+                    <td>
+                      {job.announcement_start_date ? (
+                        formatDateDmy(job.announcement_start_date, locale)
+                      ) : (
+                        <span style={{ color: "var(--sru-muted)" }}>{t("startFromAnnouncement")}</span>
+                      )}
+                    </td>
+                    <td>
+                      {job.application_deadline ? (
+                        formatDateDmy(job.application_deadline, locale)
+                      ) : (
+                        <span style={{ color: "var(--sru-muted)" }}>{t("noDeadlineShort")}</span>
+                      )}
+                    </td>
                     <td>
                       <span className="pill">{vacancyStatusLabel(job.status)}</span>
                       {/* Advertising is independent of status (20260804000003):
@@ -138,22 +157,38 @@ export default async function AnnouncedJobsPage({
                     </td>
                     <td>
                       {/* Why an ad is or isn't live on بوابة التوظيف — the
-                          management view never lets one silently vanish. */}
-                      <span className="pill">
-                        {
-                          portalStateLabels[
-                            vacancyPortalState(
-                              {
-                                status: job.status,
-                                announcedAt: job.announced_at,
-                                announcementStartDate: job.announcement_start_date,
-                                applicationDeadline: job.application_deadline,
-                              },
-                              today
-                            )
-                          ]
-                        }
-                      </span>
+                          management view never lets one silently vanish, and
+                          names the date that decides it, since "not published
+                          yet" on its own reads as a malfunction. */}
+                      {(() => {
+                        const state = vacancyPortalState(
+                          {
+                            status: job.status,
+                            announcedAt: job.announced_at,
+                            announcementStartDate: job.announcement_start_date,
+                            applicationDeadline: job.application_deadline,
+                          },
+                          today
+                        );
+                        const governingDate =
+                          state === "scheduled"
+                            ? job.announcement_start_date
+                            : state === "expired"
+                              ? job.application_deadline
+                              : null;
+                        return (
+                          <>
+                            <span className="pill">{portalStateLabels[state]}</span>
+                            {governingDate && (
+                              <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 3 }}>
+                                {state === "scheduled"
+                                  ? t("scheduledFrom", { date: formatDateDmy(governingDate, locale) })
+                                  : t("expiredOn", { date: formatDateDmy(governingDate, locale) })}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
