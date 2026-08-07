@@ -56,14 +56,51 @@ export function ConsolidateRequestsPanel({
 }) {
   const t = useTranslations("RecruitmentConsolidatePage");
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentRequestActionState | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [costs, setCosts] = useState<Record<string, string>>({});
   const [recommendation, setRecommendation] = useState(initialRecommendation);
   const [savedRecommendation, setSavedRecommendation] = useState(initialRecommendation);
 
+  // WHICH action is running, not merely WHETHER one is.
+  //
+  // `useTransition`'s own `pending` is a single flag for the whole component,
+  // and this panel hosts three unrelated action families (per-row pricing, the
+  // recommendation, the merge). Sharing it meant saving the recommendation
+  // disabled the merge button — and it stayed disabled until `router.refresh()`
+  // finished re-rendering the server component, which in dev took several
+  // seconds. Observed live during the end-to-end run: a merge click landed in
+  // that window and was silently swallowed, so nothing merged and nothing
+  // explained why.
+  //
+  // Each button now reflects only its own key, so one save never freezes an
+  // unrelated control. The keys are deliberately per-ROW for pricing
+  // (`cost:<id>`), since saving one row's cost has nothing to do with another's.
+  const [busy, setBusy] = useState<string | null>(null);
+
   const mergeable = requests.filter((request) => request.status === "under_hr_review");
+
+  /**
+   * Runs one action under its own key. `busy` is cleared in a `finally`, so a
+   * failing action can never leave its button disabled forever — the failure
+   * mode that would be worse than the bug this replaces.
+   */
+  function run(key: string, action: () => Promise<RecruitmentRequestActionState>, onSuccess?: () => void) {
+    setBusy(key);
+    startTransition(async () => {
+      try {
+        const result = await action();
+        setState(result);
+        if (result.status === "success") {
+          onSuccess?.();
+          router.refresh();
+        }
+      } finally {
+        setBusy(null);
+      }
+    });
+  }
 
   function toggle(id: string) {
     setSelected((current) =>
@@ -77,36 +114,26 @@ export function ConsolidateRequestsPanel({
 
   function saveCost(requestId: string) {
     const raw = costs[requestId];
-    startTransition(async () => {
-      const result = await setRequestHrCost({
+    run(`cost:${requestId}`, () =>
+      setRequestHrCost({
         requestId,
         estimatedCostByHr: raw === undefined || raw.trim() === "" ? null : Number(raw),
-      });
-      setState(result);
-      if (result.status === "success") router.refresh();
-    });
+      })
+    );
   }
 
   function saveRecommendation() {
-    startTransition(async () => {
-      const result = await savePlanHrRecommendation({ planId, hrRecommendation: recommendation });
-      setState(result);
-      if (result.status === "success") {
-        setSavedRecommendation(recommendation);
-        router.refresh();
-      }
-    });
+    run(
+      "recommendation",
+      () => savePlanHrRecommendation({ planId, hrRecommendation: recommendation }),
+      () => setSavedRecommendation(recommendation)
+    );
   }
 
   function merge() {
-    startTransition(async () => {
-      const result = await consolidateRequestsIntoPlan({ planId, requestIds: selected });
-      setState(result);
-      if (result.status === "success") {
-        setSelected([]);
-        router.refresh();
-      }
-    });
+    run("merge", () => consolidateRequestsIntoPlan({ planId, requestIds: selected }), () =>
+      setSelected([])
+    );
   }
 
   return (
@@ -185,7 +212,7 @@ export function ConsolidateRequestsPanel({
                           <button
                             type="button"
                             className="sru-btn"
-                            disabled={pending || costs[request.id] === undefined}
+                            disabled={busy === `cost:${request.id}` || costs[request.id] === undefined}
                             onClick={() => saveCost(request.id)}
                           >
                             {t("saveCost")}
@@ -214,7 +241,7 @@ export function ConsolidateRequestsPanel({
           <button
             type="button"
             className="sru-btn sru-btn-primary"
-            disabled={pending || selected.length === 0}
+            disabled={busy === "merge" || selected.length === 0}
             onClick={merge}
           >
             {t("mergeButton", { count: selected.length })}
@@ -253,7 +280,11 @@ export function ConsolidateRequestsPanel({
             type="button"
             className="sru-btn sru-btn-primary"
             // Dirty-state save, the project's established convention.
-            disabled={pending || recommendation.trim() === "" || recommendation === savedRecommendation}
+            disabled={
+              busy === "recommendation" ||
+              recommendation.trim() === "" ||
+              recommendation === savedRecommendation
+            }
             onClick={saveRecommendation}
           >
             {t("saveRecommendation")}
