@@ -36,6 +36,9 @@ export default async function RecruitmentPlanDetailPage({
     )?.vpra_level ?? "none";
   const canView = hasVpraAccess(level, "view");
   const canPrepare = hasVpraAccess(level, "prepare");
+  // HR's own tier — VPRA's "submit/recommend upward" — which is what
+  // separates consolidating a plan from merely raising a request.
+  const canConsolidate = hasVpraAccess(level, "recommend");
   const canApprove = hasVpraAccess(level, "approve");
 
   if (!canView) {
@@ -114,9 +117,16 @@ export default async function RecruitmentPlanDetailPage({
             {t("planMeta", { year: plan.plan_year, status: recruitmentPlanStatusLabel(plan.status) })}
           </p>
         </div>
-        <Link href="/recruitment/plan" className="sru-btn">
-          {t("backToPlans")}
-        </Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {canConsolidate && plan.status === "draft" && (
+            <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn sru-btn-primary">
+              {t("consolidateRequests")}
+            </Link>
+          )}
+          <Link href="/recruitment/plan" className="sru-btn">
+            {t("backToPlans")}
+          </Link>
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
       <GroupTabs groupKey="recruitment" current="recruitment/plan" />
