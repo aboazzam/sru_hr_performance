@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { CreateRecruitmentPlanForm } from "@/components/CreateRecruitmentPlanForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import { recruitmentPlanStatusLabel } from "@/lib/recruitmentPlan";
+import { planStatusLabel } from "@/lib/recruitmentWorkflow";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 //
@@ -85,7 +85,7 @@ export default async function RecruitmentPlanPage() {
                         </td>
                         <td className="sru-en">{plan.plan_year}</td>
                         <td>
-                          <span className="pill">{recruitmentPlanStatusLabel(plan.status)}</span>
+                          <span className="pill">{planStatusLabel(plan.status)}</span>
                         </td>
                         <td className="sru-en">{headcountByPlan.get(plan.id) ?? 0}</td>
                         <td>

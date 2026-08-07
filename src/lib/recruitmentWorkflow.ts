@@ -147,6 +147,12 @@ export interface TransitionRule<S extends string> {
   requires: RequiredAccess;
   /** A mandatory free-text reason (any return-for-revision or rejection). */
   requiresNote?: boolean;
+  /**
+   * Offers a note box that may be left empty — the spec's "حقل ملاحظة
+   * اختيارية" on the approval screen. Purely a UI hint: unlike
+   * `requiresNote` it is never enforced here, so `evaluate` ignores it.
+   */
+  optionalNote?: boolean;
   /** Finance may take no action without recording a note (spec §4). */
   requiresFinanceNote?: boolean;
   /** Final approval requires finance to have actually reviewed first. */
@@ -215,6 +221,7 @@ export const planTransitions: TransitionRule<PlanStatus>[] = [
     requires: APPROVE,
     requiresFinanceReview: true,
     requiresAllRequestsDecided: true,
+    optionalNote: true,
     labelAr: "اعتماد الخطة",
   },
   { from: "finance_review", to: "rejected", requires: APPROVE, requiresNote: true, labelAr: "رفض الخطة" },
