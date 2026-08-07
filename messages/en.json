@@ -1948,16 +1948,18 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "errorInvalid": "Please fill the required fields correctly.",
-    "errorUnauthenticated": "Your session expired, please sign in again.",
+    "errorUnauthenticated": "Your session expired — sign in again.",
     "errorForbidden": "You do not have permission to perform this action.",
     "errorNoProfile": "No employee profile is linked to your account.",
-    "errorDuplicate": "This request already exists.",
+    "errorDuplicate": "This action has already been performed.",
     "errorUnknown": "The operation could not be completed.",
     "qualificationsFromJobTitle": "Taken from the recorded qualifications of «{title}» — you can edit this.",
     "noQualificationsOnJobTitle": "No qualifications are recorded for this job title — enter them manually.",
     "competenciesFromJobTitle": "Auto-selected from «{title}» competencies ({count}) — you can change them.",
     "competenciesPickManually": "Pick the required competencies, or choose a job title to auto-select them.",
-    "restoreFromJobTitle": "Restore from the job title"
+    "restoreFromJobTitle": "Restore from the job title",
+    "errorNotFound": "The request no longer exists, or its status just changed — refresh the page.",
+    "errorInvalidInput": "The request data is incomplete or invalid."
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

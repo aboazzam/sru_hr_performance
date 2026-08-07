@@ -9,6 +9,7 @@ import {
   planStatuses,
   planTransitions,
   requestStatusLabel,
+  requestStatusLabels,
   requestStatuses,
   requestTransitions,
   transitionRefusalMessages,
@@ -388,5 +389,31 @@ describe("available* drives the action buttons", () => {
     for (const rule of [...requestTransitions, ...planTransitions]) {
       expect(rule.labelAr.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("status-adjacent transitions (2026-08-08)", () => {
+  it("marks exactly one request transition to render beside the status", () => {
+    const adjacent = requestTransitions.filter((rule) => rule.statusAdjacent);
+    expect(adjacent).toHaveLength(1);
+    expect(adjacent[0]).toMatchObject({
+      from: "included_in_plan",
+      to: "under_hr_review",
+      labelAr: "إخراج من الخطة",
+    });
+  });
+
+  it("keeps every other request transition in the actions column", () => {
+    for (const rule of requestTransitions) {
+      if (rule.from === "included_in_plan" && rule.to === "under_hr_review") continue;
+      expect(rule.statusAdjacent).toBeUndefined();
+    }
+  });
+
+  it("reads `included_in_plan` as awaiting approval, not as a final state", () => {
+    // The row is in the plan but the plan is not approved yet — the label has
+    // to say that, which is what the project owner asked for.
+    expect(requestStatusLabels.included_in_plan).toBe("بانتظار الاعتماد");
+    expect(requestStatusLabels.approved).toBe("معتمد");
   });
 });

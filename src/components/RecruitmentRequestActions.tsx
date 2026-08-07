@@ -3,9 +3,9 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { recruitmentRequestErrorText } from "@/lib/recruitmentRequestErrors";
 import {
   availableRequestTransitions,
-  transitionRefusalMessages,
   type RecruitmentPermissions,
 } from "@/lib/recruitmentWorkflow";
 import {
@@ -44,7 +44,9 @@ export function RecruitmentRequestActions({
   const [openTarget, setOpenTarget] = useState<string | null>(null);
   const [note, setNote] = useState("");
 
-  const options = availableRequestTransitions(status, permissions);
+  // Transitions flagged `statusAdjacent` render beside the status instead
+  // (RequestStatusCell), so they are excluded here rather than duplicated.
+  const options = availableRequestTransitions(status, permissions).filter((rule) => !rule.statusAdjacent);
   if (options.length === 0) {
     return <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>—</span>;
   }
@@ -121,8 +123,7 @@ export function RecruitmentRequestActions({
 
       {state?.status === "error" && (
         <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12 }}>
-          {transitionRefusalMessages[state.message as keyof typeof transitionRefusalMessages] ??
-            t("errorUnknown")}
+          {recruitmentRequestErrorText(state.message, t)}
         </span>
       )}
     </div>

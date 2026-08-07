@@ -3,11 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { RecruitmentRequestActions } from "@/components/RecruitmentRequestActions";
+import { RequestStatusCell } from "@/components/RequestStatusCell";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import {
-  requestStatusLabel,
-  type RecruitmentPermissions,
-} from "@/lib/recruitmentWorkflow";
+import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 
 // Auth is enforced centrally by (app)/layout.tsx.
 //
@@ -130,7 +128,11 @@ export default async function RecruitmentRequestsPage() {
                           {request.estimated_cost_by_hr ?? request.estimated_cost_by_requester ?? "—"}
                         </td>
                         <td>
-                          <span className="pill">{requestStatusLabel(request.status)}</span>
+                          <RequestStatusCell
+                            requestId={request.id}
+                            status={request.status}
+                            permissions={permissions}
+                          />
                         </td>
                         <td>
                           <RecruitmentRequestActions

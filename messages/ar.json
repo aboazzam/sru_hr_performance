@@ -1948,16 +1948,18 @@
     "confirm": "تأكيد",
     "cancel": "إلغاء",
     "errorInvalid": "الرجاء تعبئة الحقول المطلوبة بشكل صحيح.",
-    "errorUnauthenticated": "انتهت الجلسة، الرجاء تسجيل الدخول مجددًا.",
+    "errorUnauthenticated": "انتهت الجلسة — سجّل الدخول من جديد.",
     "errorForbidden": "لا تملك صلاحية تنفيذ هذا الإجراء.",
     "errorNoProfile": "لا يوجد ملف موظف مرتبط بحسابك.",
-    "errorDuplicate": "هذا الطلب موجود بالفعل.",
+    "errorDuplicate": "هذا الإجراء منفّذ مسبقًا.",
     "errorUnknown": "تعذر إتمام العملية.",
     "qualificationsFromJobTitle": "مأخوذة من المؤهلات المسجّلة للمسمى «{title}» — يمكنك تعديلها.",
     "noQualificationsOnJobTitle": "لا توجد مؤهلات مسجّلة لهذا المسمى — اكتبها يدويًا.",
     "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
     "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
-    "restoreFromJobTitle": "استعادة من المسمى الوظيفي"
+    "restoreFromJobTitle": "استعادة من المسمى الوظيفي",
+    "errorNotFound": "الطلب غير موجود أو غيّر أحدٌ حالته للتو — حدّث الصفحة.",
+    "errorInvalidInput": "بيانات الطلب غير مكتملة أو غير صالحة."
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",
