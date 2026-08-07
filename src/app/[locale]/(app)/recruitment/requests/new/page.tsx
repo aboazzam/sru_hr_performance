@@ -4,12 +4,21 @@ import { Link } from "@/i18n/navigation";
 import { CreateRecruitmentRequestForm } from "@/components/CreateRecruitmentRequestForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
-// The org units offered here are only the ones the caller can READ. That is
-// not the same as the ones they may WRITE to: `recruitment_requests_insert`
-// re-checks `check_vpra('recruitmentPlan','prepare', org_unit_id)` per row,
-// so a unit visible in this dropdown can still be refused on submit. Same
-// caveat every create screen in this app carries, and the honest one — the
-// alternative would be reimplementing the org-scope walk in application code.
+// The org unit list asks the RIGHT question: "where may I WRITE?", not
+// "what may I read?".
+//
+// 2026-08-07, found live: a real coordinator scoped to ONE unit saw all 58 in
+// this dropdown. The security boundary held (the insert was refused with
+// 42501), but the form was promising a choice the server would then reject.
+// The cause was not a bug in either policy — `org_units_select` legitimately
+// accepts several areas, and that user separately held the `employee` role at
+// `scope_type='all'`, which carries `vacancies=view`, so they could genuinely
+// READ every unit while being able to WRITE to only one.
+//
+// `my_org_units_with_access` (20260807000007) resolves it by asking about the
+// write level instead. It is SECURITY INVOKER, so `org_units_select` still
+// applies on top — the function can only ever narrow the list, never widen
+// it, and cannot surface a unit the caller could not already see.
 export default async function NewRecruitmentRequestPage() {
   const t = await getTranslations("RecruitmentRequestsPage");
   const supabase = await createClient();
@@ -23,7 +32,10 @@ export default async function NewRecruitmentRequestPage() {
 
   const [{ data: orgUnits }, { data: jobTitles }, { data: competencies }] = canRaise
     ? await Promise.all([
-        supabase.from("org_units").select("id, name_ar").order("name_ar"),
+        supabase.rpc("my_org_units_with_access", {
+          p_process_area: "recruitmentPlan",
+          p_min_level: "prepare",
+        }),
         supabase.from("job_titles").select("id, name_ar, grade_level").order("name_ar"),
         supabase.from("competencies").select("id, name_ar, type").order("name_ar"),
       ])

@@ -1898,7 +1898,7 @@
     "forbidden": "You do not have permission to view demand requests.",
     "forbiddenRaise": "You do not have permission to raise a demand request.",
     "empty": "No demand requests yet.",
-    "noOrgUnits": "No org units are available to you.",
+    "noOrgUnits": "There is no org unit you may raise a demand request for.",
     "newRequest": "New demand request",
     "newRequestHeading": "Recruitment demand request",
     "newRequestSubtitle": "The request is saved as a draft and only reaches HR once submitted.",
