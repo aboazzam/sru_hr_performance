@@ -12,6 +12,7 @@ import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { defaultLevelColorSwatch, identityColorSwatches, SRU_DEFAULT_PRIMARY, SRU_DEFAULT_SECONDARY } from "@/lib/orgChartColors";
 import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
+import { buildEmployeeLevelOrderResolver, isBelowOrUnknownLevel } from "@/lib/orgStructureEmployeeLevel";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // is org_structure_levels/positions' own RLS (check_vpra_global('orgStructure',
@@ -76,6 +77,12 @@ export default async function OrgStructurePage() {
     job_title_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+  const levelOrderById = new Map(levels.map((l) => [l.id, l.level_order]));
+  const positionLevelOrderById = new Map<string, number>();
+  for (const p of positions) {
+    const order = levelOrderById.get(p.level_id);
+    if (order !== undefined) positionLevelOrderById.set(p.id, order);
+  }
 
   // 2026-07-27: "اعرض المسميات الوظيفية على شاشة الهيكل التنظيمي" -- show
   // each position's linked job title (20260727000002/000003) on the chart
@@ -105,12 +112,20 @@ export default async function OrgStructurePage() {
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
-    .select("position_id, profiles(id, full_name_ar)")
+    .select("position_id, employee_id, profiles(id, full_name_ar)")
     .is("deleted_at", null);
   const assignments = (assignmentsData ?? []) as unknown as Array<{
     position_id: string;
+    employee_id: string;
     profiles: { id: string; full_name_ar: string } | null;
   }>;
+
+  // 2026-08-07: "اعرض فقط من هم دونه في المستوى ... ولا تعرض من هو أعلى
+  // منه" -- same rule as the staffing table's own org-unit-employees
+  // column (src/lib/orgStructureEmployeeLevel.ts), applied here too so the
+  // chart's org-unit rollup doesn't show a senior colleague under a junior
+  // position just because they happen to share an org unit.
+  const employeeLevelOrderById = buildEmployeeLevelOrderResolver(assignments, positionLevelOrderById);
 
   // 2026-07-27: the chart only ever showed employees directly staffed via
   // `org_structure_assignments`, missing anyone visible through a position's
@@ -142,8 +157,10 @@ export default async function OrgStructurePage() {
   }
   for (const p of positions) {
     if (!p.org_unit_id) continue;
+    const positionLevelOrder = positionLevelOrderById.get(p.id);
     for (const unitId of descendantOrgUnitIds(p.org_unit_id)) {
       for (const e of employeesByOrgUnitId.get(unitId) ?? []) {
+        if (!isBelowOrUnknownLevel(e.id, positionLevelOrder, employeeLevelOrderById)) continue;
         addAssignee(p.id, e.id, e.full_name_ar);
       }
     }
