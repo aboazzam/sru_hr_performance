@@ -43,14 +43,26 @@
 // inferred from VPRA's documented meaning; the spec named human job titles,
 // not levels. It is deliberately the one place to change if wrong.
 //
-// [غير مؤكد] Today `hr_admin` holds recruitmentPlan='approve' and
-// super_admin only 'view' (verified live 2026-08-07), so hr_admin currently
-// satisfies BOTH the recommend and the approve tier -- i.e. the same office
-// that recommends can also give final approval. The documented workflow puts
-// those in different hands. Nothing here works around that: it is a
-// role_permissions decision, changed from /admin (hr_admin -> 'recommend',
-// the approving role -> 'approve'), and this guard enforces the separation
-// correctly the moment it is made.
+// SEPARATION OF RECOMMENDING FROM APPROVING -- done, 2026-08-07.
+// This file previously carried a `[غير مؤكد]` note that hr_admin held
+// recruitmentPlan='approve' while super_admin held only 'view', so the same
+// office both recommended and gave final approval. The project owner has
+// since made the matrix change from /admin:
+//     hr_admin    approve -> recommend
+//     super_admin view    -> approve   (interim authority; the documented
+//                                       intent is to move it to the CEO)
+//     finance_manager      recruitmentBudget = recommend  (role created the
+//                                       same day; none existed before)
+// Verified live by simulating both roles: hr_admin now returns approve=false
+// while keeping recommend/prepare (it still creates plans, consolidates, and
+// reads salary_scale to price them), and super_admin returns approve=true.
+//
+// DO NOT treat the levels above as a fact about today. `role_permissions` is
+// editable at runtime from /admin, and this project has twice been misled by
+// a documented snapshot of it that had since drifted. Anything that depends
+// on who currently holds what must re-query `role_permissions`, not read a
+// comment. What IS durable is the mapping in the table above -- which LEVEL
+// each stage requires -- because that lives in code, not in data.
 // ============================================================================
 
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "./vpra";
