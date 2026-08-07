@@ -4,6 +4,17 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import {
+  evaluatePlanTransition,
+  isRequestDecided,
+  planTransitions,
+  type RecruitmentPermissions,
+  type TransitionRefusal,
+} from "@/lib/recruitmentWorkflow";
+import { financeReviewNotification, planTransitionNotification } from "@/lib/notificationTemplates";
+import { notify, profilesWithAccess } from "@/lib/notify";
+import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
+import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
 
 export type RecruitmentPlanErrorMessage =
   | "invalid_input"
@@ -12,7 +23,10 @@ export type RecruitmentPlanErrorMessage =
   | "duplicate"
   | "not_found"
   | "already_posted"
-  | "unknown";
+  | "unknown"
+  // Refusals raised by the workflow guard, surfaced with their own Arabic
+  // messages from `transitionRefusalMessages` rather than a generic error.
+  | TransitionRefusal;
 
 export type RecruitmentPlanActionState =
   | { status: "success"; createdCount?: number; skippedCount?: number }
@@ -29,18 +43,6 @@ function mapError(error: { code?: string; message: string }): RecruitmentPlanAct
     return { status: "error", message: "invalid_input" };
   }
   return { status: "error", message: "unknown" };
-}
-
-/** The caller's own level on `recruitmentPlan`, via the existing RPC. */
-async function recruitmentPlanLevel(
-  supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<VpraLevel> {
-  const { data } = await supabase.rpc("get_my_permissions");
-  return (
-    ((data ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "recruitmentPlan"
-    )?.vpra_level ?? "none"
-  );
 }
 
 async function auditLog(actorId: string, action: string, entityId: string | null, after: unknown) {
@@ -398,18 +400,58 @@ export async function publishPlanItemAsVacancy(itemId: string): Promise<Recruitm
   return { status: "success" };
 }
 
-/**
- * Approves the plan. `recruitment_plans_update`'s RLS sits at `'prepare'`
- * (Postgres policies gate the row, not individual columns), so the
- * approve-level requirement is enforced HERE, explicitly, before the write —
- * the same "application-layer check on top of a broader RLS policy" shape
- * already used by `reviewEmployeeApproval`. hr_admin is the only role at
- * `approve` today; super_admin holds `view` and is correctly rejected.
- */
-export async function approveRecruitmentPlan(planId: string): Promise<RecruitmentPlanActionState> {
-  if (!z.string().uuid().safeParse(planId).success) {
-    return { status: "error", message: "invalid_input" };
+// ---------------------------------------------------------------------------
+// Guarded plan workflow (2026-08-07)
+// ---------------------------------------------------------------------------
+// This REPLACES the original flat `approveRecruitmentPlan`, which set
+// `status='approved'` directly after an inline `approve`-level check. That
+// was correct while the plan had only draft/approved, but it would now let
+// an approver skip the entire documented cycle — approving a plan finance
+// never reviewed, or one still holding undecided requests. Approval is now
+// one transition among many, and `recruitmentWorkflow.ts` decides all of
+// them.
+
+/** The caller's own levels across every area, shaped for the guard. */
+async function myPermissions(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<RecruitmentPermissions> {
+  const { data } = await supabase.rpc("get_my_permissions");
+  const permissions: RecruitmentPermissions = {};
+  for (const row of (data ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]) {
+    permissions[row.process_area] = row.vpra_level;
   }
+  return permissions;
+}
+
+const planTransitionSchema = z.object({
+  planId: z.string().uuid(),
+  toStatus: z.string().min(1),
+  note: z.string().trim().optional(),
+  financeNote: z.string().trim().optional(),
+});
+
+/**
+ * The one and only way a plan's status changes. Like the request-side
+ * action, the CURRENT status is read here rather than accepted from the
+ * client, and the two preconditions the guard cannot see for itself —
+ * whether finance has reviewed, and how many of the plan's requests are
+ * still undecided — are counted here and handed to it.
+ *
+ * Note the undecided count is derived from `recruitment_requests` through
+ * the caller's own client, so it reflects rows RLS lets them read. An
+ * approver who cannot see a request also cannot be blocked by it; that is a
+ * deliberate consequence of reading through RLS rather than bypassing it
+ * with the service-role client, and it is safe here because every role that
+ * reaches `approve` on `recruitmentPlan` holds unscoped visibility.
+ */
+export async function transitionRecruitmentPlan(input: {
+  planId: string;
+  toStatus: string;
+  note?: string;
+  financeNote?: string;
+}): Promise<RecruitmentPlanActionState> {
+  const parsed = planTransitionSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
 
   const supabase = await createClient();
   const {
@@ -417,7 +459,159 @@ export async function approveRecruitmentPlan(planId: string): Promise<Recruitmen
   } = await supabase.auth.getUser();
   if (!actor) return { status: "error", message: "unauthenticated" };
 
-  if (!hasVpraAccess(await recruitmentPlanLevel(supabase), "approve")) {
+  const { data: plan } = await supabase
+    .from("recruitment_plans")
+    .select("id, status, finance_reviewed_at, finance_note")
+    .eq("id", parsed.data.planId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!plan) return { status: "error", message: "not_found" };
+
+  const { data: linkedRequests } = await supabase
+    .from("recruitment_requests")
+    .select("status")
+    .eq("plan_id", parsed.data.planId)
+    .is("deleted_at", null);
+  const undecidedRequestCount = (linkedRequests ?? []).filter(
+    (row) => !isRequestDecided(row.status)
+  ).length;
+
+  const verdict = evaluatePlanTransition(plan.status, parsed.data.toStatus, {
+    permissions: await myPermissions(supabase),
+    note: parsed.data.note,
+    // A finance note already on record satisfies the rule as well as a
+    // freshly typed one — finance must have written one, not written one twice.
+    financeNote: parsed.data.financeNote ?? plan.finance_note,
+    financeReviewed: plan.finance_reviewed_at !== null,
+    undecidedRequestCount,
+  });
+  if (!verdict.allowed) return { status: "error", message: verdict.refusal };
+
+  const patch: Record<string, unknown> = { status: parsed.data.toStatus };
+  if (parsed.data.financeNote) patch.finance_note = parsed.data.financeNote;
+
+  if (parsed.data.toStatus === "submitted") patch.submitted_at = new Date().toISOString();
+  if (parsed.data.toStatus === "approved" || parsed.data.toStatus === "rejected") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("auth_user_id", actor.id)
+      .maybeSingle();
+    patch.approval_note = parsed.data.note ?? null;
+    if (parsed.data.toStatus === "approved") {
+      patch.approved_by = profile?.id ?? null;
+      patch.approved_at = new Date().toISOString();
+    }
+  }
+
+  const { data: updated, error } = await supabase
+    .from("recruitment_plans")
+    .update(patch)
+    .eq("id", parsed.data.planId)
+    // Optimistic concurrency: never overwrite a decision someone else made
+    // between our read and this write.
+    .eq("status", plan.status)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) return mapError(error);
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  await auditLog(actor.id, "recruitment_plan_transitioned", parsed.data.planId, {
+    from: plan.status,
+    to: parsed.data.toStatus,
+    note: parsed.data.note ?? null,
+  });
+
+  // Final approval carries the plan's own items' requests with it, so an
+  // approved plan never leaves its requests sitting at `included_in_plan`.
+  if (parsed.data.toStatus === "approved") {
+    await supabase
+      .from("recruitment_requests")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("plan_id", parsed.data.planId)
+      .eq("status", "included_in_plan")
+      .is("deleted_at", null);
+  }
+
+  // Whoever can act next, derived from the transition table itself, plus
+  // every department that has a request riding on this plan — they are the
+  // people whose own request just moved with it.
+  try {
+    const admin = createAdminClient();
+    const { data: planRow } = await supabase
+      .from("recruitment_plans")
+      .select("name_ar, plan_year")
+      .eq("id", parsed.data.planId)
+      .maybeSingle();
+    const { data: requesters } = await supabase
+      .from("recruitment_requests")
+      .select("requested_by")
+      .eq("plan_id", parsed.data.planId)
+      .is("deleted_at", null);
+
+    const nextActors = planTransitions
+      .filter((rule) => rule.from === parsed.data.toStatus)
+      .map((rule) => rule.requires);
+
+    await notify(
+      admin,
+      [
+        ...(requesters ?? []).map((row) => row.requested_by),
+        ...(await profilesWithAccess(admin, nextActors)),
+      ],
+      planTransitionNotification({
+        toStatus: parsed.data.toStatus,
+        planName: planRow?.name_ar ?? "",
+        planYear: planRow?.plan_year ?? 0,
+        planId: parsed.data.planId,
+        reason: parsed.data.note,
+      }),
+      "recruitment_plans",
+      parsed.data.planId
+    );
+  } catch (notifyError) {
+    // A notification failure must never undo a transition already audited.
+    console.error("plan transition notification failed", notifyError);
+  }
+
+  return { status: "success" };
+}
+
+const financeReviewSchema = z.object({
+  planId: z.string().uuid(),
+  approvedBudget: z.number().min(0).nullable(),
+  // Mandatory by the spec's own rule: finance takes no action without a note.
+  financeNote: z.string().trim().min(1),
+});
+
+/**
+ * Records the finance review: the approved budget and the mandatory note,
+ * stamping `finance_reviewed_at`/`finance_reviewed_by`. That stamp is what
+ * the guard's `requiresFinanceReview` reads, so this action is what makes
+ * the finance stage genuinely unskippable rather than decorative.
+ *
+ * Gated on `recruitmentBudget>=recommend`, checked here because
+ * `recruitment_plans_update`'s RLS gates the ROW at `recruitmentPlan`
+ * `prepare` and Postgres policies cannot express "only finance may write
+ * these particular columns".
+ */
+export async function saveFinanceReview(input: {
+  planId: string;
+  approvedBudget: number | null;
+  financeNote: string;
+}): Promise<RecruitmentPlanActionState> {
+  const parsed = financeReviewSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const permissions = await myPermissions(supabase);
+  if (!hasVpraAccess(permissions.recruitmentBudget ?? "none", "recommend")) {
     return { status: "error", message: "forbidden" };
   }
 
@@ -430,17 +624,65 @@ export async function approveRecruitmentPlan(planId: string): Promise<Recruitmen
   const { data: updated, error } = await supabase
     .from("recruitment_plans")
     .update({
-      status: "approved",
-      approved_by: profile?.id ?? null,
-      approved_at: new Date().toISOString(),
+      approved_budget: parsed.data.approvedBudget,
+      finance_note: parsed.data.financeNote,
+      finance_reviewed_at: new Date().toISOString(),
+      finance_reviewed_by: profile?.id ?? null,
     })
-    .eq("id", planId)
+    .eq("id", parsed.data.planId)
     .is("deleted_at", null)
     .select("id");
 
   if (error) return mapError(error);
   if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
 
-  await auditLog(actor.id, "recruitment_plan_approved", planId, { status: "approved" });
+  await auditLog(actor.id, "recruitment_plan_finance_reviewed", parsed.data.planId, {
+    approved_budget: parsed.data.approvedBudget,
+    finance_note: parsed.data.financeNote,
+  });
+
+  // HR (who must react to an over-budget verdict) and the approval authority
+  // (who cannot approve until this exists) are the two parties that need to
+  // know a review was recorded.
+  try {
+    const admin = createAdminClient();
+    const { data: planRow } = await supabase
+      .from("recruitment_plans")
+      .select("name_ar, plan_year")
+      .eq("id", parsed.data.planId)
+      .maybeSingle();
+    const { data: itemRows } = await supabase
+      .from("recruitment_plan_items")
+      .select("headcount, estimated_monthly_cost")
+      .eq("plan_id", parsed.data.planId)
+      .is("deleted_at", null);
+
+    const totals = computeRecruitmentPlanTotals(
+      (itemRows ?? []).map((row) => ({
+        headcount: row.headcount,
+        estimatedMonthlyCost: row.estimated_monthly_cost,
+      }))
+    );
+    const variance = computeBudgetVariance(totals.totalAnnualCost, parsed.data.approvedBudget);
+
+    await notify(
+      admin,
+      await profilesWithAccess(admin, [
+        { processArea: "recruitmentPlan", minLevel: "recommend" },
+        { processArea: "recruitmentPlan", minLevel: "approve" },
+      ]),
+      financeReviewNotification({
+        planName: planRow?.name_ar ?? "",
+        planYear: planRow?.plan_year ?? 0,
+        planId: parsed.data.planId,
+        overBudget: variance.status === "over",
+      }),
+      "recruitment_plans",
+      parsed.data.planId
+    );
+  } catch (notifyError) {
+    console.error("finance review notification failed", notifyError);
+  }
+
   return { status: "success" };
 }

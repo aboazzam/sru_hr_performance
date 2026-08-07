@@ -66,10 +66,12 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
   // grant rather than introducing a process area of its own.
   // 2026-08-05: a fifth tab, "بوابة التوظيف" — the outward-facing list of ads
   // whose publication window is currently open. Also `vacancies`-gated.
-  it("the recruitment group has the five tabs, each gated on its own area", () => {
+  // 2026-08-07: a sixth tab, "طلبات الاحتياج" — the demand side of the plan.
+  it("the recruitment group has the six tabs, each gated on its own area", () => {
     const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
     expect(recruitment.children.map((c) => c.segment)).toEqual([
       "recruitment/plan",
+      "recruitment/requests",
       "promotions",
       "vacancies",
       "recruitment/announced",
@@ -77,11 +79,34 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     ]);
     expect(recruitment.children.map((c) => c.access?.[0].processArea)).toEqual([
       "recruitmentPlan",
+      "recruitmentPlan",
       "promotions",
       "vacancies",
       "vacancies",
       "vacancies",
     ]);
+  });
+
+  // The requests tab is the only child in this group with TWO access entries.
+  // `visibleNavItems` ORs them, which is what lets a finance reviewer holding
+  // `recruitmentBudget` alone — and no `recruitmentPlan` grant whatsoever —
+  // reach the requests they must review. It mirrors `recruitment_requests`'
+  // own SELECT policy rather than restating a narrower rule in the UI.
+  it("reaches the requests tab through recruitmentBudget alone", () => {
+    const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
+    const requests = recruitment.children.find((c) => c.segment === "recruitment/requests")!;
+    expect(requests.access).toEqual([
+      { processArea: "recruitmentPlan", minLevel: "view" },
+      { processArea: "recruitmentBudget", minLevel: "view" },
+    ]);
+
+    const financeOnly = visibleNavItems(recruitment.children, { recruitmentBudget: "recommend" });
+    expect(financeOnly.map((c) => c.segment)).toEqual(["recruitment/requests"]);
+
+    const sectionHead = visibleNavItems(recruitment.children, { recruitmentPlan: "prepare" });
+    expect(sectionHead.map((c) => c.segment)).toEqual(["recruitment/plan", "recruitment/requests"]);
+
+    expect(visibleNavItems(recruitment.children, {})).toEqual([]);
   });
 
   it("every child in every group declares an access requirement, except the two deliberately ungated strategicPlan tabs", () => {

@@ -206,6 +206,12 @@ export const navGroups: NavGroup[] = [
     icon: UserPlus,
     children: [
       { segment: "recruitment/plan", labelKey: "recruitmentPlan", icon: CalendarRange, access: [{ processArea: "recruitmentPlan", minLevel: "view" }] },
+      // 2026-08-07: طلبات الاحتياج — the demand side of the plan. Two access
+      // entries, OR-ed by `visibleNavItems`: a department raises and reads
+      // its own requests via `recruitmentPlan`, while a finance reviewer
+      // reaches them through `recruitmentBudget` alone, holding no
+      // `recruitmentPlan` grant at all (mirrors the SELECT policy exactly).
+      { segment: "recruitment/requests", labelKey: "recruitmentRequests", icon: ClipboardList, access: [{ processArea: "recruitmentPlan", minLevel: "view" }, { processArea: "recruitmentBudget", minLevel: "view" }] },
       { segment: "promotions", labelKey: "promotions", icon: TrendingUp, access: [{ processArea: "promotions", minLevel: "view" }] },
       { segment: "vacancies", labelKey: "vacancies", icon: Briefcase, access: [{ processArea: "vacancies", minLevel: "view" }] },
       // 2026-08-04: vacancies advertised from the الشواغر tab's megaphone

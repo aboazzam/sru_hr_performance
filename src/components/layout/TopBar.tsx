@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { locales, type Locale } from "@/i18n/config";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserMenu } from "./UserMenu";
+import { NotificationsBell, type NotificationRow } from "./NotificationsBell";
 
 const localeLabels: Record<Locale, string> = {
   ar: "عربي",
@@ -16,9 +17,12 @@ const localeLabels: Record<Locale, string> = {
 export function TopBar({
   locale,
   userName,
+  notifications = [],
 }: {
   locale: Locale;
   userName?: string;
+  /** The caller's own notifications, fetched server-side in (app)/layout.tsx. */
+  notifications?: NotificationRow[];
 }) {
   const t = useTranslations("TopBar");
   const pathname = usePathname();
@@ -45,10 +49,7 @@ export function TopBar({
         />
       </span>
       <div className="sru-topbar-meta">
-        <button type="button" className="sru-icon-btn">
-          <Bell size={16} aria-hidden />
-          {t("notifications")}
-        </button>
+        <NotificationsBell notifications={notifications} />
         <span className="divider" aria-hidden />
         <Link href={pathname} locale={otherLocale} className="pill">
           {localeLabels[otherLocale]}

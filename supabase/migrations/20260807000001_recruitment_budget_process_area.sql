@@ -1,0 +1,39 @@
+-- ============================================================================
+-- `recruitmentBudget` -- a new process area for the FINANCE REVIEW stage of
+-- the recruitment-plan workflow (خطة التوظيف).
+--
+-- Why a new area rather than reusing `recruitmentPlan`:
+--   The project owner chose (2026-08-07) to create the workflow's new roles
+--   through the /admin role editor at runtime, NOT by seeding role codes in
+--   a migration. That makes it impossible -- and wrong -- for the workflow
+--   logic to gate on a role_code like 'finance_manager': that role does not
+--   exist yet, and its code is the owner's to pick. The only stable thing to
+--   gate on is a PROCESS AREA, so "who reviews the budget" becomes "whoever
+--   holds recruitmentBudget >= recommend", assignable from /admin to any
+--   role, existing or newly created, with no code change. Same reasoning the
+--   final-approval authority already relies on (recruitmentPlan = approve).
+--
+-- Deliberately NOT seeded with any role_permissions row: no finance role
+-- exists in this database today (the 12 seeded roles have none), and
+-- inventing a grant would hand budget-review power to a role the owner
+-- never chose. Least privilege, CLAUDE.md §4-B rule 4 -- the grant is made
+-- in /admin once the finance role is created there.
+--
+-- Split into its own migration because Postgres forbids using a value added
+-- by `ALTER TYPE ... ADD VALUE` inside the same transaction that added it --
+-- the same two-step pattern already used for `orgStructure`, `staffing`,
+-- `identity`, `systemSettings`, `strategicPlanning` and `recruitmentPlan`.
+-- The follow-up migration 20260807000002 is what actually uses it.
+-- ============================================================================
+
+ALTER TYPE process_area ADD VALUE IF NOT EXISTS 'recruitmentBudget';
+
+-- ============================================================================
+-- Verification -- run AFTER applying.
+-- ============================================================================
+-- Expect 'recruitmentBudget' present:
+--   SELECT unnest(enum_range(NULL::process_area))::text ORDER BY 1;
+-- Expect ZERO rows (no role granted it yet, by design):
+--   SELECT r.role_code, rp.vpra_level FROM role_permissions rp
+--     JOIN roles r ON r.id = rp.role_id
+--     WHERE rp.process_area = 'recruitmentBudget';
