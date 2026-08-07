@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { formatDateDmy } from "@/lib/dateParts";
+import { getLocale } from "next-intl/server";
 
 // Auth is enforced centrally by (app)/layout.tsx. Real row visibility is
 // profiles_select's own RLS (self-row OR employeeData>=view) — a missing
@@ -9,6 +11,7 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 // discipline as every other detail page in this app.
 export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const locale = await getLocale();
   const t = await getTranslations("EmployeeDetailPage");
   const supabase = await createClient();
 
@@ -92,10 +95,10 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     [t("fieldRole"), roleNames.length > 0 ? roleNames.join("، ") : t("roleNone")],
     [t("fieldStatus"), t(statusLabelKeys[employee.status] ?? "statusActive")],
     [t("fieldAccount"), employee.auth_user_id ? t("accountActive") : t("accountPending")],
-    [t("fieldHireDate"), employee.hire_date ?? "—"],
+    [t("fieldHireDate"), formatDateDmy(employee.hire_date, locale)],
     [t("fieldQualification"), employee.qualification ?? "—"],
     [t("fieldEducationSpeciality"), employee.education_speciality ?? "—"],
-    [t("fieldDateOfBirth"), employee.date_of_birth ?? "—"],
+    [t("fieldDateOfBirth"), formatDateDmy(employee.date_of_birth, locale)],
     [t("fieldMobile"), employee.mobile ?? "—"],
     [t("fieldMaritalStatus"), employee.marital_status ?? "—"],
     [t("fieldGender"), employee.gender ?? "—"],
