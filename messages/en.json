@@ -14,7 +14,9 @@
     "myKpis": "My KPIs",
     "myTasks": "My Routine Tasks",
     "myPerformance": "My Performance Level",
-    "greeting": "Hello, {name}"
+    "greeting": "Hello, {name}",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications."
   },
   "NavBar": {
     "home": "Home",
@@ -1831,7 +1833,9 @@
     "reasonPlaceholder": "Write the reason (required)",
     "optionalNotePlaceholder": "Note (optional)",
     "confirm": "Confirm",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "auditTab": "Audit log",
+    "compareTab": "Compare with last year"
   },
   "AnnouncedJobsPage": {
     "title": "Advertised Jobs",
@@ -1995,5 +1999,34 @@
     "errorForbidden": "You do not have permission to perform this action.",
     "errorNotFound": "Plan not found.",
     "errorUnknown": "The operation could not be completed."
+  },
+  "RecruitmentAuditPage": {
+    "title": "Plan audit log",
+    "backToPlan": "Back to the plan",
+    "forbidden": "You do not have permission to view the audit log.",
+    "empty": "No recorded events yet.",
+    "columnWhen": "When",
+    "columnWho": "Who",
+    "columnWhat": "Action",
+    "columnDetails": "Details",
+    "columnNote": "Note"
+  },
+  "RecruitmentComparePage": {
+    "title": "Comparison with last year",
+    "backToPlan": "Back to the plan",
+    "forbidden": "You do not have permission to view the comparison.",
+    "planNotFound": "Plan not found.",
+    "noPreviousPlan": "There is no {year} plan to compare against.",
+    "headcountThisYear": "{year} headcount",
+    "headcountLastYear": "{year} headcount",
+    "headcountDelta": "Headcount change",
+    "costDelta": "Annual cost change",
+    "columnOrgUnit": "Org unit",
+    "columnHeadcountPrev": "{year} headcount",
+    "columnHeadcountCurrent": "{year} headcount",
+    "columnHeadcountDelta": "Change",
+    "columnCostPrev": "Previous cost",
+    "columnCostCurrent": "Current cost",
+    "columnCostDelta": "Cost change"
   }
 }

@@ -14,7 +14,9 @@
     "myKpis": "مؤشرات الأداء",
     "myTasks": "مهامي التشغيلية",
     "myPerformance": "مستوى أدائي",
-    "greeting": "مرحبًا، {name}"
+    "greeting": "مرحبًا، {name}",
+    "markAllRead": "تعليم الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات."
   },
   "NavBar": {
     "home": "الرئيسية",
@@ -1831,7 +1833,9 @@
     "reasonPlaceholder": "اكتب السبب (إلزامي)",
     "optionalNotePlaceholder": "ملاحظة (اختيارية)",
     "confirm": "تأكيد",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "auditTab": "سجل التدقيق",
+    "compareTab": "مقارنة بالسنة السابقة"
   },
   "AnnouncedJobsPage": {
     "title": "الوظائف المعلن عنها",
@@ -1995,5 +1999,34 @@
     "errorForbidden": "لا تملك صلاحية تنفيذ هذا الإجراء.",
     "errorNotFound": "الخطة غير موجودة.",
     "errorUnknown": "تعذر إتمام العملية."
+  },
+  "RecruitmentAuditPage": {
+    "title": "سجل التدقيق للخطة",
+    "backToPlan": "العودة للخطة",
+    "forbidden": "لا تملك صلاحية مشاهدة سجل التدقيق.",
+    "empty": "لا توجد أحداث مسجّلة بعد.",
+    "columnWhen": "التاريخ",
+    "columnWho": "المستخدم",
+    "columnWhat": "الإجراء",
+    "columnDetails": "التفاصيل",
+    "columnNote": "الملاحظة"
+  },
+  "RecruitmentComparePage": {
+    "title": "مقارنة بالسنة السابقة",
+    "backToPlan": "العودة للخطة",
+    "forbidden": "لا تملك صلاحية مشاهدة المقارنة.",
+    "planNotFound": "الخطة غير موجودة.",
+    "noPreviousPlan": "لا توجد خطة لسنة {year} للمقارنة بها.",
+    "headcountThisYear": "وظائف {year}",
+    "headcountLastYear": "وظائف {year}",
+    "headcountDelta": "الفرق في الوظائف",
+    "costDelta": "الفرق في التكلفة السنوية",
+    "columnOrgUnit": "الوحدة التنظيمية",
+    "columnHeadcountPrev": "وظائف {year}",
+    "columnHeadcountCurrent": "وظائف {year}",
+    "columnHeadcountDelta": "الفرق",
+    "columnCostPrev": "تكلفة سابقة",
+    "columnCostCurrent": "تكلفة حالية",
+    "columnCostDelta": "فرق التكلفة"
   }
 }

@@ -7,9 +7,14 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import {
   evaluatePlanTransition,
   isRequestDecided,
+  planTransitions,
   type RecruitmentPermissions,
   type TransitionRefusal,
 } from "@/lib/recruitmentWorkflow";
+import { financeReviewNotification, planTransitionNotification } from "@/lib/notificationTemplates";
+import { notify, profilesWithAccess } from "@/lib/notify";
+import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
+import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
 
 export type RecruitmentPlanErrorMessage =
   | "invalid_input"
@@ -529,6 +534,47 @@ export async function transitionRecruitmentPlan(input: {
       .is("deleted_at", null);
   }
 
+  // Whoever can act next, derived from the transition table itself, plus
+  // every department that has a request riding on this plan — they are the
+  // people whose own request just moved with it.
+  try {
+    const admin = createAdminClient();
+    const { data: planRow } = await supabase
+      .from("recruitment_plans")
+      .select("name_ar, plan_year")
+      .eq("id", parsed.data.planId)
+      .maybeSingle();
+    const { data: requesters } = await supabase
+      .from("recruitment_requests")
+      .select("requested_by")
+      .eq("plan_id", parsed.data.planId)
+      .is("deleted_at", null);
+
+    const nextActors = planTransitions
+      .filter((rule) => rule.from === parsed.data.toStatus)
+      .map((rule) => rule.requires);
+
+    await notify(
+      admin,
+      [
+        ...(requesters ?? []).map((row) => row.requested_by),
+        ...(await profilesWithAccess(admin, nextActors)),
+      ],
+      planTransitionNotification({
+        toStatus: parsed.data.toStatus,
+        planName: planRow?.name_ar ?? "",
+        planYear: planRow?.plan_year ?? 0,
+        planId: parsed.data.planId,
+        reason: parsed.data.note,
+      }),
+      "recruitment_plans",
+      parsed.data.planId
+    );
+  } catch (notifyError) {
+    // A notification failure must never undo a transition already audited.
+    console.error("plan transition notification failed", notifyError);
+  }
+
   return { status: "success" };
 }
 
@@ -594,5 +640,49 @@ export async function saveFinanceReview(input: {
     approved_budget: parsed.data.approvedBudget,
     finance_note: parsed.data.financeNote,
   });
+
+  // HR (who must react to an over-budget verdict) and the approval authority
+  // (who cannot approve until this exists) are the two parties that need to
+  // know a review was recorded.
+  try {
+    const admin = createAdminClient();
+    const { data: planRow } = await supabase
+      .from("recruitment_plans")
+      .select("name_ar, plan_year")
+      .eq("id", parsed.data.planId)
+      .maybeSingle();
+    const { data: itemRows } = await supabase
+      .from("recruitment_plan_items")
+      .select("headcount, estimated_monthly_cost")
+      .eq("plan_id", parsed.data.planId)
+      .is("deleted_at", null);
+
+    const totals = computeRecruitmentPlanTotals(
+      (itemRows ?? []).map((row) => ({
+        headcount: row.headcount,
+        estimatedMonthlyCost: row.estimated_monthly_cost,
+      }))
+    );
+    const variance = computeBudgetVariance(totals.totalAnnualCost, parsed.data.approvedBudget);
+
+    await notify(
+      admin,
+      await profilesWithAccess(admin, [
+        { processArea: "recruitmentPlan", minLevel: "recommend" },
+        { processArea: "recruitmentPlan", minLevel: "approve" },
+      ]),
+      financeReviewNotification({
+        planName: planRow?.name_ar ?? "",
+        planYear: planRow?.plan_year ?? 0,
+        planId: parsed.data.planId,
+        overBudget: variance.status === "over",
+      }),
+      "recruitment_plans",
+      parsed.data.planId
+    );
+  } catch (notifyError) {
+    console.error("finance review notification failed", notifyError);
+  }
+
   return { status: "success" };
 }

@@ -26,9 +26,12 @@ import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 import {
   evaluateRequestTransition,
   isRequestDecided,
+  requestTransitions,
   type RecruitmentPermissions,
   type TransitionRefusal,
 } from "@/lib/recruitmentWorkflow";
+import { requestTransitionNotification } from "@/lib/notificationTemplates";
+import { notify, profilesWithAccess } from "@/lib/notify";
 
 export type RecruitmentRequestErrorMessage =
   | "invalid_input"
@@ -343,7 +346,7 @@ export async function transitionRecruitmentRequest(input: {
 
   const { data: current } = await supabase
     .from("recruitment_requests")
-    .select("id, status, plan_id")
+    .select("id, status, plan_id, requested_by, job_title_id, custom_job_title")
     .eq("id", parsed.data.requestId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -380,7 +383,68 @@ export async function transitionRecruitmentRequest(input: {
     { status: current.status },
     { status: parsed.data.toStatus, note: parsed.data.note ?? null }
   );
+
+  await notifyRequestTransition({
+    requestId: parsed.data.requestId,
+    toStatus: parsed.data.toStatus,
+    note: parsed.data.note,
+    requestedBy: current.requested_by,
+    jobTitleId: current.job_title_id,
+    customJobTitle: current.custom_job_title,
+    supabase,
+  });
+
   return { status: "success" };
+}
+
+/**
+ * Notifies the request's own author plus whoever can act NEXT — derived from
+ * the transition table itself (every rule leaving the new state), so a rule
+ * added later automatically reaches the right people with no change here.
+ *
+ * Deliberately never throws: a notification failure must not undo a
+ * transition that already happened and was audited.
+ */
+async function notifyRequestTransition(input: {
+  requestId: string;
+  toStatus: string;
+  note?: string;
+  requestedBy: string | null;
+  jobTitleId: string | null;
+  customJobTitle: string | null;
+  supabase: Client;
+}) {
+  try {
+    let jobTitle = input.customJobTitle ?? "";
+    if (!jobTitle && input.jobTitleId) {
+      const { data } = await input.supabase
+        .from("job_titles")
+        .select("name_ar")
+        .eq("id", input.jobTitleId)
+        .maybeSingle();
+      jobTitle = data?.name_ar ?? "";
+    }
+
+    const admin = createAdminClient();
+    const nextActors = requestTransitions
+      .filter((rule) => rule.from === input.toStatus)
+      .map((rule) => rule.requires);
+
+    const recipients = [input.requestedBy, ...(await profilesWithAccess(admin, nextActors))];
+    await notify(
+      admin,
+      recipients,
+      requestTransitionNotification({
+        toStatus: input.toStatus,
+        jobTitle: jobTitle || "طلب احتياج",
+        reason: input.note,
+      }),
+      "recruitment_requests",
+      input.requestId
+    );
+  } catch (error) {
+    console.error("notifyRequestTransition failed", error);
+  }
 }
 
 // ---------------------------------------------------------------------------

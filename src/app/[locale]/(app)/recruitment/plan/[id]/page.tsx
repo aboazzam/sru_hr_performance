@@ -174,6 +174,12 @@ export default async function RecruitmentPlanDetailPage({
               {t("consolidateRequests")}
             </Link>
           )}
+          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn">
+            {t("compareTab")}
+          </Link>
+          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn">
+            {t("auditTab")}
+          </Link>
           <Link href="/recruitment/plan" className="sru-btn">
             {t("backToPlans")}
           </Link>

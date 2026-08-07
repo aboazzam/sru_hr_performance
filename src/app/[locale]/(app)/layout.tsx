@@ -65,9 +65,20 @@ export default async function AppShellLayout({
     ])
   ) as Partial<Record<ProcessArea, VpraLevel>>;
 
+  // The caller's own notifications for the TopBar bell. `notifications_select`
+  // (20260807000006) restricts this to the caller's own rows with no
+  // oversight branch at all, so no filter is needed (or possible) here.
+  // Capped at 20: the bell is a glance, not an archive.
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, message_ar, link_path, read_at, created_at")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   return (
     <div className="sru-app-shell">
-      <TopBar locale={safeLocale} userName={userName} />
+      <TopBar locale={safeLocale} userName={userName} notifications={notifications ?? []} />
       <div className="sru-app-body">
         <Sidebar permissions={permissions} />
         <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
