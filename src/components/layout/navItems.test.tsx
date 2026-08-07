@@ -67,7 +67,9 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
   // 2026-08-05: a fifth tab, "بوابة التوظيف" — the outward-facing list of ads
   // whose publication window is currently open. Also `vacancies`-gated.
   // 2026-08-07: a sixth tab, "طلبات الاحتياج" — the demand side of the plan.
-  it("the recruitment group has the six tabs, each gated on its own area", () => {
+  // 2026-08-07: طلب الاحتياج والبوابة صار لكلٍّ منهما مجاله الخاص، والبوابة
+  // انقسمت إلى داخلية وخارجية — سبعة تبويبات الآن.
+  it("the recruitment group has the seven tabs, each gated on its own area", () => {
     const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
     expect(recruitment.children.map((c) => c.segment)).toEqual([
       "recruitment/plan",
@@ -76,14 +78,16 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
       "vacancies",
       "recruitment/announced",
       "recruitment/portal",
+      "recruitment/portal/external",
     ]);
     expect(recruitment.children.map((c) => c.access?.[0].processArea)).toEqual([
       "recruitmentPlan",
-      "recruitmentPlan",
+      "recruitmentRequests",
       "promotions",
       "vacancies",
       "vacancies",
-      "vacancies",
+      "recruitmentPortal",
+      "recruitmentPortal",
     ]);
   });
 
@@ -96,15 +100,21 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     const recruitment = navGroups.find((g) => g.groupKey === "recruitment")!;
     const requests = recruitment.children.find((c) => c.segment === "recruitment/requests")!;
     expect(requests.access).toEqual([
-      { processArea: "recruitmentPlan", minLevel: "view" },
+      { processArea: "recruitmentRequests", minLevel: "view" },
       { processArea: "recruitmentBudget", minLevel: "view" },
     ]);
 
     const financeOnly = visibleNavItems(recruitment.children, { recruitmentBudget: "recommend" });
     expect(financeOnly.map((c) => c.segment)).toEqual(["recruitment/requests"]);
 
-    const sectionHead = visibleNavItems(recruitment.children, { recruitmentPlan: "prepare" });
-    expect(sectionHead.map((c) => c.segment)).toEqual(["recruitment/plan", "recruitment/requests"]);
+    // A coordinator granted ONLY the requests area reaches the requests tab
+    // and nothing else — which is exactly what splitting it out achieves: the
+    // plan tab now needs its own `recruitmentPlan` grant.
+    const coordinator = visibleNavItems(recruitment.children, { recruitmentRequests: "prepare" });
+    expect(coordinator.map((c) => c.segment)).toEqual(["recruitment/requests"]);
+
+    const planOnly = visibleNavItems(recruitment.children, { recruitmentPlan: "prepare" });
+    expect(planOnly.map((c) => c.segment)).toEqual(["recruitment/plan"]);
 
     expect(visibleNavItems(recruitment.children, {})).toEqual([]);
   });
@@ -278,13 +288,17 @@ describe("visibleNavGroups", () => {
   // vacancy-gated tabs (الشواغر and, since 2026-08-04, الوظائف المعلن عنها,
   // which is fed from it and gated on the same grant).
   it("shows the recruitment group's vacancy tabs for the real employee permission set", () => {
-    const groups = visibleNavGroups(navGroups, { vacancies: "view" });
+    // 2026-08-07: the portal moved to its own `recruitmentPortal` area and
+    // split into internal/external, so a `vacancies`-only grant no longer
+    // reaches it — that is the point of the split.
+    const groups = visibleNavGroups(navGroups, { vacancies: "view", recruitmentPortal: "view" });
     const recruitment = groups.find((g) => g.groupKey === "recruitment");
     expect(recruitment).toBeDefined();
     expect(recruitment!.children.map((c) => c.segment)).toEqual([
       "vacancies",
       "recruitment/announced",
       "recruitment/portal",
+      "recruitment/portal/external",
     ]);
     // More than one visible child -> the sidebar row keeps the group label.
     expect(sidebarGroupLabelKey(recruitment!)).toBe("recruitment");
