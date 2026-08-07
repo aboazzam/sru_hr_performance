@@ -18,6 +18,7 @@ interface JobTitleOption {
   id: string;
   name_ar: string;
   grade_level: number | null;
+  qualification_required?: string | null;
 }
 interface CompetencyOption {
   id: string;
@@ -49,15 +50,30 @@ export function CreateRecruitmentRequestForm({
   orgUnits,
   jobTitles,
   competencies,
+  competencyIdsByJobTitle = {},
 }: {
   orgUnits: OrgUnitOption[];
   jobTitles: JobTitleOption[];
   competencies: CompetencyOption[];
+  /** Competencies already recorded against each catalogue job title. */
+  competencyIdsByJobTitle?: Record<string, string[]>;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentRequestActionState | null>(null);
+
+  // Tracks the SAVE only — never the navigation that follows it.
+  //
+  // Reported live: the button stayed on "جارٍ الحفظ..." indefinitely even
+  // though the request was created correctly. `useTransition`'s `pending`
+  // stays true until everything inside the transition settles, and this one
+  // ended with `router.push()` + `router.refresh()` — so the label was
+  // reporting the route change, not the save, and appeared stuck for as long
+  // as the destination took to render.
+  //
+  // Cleared in `finally`, so a failed save can never strand the button either.
+  const [saving, setSaving] = useState(false);
 
   const [orgUnitId, setOrgUnitId] = useState(orgUnits[0]?.id ?? "");
   const [useCustomTitle, setUseCustomTitle] = useState(false);
@@ -88,7 +104,58 @@ export function CreateRecruitmentRequestForm({
     : "";
 
   const titleChosen = useCustomTitle ? customJobTitle.trim() !== "" : effectiveJobTitleId !== "";
-  const canSubmit = orgUnitId !== "" && titleChosen && headcount.trim() !== "" && !pending;
+  const canSubmit = orgUnitId !== "" && titleChosen && headcount.trim() !== "" && !saving;
+
+  // ---------------------------------------------------------------------------
+  // Prefill from the chosen job title (requested 2026-08-07)
+  // ---------------------------------------------------------------------------
+  // "المؤهلات والجدارات اسحبها من قائمة الوظائف واترك لي إمكانية التغيير" — so
+  // both are seeded from the catalogue and stay fully editable.
+  //
+  // Adjusted DURING RENDER on a changed job title, not in an effect: this
+  // repo's `react-hooks/set-state-in-effect` rule rejects the effect form, and
+  // the same pattern already backs the vacancy form's requirements prefill.
+  //
+  // Manual edits are never clobbered: a box the requester typed in themselves
+  // is left alone, and only an untouched box (or one still holding what this
+  // form filled in for the PREVIOUS title) is replaced.
+  const selectedJobTitle = jobTitles.find((title) => title.id === effectiveJobTitleId);
+  const titleQualifications = selectedJobTitle?.qualification_required?.trim() ?? "";
+  const titleCompetencyIds = effectiveJobTitleId
+    ? (competencyIdsByJobTitle[effectiveJobTitleId] ?? [])
+    : [];
+
+  const [syncedJobTitleId, setSyncedJobTitleId] = useState("");
+  const [autoFilledQualifications, setAutoFilledQualifications] = useState("");
+  const [autoFilledCompetencyIds, setAutoFilledCompetencyIds] = useState<string[]>([]);
+
+  const sameSet = (a: string[], b: string[]) =>
+    a.length === b.length && [...a].sort().join() === [...b].sort().join();
+
+  if (effectiveJobTitleId !== syncedJobTitleId) {
+    setSyncedJobTitleId(effectiveJobTitleId);
+    if (qualifications.trim() === "" || qualifications === autoFilledQualifications) {
+      setQualifications(titleQualifications);
+      setAutoFilledQualifications(titleQualifications);
+    }
+    if (competencyIds.length === 0 || sameSet(competencyIds, autoFilledCompetencyIds)) {
+      setCompetencyIds(titleCompetencyIds);
+      setAutoFilledCompetencyIds(titleCompetencyIds);
+    }
+  }
+
+  /** Lets the requester pull the catalogue values back after editing them. */
+  const qualificationsEdited =
+    titleQualifications !== "" && qualifications !== autoFilledQualifications;
+  const competenciesEdited =
+    titleCompetencyIds.length > 0 && !sameSet(competencyIds, autoFilledCompetencyIds);
+
+  function restoreFromJobTitle() {
+    setQualifications(titleQualifications);
+    setAutoFilledQualifications(titleQualifications);
+    setCompetencyIds(titleCompetencyIds);
+    setAutoFilledCompetencyIds(titleCompetencyIds);
+  }
 
   function toggleCompetency(id: string) {
     setCompetencyIds((current) =>
@@ -97,7 +164,17 @@ export function CreateRecruitmentRequestForm({
   }
 
   function submit() {
+    setSaving(true);
     startTransition(async () => {
+      try {
+        await save();
+      } finally {
+        setSaving(false);
+      }
+    });
+  }
+
+  async function save() {
       const result = await createRecruitmentRequest({
         orgUnitId,
         jobTitleId: useCustomTitle ? undefined : effectiveJobTitleId || undefined,
@@ -113,10 +190,11 @@ export function CreateRecruitmentRequestForm({
       });
       setState(result);
       if (result.status === "success") {
+        // `push` already fetches the destination's fresh payload, so the
+        // extra `refresh()` that used to follow it only lengthened the
+        // transition the button label was tied to.
         router.push("/recruitment/requests");
-        router.refresh();
       }
-    });
   }
 
   return (
@@ -267,6 +345,18 @@ export function CreateRecruitmentRequestForm({
               value={qualifications}
               onChange={(event) => setQualifications(event.target.value)}
             />
+            {/* Always say where the text came from — a prefilled box that
+                doesn't explain itself reads as data the requester entered. */}
+            {selectedJobTitle && titleQualifications !== "" && (
+              <span style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
+                {t("qualificationsFromJobTitle", { title: selectedJobTitle.name_ar })}
+              </span>
+            )}
+            {selectedJobTitle && titleQualifications === "" && (
+              <span style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
+                {t("noQualificationsOnJobTitle")}
+              </span>
+            )}
           </label>
           <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
             <span>{t("fieldStrategicProject")}</span>
@@ -285,6 +375,35 @@ export function CreateRecruitmentRequestForm({
               <Sparkles size={16} aria-hidden />
             </span>
             <h2>{t("sectionCompetencies")}</h2>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>
+              {selectedJobTitle && titleCompetencyIds.length > 0
+                ? t("competenciesFromJobTitle", {
+                    title: selectedJobTitle.name_ar,
+                    count: titleCompetencyIds.length,
+                  })
+                : t("competenciesPickManually")}
+            </span>
+            {(qualificationsEdited || competenciesEdited) && (
+              <button
+                type="button"
+                className="sru-btn"
+                style={{ fontSize: 12, padding: "2px 10px" }}
+                onClick={restoreFromJobTitle}
+              >
+                {t("restoreFromJobTitle")}
+              </button>
+            )}
           </div>
           <div
             style={{
@@ -309,7 +428,7 @@ export function CreateRecruitmentRequestForm({
 
       <div className="sru-form-submitrow">
         <button type="button" className="sru-btn sru-btn-primary" disabled={!canSubmit} onClick={submit}>
-          {pending ? t("saving") : t("createRequestButton")}
+          {saving ? t("saving") : t("createRequestButton")}
         </button>
         {state?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">

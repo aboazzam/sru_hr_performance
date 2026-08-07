@@ -1952,7 +1952,12 @@
     "errorForbidden": "You do not have permission to perform this action.",
     "errorNoProfile": "No employee profile is linked to your account.",
     "errorDuplicate": "This request already exists.",
-    "errorUnknown": "The operation could not be completed."
+    "errorUnknown": "The operation could not be completed.",
+    "qualificationsFromJobTitle": "Taken from the recorded qualifications of «{title}» — you can edit this.",
+    "noQualificationsOnJobTitle": "No qualifications are recorded for this job title — enter them manually.",
+    "competenciesFromJobTitle": "Auto-selected from «{title}» competencies ({count}) — you can change them.",
+    "competenciesPickManually": "Pick the required competencies, or choose a job title to auto-select them.",
+    "restoreFromJobTitle": "Restore from the job title"
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",
