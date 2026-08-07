@@ -5,6 +5,7 @@ import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
+import { buildEmployeeLevelOrderResolver, isBelowOrUnknownLevel } from "@/lib/orgStructureEmployeeLevel";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -21,6 +22,7 @@ export default async function OrgStructureStaffingPage() {
     .order("level_order", { ascending: true });
   const levels = (levelsData ?? []) as Array<{ id: string; name_ar: string; level_order: number }>;
   const levelNameById = new Map(levels.map((l) => [l.id, l.name_ar]));
+  const levelOrderById = new Map(levels.map((l) => [l.id, l.level_order]));
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
@@ -37,6 +39,11 @@ export default async function OrgStructureStaffingPage() {
     job_title_id: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
+  const positionLevelOrderById = new Map<string, number>();
+  for (const p of positions) {
+    const order = levelOrderById.get(p.level_id);
+    if (order !== undefined) positionLevelOrderById.set(p.id, order);
+  }
 
   // 2026-07-27: same job-title lookup already shipped on the visual org
   // chart -- shown here too as a read-only column (no edit UI for it on
@@ -55,13 +62,20 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
-    .select("id, position_id, profiles(employee_number, full_name_ar)")
+    .select("id, position_id, employee_id, profiles(employee_number, full_name_ar)")
     .is("deleted_at", null);
   const assignments = (assignmentsData ?? []) as unknown as Array<{
     id: string;
     position_id: string;
+    employee_id: string;
     profiles: { employee_number: string; full_name_ar: string } | null;
   }>;
+
+  // 2026-08-07: "اعرض فقط من هم دونه في المستوى ... ولا تعرض من هو أعلى
+  // منه" -- an employee's own level is only knowable when they are
+  // themselves staffed to a position via this same table; see
+  // src/lib/orgStructureEmployeeLevel.ts for the exact rule.
+  const employeeLevelOrderById = buildEmployeeLevelOrderResolver(assignments, positionLevelOrderById);
 
   // employeeData=approve (hr_admin, per the seeded matrix) already grants
   // full profiles visibility — no additional filtering needed here, same
@@ -94,11 +108,11 @@ export default async function OrgStructureStaffingPage() {
   // visual org chart -- one shared implementation now, not two to drift.
   const descendantOrgUnitIds = buildDescendantOrgUnitIdsResolver(orgUnits);
 
-  const employeesByOrgUnitId = new Map<string, string[]>();
+  const employeesByOrgUnitId = new Map<string, Array<{ id: string; label: string }>>();
   for (const e of employees) {
     if (!e.org_unit_id) continue;
     const list = employeesByOrgUnitId.get(e.org_unit_id) ?? [];
-    list.push(`${e.employee_number} — ${e.full_name_ar}`);
+    list.push({ id: e.id, label: `${e.employee_number} — ${e.full_name_ar}` });
     employeesByOrgUnitId.set(e.org_unit_id, list);
   }
 
@@ -177,7 +191,10 @@ export default async function OrgStructureStaffingPage() {
                         assignments={positionAssignments}
                         orgUnitEmployeeLabels={
                           position.org_unit_id
-                            ? Array.from(descendantOrgUnitIds(position.org_unit_id)).flatMap((id) => employeesByOrgUnitId.get(id) ?? [])
+                            ? Array.from(descendantOrgUnitIds(position.org_unit_id))
+                                .flatMap((id) => employeesByOrgUnitId.get(id) ?? [])
+                                .filter((e) => isBelowOrUnknownLevel(e.id, positionLevelOrderById.get(position.id), employeeLevelOrderById))
+                                .map((e) => e.label)
                             : []
                         }
                       />
