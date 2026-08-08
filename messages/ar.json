@@ -1645,7 +1645,16 @@
     "scopeSelectLabel": "بوابة النشر",
     "scopeInternal": "داخلي",
     "scopeExternal": "خارجي",
-    "scopeBoth": "داخلي وخارجي"
+    "scopeBoth": "داخلي وخارجي",
+    "sortBy": "الترتيب",
+    "sortNewest": "الأحدث أولًا",
+    "sortOldest": "الأقدم أولًا",
+    "sortJobTitle": "المسمى الوظيفي (أ-ي)",
+    "sortOrgUnit": "الوحدة التنظيمية (أ-ي)",
+    "sortGradeDesc": "الدرجة (الأعلى أولًا)",
+    "sortGradeAsc": "الدرجة (الأدنى أولًا)",
+    "sortStatus": "الحالة",
+    "sortAnnouncedFirst": "المعلن عنها أولًا"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",
