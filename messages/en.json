@@ -1979,7 +1979,21 @@
     "genderUnspecified": "Not specified",
     "genderMale": "Male",
     "genderFemale": "Female",
-    "columnGender": "Gender"
+    "columnGender": "Gender",
+    "searchPlaceholder": "Search job title, org unit or qualifications...",
+    "filterByStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "sortBy": "Sort by",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortJobTitle": "Job title (A-Z)",
+    "sortOrgUnit": "Org unit (A-Z)",
+    "sortHeadcountDesc": "Headcount (high to low)",
+    "sortHeadcountAsc": "Headcount (low to high)",
+    "sortStatus": "Status",
+    "resetFilters": "Reset",
+    "resultCount": "Showing {shown} of {total}",
+    "noMatches": "No matching requests."
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",
