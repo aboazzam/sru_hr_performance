@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Briefcase, ClipboardList, Sparkles } from "lucide-react";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { behavioralLevelLabels, type BehavioralLevel } from "@/lib/data/competencies";
 import {
   createRecruitmentRequest,
   type RecruitmentRequestActionState,
@@ -25,6 +26,32 @@ interface CompetencyOption {
   name_ar: string;
   type: string;
 }
+
+/**
+ * A competency the request asks for, together with how well it must be held.
+ *
+ * The two travel as one value rather than as two parallel lists: a selected
+ * competency without a level is exactly the state this form used to produce
+ * (the column existed, nothing ever wrote it), and keeping them together
+ * makes that state unrepresentable instead of merely discouraged.
+ */
+export interface SelectedCompetency {
+  competencyId: string;
+  requiredLevel: BehavioralLevel;
+}
+
+/**
+ * The same pair while the form is still being filled in, where a level the
+ * requester has not chosen yet is a real, representable state ("") rather
+ * than a lie about a level that exists. Only fully-levelled rows leave here.
+ */
+interface CompetencyDraft {
+  competencyId: string;
+  requiredLevel: BehavioralLevel | "";
+}
+
+/** The framework's four levels, in order. Same source as every other level picker in this app. */
+const levelOrder: BehavioralLevel[] = ["basic", "practitioner", "advanced", "professional"];
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalid",
@@ -50,13 +77,13 @@ export function CreateRecruitmentRequestForm({
   orgUnits,
   jobTitles,
   competencies,
-  competencyIdsByJobTitle = {},
+  competenciesByJobTitle = {},
 }: {
   orgUnits: OrgUnitOption[];
   jobTitles: JobTitleOption[];
   competencies: CompetencyOption[];
-  /** Competencies already recorded against each catalogue job title. */
-  competencyIdsByJobTitle?: Record<string, string[]>;
+  /** Competencies already recorded against each catalogue job title, with the level that title requires. */
+  competenciesByJobTitle?: Record<string, SelectedCompetency[]>;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const router = useRouter();
@@ -89,7 +116,7 @@ export function CreateRecruitmentRequestForm({
   const [qualifications, setQualifications] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [strategicProjectRef, setStrategicProjectRef] = useState("");
-  const [competencyIds, setCompetencyIds] = useState<string[]>([]);
+  const [selectedCompetencies, setSelectedCompetencies] = useState<CompetencyDraft[]>([]);
 
   const filteredJobTitles = useMemo(
     () =>
@@ -106,7 +133,6 @@ export function CreateRecruitmentRequestForm({
     : "";
 
   const titleChosen = useCustomTitle ? customJobTitle.trim() !== "" : effectiveJobTitleId !== "";
-  const canSubmit = orgUnitId !== "" && titleChosen && headcount.trim() !== "" && !saving;
 
   // ---------------------------------------------------------------------------
   // Prefill from the chosen job title (requested 2026-08-07)
@@ -123,16 +149,20 @@ export function CreateRecruitmentRequestForm({
   // form filled in for the PREVIOUS title) is replaced.
   const selectedJobTitle = jobTitles.find((title) => title.id === effectiveJobTitleId);
   const titleQualifications = selectedJobTitle?.qualification_required?.trim() ?? "";
-  const titleCompetencyIds = effectiveJobTitleId
-    ? (competencyIdsByJobTitle[effectiveJobTitleId] ?? [])
+  const titleCompetencies = effectiveJobTitleId
+    ? (competenciesByJobTitle[effectiveJobTitleId] ?? [])
     : [];
 
   const [syncedJobTitleId, setSyncedJobTitleId] = useState("");
   const [autoFilledQualifications, setAutoFilledQualifications] = useState("");
-  const [autoFilledCompetencyIds, setAutoFilledCompetencyIds] = useState<string[]>([]);
+  const [autoFilledCompetencies, setAutoFilledCompetencies] = useState<CompetencyDraft[]>([]);
 
-  const sameSet = (a: string[], b: string[]) =>
-    a.length === b.length && [...a].sort().join() === [...b].sort().join();
+  /** Compares the pair, not just the ids — a changed LEVEL counts as an edit. */
+  const sameSelection = (a: CompetencyDraft[], b: CompetencyDraft[]) => {
+    const key = (list: CompetencyDraft[]) =>
+      [...list].map((e) => `${e.competencyId}:${e.requiredLevel}`).sort().join("|");
+    return key(a) === key(b);
+  };
 
   if (effectiveJobTitleId !== syncedJobTitleId) {
     setSyncedJobTitleId(effectiveJobTitleId);
@@ -140,9 +170,9 @@ export function CreateRecruitmentRequestForm({
       setQualifications(titleQualifications);
       setAutoFilledQualifications(titleQualifications);
     }
-    if (competencyIds.length === 0 || sameSet(competencyIds, autoFilledCompetencyIds)) {
-      setCompetencyIds(titleCompetencyIds);
-      setAutoFilledCompetencyIds(titleCompetencyIds);
+    if (selectedCompetencies.length === 0 || sameSelection(selectedCompetencies, autoFilledCompetencies)) {
+      setSelectedCompetencies(titleCompetencies);
+      setAutoFilledCompetencies(titleCompetencies);
     }
   }
 
@@ -150,20 +180,48 @@ export function CreateRecruitmentRequestForm({
   const qualificationsEdited =
     titleQualifications !== "" && qualifications !== autoFilledQualifications;
   const competenciesEdited =
-    titleCompetencyIds.length > 0 && !sameSet(competencyIds, autoFilledCompetencyIds);
+    titleCompetencies.length > 0 && !sameSelection(selectedCompetencies, autoFilledCompetencies);
 
   function restoreFromJobTitle() {
     setQualifications(titleQualifications);
     setAutoFilledQualifications(titleQualifications);
-    setCompetencyIds(titleCompetencyIds);
-    setAutoFilledCompetencyIds(titleCompetencyIds);
+    setSelectedCompetencies(titleCompetencies);
+    setAutoFilledCompetencies(titleCompetencies);
   }
 
+  const selectedLevel = (id: string) =>
+    selectedCompetencies.find((entry) => entry.competencyId === id)?.requiredLevel;
+
+  /**
+   * Ticking a competency the catalogue does not cover leaves the level
+   * genuinely unchosen rather than defaulting it: guessing "basic" would
+   * write a level nobody decided, which is the failure this change exists to
+   * end. Submission stays blocked until each ticked row has one.
+   */
   function toggleCompetency(id: string) {
-    setCompetencyIds((current) =>
-      current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+    setSelectedCompetencies((current) =>
+      current.some((entry) => entry.competencyId === id)
+        ? current.filter((entry) => entry.competencyId !== id)
+        : [...current, { competencyId: id, requiredLevel: "" as const }]
     );
   }
+
+  function setCompetencyLevel(id: string, level: BehavioralLevel) {
+    setSelectedCompetencies((current) =>
+      current.map((entry) => (entry.competencyId === id ? { ...entry, requiredLevel: level } : entry))
+    );
+  }
+
+  // A ticked competency with no level cannot be saved. Blocking here rather
+  // than quietly dropping it keeps the requester's own choice: they either
+  // say what level they mean, or untick it.
+  const competenciesMissingLevel = selectedCompetencies.filter((entry) => !entry.requiredLevel).length;
+  const canSubmit =
+    orgUnitId !== "" &&
+    titleChosen &&
+    headcount.trim() !== "" &&
+    competenciesMissingLevel === 0 &&
+    !saving;
 
   function submit() {
     setSaving(true);
@@ -189,7 +247,17 @@ export function CreateRecruitmentRequestForm({
         qualifications: qualifications || undefined,
         estimatedCostByRequester: estimatedCost ? Number(estimatedCost) : undefined,
         strategicProjectRef: strategicProjectRef || undefined,
-        competencyIds: competencyIds.length > 0 ? competencyIds : undefined,
+        // `canSubmit` already refuses an unlevelled row, so this narrowing
+        // drops nothing in practice — it is what turns the draft type into
+        // the action's own fully-levelled shape without a cast.
+        competencies:
+          selectedCompetencies.length > 0
+            ? selectedCompetencies.flatMap((entry) =>
+                entry.requiredLevel
+                  ? [{ competencyId: entry.competencyId, requiredLevel: entry.requiredLevel }]
+                  : []
+              )
+            : undefined,
       });
       setState(result);
       if (result.status === "success") {
@@ -404,10 +472,10 @@ export function CreateRecruitmentRequestForm({
             }}
           >
             <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>
-              {selectedJobTitle && titleCompetencyIds.length > 0
+              {selectedJobTitle && titleCompetencies.length > 0
                 ? t("competenciesFromJobTitle", {
                     title: selectedJobTitle.name_ar,
-                    count: titleCompetencyIds.length,
+                    count: titleCompetencies.length,
                   })
                 : t("competenciesPickManually")}
             </span>
@@ -429,17 +497,54 @@ export function CreateRecruitmentRequestForm({
               gap: 8,
             }}
           >
-            {competencies.map((competency) => (
-              <label key={competency.id} style={{ fontSize: 13, display: "flex", gap: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={competencyIds.includes(competency.id)}
-                  onChange={() => toggleCompetency(competency.id)}
-                />
-                <span>{competency.name_ar}</span>
-              </label>
-            ))}
+            {competencies.map((competency) => {
+              const level = selectedLevel(competency.id);
+              const checked = selectedCompetencies.some((e) => e.competencyId === competency.id);
+              return (
+                <div
+                  key={competency.id}
+                  style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}
+                >
+                  <label style={{ display: "flex", gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleCompetency(competency.id)}
+                    />
+                    <span>{competency.name_ar}</span>
+                  </label>
+                  {/* The level appears only once the competency is asked for:
+                      a level on an unticked row would be a setting with no
+                      subject, and it keeps the unselected grid quiet. */}
+                  {checked && (
+                    <select
+                      aria-label={t("competencyLevelFor", { name: competency.name_ar })}
+                      value={level ?? ""}
+                      onChange={(event) =>
+                        setCompetencyLevel(competency.id, event.target.value as BehavioralLevel)
+                      }
+                      style={{ fontSize: 12, marginInlineStart: 22 }}
+                    >
+                      <option value="" disabled>
+                        {t("competencyLevelPlaceholder")}
+                      </option>
+                      {levelOrder.map((option) => (
+                        <option key={option} value={option}>
+                          {behavioralLevelLabels[option]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          {competenciesMissingLevel > 0 && (
+            <p role="alert" className="text-sm text-red-600" style={{ marginTop: 8 }}>
+              {t("competencyLevelsMissing", { count: competenciesMissingLevel })}
+            </p>
+          )}
         </div>
       )}
 
