@@ -1993,7 +1993,9 @@
     "sortStatus": "Status",
     "resetFilters": "Reset",
     "resultCount": "Showing {shown} of {total}",
-    "noMatches": "No matching requests."
+    "noMatches": "No matching requests.",
+    "exportExcel": "Export to Excel",
+    "columnCreatedAt": "Created on"
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

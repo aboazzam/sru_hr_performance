@@ -1993,7 +1993,9 @@
     "sortStatus": "الحالة",
     "resetFilters": "إعادة تعيين",
     "resultCount": "عرض {shown} من {total}",
-    "noMatches": "لا توجد طلبات مطابقة."
+    "noMatches": "لا توجد طلبات مطابقة.",
+    "exportExcel": "تصدير إلى إكسل",
+    "columnCreatedAt": "تاريخ الإنشاء"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",
