@@ -3,24 +3,15 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { recruitmentRequestErrorText } from "@/lib/recruitmentRequestErrors";
 import {
   availableRequestTransitions,
-  transitionRefusalMessages,
   type RecruitmentPermissions,
 } from "@/lib/recruitmentWorkflow";
 import {
   transitionRecruitmentRequest,
   type RecruitmentRequestActionState,
 } from "@/app/[locale]/(app)/recruitment/requests/actions";
-
-/** Action-level failures (not workflow refusals) → their own message key. */
-const actionErrorKeys: Record<string, string> = {
-  not_found: "errorRequestGone",
-  unauthenticated: "errorUnauthenticated",
-  no_profile: "errorNoProfile",
-  invalid_input: "errorInvalid",
-  duplicate: "errorDuplicate",
-};
 
 /**
  * The action buttons for one request row. Which buttons exist comes straight
@@ -53,7 +44,9 @@ export function RecruitmentRequestActions({
   const [openTarget, setOpenTarget] = useState<string | null>(null);
   const [note, setNote] = useState("");
 
-  const options = availableRequestTransitions(status, permissions);
+  // Transitions flagged `statusAdjacent` render beside the status instead
+  // (RequestStatusCell), so they are excluded here rather than duplicated.
+  const options = availableRequestTransitions(status, permissions).filter((rule) => !rule.statusAdjacent);
   if (options.length === 0) {
     return <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>—</span>;
   }
@@ -134,9 +127,11 @@ export function RecruitmentRequestActions({
               which carry their own Arabic wording, and action-level failures.
               The latter used to fall through to a bare "تعذر إتمام العملية" —
               reported live when a stale page tried to submit a request that
-              no longer existed, leaving no hint that reloading would help. */}
-          {transitionRefusalMessages[state.message as keyof typeof transitionRefusalMessages] ??
-            t(actionErrorKeys[state.message] ?? "errorUnknown")}
+              no longer existed, leaving no hint that reloading would help.
+              The mapping lives in a shared helper because RequestStatusCell
+              renders the same failures beside the status. */}
+          {recruitmentRequestErrorText(state.message, t)}
+
         </span>
       )}
     </div>
