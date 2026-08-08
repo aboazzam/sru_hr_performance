@@ -1970,7 +1970,11 @@
     "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
     "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
     "restoreFromJobTitle": "استعادة من المسمى الوظيفي",
-    "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة."
+    "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة.",
+    "editAction": "تعديل الطلب",
+    "deleteAction": "حذف الطلب",
+    "deleteConfirm": "سيُحذف طلب الاحتياج. هل تريد المتابعة؟",
+    "saveEdit": "حفظ التعديل"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",
