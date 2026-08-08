@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { CreateRecruitmentRequestForm } from "@/components/CreateRecruitmentRequestForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { type BehavioralLevel } from "@/lib/data/competencies";
 
 // The org unit list asks the RIGHT question: "where may I WRITE?", not
 // "what may I read?".
@@ -50,16 +51,24 @@ export default async function NewRecruitmentRequestPage() {
   // job_title_competencies is read separately rather than as an embed: this is
   // a plain lookup table with no ambiguity, and fetching it flat avoids the
   // array-vs-object embed inference trap this project has hit before.
+  //
+  // `required_level` is carried too, not just the id: the catalogue already
+  // records how well each competency must be held for that title (it is NOT
+  // NULL there), so picking a title seeds the level as well as the tick, and
+  // the requester only has to choose one for competencies they add by hand.
   const { data: titleCompetencyRows } = canRaise
     ? await supabase
         .from("job_title_competencies")
-        .select("job_title_id, competency_id")
+        .select("job_title_id, competency_id, required_level")
         .is("deleted_at", null)
     : { data: null };
 
-  const competencyIdsByJobTitle: Record<string, string[]> = {};
+  const competenciesByJobTitle: Record<string, { competencyId: string; requiredLevel: BehavioralLevel }[]> = {};
   for (const row of titleCompetencyRows ?? []) {
-    (competencyIdsByJobTitle[row.job_title_id] ??= []).push(row.competency_id);
+    (competenciesByJobTitle[row.job_title_id] ??= []).push({
+      competencyId: row.competency_id,
+      requiredLevel: row.required_level as BehavioralLevel,
+    });
   }
 
   return (
@@ -84,7 +93,7 @@ export default async function NewRecruitmentRequestPage() {
             orgUnits={orgUnits ?? []}
             jobTitles={jobTitles ?? []}
             competencies={competencies ?? []}
-            competencyIdsByJobTitle={competencyIdsByJobTitle}
+            competenciesByJobTitle={competenciesByJobTitle}
           />
         )}
       </div>

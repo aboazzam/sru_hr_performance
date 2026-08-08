@@ -1983,7 +1983,7 @@
     "errorUnknown": "The operation could not be completed.",
     "qualificationsFromJobTitle": "Taken from the recorded qualifications of «{title}» — you can edit this.",
     "noQualificationsOnJobTitle": "No qualifications are recorded for this job title — enter them manually.",
-    "competenciesFromJobTitle": "Auto-selected from «{title}» competencies ({count}) — you can change them.",
+    "competenciesFromJobTitle": "Auto-selected from «{title}» competencies ({count}) with their required levels — you can change them.",
     "competenciesPickManually": "Pick the required competencies, or choose a job title to auto-select them.",
     "restoreFromJobTitle": "Restore from the job title",
     "errorRequestGone": "This request no longer exists — please refresh the page.",
@@ -2012,7 +2012,10 @@
     "noMatches": "No matching requests.",
     "exportExcel": "Export to Excel",
     "columnCreatedAt": "Created on",
-    "printedOn": "Printed on: {date}"
+    "printedOn": "Printed on: {date}",
+    "competencyLevelPlaceholder": "Choose the required level…",
+    "competencyLevelFor": "Required level for {name}",
+    "competencyLevelsMissing": "Choose a required level for every selected competency ({count} without one)."
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

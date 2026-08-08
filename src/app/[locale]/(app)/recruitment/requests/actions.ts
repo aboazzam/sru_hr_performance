@@ -123,7 +123,19 @@ const createSchema = z
     evaluationId: z.string().uuid().optional(),
     estimatedCostByRequester: z.number().min(0).optional(),
     strategicProjectRef: z.string().trim().optional(),
-    competencyIds: z.array(z.string().uuid()).optional(),
+    // Each selected competency carries its own required level (2026-08-08).
+    // The column has always existed but nothing ever wrote it, so every link
+    // this form created sat at NULL — a request could name a competency
+    // without saying how well it must be held, which is the whole point of
+    // naming it. The level is part of the pair now, not an optional extra.
+    competencies: z
+      .array(
+        z.object({
+          competencyId: z.string().uuid(),
+          requiredLevel: z.enum(["basic", "practitioner", "advanced", "professional"]),
+        })
+      )
+      .optional(),
   })
   // Mirrors the DB's own `recruitment_requests_job_title_source` CHECK, so a
   // bad request is refused with a readable message instead of a raw 23514.
@@ -187,11 +199,12 @@ export async function createRecruitmentRequest(
 
   // Competency links go through the caller's own client too, so the same
   // org-scoped gate applies to them via their parent request.
-  if (data.competencyIds && data.competencyIds.length > 0) {
+  if (data.competencies && data.competencies.length > 0) {
     const { error: linkError } = await supabase.from("recruitment_request_competencies").insert(
-      data.competencyIds.map((competencyId) => ({
+      data.competencies.map((entry) => ({
         request_id: created.id,
-        competency_id: competencyId,
+        competency_id: entry.competencyId,
+        required_level: entry.requiredLevel,
       }))
     );
     if (linkError) return mapError(linkError);

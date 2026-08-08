@@ -1983,7 +1983,7 @@
     "errorUnknown": "تعذر إتمام العملية.",
     "qualificationsFromJobTitle": "مأخوذة من المؤهلات المسجّلة للمسمى «{title}» — يمكنك تعديلها.",
     "noQualificationsOnJobTitle": "لا توجد مؤهلات مسجّلة لهذا المسمى — اكتبها يدويًا.",
-    "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
+    "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) بمستوياتها المطلوبة — يمكنك التغيير.",
     "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
     "restoreFromJobTitle": "استعادة من المسمى الوظيفي",
     "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة.",
@@ -2012,7 +2012,10 @@
     "noMatches": "لا توجد طلبات مطابقة.",
     "exportExcel": "تصدير إلى إكسل",
     "columnCreatedAt": "تاريخ الإنشاء",
-    "printedOn": "تاريخ الطباعة: {date}"
+    "printedOn": "تاريخ الطباعة: {date}",
+    "competencyLevelPlaceholder": "اختر المستوى المطلوب…",
+    "competencyLevelFor": "المستوى المطلوب لجدارة {name}",
+    "competencyLevelsMissing": "حدّد المستوى المطلوب لكل جدارة مختارة ({count} بلا مستوى)."
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",
