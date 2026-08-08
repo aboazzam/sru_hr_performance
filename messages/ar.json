@@ -1979,7 +1979,21 @@
     "genderUnspecified": "غير مشترط",
     "genderMale": "ذكر",
     "genderFemale": "أنثى",
-    "columnGender": "الجنس"
+    "columnGender": "الجنس",
+    "searchPlaceholder": "ابحث في المسمى أو الوحدة أو المؤهلات...",
+    "filterByStatus": "تصفية بالحالة",
+    "allStatuses": "كل الحالات",
+    "sortBy": "الترتيب",
+    "sortNewest": "الأحدث أولًا",
+    "sortOldest": "الأقدم أولًا",
+    "sortJobTitle": "المسمى الوظيفي (أ-ي)",
+    "sortOrgUnit": "الوحدة التنظيمية (أ-ي)",
+    "sortHeadcountDesc": "العدد (الأكثر أولًا)",
+    "sortHeadcountAsc": "العدد (الأقل أولًا)",
+    "sortStatus": "الحالة",
+    "resetFilters": "إعادة تعيين",
+    "resultCount": "عرض {shown} من {total}",
+    "noMatches": "لا توجد طلبات مطابقة."
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

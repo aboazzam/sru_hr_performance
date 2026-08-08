@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
-import { RecruitmentRequestRow } from "@/components/RecruitmentRequestRow";
+import { RecruitmentRequestsTable } from "@/components/RecruitmentRequestsTable";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 
@@ -16,7 +16,8 @@ import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 // one unfiltered query and lets Postgres decide — adding an application-side
 // filter here would either duplicate that logic or contradict it.
 
-// The inline editor spans the whole table; keep it in step with <thead>.
+// The inline editor spans the whole table; keep it in step with the <thead>
+// in RecruitmentRequestsTable, which owns the markup now.
 // The reason/contract/gender label maps moved into RecruitmentRequestRow with
 // the cells that render them, and now read from the message catalogue like the
 // rest of that component.
@@ -92,43 +93,19 @@ export default async function RecruitmentRequestsPage() {
           {!requests || requests.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
           ) : (
-            <div className="sru-card">
-              <div className="table-scroll">
-                <table className="admin-matrix">
-                  <thead>
-                    <tr>
-                      <th>{t("columnJobTitle")}</th>
-                      <th>{t("columnOrgUnit")}</th>
-                      <th>{t("columnHeadcount")}</th>
-                      <th>{t("columnReason")}</th>
-                      <th>{t("columnContract")}</th>
-                      <th>{t("columnGender")}</th>
-                      <th>{t("columnQuarter")}</th>
-                      <th>{t("columnCost")}</th>
-                      <th>{t("columnStatus")}</th>
-                      <th>{t("columnActions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requests.map((request) => (
-                      <RecruitmentRequestRow
-                        key={request.id}
-                        request={request}
-                        jobTitle={
-                          request.job_title_id
-                            ? (jobTitleName.get(request.job_title_id) ?? "—")
-                            : (request.custom_job_title ?? "—")
-                        }
-                        orgUnit={orgUnitName.get(request.org_unit_id) ?? "—"}
-                        permissions={permissions}
-                        canEdit={canRaise}
-                        columnCount={TABLE_COLUMN_COUNT}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <RecruitmentRequestsTable
+              rows={requests.map((request) => ({
+                request,
+                jobTitle: request.job_title_id
+                  ? (jobTitleName.get(request.job_title_id) ?? "—")
+                  : (request.custom_job_title ?? "—"),
+                orgUnit: orgUnitName.get(request.org_unit_id) ?? "—",
+                createdAt: request.created_at,
+              }))}
+              permissions={permissions}
+              canEdit={canRaise}
+              columnCount={TABLE_COLUMN_COUNT}
+            />
           )}
         </div>
       )}
