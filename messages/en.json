@@ -1654,7 +1654,12 @@
     "sortGradeDesc": "Grade (high to low)",
     "sortGradeAsc": "Grade (low to high)",
     "sortStatus": "Status",
-    "sortAnnouncedFirst": "Advertised first"
+    "sortAnnouncedFirst": "Advertised first",
+    "exportExcel": "Export to Excel",
+    "gradeHeader": "Grade",
+    "announcedHeader": "Advertised",
+    "planHeader": "From recruitment plan",
+    "createdAtHeader": "Created on"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",

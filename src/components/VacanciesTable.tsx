@@ -3,10 +3,10 @@
 import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Trash2, Megaphone, MegaphoneOff } from "lucide-react";
-import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { Trash2, Megaphone, MegaphoneOff, FileSpreadsheet } from "lucide-react";
 import {
   DEFAULT_VACANCY_SORT,
+  filterVacancies,
   isVacancySortOption,
   sortVacancies,
   VACANCY_SORT_OPTIONS,
@@ -86,18 +86,10 @@ export function VacanciesTable({
 
   const counts = useMemo(() => countVacancyStatuses(vacancies.map((v) => v.status)), [vacancies]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim();
-    return vacancies.filter((v) => {
-      if (statusFilter && v.status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        includesIgnoringHamza(v.jobTitleName ?? "", q) ||
-        includesIgnoringHamza(v.orgUnitName ?? "", q) ||
-        includesIgnoringHamza(v.requirementsAr ?? "", q)
-      );
-    });
-  }, [vacancies, query, statusFilter]);
+  const filtered = useMemo(
+    () => filterVacancies(vacancies, { query, status: statusFilter }),
+    [vacancies, query, statusFilter]
+  );
 
   const visible = useMemo(() => sortVacancies(filtered, sort), [filtered, sort]);
 
@@ -109,6 +101,14 @@ export function VacanciesTable({
       if (result.status === "success") router.refresh();
     });
   }
+
+  // The export re-fetches on the server through the caller's own RLS; these
+  // params only tell it to narrow the same way the screen currently is.
+  const exportParams = new URLSearchParams();
+  if (query.trim() !== "") exportParams.set("q", query.trim());
+  if (statusFilter !== "") exportParams.set("status", statusFilter);
+  if (sort !== DEFAULT_VACANCY_SORT) exportParams.set("sort", sort);
+  const exportHref = `/api/vacancies/export${exportParams.size ? `?${exportParams}` : ""}`;
 
   const summary: Array<{ key: string; label: string; value: number }> = [
     { key: "total", label: t("summaryTotal"), value: counts.total },
@@ -182,6 +182,15 @@ export function VacanciesTable({
             {t("resetFilters")}
           </button>
         )}
+        <a
+          href={exportHref}
+          className="sru-btn"
+          download
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          <FileSpreadsheet size={15} aria-hidden />
+          {t("exportExcel")}
+        </a>
         {actionState?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">
             {t(errorKeys[actionState.message] ?? "actionErrorUnknown")}
