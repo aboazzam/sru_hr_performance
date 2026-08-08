@@ -226,6 +226,19 @@ const updateSchema = z.object({
   proposedQuarter: z.number().int().min(1).max(4).nullable(),
   qualifications: z.string().trim().nullable(),
   estimatedCostByRequester: z.number().min(0).nullable(),
+  // The FULL competency set the request should end up with, each with its
+  // level (same required enum as creation — an unlevelled link cannot be
+  // written here either). Omitted entirely = "leave the competencies alone",
+  // which is what an older caller that does not know about them still means;
+  // an empty ARRAY is a real instruction to clear them all.
+  competencies: z
+    .array(
+      z.object({
+        competencyId: z.string().uuid(),
+        requiredLevel: z.enum(["basic", "practitioner", "advanced", "professional"]),
+      })
+    )
+    .optional(),
 });
 
 /**
@@ -245,6 +258,7 @@ export async function updateRecruitmentRequest(input: {
   proposedQuarter: number | null;
   qualifications: string | null;
   estimatedCostByRequester: number | null;
+  competencies?: { competencyId: string; requiredLevel: string }[];
 }): Promise<RecruitmentRequestActionState> {
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) return { status: "error", message: "invalid_input" };
@@ -285,8 +299,99 @@ export async function updateRecruitmentRequest(input: {
   // RLS refuses an UPDATE by matching zero rows, not by raising.
   if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
 
+  if (parsed.data.competencies) {
+    const linkError = await syncRequestCompetencies(
+      supabase,
+      parsed.data.requestId,
+      parsed.data.competencies
+    );
+    if (linkError) return linkError;
+  }
+
   await auditLog(actor.id, "recruitment_request_updated", parsed.data.requestId, current, parsed.data);
   return { status: "success" };
+}
+
+/**
+ * Brings a request's competency links in line with the set the editor sent.
+ *
+ * Three things shape how this is written, none of them incidental:
+ *
+ *  - There is NO DELETE policy on `recruitment_request_competencies` (and
+ *    CLAUDE.md §5-A rule 7 wants soft deletes anyway), so a competency the
+ *    requester removed is stamped `deleted_at`, never deleted.
+ *  - Uniqueness is a PARTIAL index — `(request_id, competency_id) WHERE
+ *    deleted_at IS NULL` — which PostgREST's `on_conflict` cannot target, so
+ *    this is the select-then-insert-or-update shape used everywhere else in
+ *    this schema, not an `.upsert()`.
+ *  - Re-adding a competency that was removed earlier must REVIVE exactly one
+ *    of its soft-deleted rows rather than insert a second live one; reviving
+ *    all of them would violate that same index after a remove/add cycle.
+ *
+ * Every statement goes through the caller's own client, so
+ * `recruitment_request_competencies_{insert,update}`'s RLS stays the real
+ * gate — this function adds no authority of its own.
+ */
+async function syncRequestCompetencies(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  requestId: string,
+  desired: { competencyId: string; requiredLevel: string }[]
+): Promise<RecruitmentRequestActionState | null> {
+  const { data: existing, error: readError } = await supabase
+    .from("recruitment_request_competencies")
+    .select("id, competency_id, required_level, deleted_at")
+    .eq("request_id", requestId);
+  if (readError) return mapError(readError);
+
+  const live = (existing ?? []).filter((row) => row.deleted_at === null);
+  const desiredIds = new Set(desired.map((entry) => entry.competencyId));
+
+  // 1. Remove what is no longer asked for.
+  const toRemove = live.filter((row) => !desiredIds.has(row.competency_id)).map((row) => row.id);
+  if (toRemove.length > 0) {
+    const { error } = await supabase
+      .from("recruitment_request_competencies")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", toRemove);
+    if (error) return mapError(error);
+  }
+
+  for (const entry of desired) {
+    const liveRow = live.find((row) => row.competency_id === entry.competencyId);
+
+    // 2. Already there — write the level only if it actually changed.
+    if (liveRow) {
+      if (liveRow.required_level !== entry.requiredLevel) {
+        const { error } = await supabase
+          .from("recruitment_request_competencies")
+          .update({ required_level: entry.requiredLevel })
+          .eq("id", liveRow.id);
+        if (error) return mapError(error);
+      }
+      continue;
+    }
+
+    // 3. Newly asked for: revive ONE earlier soft-deleted row if there is
+    //    one, otherwise insert.
+    const revivable = (existing ?? []).find(
+      (row) => row.deleted_at !== null && row.competency_id === entry.competencyId
+    );
+    const { error } = revivable
+      ? await supabase
+          .from("recruitment_request_competencies")
+          .update({ deleted_at: null, required_level: entry.requiredLevel })
+          .eq("id", revivable.id)
+      : await supabase
+          .from("recruitment_request_competencies")
+          .insert({
+            request_id: requestId,
+            competency_id: entry.competencyId,
+            required_level: entry.requiredLevel,
+          });
+    if (error) return mapError(error);
+  }
+
+  return null;
 }
 
 /** Soft-delete (CLAUDE.md §5-A rule 7) — only while still a draft. */

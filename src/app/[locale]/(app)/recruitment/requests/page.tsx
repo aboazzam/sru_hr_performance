@@ -6,6 +6,8 @@ import { RecruitmentRequestsTable } from "@/components/RecruitmentRequestsTable"
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
+import { type BehavioralLevel } from "@/lib/data/competencies";
+import { type CompetencyDraft, type CompetencyOption } from "@/components/CompetencyLevelPicker";
 
 // Auth is enforced centrally by (app)/layout.tsx.
 //
@@ -67,6 +69,36 @@ export default async function RecruitmentRequestsPage() {
     ? await supabase.from("job_titles").select("id, name_ar").in("id", jobTitleIds as string[])
     : { data: [] };
 
+  // The competency catalogue and each request's own links feed the inline
+  // editor. Both go through the caller's own client, so a viewer without the
+  // grant simply gets nothing and the editor renders no competency section
+  // rather than erroring — the same graceful degradation used elsewhere.
+  const requestIds = (requests ?? []).map((r) => r.id);
+  const [{ data: competencies }, { data: requestCompetencyRows }] = await Promise.all([
+    canRaise && requestIds.length > 0
+      ? supabase.from("competencies").select("id, name_ar").order("name_ar")
+      : Promise.resolve({ data: null }),
+    requestIds.length > 0
+      ? supabase
+          .from("recruitment_request_competencies")
+          .select("request_id, competency_id, required_level")
+          .in("request_id", requestIds)
+          .is("deleted_at", null)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const competenciesByRequest: Record<string, CompetencyDraft[]> = {};
+  for (const row of requestCompetencyRows ?? []) {
+    // A link written before levels were required can still be NULL here. The
+    // DRAFT type already has a place for that ("") — so it is carried through
+    // honestly as unchosen, and the editor blocks saving until a level is
+    // picked, rather than inventing one to satisfy a stricter type.
+    (competenciesByRequest[row.request_id] ??= []).push({
+      competencyId: row.competency_id,
+      requiredLevel: (row.required_level as BehavioralLevel | null) ?? "",
+    });
+  }
+
   // Printed-on stamp: formatted here rather than in the client component,
   // so the server and client renders cannot disagree and the date follows the
   // configured display timezone like every other date in this app.
@@ -114,6 +146,8 @@ export default async function RecruitmentRequestsPage() {
                 createdAt: request.created_at,
               }))}
               permissions={permissions}
+              competencies={(competencies ?? []) as CompetencyOption[]}
+              competenciesByRequest={competenciesByRequest}
               canEdit={canRaise}
               columnCount={TABLE_COLUMN_COUNT}
               printedOn={printedOn}
