@@ -2,8 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
-import { RecruitmentRequestActions } from "@/components/RecruitmentRequestActions";
-import { RequestStatusCell } from "@/components/RequestStatusCell";
+import { RecruitmentRequestRow } from "@/components/RecruitmentRequestRow";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 
@@ -17,24 +16,11 @@ import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 // one unfiltered query and lets Postgres decide — adding an application-side
 // filter here would either duplicate that logic or contradict it.
 
-const reasonLabels: Record<string, string> = {
-  vacant: "وظيفة شاغرة",
-  expansion: "توسع",
-  replacement: "إحلال",
-};
-
-// غياب القيمة يعني "غير مشترط" لا "غير معروف".
-const genderLabels: Record<string, string> = {
-  Male: "ذكر",
-  Female: "أنثى",
-  "": "غير مشترط",
-};
-
-const contractLabels: Record<string, string> = {
-  permanent: "دائم",
-  temporary: "مؤقت",
-  part_time: "دوام جزئي",
-};
+// The inline editor spans the whole table; keep it in step with <thead>.
+// The reason/contract/gender label maps moved into RecruitmentRequestRow with
+// the cells that render them, and now read from the message catalogue like the
+// rest of that component.
+const TABLE_COLUMN_COUNT = 10;
 
 export default async function RecruitmentRequestsPage() {
   const t = await getTranslations("RecruitmentRequestsPage");
@@ -57,7 +43,10 @@ export default async function RecruitmentRequestsPage() {
     ? await supabase
         .from("recruitment_requests")
         .select(
-          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
+          // `qualifications` is not shown as a column, but the inline editor
+          // sends every field `updateRecruitmentRequest` takes — it has to
+          // arrive here so saving an edit cannot blank it out.
+          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -122,38 +111,19 @@ export default async function RecruitmentRequestsPage() {
                   </thead>
                   <tbody>
                     {requests.map((request) => (
-                      <tr key={request.id}>
-                        <td>
-                          {request.job_title_id
+                      <RecruitmentRequestRow
+                        key={request.id}
+                        request={request}
+                        jobTitle={
+                          request.job_title_id
                             ? (jobTitleName.get(request.job_title_id) ?? "—")
-                            : (request.custom_job_title ?? "—")}
-                        </td>
-                        <td>{orgUnitName.get(request.org_unit_id) ?? "—"}</td>
-                        <td className="sru-en">{request.headcount}</td>
-                        <td>{reasonLabels[request.request_reason] ?? request.request_reason}</td>
-                        <td>{contractLabels[request.contract_type] ?? request.contract_type}</td>
-                        <td>{genderLabels[request.gender ?? ""] ?? "—"}</td>
-                        <td className="sru-en">
-                          {request.proposed_quarter ? `Q${request.proposed_quarter}` : "—"}
-                        </td>
-                        <td className="sru-en">
-                          {request.estimated_cost_by_hr ?? request.estimated_cost_by_requester ?? "—"}
-                        </td>
-                        <td>
-                          <RequestStatusCell
-                            requestId={request.id}
-                            status={request.status}
-                            permissions={permissions}
-                          />
-                        </td>
-                        <td>
-                          <RecruitmentRequestActions
-                            requestId={request.id}
-                            status={request.status}
-                            permissions={permissions}
-                          />
-                        </td>
-                      </tr>
+                            : (request.custom_job_title ?? "—")
+                        }
+                        orgUnit={orgUnitName.get(request.org_unit_id) ?? "—"}
+                        permissions={permissions}
+                        canEdit={canRaise}
+                        columnCount={TABLE_COLUMN_COUNT}
+                      />
                     ))}
                   </tbody>
                 </table>
