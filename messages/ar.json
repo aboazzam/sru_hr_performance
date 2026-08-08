@@ -1659,7 +1659,9 @@
     "gradeHeader": "الدرجة",
     "announcedHeader": "الإعلان",
     "planHeader": "من خطة التوظيف",
-    "createdAtHeader": "تاريخ الإنشاء"
+    "createdAtHeader": "تاريخ الإنشاء",
+    "printedOn": "تاريخ الطباعة: {date}",
+    "printedCount": "عرض {shown} من {total}"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",

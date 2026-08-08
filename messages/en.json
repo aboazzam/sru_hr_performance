@@ -1659,7 +1659,9 @@
     "gradeHeader": "Grade",
     "announcedHeader": "Advertised",
     "planHeader": "From recruitment plan",
-    "createdAtHeader": "Created on"
+    "createdAtHeader": "Created on",
+    "printedOn": "Printed on: {date}",
+    "printedCount": "Showing {shown} of {total}"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",

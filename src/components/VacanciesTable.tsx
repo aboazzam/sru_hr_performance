@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Trash2, Megaphone, MegaphoneOff, FileSpreadsheet } from "lucide-react";
+import { PrintButton } from "@/components/PrintButton";
 import {
   DEFAULT_VACANCY_SORT,
   filterVacancies,
@@ -70,9 +71,13 @@ const errorKeys: Record<string, string> = {
 export function VacanciesTable({
   vacancies,
   canManage,
+  printedOn,
 }: {
   vacancies: VacancyRowView[];
   canManage: boolean;
+  /** Formatted server-side (display timezone) — a Date created in this client
+   *  component would differ between the server and client renders. */
+  printedOn: string;
 }) {
   const t = useTranslations("VacanciesPage");
   const router = useRouter();
@@ -136,7 +141,10 @@ export function VacanciesTable({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        className="no-print"
+        style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}
+      >
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -191,11 +199,26 @@ export function VacanciesTable({
           <FileSpreadsheet size={15} aria-hidden />
           {t("exportExcel")}
         </a>
+        <PrintButton />
         {actionState?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">
             {t(errorKeys[actionState.message] ?? "actionErrorUnknown")}
           </span>
         )}
+      </div>
+
+      {/* On paper the controls above are gone, so the sheet has to say what it
+          is: the screen's title, when it was printed, and which filter produced
+          these rows. */}
+      <div className="print-only">
+        <strong style={{ fontSize: 15 }}>{t("title")}</strong>
+        <div style={{ fontSize: 12 }}>
+          {t("printedOn", { date: printedOn })}
+          {" — "}
+          {t("printedCount", { shown: visible.length, total: vacancies.length })}
+          {statusFilter ? ` — ${t("columnStatus")}: ${vacancyStatusLabel(statusFilter)}` : ""}
+          {query.trim() ? ` — "${query.trim()}"` : ""}
+        </div>
       </div>
 
       <div className="sru-card">
@@ -212,7 +235,7 @@ export function VacanciesTable({
                   <th>{t("columnOrgUnit")}</th>
                   <th>{t("columnStatus")}</th>
                   <th>{t("columnRequirements")}</th>
-                  {canManage && <th>{t("columnActions")}</th>}
+                  {canManage && <th className="sru-col-actions">{t("columnActions")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +292,7 @@ export function VacanciesTable({
                     </td>
                     <td>{vacancy.requirementsAr ?? "—"}</td>
                     {canManage && (
-                      <td>
+                      <td className="sru-col-actions">
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         {/* اختيار البوابة قبل الإعلان — يظهر فقط قبله، لأن
                             سحب الإعلان لا يحتاج نطاقًا. الافتراضي "داخلي"
