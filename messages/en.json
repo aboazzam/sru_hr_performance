@@ -1974,7 +1974,12 @@
     "editAction": "Edit request",
     "deleteAction": "Delete request",
     "deleteConfirm": "This demand request will be deleted. Continue?",
-    "saveEdit": "Save changes"
+    "saveEdit": "Save changes",
+    "fieldGender": "Required gender",
+    "genderUnspecified": "Not specified",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "columnGender": "Gender"
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

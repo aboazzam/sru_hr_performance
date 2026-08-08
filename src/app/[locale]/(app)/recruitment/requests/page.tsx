@@ -17,10 +17,10 @@ import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 // filter here would either duplicate that logic or contradict it.
 
 // The inline editor spans the whole table; keep it in step with <thead>.
-// The reason/contract label maps moved into RecruitmentRequestRow with the
-// cells that render them, and now read from the message catalogue like the
+// The reason/contract/gender label maps moved into RecruitmentRequestRow with
+// the cells that render them, and now read from the message catalogue like the
 // rest of that component.
-const TABLE_COLUMN_COUNT = 9;
+const TABLE_COLUMN_COUNT = 10;
 
 export default async function RecruitmentRequestsPage() {
   const t = await getTranslations("RecruitmentRequestsPage");
@@ -46,7 +46,7 @@ export default async function RecruitmentRequestsPage() {
           // `qualifications` is not shown as a column, but the inline editor
           // sends every field `updateRecruitmentRequest` takes — it has to
           // arrive here so saving an edit cannot blank it out.
-          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
+          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -102,6 +102,7 @@ export default async function RecruitmentRequestsPage() {
                       <th>{t("columnHeadcount")}</th>
                       <th>{t("columnReason")}</th>
                       <th>{t("columnContract")}</th>
+                      <th>{t("columnGender")}</th>
                       <th>{t("columnQuarter")}</th>
                       <th>{t("columnCost")}</th>
                       <th>{t("columnStatus")}</th>

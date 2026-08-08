@@ -1974,7 +1974,12 @@
     "editAction": "تعديل الطلب",
     "deleteAction": "حذف الطلب",
     "deleteConfirm": "سيُحذف طلب الاحتياج. هل تريد المتابعة؟",
-    "saveEdit": "حفظ التعديل"
+    "saveEdit": "حفظ التعديل",
+    "fieldGender": "الجنس المطلوب",
+    "genderUnspecified": "غير مشترط",
+    "genderMale": "ذكر",
+    "genderFemale": "أنثى",
+    "columnGender": "الجنس"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

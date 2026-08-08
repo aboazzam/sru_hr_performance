@@ -20,6 +20,7 @@ export interface RecruitmentRequestRowData {
   headcount: number;
   request_reason: string;
   contract_type: string;
+  gender: string | null;
   proposed_quarter: number | null;
   qualifications: string | null;
   estimated_cost_by_requester: number | null;
@@ -37,6 +38,16 @@ const contractLabelKeys: Record<string, string> = {
   permanent: "contractPermanent",
   temporary: "contractTemporary",
   part_time: "contractPartTime",
+};
+
+// غياب القيمة يعني "غير مشترط" لا "غير معروف" — same reading as the column
+// this replaced. Gender is set when the request is raised and is not part of
+// `updateRecruitmentRequest`'s schema, so the inline editor deliberately
+// leaves it alone rather than silently offering a field the server ignores.
+const genderLabelKeys: Record<string, string> = {
+  Male: "genderMale",
+  Female: "genderFemale",
+  "": "genderUnspecified",
 };
 
 /**
@@ -138,6 +149,7 @@ export function RecruitmentRequestRow({
         <td className="sru-en">{request.headcount}</td>
         <td>{t(reasonLabelKeys[request.request_reason] ?? "reasonVacant")}</td>
         <td>{t(contractLabelKeys[request.contract_type] ?? "contractPermanent")}</td>
+        <td>{t(genderLabelKeys[request.gender ?? ""] ?? "genderUnspecified")}</td>
         <td className="sru-en">{request.proposed_quarter ? `Q${request.proposed_quarter}` : "—"}</td>
         <td className="sru-en">
           {request.estimated_cost_by_hr ?? request.estimated_cost_by_requester ?? "—"}
