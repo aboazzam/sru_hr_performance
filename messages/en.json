@@ -1995,7 +1995,8 @@
     "resultCount": "Showing {shown} of {total}",
     "noMatches": "No matching requests.",
     "exportExcel": "Export to Excel",
-    "columnCreatedAt": "Created on"
+    "columnCreatedAt": "Created on",
+    "printedOn": "Printed on: {date}"
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

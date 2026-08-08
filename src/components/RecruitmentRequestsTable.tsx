@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
+import { PrintButton } from "@/components/PrintButton";
 import { useTranslations } from "next-intl";
 import {
   RecruitmentRequestRow,
@@ -55,11 +56,15 @@ export function RecruitmentRequestsTable({
   permissions,
   canEdit,
   columnCount,
+  printedOn,
 }: {
   rows: RecruitmentRequestView[];
   permissions: RecruitmentPermissions;
   canEdit: boolean;
   columnCount: number;
+  /** Formatted server-side (display timezone) — a Date created here would
+   *  differ between the server and client renders. */
+  printedOn: string;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const [query, setQuery] = useState("");
@@ -99,7 +104,10 @@ export function RecruitmentRequestsTable({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        className="no-print"
+        style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}
+      >
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -156,9 +164,24 @@ export function RecruitmentRequestsTable({
           <FileSpreadsheet size={15} aria-hidden />
           {t("exportExcel")}
         </a>
+        <PrintButton />
         <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
           {t("resultCount", { shown: visible.length, total: rows.length })}
         </span>
+      </div>
+
+      {/* On paper the reader loses the controls above, so the sheet has to
+          say what it is: the screen's title, when it was printed, and which
+          filter produced these rows. */}
+      <div className="print-only" style={{ marginBottom: 8 }}>
+        <strong style={{ fontSize: 15 }}>{t("title")}</strong>
+        <div style={{ fontSize: 12 }}>
+          {t("printedOn", { date: printedOn })}
+          {" — "}
+          {t("resultCount", { shown: visible.length, total: rows.length })}
+          {statusFilter ? ` — ${t("columnStatus")}: ${requestStatusLabels[statusFilter as keyof typeof requestStatusLabels] ?? statusFilter}` : ""}
+          {query.trim() ? ` — "${query.trim()}"` : ""}
+        </div>
       </div>
 
       {visible.length === 0 ? (
@@ -178,7 +201,7 @@ export function RecruitmentRequestsTable({
                   <th>{t("columnQuarter")}</th>
                   <th>{t("columnCost")}</th>
                   <th>{t("columnStatus")}</th>
-                  <th>{t("columnActions")}</th>
+                  <th className="sru-col-actions">{t("columnActions")}</th>
                 </tr>
               </thead>
               <tbody>

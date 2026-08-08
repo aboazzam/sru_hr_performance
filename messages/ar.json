@@ -1995,7 +1995,8 @@
     "resultCount": "عرض {shown} من {total}",
     "noMatches": "لا توجد طلبات مطابقة.",
     "exportExcel": "تصدير إلى إكسل",
-    "columnCreatedAt": "تاريخ الإنشاء"
+    "columnCreatedAt": "تاريخ الإنشاء",
+    "printedOn": "تاريخ الطباعة: {date}"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",
