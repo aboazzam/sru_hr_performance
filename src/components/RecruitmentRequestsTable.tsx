@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   RecruitmentRequestRow,
@@ -87,6 +88,15 @@ export function RecruitmentRequestsTable({
 
   const filtering = query.trim() !== "" || statusFilter !== "";
 
+  // The export re-fetches through the caller's own RLS on the server; these
+  // params only tell it to narrow the same way the screen currently is, so
+  // the file matches what the reader is looking at.
+  const exportParams = new URLSearchParams();
+  if (query.trim() !== "") exportParams.set("q", query.trim());
+  if (statusFilter !== "") exportParams.set("status", statusFilter);
+  if (sort !== DEFAULT_REQUEST_SORT) exportParams.set("sort", sort);
+  const exportHref = `/api/recruitment/requests/export${exportParams.size ? `?${exportParams}` : ""}`;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -135,6 +145,17 @@ export function RecruitmentRequestsTable({
             {t("resetFilters")}
           </button>
         )}
+        <a
+          href={exportHref}
+          className="sru-btn"
+          // A plain download link, not a fetch: the browser handles the file
+          // and the request carries the session cookie like any other.
+          download
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          <FileSpreadsheet size={15} aria-hidden />
+          {t("exportExcel")}
+        </a>
         <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
           {t("resultCount", { shown: visible.length, total: rows.length })}
         </span>
