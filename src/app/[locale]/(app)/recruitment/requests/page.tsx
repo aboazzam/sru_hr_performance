@@ -38,7 +38,10 @@ export default async function RecruitmentRequestsPage() {
   for (const row of (permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]) {
     permissions[row.process_area] = row.vpra_level;
   }
-  const planLevel = permissions.recruitmentPlan ?? "none";
+  // طلب الاحتياج له مجاله الخاص منذ 20260807000009، بعد أن كان مطويًا داخل
+  // `recruitmentPlan` — فصار يمكن منح منسّق صلاحية رفع الطلبات دون أن يرى
+  // الخطة نفسها.
+  const planLevel = permissions.recruitmentRequests ?? "none";
   const budgetLevel = permissions.recruitmentBudget ?? "none";
   const canView = hasVpraAccess(planLevel, "view") || hasVpraAccess(budgetLevel, "view");
   const canRaise = hasVpraAccess(planLevel, "prepare");

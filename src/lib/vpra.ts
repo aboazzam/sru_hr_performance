@@ -52,7 +52,9 @@ export type ProcessArea =
   | "bauTasksReports"
   | "feedback360Reports"
   | "recruitmentPlan"
-  | "recruitmentBudget";
+  | "recruitmentBudget"
+  | "recruitmentRequests"
+  | "recruitmentPortal";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -79,6 +81,8 @@ export const processAreas: ProcessArea[] = [
   "feedback360Reports",
   "recruitmentPlan",
   "recruitmentBudget",
+  "recruitmentRequests",
+  "recruitmentPortal",
 ];
 
 /**
@@ -113,6 +117,8 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   feedback360Reports: "تقارير تقييم 360",
   recruitmentPlan: "خطة التوظيف",
   recruitmentBudget: "مراجعة ميزانية التوظيف",
+  recruitmentRequests: "طلب الاحتياج",
+  recruitmentPortal: "بوابة التوظيف",
 };
 
 export interface ProcessAreaSection {
@@ -190,7 +196,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "التوظيف",
-    areas: ["recruitmentPlan", "recruitmentBudget", "promotions", "vacancies"],
+    areas: ["recruitmentPlan", "recruitmentRequests", "recruitmentBudget", "promotions", "vacancies", "recruitmentPortal"],
   },
   {
     titleAr: "الإدارة والنظام",

@@ -19,9 +19,9 @@ export function recruitmentRequestErrorText(message: string, t: (key: string) =>
   if (refusal) return refusal;
 
   const keyByMessage: Record<string, string> = {
-    not_found: "errorNotFound",
+    not_found: "errorRequestGone",
     no_profile: "errorNoProfile",
-    invalid_input: "errorInvalidInput",
+    invalid_input: "errorInvalid",
     duplicate: "errorDuplicate",
     unauthenticated: "errorUnauthenticated",
   };

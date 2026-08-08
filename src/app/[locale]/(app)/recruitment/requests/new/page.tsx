@@ -26,14 +26,14 @@ export default async function NewRecruitmentRequestPage() {
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
   const level =
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "recruitmentPlan"
+      (row) => row.process_area === "recruitmentRequests"
     )?.vpra_level ?? "none";
   const canRaise = hasVpraAccess(level, "prepare");
 
   const [{ data: orgUnits }, { data: jobTitles }, { data: competencies }] = canRaise
     ? await Promise.all([
         supabase.rpc("my_org_units_with_access", {
-          p_process_area: "recruitmentPlan",
+          p_process_area: "recruitmentRequests",
           p_min_level: "prepare",
         }),
         // `qualification_required` and the title's own competency links feed

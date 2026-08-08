@@ -54,7 +54,9 @@
     "recruitmentPlan": "خطة التوظيف",
     "announcedJobs": "الوظائف المعلن عنها",
     "recruitmentPortal": "بوابة التوظيف",
-    "recruitmentRequests": "طلبات الاحتياج"
+    "recruitmentRequests": "طلبات الاحتياج",
+    "recruitmentPortalInternal": "بوابة التوظيف الداخلي",
+    "recruitmentPortalExternal": "بوابة التوظيف الخارجي"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -1639,7 +1641,11 @@
     "unannounceButton": "إلغاء الإعلان عن الوظيفة",
     "unannounceConfirm": "هل تريد إلغاء الإعلان عن هذه الوظيفة؟ ستختفي من تاب الوظائف المعلن عنها.",
     "announcedBadge": "معلن عنها",
-    "announcedBadgeTitle": "تظهر في تاب الوظائف المعلن عنها"
+    "announcedBadgeTitle": "تظهر في تاب الوظائف المعلن عنها",
+    "scopeSelectLabel": "بوابة النشر",
+    "scopeInternal": "داخلي",
+    "scopeExternal": "خارجي",
+    "scopeBoth": "داخلي وخارجي"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",
@@ -1890,7 +1896,13 @@
     "openingsLabel": "عدد الوظائف",
     "requirementsLabel": "المتطلبات",
     "deadlineLabel": "آخر موعد للتقديم",
-    "noDeadline": "مفتوح بلا موعد نهائي"
+    "noDeadline": "مفتوح بلا موعد نهائي",
+    "titleInternal": "بوابة التوظيف الداخلي",
+    "subtitleInternal": "الوظائف المعلن عنها لمنسوبي الجامعة، خلال فترة النشر فقط.",
+    "titleExternal": "بوابة التوظيف الخارجي",
+    "subtitleExternal": "الوظائف المعلن عنها للمتقدّمين من خارج الجامعة، خلال فترة النشر فقط.",
+    "scopeLabel": "النشر",
+    "scopeBoth": "داخلي وخارجي"
   },
   "RecruitmentRequestsPage": {
     "title": "طلبات الاحتياج الوظيفي",
@@ -1948,18 +1960,17 @@
     "confirm": "تأكيد",
     "cancel": "إلغاء",
     "errorInvalid": "الرجاء تعبئة الحقول المطلوبة بشكل صحيح.",
-    "errorUnauthenticated": "انتهت الجلسة — سجّل الدخول من جديد.",
+    "errorUnauthenticated": "انتهت الجلسة، الرجاء تسجيل الدخول مجددًا.",
     "errorForbidden": "لا تملك صلاحية تنفيذ هذا الإجراء.",
     "errorNoProfile": "لا يوجد ملف موظف مرتبط بحسابك.",
-    "errorDuplicate": "هذا الإجراء منفّذ مسبقًا.",
+    "errorDuplicate": "هذا الطلب موجود بالفعل.",
     "errorUnknown": "تعذر إتمام العملية.",
     "qualificationsFromJobTitle": "مأخوذة من المؤهلات المسجّلة للمسمى «{title}» — يمكنك تعديلها.",
     "noQualificationsOnJobTitle": "لا توجد مؤهلات مسجّلة لهذا المسمى — اكتبها يدويًا.",
     "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
     "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
     "restoreFromJobTitle": "استعادة من المسمى الوظيفي",
-    "errorNotFound": "الطلب غير موجود أو غيّر أحدٌ حالته للتو — حدّث الصفحة.",
-    "errorInvalidInput": "بيانات الطلب غير مكتملة أو غير صالحة."
+    "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة."
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

@@ -88,9 +88,15 @@ export async function updateVacancyStatus(vacancyId: string, status: string): Pr
  */
 export async function setVacancyAnnouncement(
   vacancyId: string,
-  announced: boolean
+  announced: boolean,
+  // أين يُنشر الإعلان: البوابة الداخلية، الخارجية، أو كلتاهما (20260807000010).
+  // الافتراضي داخلي — أضيق الخيارات — فلا يُنشر شيء خارجيًا بغير قصد.
+  postingScope: "internal" | "external" | "both" = "internal"
 ): Promise<VacancyActionState> {
   if (!z.string().uuid().safeParse(vacancyId).success) {
+    return { status: "error", message: "invalid_input" };
+  }
+  if (!["internal", "external", "both"].includes(postingScope)) {
     return { status: "error", message: "invalid_input" };
   }
 
@@ -115,6 +121,9 @@ export async function setVacancyAnnouncement(
     .update({
       announced_at: announced ? new Date().toISOString() : null,
       announced_by: announcedBy,
+      // النطاق يُكتب عند الإعلان فقط؛ سحب الإعلان يترك النطاق كما كان فلا
+      // تُفقَد المعلومة إن أُعيد الإعلان لاحقًا.
+      ...(announced ? { posting_scope: postingScope } : {}),
     })
     .eq("id", vacancyId)
     .is("deleted_at", null)
