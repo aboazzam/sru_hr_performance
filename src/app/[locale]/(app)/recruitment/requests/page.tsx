@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { RecruitmentRequestsTable } from "@/components/RecruitmentRequestsTable";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 
@@ -66,6 +67,16 @@ export default async function RecruitmentRequestsPage() {
     ? await supabase.from("job_titles").select("id, name_ar").in("id", jobTitleIds as string[])
     : { data: [] };
 
+  // Printed-on stamp: formatted here rather than in the client component,
+  // so the server and client renders cannot disagree and the date follows the
+  // configured display timezone like every other date in this app.
+  const displayTimezone = await getDisplayTimezone(supabase);
+  const printedOn = new Intl.DateTimeFormat("ar", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: displayTimezone,
+  }).format(new Date());
+
   const orgUnitName = new Map((orgUnits ?? []).map((u) => [u.id, u.name_ar]));
   const jobTitleName = new Map((jobTitles ?? []).map((j) => [j.id, j.name_ar]));
 
@@ -83,7 +94,7 @@ export default async function RecruitmentRequestsPage() {
       ) : (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
           {canRaise && (
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href="/recruitment/requests/new" className="sru-btn sru-btn-primary">
                 {t("newRequest")}
               </Link>
@@ -105,6 +116,7 @@ export default async function RecruitmentRequestsPage() {
               permissions={permissions}
               canEdit={canRaise}
               columnCount={TABLE_COLUMN_COUNT}
+              printedOn={printedOn}
             />
           )}
         </div>

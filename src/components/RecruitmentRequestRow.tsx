@@ -161,7 +161,7 @@ export function RecruitmentRequestRow({
             permissions={permissions}
           />
         </td>
-        <td>
+        <td className="sru-col-actions">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <RecruitmentRequestActions
               requestId={request.id}
@@ -210,7 +210,7 @@ export function RecruitmentRequestRow({
       </tr>
 
       {editing && (
-        <tr>
+        <tr className="no-print">
           <td colSpan={columnCount} style={{ background: "var(--sru-bg)" }}>
             <div className="sru-formgrid" style={{ padding: "6px 2px 2px" }}>
               <div className="sru-field">

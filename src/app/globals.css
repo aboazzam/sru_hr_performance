@@ -1245,3 +1245,30 @@ td.sru-en,
 th.sru-en {
   display: table-cell;
 }
+
+/* ===== Printing a data table (2026-08-08) =====
+   `sru-print.css` already hides anything marked `.no-print` and the print
+   button itself; these two helpers cover what a table needs on top of that,
+   added here additively rather than by editing the kit (CLAUDE.md §7).
+
+   `.print-only` — a caption that exists only on paper: the screen already
+   says what the reader is looking at (filters, counts), the printed sheet
+   would not without it.
+
+   `.sru-col-actions` — an actions column carries buttons, which are noise on
+   paper. Hiding the cells rather than the column lets the remaining columns
+   reflow into the full page width. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block;
+  }
+
+  th.sru-col-actions,
+  td.sru-col-actions {
+    display: none !important;
+  }
+}
