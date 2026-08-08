@@ -5,7 +5,15 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Briefcase, ClipboardList, Sparkles } from "lucide-react";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
-import { behavioralLevelLabels, type BehavioralLevel } from "@/lib/data/competencies";
+import {
+  CompetencyLevelPicker,
+  countMissingLevels,
+  sameSelection,
+  toSavedCompetencies,
+  type CompetencyDraft,
+  type CompetencyOption,
+  type SelectedCompetency,
+} from "@/components/CompetencyLevelPicker";
 import {
   createRecruitmentRequest,
   type RecruitmentRequestActionState,
@@ -21,37 +29,6 @@ interface JobTitleOption {
   grade_level: number | null;
   qualification_required?: string | null;
 }
-interface CompetencyOption {
-  id: string;
-  name_ar: string;
-  type: string;
-}
-
-/**
- * A competency the request asks for, together with how well it must be held.
- *
- * The two travel as one value rather than as two parallel lists: a selected
- * competency without a level is exactly the state this form used to produce
- * (the column existed, nothing ever wrote it), and keeping them together
- * makes that state unrepresentable instead of merely discouraged.
- */
-export interface SelectedCompetency {
-  competencyId: string;
-  requiredLevel: BehavioralLevel;
-}
-
-/**
- * The same pair while the form is still being filled in, where a level the
- * requester has not chosen yet is a real, representable state ("") rather
- * than a lie about a level that exists. Only fully-levelled rows leave here.
- */
-interface CompetencyDraft {
-  competencyId: string;
-  requiredLevel: BehavioralLevel | "";
-}
-
-/** The framework's four levels, in order. Same source as every other level picker in this app. */
-const levelOrder: BehavioralLevel[] = ["basic", "practitioner", "advanced", "professional"];
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalid",
@@ -157,13 +134,6 @@ export function CreateRecruitmentRequestForm({
   const [autoFilledQualifications, setAutoFilledQualifications] = useState("");
   const [autoFilledCompetencies, setAutoFilledCompetencies] = useState<CompetencyDraft[]>([]);
 
-  /** Compares the pair, not just the ids — a changed LEVEL counts as an edit. */
-  const sameSelection = (a: CompetencyDraft[], b: CompetencyDraft[]) => {
-    const key = (list: CompetencyDraft[]) =>
-      [...list].map((e) => `${e.competencyId}:${e.requiredLevel}`).sort().join("|");
-    return key(a) === key(b);
-  };
-
   if (effectiveJobTitleId !== syncedJobTitleId) {
     setSyncedJobTitleId(effectiveJobTitleId);
     if (qualifications.trim() === "" || qualifications === autoFilledQualifications) {
@@ -189,33 +159,10 @@ export function CreateRecruitmentRequestForm({
     setAutoFilledCompetencies(titleCompetencies);
   }
 
-  const selectedLevel = (id: string) =>
-    selectedCompetencies.find((entry) => entry.competencyId === id)?.requiredLevel;
-
-  /**
-   * Ticking a competency the catalogue does not cover leaves the level
-   * genuinely unchosen rather than defaulting it: guessing "basic" would
-   * write a level nobody decided, which is the failure this change exists to
-   * end. Submission stays blocked until each ticked row has one.
-   */
-  function toggleCompetency(id: string) {
-    setSelectedCompetencies((current) =>
-      current.some((entry) => entry.competencyId === id)
-        ? current.filter((entry) => entry.competencyId !== id)
-        : [...current, { competencyId: id, requiredLevel: "" as const }]
-    );
-  }
-
-  function setCompetencyLevel(id: string, level: BehavioralLevel) {
-    setSelectedCompetencies((current) =>
-      current.map((entry) => (entry.competencyId === id ? { ...entry, requiredLevel: level } : entry))
-    );
-  }
-
   // A ticked competency with no level cannot be saved. Blocking here rather
   // than quietly dropping it keeps the requester's own choice: they either
   // say what level they mean, or untick it.
-  const competenciesMissingLevel = selectedCompetencies.filter((entry) => !entry.requiredLevel).length;
+  const competenciesMissingLevel = countMissingLevels(selectedCompetencies);
   const canSubmit =
     orgUnitId !== "" &&
     titleChosen &&
@@ -251,13 +198,7 @@ export function CreateRecruitmentRequestForm({
         // drops nothing in practice — it is what turns the draft type into
         // the action's own fully-levelled shape without a cast.
         competencies:
-          selectedCompetencies.length > 0
-            ? selectedCompetencies.flatMap((entry) =>
-                entry.requiredLevel
-                  ? [{ competencyId: entry.competencyId, requiredLevel: entry.requiredLevel }]
-                  : []
-              )
-            : undefined,
+          selectedCompetencies.length > 0 ? toSavedCompetencies(selectedCompetencies) : undefined,
       });
       setState(result);
       if (result.status === "success") {
@@ -490,55 +431,15 @@ export function CreateRecruitmentRequestForm({
               </button>
             )}
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 8,
+          <CompetencyLevelPicker
+            competencies={competencies}
+            selection={selectedCompetencies}
+            onChange={setSelectedCompetencies}
+            labels={{
+              levelPlaceholder: t("competencyLevelPlaceholder"),
+              levelFor: (name) => t("competencyLevelFor", { name }),
             }}
-          >
-            {competencies.map((competency) => {
-              const level = selectedLevel(competency.id);
-              const checked = selectedCompetencies.some((e) => e.competencyId === competency.id);
-              return (
-                <div
-                  key={competency.id}
-                  style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}
-                >
-                  <label style={{ display: "flex", gap: 6 }}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleCompetency(competency.id)}
-                    />
-                    <span>{competency.name_ar}</span>
-                  </label>
-                  {/* The level appears only once the competency is asked for:
-                      a level on an unticked row would be a setting with no
-                      subject, and it keeps the unselected grid quiet. */}
-                  {checked && (
-                    <select
-                      aria-label={t("competencyLevelFor", { name: competency.name_ar })}
-                      value={level ?? ""}
-                      onChange={(event) =>
-                        setCompetencyLevel(competency.id, event.target.value as BehavioralLevel)
-                      }
-                      style={{ fontSize: 12, marginInlineStart: 22 }}
-                    >
-                      <option value="" disabled>
-                        {t("competencyLevelPlaceholder")}
-                      </option>
-                      {levelOrder.map((option) => (
-                        <option key={option} value={option}>
-                          {behavioralLevelLabels[option]}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          />
 
           {competenciesMissingLevel > 0 && (
             <p role="alert" className="text-sm text-red-600" style={{ marginTop: 8 }}>

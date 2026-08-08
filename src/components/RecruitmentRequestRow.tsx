@@ -7,6 +7,13 @@ import { useRouter } from "@/i18n/navigation";
 import { RecruitmentRequestActions } from "@/components/RecruitmentRequestActions";
 import { RequestStatusCell } from "@/components/RequestStatusCell";
 import { recruitmentRequestErrorText } from "@/lib/recruitmentRequestErrors";
+import {
+  CompetencyLevelPicker,
+  countMissingLevels,
+  toSavedCompetencies,
+  type CompetencyDraft,
+  type CompetencyOption,
+} from "@/components/CompetencyLevelPicker";
 import { type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 import {
   deleteRecruitmentRequest,
@@ -73,6 +80,8 @@ export function RecruitmentRequestRow({
   jobTitle,
   orgUnit,
   permissions,
+  competencies,
+  selectedCompetencies,
   canEdit,
   columnCount,
 }: {
@@ -80,6 +89,10 @@ export function RecruitmentRequestRow({
   jobTitle: string;
   orgUnit: string;
   permissions: RecruitmentPermissions;
+  /** The whole catalogue to choose from. */
+  competencies: CompetencyOption[];
+  /** What this request currently asks for — the editor's starting point. */
+  selectedCompetencies: CompetencyDraft[];
   canEdit: boolean;
   columnCount: number;
 }) {
@@ -95,9 +108,15 @@ export function RecruitmentRequestRow({
   const [quarter, setQuarter] = useState(request.proposed_quarter?.toString() ?? "");
   const [qualifications, setQualifications] = useState(request.qualifications ?? "");
   const [cost, setCost] = useState(request.estimated_cost_by_requester?.toString() ?? "");
+  const [selection, setSelection] = useState<CompetencyDraft[]>(selectedCompetencies);
 
   const isEditable = request.status === "draft" || request.status === "returned_for_revision";
   const isDeletable = request.status === "draft" && !request.plan_id;
+
+  // A link written before levels were required arrives with no level, so an
+  // untouched old request can legitimately open the editor already blocked —
+  // which is the point: it says out loud what was missing all along.
+  const missingLevels = countMissingLevels(selection);
 
   function resetFields() {
     setHeadcount(String(request.headcount));
@@ -106,6 +125,7 @@ export function RecruitmentRequestRow({
     setQuarter(request.proposed_quarter?.toString() ?? "");
     setQualifications(request.qualifications ?? "");
     setCost(request.estimated_cost_by_requester?.toString() ?? "");
+    setSelection(selectedCompetencies);
   }
 
   function handleSave() {
@@ -119,6 +139,9 @@ export function RecruitmentRequestRow({
         proposedQuarter: quarter === "" ? null : Number(quarter),
         qualifications: qualifications.trim() === "" ? null : qualifications.trim(),
         estimatedCostByRequester: cost === "" ? null : Number(cost),
+        // Always sent, so removing the last competency actually clears them
+        // (an omitted field means "leave them alone" to the action).
+        competencies: toSavedCompetencies(selection),
       });
       setState(result);
       if (result.status === "success") {
@@ -272,11 +295,34 @@ export function RecruitmentRequestRow({
               </div>
             </div>
 
+            {competencies.length > 0 && (
+              <div style={{ padding: "10px 2px 2px" }}>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>{t("sectionCompetencies")}</label>
+                <div style={{ marginTop: 6 }}>
+                  <CompetencyLevelPicker
+                    competencies={competencies}
+                    selection={selection}
+                    onChange={setSelection}
+                    disabled={pending}
+                    labels={{
+                      levelPlaceholder: t("competencyLevelPlaceholder"),
+                      levelFor: (name) => t("competencyLevelFor", { name }),
+                    }}
+                  />
+                </div>
+                {missingLevels > 0 && (
+                  <p role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5, marginTop: 6 }}>
+                    {t("competencyLevelsMissing", { count: missingLevels })}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="sru-icon-action-group" style={{ paddingBottom: 8 }}>
               <button
                 type="button"
                 className="sru-icon-action primary"
-                disabled={pending || headcount.trim() === ""}
+                disabled={pending || headcount.trim() === "" || missingLevels > 0}
                 onClick={handleSave}
                 title={t("saveEdit")}
                 aria-label={t("saveEdit")}

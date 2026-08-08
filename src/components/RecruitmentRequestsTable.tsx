@@ -21,6 +21,7 @@ import {
   requestStatuses,
   type RecruitmentPermissions,
 } from "@/lib/recruitmentWorkflow";
+import { type CompetencyDraft, type CompetencyOption } from "@/components/CompetencyLevelPicker";
 
 export interface RecruitmentRequestView {
   request: RecruitmentRequestRowData;
@@ -54,12 +55,17 @@ const sortLabelKeys: Record<RequestSortOption, string> = {
 export function RecruitmentRequestsTable({
   rows,
   permissions,
+  competencies,
+  competenciesByRequest,
   canEdit,
   columnCount,
   printedOn,
 }: {
   rows: RecruitmentRequestView[];
   permissions: RecruitmentPermissions;
+  /** The competency catalogue and each request's current links, for the inline editor. */
+  competencies: CompetencyOption[];
+  competenciesByRequest: Record<string, CompetencyDraft[]>;
   canEdit: boolean;
   columnCount: number;
   /** Formatted server-side (display timezone) — a Date created here would
@@ -212,6 +218,8 @@ export function RecruitmentRequestsTable({
                     jobTitle={view.jobTitle}
                     orgUnit={view.orgUnit}
                     permissions={permissions}
+                    competencies={competencies}
+                    selectedCompetencies={competenciesByRequest[view.request.id] ?? []}
                     canEdit={canEdit}
                     columnCount={columnCount}
                   />
