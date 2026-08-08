@@ -6,6 +6,13 @@ import { useRouter } from "@/i18n/navigation";
 import { Trash2, Megaphone, MegaphoneOff } from "lucide-react";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import {
+  DEFAULT_VACANCY_SORT,
+  isVacancySortOption,
+  sortVacancies,
+  VACANCY_SORT_OPTIONS,
+  type VacancySortOption,
+} from "@/lib/vacancyTable";
+import {
   countVacancyStatuses,
   vacancyStatuses,
   vacancyStatusLabel,
@@ -31,7 +38,20 @@ export interface VacancyRowView {
   announced: boolean;
   /** أي بوابة يظهر عليها الإعلان: داخلية | خارجية | كلتاهما. */
   postingScope: string;
+  /** Used only for ordering (newest/oldest, and inside "advertised first"). */
+  createdAt: string;
 }
+
+const sortLabelKeys: Record<VacancySortOption, string> = {
+  newest: "sortNewest",
+  oldest: "sortOldest",
+  jobTitle: "sortJobTitle",
+  orgUnit: "sortOrgUnit",
+  gradeDesc: "sortGradeDesc",
+  gradeAsc: "sortGradeAsc",
+  status: "sortStatus",
+  announcedFirst: "sortAnnouncedFirst",
+};
 
 const errorKeys: Record<string, string> = {
   invalid_input: "actionErrorInvalid",
@@ -59,6 +79,7 @@ export function VacanciesTable({
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState<VacancySortOption>(DEFAULT_VACANCY_SORT);
   const [actionState, setActionState] = useState<VacancyActionState | null>(null);
   /** اختيار بوابة النشر لكل صف قبل الإعلان (داخلي افتراضًا). */
   const [scopeChoice, setScopeChoice] = useState<Record<string, string>>({});
@@ -77,6 +98,8 @@ export function VacanciesTable({
       );
     });
   }, [vacancies, query, statusFilter]);
+
+  const visible = useMemo(() => sortVacancies(filtered, sort), [filtered, sort]);
 
   function run(fn: () => Promise<VacancyActionState>) {
     setActionState(null);
@@ -133,13 +156,27 @@ export function VacanciesTable({
             </option>
           ))}
         </select>
-        {(query || statusFilter) && (
+        <select
+          value={sort}
+          onChange={(e) =>
+            setSort(isVacancySortOption(e.target.value) ? e.target.value : DEFAULT_VACANCY_SORT)
+          }
+          aria-label={t("sortBy")}
+        >
+          {VACANCY_SORT_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {t(sortLabelKeys[option])}
+            </option>
+          ))}
+        </select>
+        {(query || statusFilter || sort !== DEFAULT_VACANCY_SORT) && (
           <button
             type="button"
             className="sru-btn"
             onClick={() => {
               setQuery("");
               setStatusFilter("");
+              setSort(DEFAULT_VACANCY_SORT);
             }}
           >
             {t("resetFilters")}
@@ -153,7 +190,7 @@ export function VacanciesTable({
       </div>
 
       <div className="sru-card">
-        {filtered.length === 0 ? (
+        {visible.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
             {vacancies.length === 0 ? t("empty") : t("noMatches")}
           </p>
@@ -170,7 +207,7 @@ export function VacanciesTable({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((vacancy) => (
+                {visible.map((vacancy) => (
                   <tr key={vacancy.id}>
                     <td>
                       {vacancy.jobTitleName ?? "—"}

@@ -1645,7 +1645,16 @@
     "scopeSelectLabel": "Publication portal",
     "scopeInternal": "Internal",
     "scopeExternal": "External",
-    "scopeBoth": "Internal and external"
+    "scopeBoth": "Internal and external",
+    "sortBy": "Sort by",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortJobTitle": "Job title (A-Z)",
+    "sortOrgUnit": "Org unit (A-Z)",
+    "sortGradeDesc": "Grade (high to low)",
+    "sortGradeAsc": "Grade (low to high)",
+    "sortStatus": "Status",
+    "sortAnnouncedFirst": "Advertised first"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",
