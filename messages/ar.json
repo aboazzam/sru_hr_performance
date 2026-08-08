@@ -1654,7 +1654,12 @@
     "sortGradeDesc": "الدرجة (الأعلى أولًا)",
     "sortGradeAsc": "الدرجة (الأدنى أولًا)",
     "sortStatus": "الحالة",
-    "sortAnnouncedFirst": "المعلن عنها أولًا"
+    "sortAnnouncedFirst": "المعلن عنها أولًا",
+    "exportExcel": "تصدير إلى إكسل",
+    "gradeHeader": "الدرجة",
+    "announcedHeader": "الإعلان",
+    "planHeader": "من خطة التوظيف",
+    "createdAtHeader": "تاريخ الإنشاء"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",

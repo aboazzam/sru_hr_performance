@@ -1,11 +1,20 @@
 /**
- * Ordering for the الشواغر table.
+ * Filtering and ordering for the الشواغر table.
  *
- * The search and status filter already live in `VacanciesTable` itself (they
- * predate this file); this adds the sort rules only, kept out of the component
- * so they can be unit-tested — the same split the طلبات الاحتياج table uses
- * (`recruitmentRequestTable.ts`).
+ * The search/status filter used to live inline in `VacanciesTable`; it moved
+ * here (2026-08-08) when the Excel export needed to apply the EXACT same rules
+ * server-side. One implementation, used by both, and unit-testable — the same
+ * split the طلبات الاحتياج table uses (`recruitmentRequestTable.ts`).
  */
+
+import { includesIgnoringHamza } from "./arabicSearch";
+
+export interface VacancyFilterable {
+  jobTitleName: string | null;
+  orgUnitName: string | null;
+  requirementsAr: string | null;
+  status: string;
+}
 
 export interface VacancySortable {
   jobTitleName: string | null;
@@ -14,6 +23,31 @@ export interface VacancySortable {
   status: string;
   announced: boolean;
   createdAt: string;
+}
+
+/**
+ * Free-text match across the three fields the reader can see on this screen.
+ * Hamza-insensitive, like every other search in this app.
+ */
+export function matchesVacancyQuery(row: VacancyFilterable, query: string): boolean {
+  const q = query.trim();
+  if (q === "") return true;
+  return (
+    includesIgnoringHamza(row.jobTitleName ?? "", q) ||
+    includesIgnoringHamza(row.orgUnitName ?? "", q) ||
+    includesIgnoringHamza(row.requirementsAr ?? "", q)
+  );
+}
+
+export function filterVacancies<T extends VacancyFilterable>(
+  rows: T[],
+  options: { query?: string; status?: string }
+): T[] {
+  const { query = "", status = "" } = options;
+  return rows.filter((row) => {
+    if (status && row.status !== status) return false;
+    return matchesVacancyQuery(row, query);
+  });
 }
 
 export const VACANCY_SORT_OPTIONS = [

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_VACANCY_SORT,
+  filterVacancies,
   isVacancySortOption,
+  matchesVacancyQuery,
   sortVacancies,
   VACANCY_SORT_OPTIONS,
   type VacancySortable,
@@ -82,5 +84,54 @@ describe("isVacancySortOption", () => {
   it("accepts every declared option and rejects anything else", () => {
     for (const option of VACANCY_SORT_OPTIONS) expect(isVacancySortOption(option)).toBe(true);
     expect(isVacancySortOption("nope")).toBe(false);
+  });
+});
+
+describe("matchesVacancyQuery", () => {
+  const base = {
+    jobTitleName: "محلل بيانات",
+    orgUnitName: "إدارة التحول الرقمي",
+    requirementsAr: "بكالوريوس خبرة 3 سنوات",
+    status: "open",
+  };
+
+  it("matches an empty query", () => {
+    expect(matchesVacancyQuery(base, "  ")).toBe(true);
+  });
+
+  it("matches the job title, the org unit and the requirements", () => {
+    expect(matchesVacancyQuery(base, "بيانات")).toBe(true);
+    expect(matchesVacancyQuery(base, "التحول")).toBe(true);
+    expect(matchesVacancyQuery(base, "بكالوريوس")).toBe(true);
+  });
+
+  it("ignores hamza differences", () => {
+    expect(matchesVacancyQuery(base, "ادارة")).toBe(true);
+  });
+
+  it("tolerates missing fields", () => {
+    expect(
+      matchesVacancyQuery({ jobTitleName: null, orgUnitName: null, requirementsAr: null, status: "open" }, "شيء")
+    ).toBe(false);
+  });
+});
+
+describe("filterVacancies", () => {
+  const rows = [
+    { jobTitleName: "محلل بيانات", orgUnitName: "إدارة التحول الرقمي", requirementsAr: null, status: "open" },
+    { jobTitleName: "سائق", orgUnitName: "مجلس الأمناء", requirementsAr: null, status: "closed" },
+  ];
+
+  it("returns everything when nothing is set", () => {
+    expect(filterVacancies(rows, {})).toHaveLength(2);
+  });
+
+  it("filters by status alone", () => {
+    expect(filterVacancies(rows, { status: "closed" }).map((r) => r.jobTitleName)).toEqual(["سائق"]);
+  });
+
+  it("combines status and query", () => {
+    expect(filterVacancies(rows, { status: "open", query: "محلل" })).toHaveLength(1);
+    expect(filterVacancies(rows, { status: "closed", query: "محلل" })).toHaveLength(0);
   });
 });
