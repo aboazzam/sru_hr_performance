@@ -112,7 +112,10 @@ export const requestStatusLabels: Record<RequestStatus, string> = {
   draft: "مسودة",
   submitted: "مرفوع",
   under_hr_review: "قيد مراجعة الموارد البشرية",
-  included_in_plan: "مُدرج في الخطة",
+  // The row IS in the plan, but the plan has not been approved yet — the
+  // project owner asked for the status to say so, since "مُدرج في الخطة"
+  // read as a final state to whoever sees it.
+  included_in_plan: "بانتظار الاعتماد",
   returned_for_revision: "معاد للتعديل",
   approved: "معتمد",
   rejected: "مرفوض",
@@ -171,6 +174,15 @@ export interface TransitionRule<S extends string> {
   requiresFinanceReview?: boolean;
   /** Final approval requires every linked request to be decided. */
   requiresAllRequestsDecided?: boolean;
+  /**
+   * Render this transition as a small icon BESIDE the status instead of a
+   * text button in the actions column. Requested for "إخراج من الخطة": the
+   * status now reads "بانتظار الاعتماد", and pulling the item back out of
+   * the plan belongs next to that status rather than among the forward
+   * actions. Kept here (data, not React) so the transition table stays the
+   * single authority and no component re-derives which action goes where.
+   */
+  statusAdjacent?: boolean;
   /** Short Arabic label for the action button that performs it. */
   labelAr: string;
 }
@@ -199,7 +211,7 @@ export const requestTransitions: TransitionRule<RequestStatus>[] = [
   { from: "under_hr_review", to: "returned_for_revision", requires: RECOMMEND, requiresNote: true, labelAr: "إعادة للتعديل" },
 
   // Pulling an item back out of the plan before it is submitted upward.
-  { from: "included_in_plan", to: "under_hr_review", requires: RECOMMEND, labelAr: "إخراج من الخطة" },
+  { from: "included_in_plan", to: "under_hr_review", requires: RECOMMEND, statusAdjacent: true, labelAr: "إخراج من الخطة" },
 
   // Carried by the plan's final approval.
   { from: "included_in_plan", to: "approved", requires: APPROVE, labelAr: "اعتماد" },
