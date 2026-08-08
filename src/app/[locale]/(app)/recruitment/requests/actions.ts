@@ -116,6 +116,8 @@ const createSchema = z
     contractType: z.enum(["permanent", "temporary", "part_time"]),
     salaryGrade: z.number().int().min(1).max(16).optional(),
     proposedQuarter: z.number().int().min(1).max(4).optional(),
+    // نفس مفردات profiles.gender وقيد CHECK في 20260808000002.
+    gender: z.enum(["Male", "Female"]).optional(),
     proposedMonth: z.number().int().min(1).max(12).optional(),
     qualifications: z.string().trim().optional(),
     evaluationId: z.string().uuid().optional(),
@@ -170,6 +172,7 @@ export async function createRecruitmentRequest(
       contract_type: data.contractType,
       salary_grade: data.salaryGrade ?? null,
       proposed_quarter: data.proposedQuarter ?? null,
+      gender: data.gender ?? null,
       proposed_month: data.proposedMonth ?? null,
       qualifications: data.qualifications ?? null,
       evaluation_id: data.evaluationId ?? null,

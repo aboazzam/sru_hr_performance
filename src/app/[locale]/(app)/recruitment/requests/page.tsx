@@ -23,6 +23,13 @@ const reasonLabels: Record<string, string> = {
   replacement: "إحلال",
 };
 
+// غياب القيمة يعني "غير مشترط" لا "غير معروف".
+const genderLabels: Record<string, string> = {
+  Male: "ذكر",
+  Female: "أنثى",
+  "": "غير مشترط",
+};
+
 const contractLabels: Record<string, string> = {
   permanent: "دائم",
   temporary: "مؤقت",
@@ -50,7 +57,7 @@ export default async function RecruitmentRequestsPage() {
     ? await supabase
         .from("recruitment_requests")
         .select(
-          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, proposed_quarter, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
+          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -106,6 +113,7 @@ export default async function RecruitmentRequestsPage() {
                       <th>{t("columnHeadcount")}</th>
                       <th>{t("columnReason")}</th>
                       <th>{t("columnContract")}</th>
+                      <th>{t("columnGender")}</th>
                       <th>{t("columnQuarter")}</th>
                       <th>{t("columnCost")}</th>
                       <th>{t("columnStatus")}</th>
@@ -124,6 +132,7 @@ export default async function RecruitmentRequestsPage() {
                         <td className="sru-en">{request.headcount}</td>
                         <td>{reasonLabels[request.request_reason] ?? request.request_reason}</td>
                         <td>{contractLabels[request.contract_type] ?? request.contract_type}</td>
+                        <td>{genderLabels[request.gender ?? ""] ?? "—"}</td>
                         <td className="sru-en">
                           {request.proposed_quarter ? `Q${request.proposed_quarter}` : "—"}
                         </td>

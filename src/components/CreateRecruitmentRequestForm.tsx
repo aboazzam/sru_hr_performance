@@ -84,6 +84,8 @@ export function CreateRecruitmentRequestForm({
   const [requestReason, setRequestReason] = useState("vacant");
   const [contractType, setContractType] = useState("permanent");
   const [proposedQuarter, setProposedQuarter] = useState("");
+  /** "" = غير مشترط. القيم المخزّنة Male/Female كما في profiles.gender. */
+  const [gender, setGender] = useState("");
   const [qualifications, setQualifications] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [strategicProjectRef, setStrategicProjectRef] = useState("");
@@ -183,6 +185,7 @@ export function CreateRecruitmentRequestForm({
         requestReason: requestReason as "vacant" | "expansion" | "replacement",
         contractType: contractType as "permanent" | "temporary" | "part_time",
         proposedQuarter: proposedQuarter ? Number(proposedQuarter) : undefined,
+        gender: gender ? (gender as "Male" | "Female") : undefined,
         qualifications: qualifications || undefined,
         estimatedCostByRequester: estimatedCost ? Number(estimatedCost) : undefined,
         strategicProjectRef: strategicProjectRef || undefined,
@@ -232,18 +235,9 @@ export function CreateRecruitmentRequestForm({
             />
           </label>
 
-          <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
-            <span>
-              <input
-                type="checkbox"
-                checked={useCustomTitle}
-                onChange={(event) => setUseCustomTitle(event.target.checked)}
-                style={{ marginInlineEnd: 6 }}
-              />
-              {t("useCustomTitle")}
-            </span>
-          </label>
-
+          {/* المسمى الوظيفي أولًا، ثم خيار الإدخال اليدوي بعده — يُبحث ويُختار
+              من الكتالوج، وإن لم يوجد فحينئذٍ يُلجأ للكتابة اليدوية. الترتيب
+              السابق كان يعرض الخيار الاستثنائي قبل الحالة الطبيعية. */}
           {useCustomTitle ? (
             <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
               <span>{t("fieldCustomJobTitle")}</span>
@@ -284,6 +278,29 @@ export function CreateRecruitmentRequestForm({
               </label>
             </>
           )}
+
+          <label
+            className="sru-field"
+            style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "center", gap: 8 }}
+          >
+            <input
+              type="checkbox"
+              checked={useCustomTitle}
+              onChange={(event) => setUseCustomTitle(event.target.checked)}
+            />
+            <span style={{ margin: 0 }}>{t("useCustomTitle")}</span>
+          </label>
+
+          <label className="sru-field">
+            <span>{t("fieldGender")}</span>
+            {/* اختياري: غيابه يعني "غير مشترط" لا "غير معروف"، والقيم هي
+                نفسها المخزّنة في profiles.gender فلا يتعدد القاموس. */}
+            <select value={gender} onChange={(event) => setGender(event.target.value)}>
+              <option value="">{t("genderUnspecified")}</option>
+              <option value="Male">{t("genderMale")}</option>
+              <option value="Female">{t("genderFemale")}</option>
+            </select>
+          </label>
 
           <label className="sru-field">
             <span>{t("fieldReason")}</span>

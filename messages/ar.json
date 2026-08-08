@@ -1970,7 +1970,12 @@
     "competenciesFromJobTitle": "محدَّدة تلقائيًا من جدارات المسمى «{title}» ({count}) — يمكنك التغيير.",
     "competenciesPickManually": "اختر الجدارات المطلوبة، أو اختر مسمى وظيفيًا لتُحدَّد تلقائيًا.",
     "restoreFromJobTitle": "استعادة من المسمى الوظيفي",
-    "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة."
+    "errorRequestGone": "لم يعد هذا الطلب موجودًا — حدّث الصفحة.",
+    "fieldGender": "الجنس المطلوب",
+    "genderUnspecified": "غير مشترط",
+    "genderMale": "ذكر",
+    "genderFemale": "أنثى",
+    "columnGender": "الجنس"
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

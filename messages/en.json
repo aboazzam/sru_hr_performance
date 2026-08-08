@@ -1970,7 +1970,12 @@
     "competenciesFromJobTitle": "Auto-selected from «{title}» competencies ({count}) — you can change them.",
     "competenciesPickManually": "Pick the required competencies, or choose a job title to auto-select them.",
     "restoreFromJobTitle": "Restore from the job title",
-    "errorRequestGone": "This request no longer exists — please refresh the page."
+    "errorRequestGone": "This request no longer exists — please refresh the page.",
+    "fieldGender": "Required gender",
+    "genderUnspecified": "Not specified",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "columnGender": "Gender"
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",
