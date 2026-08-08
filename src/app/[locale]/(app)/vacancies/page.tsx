@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 import { Link } from "@/i18n/navigation";
 import { ImportVacanciesExcelForm } from "@/components/ImportVacanciesExcelForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
@@ -77,6 +78,16 @@ export default async function VacanciesPage() {
     postingScope: vacancy.posting_scope,
   }));
 
+  // Printed-on stamp: formatted here, not in the client component, so the
+  // server and client renders cannot disagree, and it follows the configured
+  // display timezone like every other date in this app.
+  const displayTimezone = await getDisplayTimezone(supabase);
+  const printedOn = new Intl.DateTimeFormat("ar", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: displayTimezone,
+  }).format(new Date());
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -103,7 +114,7 @@ export default async function VacanciesPage() {
             `vacancies`, which needs `approve`, so they're hidden below that
             bar rather than offered and then rejected by Postgres. */}
         {canCreate && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <ImportVacanciesExcelForm />
             <Link href="/vacancies/new" className="sru-btn sru-btn-primary">
               {t("newVacancy")}
@@ -117,7 +128,7 @@ export default async function VacanciesPage() {
       <GroupTabs groupKey="recruitment" current="vacancies" />
       <div style={{ height: 20 }} />
 
-      <VacanciesTable vacancies={rows} canManage={canManage} />
+      <VacanciesTable vacancies={rows} canManage={canManage} printedOn={printedOn} />
     </div>
   );
 }
