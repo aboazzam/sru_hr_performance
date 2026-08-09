@@ -26,6 +26,7 @@ import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 import {
   evaluateRequestTransition,
   isRequestDecided,
+  isRequestMergeable,
   requestTransitions,
   type RecruitmentPermissions,
   type TransitionRefusal,
@@ -505,6 +506,12 @@ export async function transitionRecruitmentRequest(input: {
     { status: parsed.data.toStatus, note: parsed.data.note ?? null }
   );
 
+  // الاعتماد يُدرج الطلب في الخطة تلقائيًا — "وبعد الضغط على الاعتماد من
+  // الأدمن تظهر معتمدة وتُدرج تلقائيًا في الخطة".
+  if (parsed.data.toStatus === "approved") {
+    await addApprovedRequestToPlan(supabase, parsed.data.requestId);
+  }
+
   await notifyRequestTransition({
     requestId: parsed.data.requestId,
     toStatus: parsed.data.toStatus,
@@ -516,6 +523,71 @@ export async function transitionRecruitmentRequest(input: {
   });
 
   return { status: "success" };
+}
+
+/**
+ * يدرج طلبًا اعتُمد للتو في خطة التوظيف.
+ *
+ * الخطة المستهدفة [استنتاج]: أحدث خطة ما تزال `draft` — أي التي يجري
+ * إعدادها الآن. لم يُطلب تحديد الخطة يدويًا عند الاعتماد، وربطه بسنة الطلب
+ * كان سيفشل بصمت متى اختلفت السنة عن أي خطة قائمة.
+ *
+ * وإن لم توجد خطة مسودة أصلًا، يبقى الطلب معتمدًا بلا ربط بدل أن يفشل
+ * الاعتماد: قرار الأدمن حقيقي ولا يصح إبطاله لغياب وعاء إداري، والموارد
+ * البشرية تستطيع دمجه لاحقًا من شاشة الدمج كما كانت.
+ *
+ * التكلفة تُشتق من `salary_scale.step_a` كما في الدمج اليدوي تمامًا، فلا
+ * يختلف بندٌ أُدرج تلقائيًا عن بندٍ أُدرج يدويًا.
+ *
+ * لا يرمي أبدًا: الاعتماد نفسه قد سُجّل ودُقّق بالفعل، فلا يصح أن يُبطله
+ * فشل خطوة لاحقة.
+ */
+async function addApprovedRequestToPlan(supabase: Client, requestId: string): Promise<void> {
+  try {
+    const { data: request } = await supabase
+      .from("recruitment_requests")
+      .select("id, plan_id, org_unit_id, job_title_id, headcount, proposed_quarter, estimated_cost_by_hr, estimated_cost_by_requester")
+      .eq("id", requestId)
+      .maybeSingle();
+    if (!request) return;
+
+    const { data: plan } = await supabase
+      .from("recruitment_plans")
+      .select("id")
+      .eq("status", "draft")
+      .is("deleted_at", null)
+      .order("plan_year", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!plan) return;
+
+    let cost = request.estimated_cost_by_hr ?? request.estimated_cost_by_requester ?? null;
+    if (cost == null && request.job_title_id) {
+      const { data: salary } = await supabase
+        .from("salary_scale")
+        .select("step_a")
+        .eq("job_title_id", request.job_title_id)
+        .maybeSingle();
+      cost = salary?.step_a ?? null;
+    }
+
+    // الفهرس الفريد (plan_id, request_id) يجعل إعادة المحاولة غير ضارة.
+    await supabase.from("recruitment_plan_items").insert({
+      plan_id: plan.id,
+      request_id: request.id,
+      org_unit_id: request.org_unit_id,
+      job_title_id: request.job_title_id,
+      headcount: request.headcount,
+      target_quarter: request.proposed_quarter,
+      estimated_monthly_cost: cost,
+    });
+
+    if (!request.plan_id) {
+      await supabase.from("recruitment_requests").update({ plan_id: plan.id }).eq("id", request.id);
+    }
+  } catch (error) {
+    console.error("addApprovedRequestToPlan failed", error);
+  }
 }
 
 /**
@@ -579,13 +651,26 @@ const consolidateSchema = z.object({
 
 /**
  * Merges the chosen requests into one plan: each becomes a real plan item
- * and moves to `included_in_plan`.
+ * linked back to its request.
  *
- * The set of requests is re-read from the database and re-checked against
- * the guard one by one — a request the caller may not move, or that is not
- * in a mergeable state, is SKIPPED rather than failing the whole batch, so
- * one stale checkbox cannot lose an entire merge. The counts come back so
- * the screen can say exactly what happened.
+ * Since 20260808000003 this NO LONGER changes the request's status. Status
+ * now tracks who has to act next (coordinator -> HR -> approver), and plan
+ * membership is a separate fact recorded by `plan_id` and the item row —
+ * conflating them is exactly what made the old chain unreadable. A request
+ * approved by the approver is inserted automatically; this screen stays for
+ * pulling reviewed requests into a plan ahead of that decision, and as the
+ * fallback when no draft plan existed at approval time.
+ *
+ * A request is mergeable once HR has reviewed it: merging something still
+ * under review would put a number into a budget nobody has checked.
+ *
+ * The set of requests is re-read from the database and re-checked one by one
+ * — a request that is not in a mergeable state is SKIPPED rather than
+ * failing the whole batch, so one stale checkbox cannot lose an entire
+ * merge. The counts come back so the screen can say exactly what happened.
+ * Authorization is not re-derived here: the INSERT and UPDATE both go
+ * through the caller's own client, so `recruitment_plan_items`' and
+ * `recruitment_requests`' own RLS decides, as everywhere else.
  *
  * Cost: seeded from the real `salary_scale.step_a` for the request's job
  * title when HR has not priced it, exactly as `addRecruitmentPlanItem`
@@ -624,13 +709,11 @@ export async function consolidateRequestsIntoPlan(input: {
     .in("id", parsed.data.requestIds)
     .is("deleted_at", null);
 
-  const permissions = await myPermissions(supabase);
   let created = 0;
   let skipped = 0;
 
   for (const request of requests ?? []) {
-    const verdict = evaluateRequestTransition(request.status, "included_in_plan", { permissions });
-    if (!verdict.allowed) {
+    if (!isRequestMergeable(request.status)) {
       skipped += 1;
       continue;
     }
@@ -671,7 +754,6 @@ export async function consolidateRequestsIntoPlan(input: {
       .from("recruitment_requests")
       .update({
         plan_id: parsed.data.planId,
-        status: "included_in_plan",
         updated_at: new Date().toISOString(),
       })
       .eq("id", request.id)

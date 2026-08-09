@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Layers, PenLine } from "lucide-react";
 import { RecruitmentRequestActions } from "@/components/RecruitmentRequestActions";
-import { requestStatusLabel, type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
+import {
+  isRequestMergeable,
+  requestStatusLabel,
+  type RecruitmentPermissions,
+} from "@/lib/recruitmentWorkflow";
 import {
   consolidateRequestsIntoPlan,
   savePlanHrRecommendation,
@@ -29,11 +33,14 @@ interface RequestRow {
 /**
  * HR's merge screen: pick requests, price them, write the recommendation.
  *
- * Only requests already at `under_hr_review` can be selected — that is the
- * one state the transition table allows into `included_in_plan`, so the
- * checkbox mirrors the guard instead of inventing a second rule. A request
- * still at `submitted` shows its own "start review" action instead, from the
- * shared RecruitmentRequestActions component.
+ * Only requests HR has already reviewed can be selected — `isRequestMergeable`
+ * is the same function the Server Action applies, so the checkbox cannot
+ * offer something the server would refuse. A request still under review shows
+ * its own review actions instead, from RecruitmentRequestActions.
+ *
+ * Merging records plan membership only; it no longer moves the request's
+ * status (20260808000003), since status now says who must act next and plan
+ * membership is a separate fact.
  *
  * The server re-reads and re-checks every selected request anyway and SKIPS
  * the ones it may not move, so a stale checkbox can never corrupt a merge —
@@ -79,7 +86,7 @@ export function ConsolidateRequestsPanel({
   // (`cost:<id>`), since saving one row's cost has nothing to do with another's.
   const [busy, setBusy] = useState<string | null>(null);
 
-  const mergeable = requests.filter((request) => request.status === "under_hr_review");
+  const mergeable = requests.filter((request) => isRequestMergeable(request.status));
 
   /**
    * Runs one action under its own key. `busy` is cleared in a `finally`, so a
@@ -173,7 +180,7 @@ export function ConsolidateRequestsPanel({
               </thead>
               <tbody>
                 {requests.map((request) => {
-                  const canSelect = request.status === "under_hr_review";
+                  const canSelect = isRequestMergeable(request.status);
                   const costValue =
                     costs[request.id] ??
                     (request.estimated_cost_by_hr === null ? "" : String(request.estimated_cost_by_hr));

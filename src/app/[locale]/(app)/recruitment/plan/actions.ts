@@ -523,8 +523,13 @@ export async function transitionRecruitmentPlan(input: {
     note: parsed.data.note ?? null,
   });
 
-  // Final approval carries the plan's own items' requests with it, so an
-  // approved plan never leaves its requests sitting at `included_in_plan`.
+  // Legacy carry-over only. Since 20260808000003 a request reaches `approved`
+  // on its own — the approver rules on it and it is inserted into the plan
+  // automatically — and a request still at `hr_reviewed` COUNTS AS UNDECIDED,
+  // so `requiresAllRequestsDecided` refuses this very transition while one is
+  // on the plan. Approving a plan therefore cannot encounter a live request
+  // that still needs deciding; only an `included_in_plan` row left over from
+  // the old chain can be here, and this sweeps it up.
   if (parsed.data.toStatus === "approved") {
     await supabase
       .from("recruitment_requests")

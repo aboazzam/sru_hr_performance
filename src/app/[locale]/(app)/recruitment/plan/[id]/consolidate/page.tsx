@@ -33,10 +33,14 @@ export default async function ConsolidatePlanPage({
     .is("deleted_at", null)
     .maybeSingle();
 
-  // Candidates: everything not yet folded into a plan. Requests still at
-  // `submitted` are shown too (not just the mergeable `under_hr_review`
-  // ones), because HR's first act is to pick them up — hiding them would
-  // make the queue look empty while work is waiting.
+  // Candidates: requests HR has already reviewed and that are not yet on any
+  // plan. Anything still `under_hr_review` is deliberately absent — merging
+  // it would budget for a request nobody has checked, and HR's own next act
+  // there is the review itself, on the requests screen.
+  //
+  // An `approved` request normally lands on a plan automatically the moment
+  // the approver rules on it (20260808000003); it stays listed here for the
+  // case where no draft plan existed at that moment, so it is never stranded.
   const { data: requests } = canConsolidate
     ? await supabase
         .from("recruitment_requests")
@@ -45,7 +49,7 @@ export default async function ConsolidatePlanPage({
         )
         .is("plan_id", null)
         .is("deleted_at", null)
-        .in("status", ["submitted", "under_hr_review"])
+        .in("status", ["hr_reviewed", "approved"])
         .order("created_at", { ascending: true })
     : { data: null };
 

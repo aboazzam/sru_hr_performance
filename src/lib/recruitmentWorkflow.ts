@@ -86,12 +86,15 @@ function meets(permissions: RecruitmentPermissions, required: RequiredAccess): b
 
 export const requestStatuses = [
   "draft",
-  "submitted",
   "under_hr_review",
-  "included_in_plan",
+  "hr_reviewed",
   "returned_for_revision",
   "approved",
   "rejected",
+  // مهجورتان (20260808000003): لا ينتجهما شيء بعد اليوم، وتبقيان في المفردات
+  // لأن قيد CHECK ما زال يقبلهما ولئلا يظهر صف قديم بحالة بلا اسم.
+  "submitted",
+  "included_in_plan",
 ] as const;
 export type RequestStatus = (typeof requestStatuses)[number];
 
@@ -110,15 +113,15 @@ export type PlanStatus = (typeof planStatuses)[number];
 /** Fixed Arabic domain vocabulary, same convention as `evaluationStateLabels`. */
 export const requestStatusLabels: Record<RequestStatus, string> = {
   draft: "مسودة",
-  submitted: "مرفوع",
-  under_hr_review: "قيد مراجعة الموارد البشرية",
-  // The row IS in the plan, but the plan has not been approved yet — the
-  // project owner asked for the status to say so, since "مُدرج في الخطة"
-  // read as a final state to whoever sees it.
-  included_in_plan: "بانتظار الاعتماد",
+  under_hr_review: "مراجعة الموارد البشرية",
+  // انتهت الموارد البشرية منه وينتظر قرار الأدمن.
+  hr_reviewed: "تمت المراجعة",
   returned_for_revision: "معاد للتعديل",
   approved: "معتمد",
   rejected: "مرفوض",
+  // مهجورتان — تُعرضان فقط إن بقي صف قديم يحملهما.
+  submitted: "مرفوع",
+  included_in_plan: "بانتظار الاعتماد",
 };
 
 export const planStatusLabels: Record<PlanStatus, string> = {
@@ -146,10 +149,37 @@ export function planStatusLabel(status: string): string {
  * while any of its requests is still here — the spec's own rule
  * ("الخطة لا تُرفع للاعتماد النهائي وفيها بنود لم يُفصل فيها").
  */
-export const undecidedRequestStatuses: RequestStatus[] = ["submitted", "under_hr_review"];
+// `hr_reviewed` منها: الموارد البشرية أنهت دورها لكن الأدمن لم يقرّر بعد،
+// فالطلب ما زال بلا فصل. و`submitted` مهجورة وتبقى هنا للصفوف القديمة.
+export const undecidedRequestStatuses: RequestStatus[] = [
+  "submitted",
+  "under_hr_review",
+  "hr_reviewed",
+];
 
 export function isRequestDecided(status: string): boolean {
   return !undecidedRequestStatuses.includes(status as RequestStatus);
+}
+
+/**
+ * الحالات التي يجوز فيها ضمّ الطلب إلى خطة يدويًا من شاشة الدمج.
+ *
+ * الدمج لم يعد ينقل الحالة (20260808000003)، فلا يحكمه جدول التحويلات —
+ * ومع ذلك تسكن القاعدة هنا لا في الشاشة ولا في الإجراء، لأن الاثنين
+ * يقرآنها: لو تفرّقت لانحرف مربّع الاختيار عمّا يقبله الخادم فعلًا.
+ *
+ * لا يُضمّ طلب ما زال تحت المراجعة: تسعيره في ميزانية قبل أن يفحصه أحد هو
+ * بالضبط ما يفترض أن تمنعه المراجعة. و`included_in_plan` مهجورة، وتُقبل
+ * لئلا يعلق صفٌّ قديم خارج أي خطة.
+ */
+export const mergeableRequestStatuses: RequestStatus[] = [
+  "hr_reviewed",
+  "approved",
+  "included_in_plan",
+];
+
+export function isRequestMergeable(status: string): boolean {
+  return mergeableRequestStatuses.includes(status as RequestStatus);
 }
 
 // ---------------------------------------------------------------------------
@@ -198,24 +228,26 @@ const FINANCE: RequiredAccess = { processArea: "recruitmentBudget", minLevel: "r
  * own final approval.
  */
 export const requestTransitions: TransitionRule<RequestStatus>[] = [
-  { from: "draft", to: "submitted", requires: PREPARE, labelAr: "رفع الطلب" },
-  // Resubmission after the request was sent back — same author, same level.
-  { from: "returned_for_revision", to: "submitted", requires: PREPARE, labelAr: "إعادة الرفع" },
+  // ١) المنسّق: حالتان لا أكثر — مسودة يعمل عليها، ثم يرفعها فتصير مسؤولية
+  //    الموارد البشرية مباشرةً. لا حالة وسيطة "مرفوع" بينهما: كانت تعني أن
+  //    المنسّق يرى "مسودة" بينما يرى الأدمن "رفع الطلب" لنفس الصف، وأن
+  //    الأدمن يؤدي خطوة الموارد البشرية بنفسه.
+  { from: "draft", to: "under_hr_review", requires: PREPARE, labelAr: "رفع الطلب" },
+  { from: "returned_for_revision", to: "under_hr_review", requires: PREPARE, labelAr: "إعادة الرفع" },
 
-  { from: "submitted", to: "under_hr_review", requires: RECOMMEND, labelAr: "بدء مراجعة الموارد البشرية" },
-  { from: "submitted", to: "returned_for_revision", requires: RECOMMEND, requiresNote: true, labelAr: "إعادة للتعديل" },
-
-  // The three item-level outcomes of HR's review ("يُقبل / يُرفض / يُعاد").
-  { from: "under_hr_review", to: "included_in_plan", requires: RECOMMEND, labelAr: "إدراج في الخطة" },
+  // ٢) الموارد البشرية: تنتهي مراجعتها، أو ترفض، أو تعيد للتعديل.
+  { from: "under_hr_review", to: "hr_reviewed", requires: RECOMMEND, labelAr: "تمت المراجعة" },
   { from: "under_hr_review", to: "rejected", requires: RECOMMEND, requiresNote: true, labelAr: "رفض الطلب" },
   { from: "under_hr_review", to: "returned_for_revision", requires: RECOMMEND, requiresNote: true, labelAr: "إعادة للتعديل" },
 
-  // Pulling an item back out of the plan before it is submitted upward.
-  { from: "included_in_plan", to: "under_hr_review", requires: RECOMMEND, statusAdjacent: true, labelAr: "إخراج من الخطة" },
+  // التراجع عن المراجعة — بجوار الحالة لا في عمود الإجراءات، حفاظًا على نمط
+  // "التصحيح أيقونة لا زر" الذي أُقرّ سابقًا.
+  { from: "hr_reviewed", to: "under_hr_review", requires: RECOMMEND, statusAdjacent: true, labelAr: "التراجع عن المراجعة" },
 
-  // Carried by the plan's final approval.
-  { from: "included_in_plan", to: "approved", requires: APPROVE, labelAr: "اعتماد" },
-  { from: "included_in_plan", to: "rejected", requires: APPROVE, requiresNote: true, labelAr: "رفض" },
+  // ٣) الأدمن: اعتماد — ومعه الإدراج التلقائي في الخطة — أو رفض أو إعادة.
+  { from: "hr_reviewed", to: "approved", requires: APPROVE, labelAr: "اعتماد" },
+  { from: "hr_reviewed", to: "rejected", requires: APPROVE, requiresNote: true, labelAr: "رفض" },
+  { from: "hr_reviewed", to: "returned_for_revision", requires: APPROVE, requiresNote: true, labelAr: "إعادة للتعديل" },
 ];
 
 /**

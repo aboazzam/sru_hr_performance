@@ -42,12 +42,14 @@ describe("status vocabularies", () => {
   it("matches the request status CHECK in the migration", () => {
     expect([...requestStatuses]).toEqual([
       "draft",
-      "submitted",
       "under_hr_review",
-      "included_in_plan",
+      "hr_reviewed",
       "returned_for_revision",
       "approved",
       "rejected",
+      // مهجورتان (20260808000003): لا يُنتجهما شيء وتبقيان لصفوف قديمة.
+      "submitted",
+      "included_in_plan",
     ]);
   });
 
@@ -71,10 +73,13 @@ describe("status vocabularies", () => {
     expect(planStatusLabel("something_else")).toBe("something_else");
   });
 
-  it("treats only submitted/under_hr_review as undecided", () => {
-    expect(isRequestDecided("submitted")).toBe(false);
+  it("counts a request as undecided until the approver rules on it", () => {
+    // `hr_reviewed` is the case that matters: HR is done, but the approver
+    // has not ruled, so the plan must not be approvable over it.
+    expect(isRequestDecided("hr_reviewed")).toBe(false);
     expect(isRequestDecided("under_hr_review")).toBe(false);
-    expect(isRequestDecided("included_in_plan")).toBe(true);
+    expect(isRequestDecided("submitted")).toBe(false);
+    expect(isRequestDecided("approved")).toBe(true);
     expect(isRequestDecided("rejected")).toBe(true);
     expect(isRequestDecided("draft")).toBe(true);
   });
@@ -116,7 +121,9 @@ describe("every UNDEFINED transition is refused, even with full permissions", ()
         expect(verdict).toEqual({ allowed: false, refusal: "unknown_transition" });
       }
     }
-    // 7 statuses -> 49 pairs, minus the 10 defined ones.
+    // 8 statuses (6 live + 2 deprecated) -> 64 pairs, minus the defined ones.
+    // Nothing may leave a deprecated status either: they exist only so an old
+    // row still satisfies the CHECK, not as a way back into the workflow.
     expect(checked).toBe(requestStatuses.length ** 2 - requestTransitions.length);
   });
 
@@ -166,15 +173,19 @@ describe("every DEFINED transition is refused for a caller with no permissions",
 
 describe("the four actors are separated by VPRA level, not by role identity", () => {
   it("lets a section head submit its own request but not review it", () => {
-    expect(evaluateRequestTransition("draft", "submitted", { permissions: sectionHead }).allowed).toBe(true);
     expect(
-      evaluateRequestTransition("submitted", "under_hr_review", { permissions: sectionHead })
+      evaluateRequestTransition("draft", "under_hr_review", { permissions: sectionHead }).allowed
+    ).toBe(true);
+    expect(
+      evaluateRequestTransition("under_hr_review", "hr_reviewed", { permissions: sectionHead })
     ).toEqual({ allowed: false, refusal: "forbidden" });
   });
 
-  it("lets HR review and consolidate, but not give final approval", () => {
-    expect(evaluateRequestTransition("submitted", "under_hr_review", { permissions: hr }).allowed).toBe(true);
-    expect(evaluateRequestTransition("under_hr_review", "included_in_plan", { permissions: hr }).allowed).toBe(true);
+  it("lets HR mark a request reviewed, but not give final approval", () => {
+    expect(evaluateRequestTransition("under_hr_review", "hr_reviewed", { permissions: hr }).allowed).toBe(true);
+    expect(
+      evaluateRequestTransition("hr_reviewed", "approved", { permissions: hr })
+    ).toEqual({ allowed: false, refusal: "forbidden" });
     expect(
       evaluatePlanTransition("finance_review", "approved", {
         permissions: hr,
@@ -185,7 +196,7 @@ describe("the four actors are separated by VPRA level, not by role identity", ()
   });
 
   it("lets HR raise a request too, since recommend outranks prepare", () => {
-    expect(evaluateRequestTransition("draft", "submitted", { permissions: hr }).allowed).toBe(true);
+    expect(evaluateRequestTransition("draft", "under_hr_review", { permissions: hr }).allowed).toBe(true);
   });
 
   it("lets finance review the budget without any recruitmentPlan grant at all", () => {
@@ -269,6 +280,16 @@ describe("final approval preconditions", () => {
     });
   });
 
+  it("keeps a merged-but-unruled request blocking the plan", () => {
+    // `hr_reviewed` is what a request sits at after HR merges it into a plan
+    // but before the approver rules on it. It MUST count as undecided, or a
+    // plan could be approved carrying an item nobody decided — the spec's own
+    // rule. This is also why `transitionRecruitmentPlan`'s carry-over only
+    // has to sweep up the retired `included_in_plan` rows.
+    expect(isRequestDecided("hr_reviewed")).toBe(false);
+    expect(isRequestDecided("included_in_plan")).toBe(true);
+  });
+
   it("blocks approval before finance has reviewed", () => {
     expect(evaluatePlanTransition("finance_review", "approved", { ...base, financeReviewed: false })).toEqual({
       allowed: false,
@@ -304,12 +325,11 @@ describe("final approval preconditions", () => {
 });
 
 describe("the documented happy path is walkable end to end", () => {
-  it("walks request: draft -> submitted -> under_hr_review -> included_in_plan -> approved", () => {
+  it("walks request: draft -> under_hr_review -> hr_reviewed -> approved", () => {
     const steps: Array<[string, string, RecruitmentPermissions]> = [
-      ["draft", "submitted", sectionHead],
-      ["submitted", "under_hr_review", hr],
-      ["under_hr_review", "included_in_plan", hr],
-      ["included_in_plan", "approved", authority],
+      ["draft", "under_hr_review", sectionHead],
+      ["under_hr_review", "hr_reviewed", hr],
+      ["hr_reviewed", "approved", authority],
     ];
     for (const [from, to, permissions] of steps) {
       expect(evaluateRequestTransition(from, to, { permissions }).allowed).toBe(true);
@@ -346,19 +366,38 @@ describe("the documented happy path is walkable end to end", () => {
         note: "المؤهلات غير واضحة",
       }).allowed
     ).toBe(true);
-    expect(evaluateRequestTransition("returned_for_revision", "submitted", { permissions: sectionHead }).allowed).toBe(true);
+    expect(
+      evaluateRequestTransition("returned_for_revision", "under_hr_review", { permissions: sectionHead })
+        .allowed
+    ).toBe(true);
   });
 });
 
 describe("available* drives the action buttons", () => {
   it("offers a section head only its own submit action", () => {
-    expect(availableRequestTransitions("draft", sectionHead).map((r) => r.to)).toEqual(["submitted"]);
+    expect(availableRequestTransitions("draft", sectionHead).map((r) => r.to)).toEqual([
+      "under_hr_review",
+    ]);
   });
 
   it("offers HR the three item-level outcomes while reviewing", () => {
     expect(new Set(availableRequestTransitions("under_hr_review", hr).map((r) => r.to))).toEqual(
-      new Set(["included_in_plan", "rejected", "returned_for_revision"])
+      new Set(["hr_reviewed", "rejected", "returned_for_revision"])
     );
+  });
+
+  it("offers the approver the three outcomes once HR is done, and HR none of them", () => {
+    // The approver clears `recommend` too, so the undo is offered to them as
+    // well — VPRA is a ladder, not a set of disjoint slots. What matters is
+    // that HR gets ONLY the undo and none of the three decisions.
+    const forApprover = availableRequestTransitions("hr_reviewed", authority).map((r) => r.to);
+    expect(new Set(forApprover)).toEqual(
+      new Set(["approved", "rejected", "returned_for_revision", "under_hr_review"])
+    );
+    // HR keeps only the undo, which renders beside the status, not as an action.
+    expect(availableRequestTransitions("hr_reviewed", hr).map((r) => r.to)).toEqual([
+      "under_hr_review",
+    ]);
   });
 
   it("offers nothing at all to a caller with no grants", () => {
@@ -397,23 +436,26 @@ describe("status-adjacent transitions (2026-08-08)", () => {
     const adjacent = requestTransitions.filter((rule) => rule.statusAdjacent);
     expect(adjacent).toHaveLength(1);
     expect(adjacent[0]).toMatchObject({
-      from: "included_in_plan",
+      from: "hr_reviewed",
       to: "under_hr_review",
-      labelAr: "إخراج من الخطة",
+      labelAr: "التراجع عن المراجعة",
     });
   });
 
   it("keeps every other request transition in the actions column", () => {
     for (const rule of requestTransitions) {
-      if (rule.from === "included_in_plan" && rule.to === "under_hr_review") continue;
+      if (rule.from === "hr_reviewed" && rule.to === "under_hr_review") continue;
       expect(rule.statusAdjacent).toBeUndefined();
     }
   });
 
-  it("reads `included_in_plan` as awaiting approval, not as a final state", () => {
-    // The row is in the plan but the plan is not approved yet — the label has
-    // to say that, which is what the project owner asked for.
-    expect(requestStatusLabels.included_in_plan).toBe("بانتظار الاعتماد");
+  it("names each status after what the reader has to do next", () => {
+    // The old chain made the coordinator read "مسودة" for a request they had
+    // already submitted, and the approver read "رفع الطلب" as their own next
+    // action. Each label now states whose court the request is in.
+    expect(requestStatusLabels.draft).toBe("مسودة");
+    expect(requestStatusLabels.under_hr_review).toBe("مراجعة الموارد البشرية");
+    expect(requestStatusLabels.hr_reviewed).toBe("تمت المراجعة");
     expect(requestStatusLabels.approved).toBe("معتمد");
   });
 });

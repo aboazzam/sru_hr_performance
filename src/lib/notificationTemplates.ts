@@ -44,12 +44,21 @@ export function requestTransitionNotification(input: {
   const linkPath = "/recruitment/requests";
 
   switch (toStatus) {
-    case "submitted":
-      return { type: "recruitment_request_submitted", messageAr: `تم رفع ${subject} إلى الموارد البشرية.`, linkPath };
     case "under_hr_review":
-      return { type: "recruitment_request_under_review", messageAr: `بدأت الموارد البشرية مراجعة ${subject}.`, linkPath };
-    case "included_in_plan":
-      return { type: "recruitment_request_included", messageAr: `تم إدراج ${subject} في خطة التوظيف.`, linkPath };
+      // The coordinator's submit lands here, and so does HR undoing its own
+      // review — one message covers both, because for the reader the fact is
+      // the same: the request is now on HR's desk.
+      return {
+        type: "recruitment_request_under_review",
+        messageAr: `${subject} بانتظار مراجعة الموارد البشرية.`,
+        linkPath,
+      };
+    case "hr_reviewed":
+      return {
+        type: "recruitment_request_hr_reviewed",
+        messageAr: `أنهت الموارد البشرية مراجعة ${subject}، وهو بانتظار الاعتماد.`,
+        linkPath,
+      };
     case "returned_for_revision":
       return {
         type: "recruitment_request_returned",
@@ -59,7 +68,11 @@ export function requestTransitionNotification(input: {
     case "rejected":
       return { type: "recruitment_request_rejected", messageAr: withReason(`رُفض ${subject}`, reason), linkPath };
     case "approved":
-      return { type: "recruitment_request_approved", messageAr: `تم اعتماد ${subject} ضمن خطة التوظيف.`, linkPath };
+      return {
+        type: "recruitment_request_approved",
+        messageAr: `تم اعتماد ${subject} وإدراجه في خطة التوظيف.`,
+        linkPath,
+      };
     default:
       // Never silently drop an unknown state: fall back to the shared status
       // vocabulary so a rule added later still produces a readable message.
