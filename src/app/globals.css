@@ -1272,3 +1272,81 @@ th.sru-en {
     display: none !important;
   }
 }
+
+/* ===== Hover explanation for icon-only actions (2026-08-10) =====
+   طلب مباشر: تحويل أوامر عمود الإجراءات إلى أيقونات "مع شرح حين تقترب
+   الفأرة من الأيقونة". الأيقونة وحدها تختصر المساحة لكنها تُخفي المعنى،
+   فالشرح هو ما يجعل الاختصار مقبولًا.
+
+   Not the native `title` attribute: it waits about a second before showing,
+   cannot be styled or placed, and renders in the OS locale's own direction —
+   wrong for an RTL sheet. This is instant, follows the app's own surface and
+   border tokens, and reads right-to-left like everything around it.
+
+   The visible text lives in `data-tooltip`; the button still carries its own
+   `aria-label`, so assistive tech gets the name whether or not this renders.
+   Attribute-driven so any icon button opts in by adding one attribute. */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 50%;
+  transform: translateX(50%);
+  z-index: 40;
+  /* Wide enough for a sentence, capped so it never spans the table. */
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--sru-purple-dark);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  text-align: right;
+  white-space: normal;
+  /* Hidden by default without `display:none`, so the fade can run. */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  pointer-events: none;
+}
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  right: 50%;
+  transform: translateX(50%);
+  z-index: 40;
+  border: 5px solid transparent;
+  border-top-color: var(--sru-purple-dark);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  pointer-events: none;
+}
+/* `:focus-visible` too — the explanation must be reachable by keyboard, not
+   only by a mouse the request happened to mention. */
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::after,
+[data-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+/* A disabled control explains nothing on hover in most browsers anyway, and
+   a tooltip for an action you cannot take is noise. */
+[data-tooltip]:disabled::after,
+[data-tooltip]:disabled::before {
+  display: none;
+}
+/* Paper has no hover. */
+@media print {
+  [data-tooltip]::after,
+  [data-tooltip]::before {
+    display: none !important;
+  }
+}

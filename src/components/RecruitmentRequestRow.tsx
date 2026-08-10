@@ -203,7 +203,7 @@ export function RecruitmentRequestRow({
                       resetFields();
                       setEditing((open) => !open);
                     }}
-                    title={t("editAction")}
+                    data-tooltip={t("editAction")}
                     aria-label={t("editAction")}
                   >
                     <Pencil size={14} />
@@ -215,7 +215,7 @@ export function RecruitmentRequestRow({
                     className="sru-icon-action danger"
                     disabled={pending}
                     onClick={handleDelete}
-                    title={t("deleteAction")}
+                    data-tooltip={t("deleteAction")}
                     aria-label={t("deleteAction")}
                   >
                     <Trash2 size={14} />
@@ -324,7 +324,7 @@ export function RecruitmentRequestRow({
                 className="sru-icon-action primary"
                 disabled={pending || headcount.trim() === "" || missingLevels > 0}
                 onClick={handleSave}
-                title={t("saveEdit")}
+                data-tooltip={t("saveEdit")}
                 aria-label={t("saveEdit")}
               >
                 <Check size={14} />
@@ -338,7 +338,7 @@ export function RecruitmentRequestRow({
                   setState(null);
                   resetFields();
                 }}
-                title={t("cancel")}
+                data-tooltip={t("cancel")}
                 aria-label={t("cancel")}
               >
                 <X size={14} />
