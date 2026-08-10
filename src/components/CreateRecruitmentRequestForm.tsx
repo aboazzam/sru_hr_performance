@@ -170,19 +170,29 @@ export function CreateRecruitmentRequestForm({
     competenciesMissingLevel === 0 &&
     !saving;
 
-  function submit() {
+  /**
+   * حالتان لصاحب الطلب، لا واحدة: «حفظ كمسودة» لطلب لم يكتمل بعد، و«رفع
+   * الطلب» يرسله إلى الموارد البشرية فورًا.
+   *
+   * كان النموذج يحفظ مسودة دائمًا، فيظنّ صاحب الطلب أنه رفعه بينما يقرأ
+   * الجميع «مسودة»، ويلزمه رجوعٌ إلى الجدول وضغطةٌ ثانية على زرٍّ يراه غيره
+   * أيضًا — وهو ما جعل الموارد البشرية والأدمن يريان «رفع الطلب» بوصفه
+   * إجراءهم هم.
+   */
+  function submit(asSubmitted: boolean) {
     setSaving(true);
     startTransition(async () => {
       try {
-        await save();
+        await save(asSubmitted);
       } finally {
         setSaving(false);
       }
     });
   }
 
-  async function save() {
+  async function save(asSubmitted: boolean) {
       const result = await createRecruitmentRequest({
+        submit: asSubmitted,
         orgUnitId,
         jobTitleId: useCustomTitle ? undefined : effectiveJobTitleId || undefined,
         customJobTitle: useCustomTitle ? customJobTitle : undefined,
@@ -450,8 +460,23 @@ export function CreateRecruitmentRequestForm({
       )}
 
       <div className="sru-form-submitrow">
-        <button type="button" className="sru-btn sru-btn-primary" disabled={!canSubmit} onClick={submit}>
-          {saving ? t("saving") : t("createRequestButton")}
+        {/* الرفع هو الفعل المقصود عادةً، فهو الزر الأساسي؛ والمسودة تبقى
+            متاحةً بجانبه لطلب لم يكتمل. */}
+        <button
+          type="button"
+          className="sru-btn sru-btn-primary"
+          disabled={!canSubmit}
+          onClick={() => submit(true)}
+        >
+          {saving ? t("saving") : t("createAndSubmitButton")}
+        </button>
+        <button
+          type="button"
+          className="sru-btn"
+          disabled={!canSubmit}
+          onClick={() => submit(false)}
+        >
+          {t("createRequestButton")}
         </button>
         {state?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">

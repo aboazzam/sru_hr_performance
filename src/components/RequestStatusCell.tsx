@@ -31,17 +31,22 @@ export function RequestStatusCell({
   requestId,
   status,
   permissions,
+  isMine,
 }: {
   requestId: string;
   status: string;
   permissions: RecruitmentPermissions;
+  /** Passed through to the same filter the actions column applies. */
+  isMine: boolean;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentRequestActionState | null>(null);
 
-  const adjacent = availableRequestTransitions(status, permissions).filter((rule) => rule.statusAdjacent);
+  const adjacent = availableRequestTransitions(status, permissions, isMine).filter(
+    (rule) => rule.statusAdjacent
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>

@@ -28,12 +28,14 @@ const superuser: RecruitmentPermissions = {
   recruitmentBudget: "approve",
 };
 
+/** Every precondition any rule can ask for, including authorship. */
 const satisfied = {
   permissions: superuser,
   note: "سبب",
   financeNote: "ملاحظة مالية",
   financeReviewed: true,
   undecidedRequestCount: 0,
+  isOwnRequest: true,
 };
 
 describe("status vocabularies", () => {
@@ -174,7 +176,10 @@ describe("every DEFINED transition is refused for a caller with no permissions",
 describe("the four actors are separated by VPRA level, not by role identity", () => {
   it("lets a section head submit its own request but not review it", () => {
     expect(
-      evaluateRequestTransition("draft", "under_hr_review", { permissions: sectionHead }).allowed
+      evaluateRequestTransition("draft", "under_hr_review", {
+        permissions: sectionHead,
+        isOwnRequest: true,
+      }).allowed
     ).toBe(true);
     expect(
       evaluateRequestTransition("under_hr_review", "hr_reviewed", { permissions: sectionHead })
@@ -196,7 +201,10 @@ describe("the four actors are separated by VPRA level, not by role identity", ()
   });
 
   it("lets HR raise a request too, since recommend outranks prepare", () => {
-    expect(evaluateRequestTransition("draft", "under_hr_review", { permissions: hr }).allowed).toBe(true);
+    expect(
+      evaluateRequestTransition("draft", "under_hr_review", { permissions: hr, isOwnRequest: true })
+        .allowed
+    ).toBe(true);
   });
 
   it("lets finance review the budget without any recruitmentPlan grant at all", () => {
@@ -332,7 +340,7 @@ describe("the documented happy path is walkable end to end", () => {
       ["hr_reviewed", "approved", authority],
     ];
     for (const [from, to, permissions] of steps) {
-      expect(evaluateRequestTransition(from, to, { permissions }).allowed).toBe(true);
+      expect(evaluateRequestTransition(from, to, { permissions, isOwnRequest: true }).allowed).toBe(true);
     }
   });
 
@@ -367,15 +375,17 @@ describe("the documented happy path is walkable end to end", () => {
       }).allowed
     ).toBe(true);
     expect(
-      evaluateRequestTransition("returned_for_revision", "under_hr_review", { permissions: sectionHead })
-        .allowed
+      evaluateRequestTransition("returned_for_revision", "under_hr_review", {
+        permissions: sectionHead,
+        isOwnRequest: true,
+      }).allowed
     ).toBe(true);
   });
 });
 
 describe("available* drives the action buttons", () => {
   it("offers a section head only its own submit action", () => {
-    expect(availableRequestTransitions("draft", sectionHead).map((r) => r.to)).toEqual([
+    expect(availableRequestTransitions("draft", sectionHead, true).map((r) => r.to)).toEqual([
       "under_hr_review",
     ]);
   });
@@ -449,13 +459,77 @@ describe("status-adjacent transitions (2026-08-08)", () => {
     }
   });
 
-  it("names each status after what the reader has to do next", () => {
-    // The old chain made the coordinator read "مسودة" for a request they had
-    // already submitted, and the approver read "رفع الطلب" as their own next
-    // action. Each label now states whose court the request is in.
+  it("lets only the author raise their own request, whatever the level", () => {
+    // Reported live twice: HR and the approver both clear `prepare`, so both
+    // were offered "رفع الطلب" on somebody else's draft and read it as their
+    // own next step. Authority is not the question here — authorship is.
+    for (const actor of [sectionHead, hr, authority]) {
+      expect(
+        evaluateRequestTransition("draft", "under_hr_review", {
+          permissions: actor,
+          isOwnRequest: true,
+        }).allowed
+      ).toBe(true);
+      expect(
+        evaluateRequestTransition("draft", "under_hr_review", {
+          permissions: actor,
+          isOwnRequest: false,
+        })
+      ).toEqual({ allowed: false, refusal: "forbidden" });
+    }
+
+    // Omitting ownership must refuse, not assume — the safe direction.
+    expect(
+      evaluateRequestTransition("draft", "under_hr_review", { permissions: sectionHead })
+    ).toEqual({ allowed: false, refusal: "forbidden" });
+
+    // Re-raising a returned request is the author's too.
+    expect(
+      evaluateRequestTransition("returned_for_revision", "under_hr_review", {
+        permissions: hr,
+        isOwnRequest: false,
+      })
+    ).toEqual({ allowed: false, refusal: "forbidden" });
+
+    // But reviewing and deciding are NOT owner-gated: HR reviews requests
+    // raised by other people, which is the entire point.
+    expect(
+      evaluateRequestTransition("under_hr_review", "hr_reviewed", {
+        permissions: hr,
+        isOwnRequest: false,
+      }).allowed
+    ).toBe(true);
+    expect(
+      evaluateRequestTransition("hr_reviewed", "approved", {
+        permissions: authority,
+        isOwnRequest: false,
+      }).allowed
+    ).toBe(true);
+  });
+
+  it("offers no raise button on someone else's draft", () => {
+    expect(availableRequestTransitions("draft", hr, false)).toEqual([]);
+    expect(availableRequestTransitions("draft", authority, false)).toEqual([]);
+    expect(availableRequestTransitions("draft", sectionHead, true).map((r) => r.to)).toEqual([
+      "under_hr_review",
+    ]);
+  });
+
+  it("names each status after WHO the request is waiting on", () => {
+    // Reported live: "مراجعة الموارد البشرية" and "تمت المراجعة" describe what
+    // just finished, so a reader cannot tell whether the request is theirs to
+    // act on. Each live label now names who is being waited for.
     expect(requestStatusLabels.draft).toBe("مسودة");
-    expect(requestStatusLabels.under_hr_review).toBe("مراجعة الموارد البشرية");
-    expect(requestStatusLabels.hr_reviewed).toBe("تمت المراجعة");
+    expect(requestStatusLabels.under_hr_review).toBe("بانتظار مراجعة الموارد البشرية");
+    expect(requestStatusLabels.hr_reviewed).toBe("بانتظار الاعتماد");
     expect(requestStatusLabels.approved).toBe("معتمد");
+
+    // Every live status reads as a state, never as an instruction: an action
+    // label leaking in here is what made HR and the approver both read
+    // "رفع الطلب" as their own next step.
+    for (const status of requestStatuses) {
+      if (status === "submitted" || status === "included_in_plan") continue;
+      expect(requestStatusLabels[status]).not.toBe("رفع الطلب");
+    }
   });
 });
