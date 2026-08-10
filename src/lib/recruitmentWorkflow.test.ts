@@ -9,6 +9,7 @@ import {
   planStatuses,
   planTransitions,
   requestStatusLabel,
+  requestStatusLabelForViewer,
   requestStatusLabels,
   requestStatuses,
   requestTransitions,
@@ -28,14 +29,13 @@ const superuser: RecruitmentPermissions = {
   recruitmentBudget: "approve",
 };
 
-/** Every precondition any rule can ask for, including authorship. */
+/** Every precondition any rule can ask for. */
 const satisfied = {
   permissions: superuser,
   note: "سبب",
   financeNote: "ملاحظة مالية",
   financeReviewed: true,
   undecidedRequestCount: 0,
-  isOwnRequest: true,
 };
 
 describe("status vocabularies", () => {
@@ -178,7 +178,6 @@ describe("the four actors are separated by VPRA level, not by role identity", ()
     expect(
       evaluateRequestTransition("draft", "under_hr_review", {
         permissions: sectionHead,
-        isOwnRequest: true,
       }).allowed
     ).toBe(true);
     expect(
@@ -202,7 +201,7 @@ describe("the four actors are separated by VPRA level, not by role identity", ()
 
   it("lets HR raise a request too, since recommend outranks prepare", () => {
     expect(
-      evaluateRequestTransition("draft", "under_hr_review", { permissions: hr, isOwnRequest: true })
+      evaluateRequestTransition("draft", "under_hr_review", { permissions: hr })
         .allowed
     ).toBe(true);
   });
@@ -340,7 +339,7 @@ describe("the documented happy path is walkable end to end", () => {
       ["hr_reviewed", "approved", authority],
     ];
     for (const [from, to, permissions] of steps) {
-      expect(evaluateRequestTransition(from, to, { permissions, isOwnRequest: true }).allowed).toBe(true);
+      expect(evaluateRequestTransition(from, to, { permissions }).allowed).toBe(true);
     }
   });
 
@@ -377,7 +376,6 @@ describe("the documented happy path is walkable end to end", () => {
     expect(
       evaluateRequestTransition("returned_for_revision", "under_hr_review", {
         permissions: sectionHead,
-        isOwnRequest: true,
       }).allowed
     ).toBe(true);
   });
@@ -385,7 +383,7 @@ describe("the documented happy path is walkable end to end", () => {
 
 describe("available* drives the action buttons", () => {
   it("offers a section head only its own submit action", () => {
-    expect(availableRequestTransitions("draft", sectionHead, true).map((r) => r.to)).toEqual([
+    expect(availableRequestTransitions("draft", sectionHead).map((r) => r.to)).toEqual([
       "under_hr_review",
     ]);
   });
@@ -459,60 +457,20 @@ describe("status-adjacent transitions (2026-08-08)", () => {
     }
   });
 
-  it("lets only the author raise their own request, whatever the level", () => {
-    // Reported live twice: HR and the approver both clear `prepare`, so both
-    // were offered "رفع الطلب" on somebody else's draft and read it as their
-    // own next step. Authority is not the question here — authorship is.
+  it("lets anyone holding the level raise a request, author or not", () => {
+    // Restricting the raise to the author was tried and reversed by an
+    // explicit decision — HR is meant to be able to push a stalled draft on
+    // its author's behalf. Permission alone decides, as everywhere else here.
     for (const actor of [sectionHead, hr, authority]) {
       expect(
-        evaluateRequestTransition("draft", "under_hr_review", {
-          permissions: actor,
-          isOwnRequest: true,
-        }).allowed
+        evaluateRequestTransition("draft", "under_hr_review", { permissions: actor }).allowed
       ).toBe(true);
       expect(
-        evaluateRequestTransition("draft", "under_hr_review", {
-          permissions: actor,
-          isOwnRequest: false,
-        })
-      ).toEqual({ allowed: false, refusal: "forbidden" });
+        evaluateRequestTransition("returned_for_revision", "under_hr_review", { permissions: actor })
+          .allowed
+      ).toBe(true);
     }
-
-    // Omitting ownership must refuse, not assume — the safe direction.
-    expect(
-      evaluateRequestTransition("draft", "under_hr_review", { permissions: sectionHead })
-    ).toEqual({ allowed: false, refusal: "forbidden" });
-
-    // Re-raising a returned request is the author's too.
-    expect(
-      evaluateRequestTransition("returned_for_revision", "under_hr_review", {
-        permissions: hr,
-        isOwnRequest: false,
-      })
-    ).toEqual({ allowed: false, refusal: "forbidden" });
-
-    // But reviewing and deciding are NOT owner-gated: HR reviews requests
-    // raised by other people, which is the entire point.
-    expect(
-      evaluateRequestTransition("under_hr_review", "hr_reviewed", {
-        permissions: hr,
-        isOwnRequest: false,
-      }).allowed
-    ).toBe(true);
-    expect(
-      evaluateRequestTransition("hr_reviewed", "approved", {
-        permissions: authority,
-        isOwnRequest: false,
-      }).allowed
-    ).toBe(true);
-  });
-
-  it("offers no raise button on someone else's draft", () => {
-    expect(availableRequestTransitions("draft", hr, false)).toEqual([]);
-    expect(availableRequestTransitions("draft", authority, false)).toEqual([]);
-    expect(availableRequestTransitions("draft", sectionHead, true).map((r) => r.to)).toEqual([
-      "under_hr_review",
-    ]);
+    expect(availableRequestTransitions("draft", hr).map((r) => r.to)).toEqual(["under_hr_review"]);
   });
 
   it("names each status after WHO the request is waiting on", () => {
@@ -531,5 +489,36 @@ describe("status-adjacent transitions (2026-08-08)", () => {
       if (status === "submitted" || status === "included_in_plan") continue;
       expect(requestStatusLabels[status]).not.toBe("رفع الطلب");
     }
+  });
+
+  it("shortens the wait to «بانتظار المراجعة» for the one being waited on", () => {
+    // Asked for directly: HR does not need telling that the wait is on them.
+    expect(requestStatusLabelForViewer("under_hr_review", hr)).toBe("بانتظار المراجعة");
+
+    // THE CASE THAT MAKES "can you act" the wrong test: the approver clears
+    // `recommend` too, so a can-act check would tell them the wait is theirs
+    // when it is HR's. They read the full form, as asked for the admin.
+    expect(requestStatusLabelForViewer("under_hr_review", authority)).toBe(
+      "بانتظار مراجعة الموارد البشرية"
+    );
+
+    // And so does the requester, who is waiting rather than being waited on.
+    expect(requestStatusLabelForViewer("under_hr_review", sectionHead)).toBe(
+      "بانتظار مراجعة الموارد البشرية"
+    );
+    expect(requestStatusLabelForViewer("under_hr_review", nobody)).toBe(
+      "بانتظار مراجعة الموارد البشرية"
+    );
+
+    // A status with no self label reads the same for everyone — no entry
+    // needed, and none invented.
+    for (const actor of [sectionHead, hr, authority, nobody]) {
+      expect(requestStatusLabelForViewer("hr_reviewed", actor)).toBe("بانتظار الاعتماد");
+      expect(requestStatusLabelForViewer("draft", actor)).toBe("مسودة");
+      expect(requestStatusLabelForViewer("approved", actor)).toBe("معتمد");
+    }
+
+    // Unknown values still pass through untouched, like `requestStatusLabel`.
+    expect(requestStatusLabelForViewer("something_else", hr)).toBe("something_else");
   });
 });

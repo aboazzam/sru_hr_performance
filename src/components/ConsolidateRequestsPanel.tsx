@@ -230,15 +230,10 @@ export function ConsolidateRequestsPanel({
                         <span className="pill">{requestStatusLabel(request.status)}</span>
                       </td>
                       <td>
-                        {/* This screen lists requests HR has already reviewed,
-                            which carry no owner-only action; and the merge is
-                            HR acting on OTHER people's requests by definition,
-                            so authorship is false rather than unknown. */}
                         <RecruitmentRequestActions
                           requestId={request.id}
                           status={request.status}
                           permissions={permissions}
-                          isMine={false}
                         />
                       </td>
                     </tr>

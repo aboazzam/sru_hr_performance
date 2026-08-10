@@ -17,6 +17,7 @@ import {
   type RequestSortOption,
 } from "@/lib/recruitmentRequestTable";
 import {
+  requestStatusLabelForViewer,
   requestStatusLabels,
   requestStatuses,
   type RecruitmentPermissions,
@@ -28,8 +29,6 @@ export interface RecruitmentRequestView {
   jobTitle: string;
   orgUnit: string;
   createdAt: string;
-  /** Is the viewer this request's own author? Decides owner-only actions. */
-  isMine: boolean;
 }
 
 const sortLabelKeys: Record<RequestSortOption, string> = {
@@ -148,9 +147,12 @@ export function RecruitmentRequestsTable({
           aria-label={t("filterByStatus")}
         >
           <option value="">{t("allStatuses")}</option>
+          {/* Same wording as the cells below it: a filter offering
+              "بانتظار مراجعة الموارد البشرية" while every row beside it reads
+              "بانتظار المراجعة" looks like two different states. */}
           {requestStatuses.map((status) => (
             <option key={status} value={status}>
-              {requestStatusLabels[status]}
+              {requestStatusLabelForViewer(status, permissions)}
             </option>
           ))}
         </select>
@@ -251,7 +253,6 @@ export function RecruitmentRequestsTable({
                       competencies={competencies}
                       selectedCompetencies={competenciesByRequest[view.request.id] ?? []}
                       canEdit={canEdit}
-                      isMine={view.isMine}
                       columnCount={columnCount}
                     />
                   ))}

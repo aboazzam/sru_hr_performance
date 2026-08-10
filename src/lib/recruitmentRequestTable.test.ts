@@ -47,6 +47,14 @@ describe("matchesRequestQuery", () => {
     expect(matchesRequestQuery(row({ status: "under_hr_review" }), "under_hr")).toBe(false);
   });
 
+  it("also matches the short form the awaited reader actually sees", () => {
+    // HR reads "بانتظار المراجعة" on screen, and that is not a substring of
+    // "بانتظار مراجعة الموارد البشرية" — الـ definite article differs — so
+    // typing what is in front of them would otherwise find nothing.
+    expect(matchesRequestQuery(row({ status: "under_hr_review" }), "بانتظار المراجعة")).toBe(true);
+    expect(matchesRequestQuery(row({ status: "draft" }), "بانتظار المراجعة")).toBe(false);
+  });
+
   it("rejects a non-matching query", () => {
     expect(matchesRequestQuery(row(), "زززز")).toBe(false);
   });

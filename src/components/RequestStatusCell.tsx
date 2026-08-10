@@ -7,7 +7,7 @@ import { Undo2 } from "lucide-react";
 import { recruitmentRequestErrorText } from "@/lib/recruitmentRequestErrors";
 import {
   availableRequestTransitions,
-  requestStatusLabel,
+  requestStatusLabelForViewer,
   type RecruitmentPermissions,
 } from "@/lib/recruitmentWorkflow";
 import {
@@ -31,27 +31,26 @@ export function RequestStatusCell({
   requestId,
   status,
   permissions,
-  isMine,
 }: {
   requestId: string;
   status: string;
   permissions: RecruitmentPermissions;
-  /** Passed through to the same filter the actions column applies. */
-  isMine: boolean;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentRequestActionState | null>(null);
 
-  const adjacent = availableRequestTransitions(status, permissions, isMine).filter(
+  const adjacent = availableRequestTransitions(status, permissions).filter(
     (rule) => rule.statusAdjacent
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <span className="pill">{requestStatusLabel(status)}</span>
+        {/* Whoever the request is waiting on reads the short form; everyone
+            else reads who it is waiting on. */}
+        <span className="pill">{requestStatusLabelForViewer(status, permissions)}</span>
         {adjacent.map((rule) => (
           <button
             key={rule.to}

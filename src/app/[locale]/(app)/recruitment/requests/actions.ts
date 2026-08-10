@@ -505,14 +505,9 @@ export async function transitionRecruitmentRequest(input: {
   if (!current) return { status: "error", message: "not_found" };
 
   const permissions = await myPermissions(supabase);
-  // Ownership is read from the row, never from the caller — the same rule as
-  // the current status. Hiding an owner-only button is a courtesy; this is
-  // what actually refuses it.
-  const myProfile = await myProfileId(supabase);
   const verdict = evaluateRequestTransition(current.status, parsed.data.toStatus, {
     permissions,
     note: parsed.data.note,
-    isOwnRequest: myProfile !== null && current.requested_by === myProfile,
   });
   if (!verdict.allowed) return { status: "error", message: verdict.refusal };
 
