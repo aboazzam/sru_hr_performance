@@ -56,8 +56,12 @@ export function RequestStatusCell({
             key={rule.to}
             type="button"
             className="sru-icon-action"
-            title={rule.labelAr}
             aria-label={rule.labelAr}
+            // The same hover explanation as the actions column. This icon was
+            // already icon-only and had nothing but a native `title`.
+            data-tooltip={
+              rule.descriptionAr ? `${rule.labelAr} — ${rule.descriptionAr}` : rule.labelAr
+            }
             disabled={pending}
             onClick={() => {
               setState(null);

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { recruitmentRequestErrorText } from "@/lib/recruitmentRequestErrors";
+import { RequestActionIconGlyph } from "@/components/RequestActionIconGlyph";
 import {
   availableRequestTransitions,
   type RecruitmentPermissions,
@@ -12,6 +13,16 @@ import {
   transitionRecruitmentRequest,
   type RecruitmentRequestActionState,
 } from "@/app/[locale]/(app)/recruitment/requests/actions";
+
+/**
+ * Rejection is the one action here that cannot be walked back, so it is the
+ * one that gets a colour. Everything else stays neutral: tinting several
+ * icons at once turns the column into decoration and the warning stops
+ * registering.
+ */
+function iconVariant(icon: string | undefined): string {
+  return icon === "reject" ? " danger" : "";
+}
 
 /**
  * The action buttons for one request row. Which buttons exist comes straight
@@ -53,6 +64,8 @@ export function RecruitmentRequestActions({
     return <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>—</span>;
   }
 
+  const openRule = options.find((rule) => rule.to === openTarget);
+
   function run(toStatus: string, reason?: string) {
     startTransition(async () => {
       const result = await transitionRecruitmentRequest({ requestId, toStatus, note: reason });
@@ -67,27 +80,47 @@ export function RecruitmentRequestActions({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {options.map((rule) => (
-          <button
-            key={rule.to}
-            type="button"
-            className="sru-btn"
-            disabled={pending}
-            onClick={() => {
-              setState(null);
-              if (rule.requiresNote) {
-                setOpenTarget(openTarget === rule.to ? null : rule.to);
-                setNote("");
-              } else {
-                run(rule.to);
+      {/* Icons rather than stacked text buttons, asked for directly. The
+          explanation on hover is what makes that trade acceptable: the label
+          names the action, the sentence says what it will actually do.
+          `aria-label` carries the name for assistive tech, which never sees
+          the CSS tooltip. */}
+      <div className="sru-icon-action-group" style={{ flexWrap: "wrap" }}>
+        {options.map((rule) => {
+          const open = openTarget === rule.to;
+          return (
+            <button
+              key={`${rule.from}->${rule.to}`}
+              type="button"
+              className={`sru-icon-action${iconVariant(rule.icon)}${open ? " primary" : ""}`}
+              aria-label={rule.labelAr}
+              aria-pressed={rule.requiresNote ? open : undefined}
+              data-tooltip={
+                rule.descriptionAr ? `${rule.labelAr} — ${rule.descriptionAr}` : rule.labelAr
               }
-            }}
-          >
-            {rule.labelAr}
-          </button>
-        ))}
+              disabled={pending}
+              onClick={() => {
+                setState(null);
+                if (rule.requiresNote) {
+                  setOpenTarget(open ? null : rule.to);
+                  setNote("");
+                } else {
+                  run(rule.to);
+                }
+              }}
+            >
+              {rule.icon ? <RequestActionIconGlyph name={rule.icon} /> : rule.labelAr}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Which action the open reason box belongs to. With text buttons the
+          label above it said so; with icons nothing would, and rejecting when
+          you meant to return for revision is not a recoverable slip. */}
+      {openTarget && openRule && (
+        <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>{openRule.labelAr}</span>
+      )}
 
       {openTarget && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

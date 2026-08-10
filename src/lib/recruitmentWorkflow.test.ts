@@ -437,6 +437,37 @@ describe("available* drives the action buttons", () => {
       expect(rule.labelAr.trim().length).toBeGreaterThan(0);
     }
   });
+
+  it("gives every request action an icon and a hover explanation", () => {
+    // Request actions render as icons only. A rule added without these two
+    // would ship as a blank button with nothing to explain it — the one
+    // failure mode this change introduces, so it is the one pinned here.
+    for (const rule of requestTransitions) {
+      expect(rule.icon, `${rule.from} -> ${rule.to} has no icon`).toBeDefined();
+      expect(
+        rule.descriptionAr?.trim().length ?? 0,
+        `${rule.from} -> ${rule.to} has no description`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("explains what the action DOES rather than repeating its name", () => {
+    // "اعتماد — اعتماد" is a tooltip that earns nothing: the explanation has
+    // to add what the icon and the label together cannot show.
+    for (const rule of requestTransitions) {
+      expect(rule.descriptionAr).not.toBe(rule.labelAr);
+      expect(rule.descriptionAr!.length).toBeGreaterThan(rule.labelAr.length);
+    }
+  });
+
+  it("keeps one icon per meaning, not per destination status", () => {
+    // Reaching `under_hr_review` is "raise" from a draft but "undo the
+    // review" from `hr_reviewed`; keying icons by destination would draw both
+    // the same glyph. Every rule into that status must differ.
+    const intoHrReview = requestTransitions.filter((rule) => rule.to === "under_hr_review");
+    expect(intoHrReview.length).toBeGreaterThan(1);
+    expect(new Set(intoHrReview.map((rule) => rule.icon)).size).toBe(intoHrReview.length);
+  });
 });
 
 describe("status-adjacent transitions (2026-08-08)", () => {

@@ -237,7 +237,39 @@ export interface TransitionRule<S extends string> {
   statusAdjacent?: boolean;
   /** Short Arabic label for the action button that performs it. */
   labelAr: string;
+  /**
+   * Which icon stands for this action, as a NAME rather than a component.
+   *
+   * The table is the single authority on what an action is, and it stays free
+   * of React so it can be unit-tested and imported anywhere; the client
+   * component owns the name → Lucide mapping. Carried per rule, not per
+   * target status, because one target can mean two different things: reaching
+   * `under_hr_review` is "raise" from a draft but "undo the review" from
+   * `hr_reviewed`.
+   */
+  icon?: RequestActionIcon;
+  /**
+   * What actually happens if you press it — the hover explanation.
+   *
+   * Deliberately NOT a restatement of `labelAr`: once an action is only an
+   * icon, "اعتماد" alone tells the reader nothing they could not guess, while
+   * "…ويُدرج تلقائيًا في خطة التوظيف" is the part they cannot see.
+   */
+  descriptionAr?: string;
 }
+
+/**
+ * Icon names used by request actions. A closed union, so a rule carrying a
+ * misspelt icon fails to compile rather than silently rendering nothing.
+ */
+export type RequestActionIcon =
+  | "send"
+  | "resend"
+  | "reviewed"
+  | "approve"
+  | "reject"
+  | "returnForRevision"
+  | "undo";
 
 const PREPARE: RequiredAccess = { processArea: "recruitmentPlan", minLevel: "prepare" };
 const RECOMMEND: RequiredAccess = { processArea: "recruitmentPlan", minLevel: "recommend" };
@@ -257,22 +289,90 @@ export const requestTransitions: TransitionRule<RequestStatus>[] = [
   // الرفع متاح لكل من يستوفي `prepare`، لا لصاحب الطلب وحده: قُيّد بالمالك
   // مرةً ثم أُعيد بقرار صريح — «أبقِ صلاحية رفع الطلب عند صاحب الصلاحية»،
   // فالموارد البشرية تستطيع دفع مسودة متوقفة نيابةً عن صاحبها.
-  { from: "draft", to: "under_hr_review", requires: PREPARE, labelAr: "رفع الطلب" },
-  { from: "returned_for_revision", to: "under_hr_review", requires: PREPARE, labelAr: "إعادة الرفع" },
+  {
+    from: "draft",
+    to: "under_hr_review",
+    requires: PREPARE,
+    labelAr: "رفع الطلب",
+    icon: "send",
+    descriptionAr: "إرسال الطلب إلى الموارد البشرية لمراجعته.",
+  },
+  {
+    from: "returned_for_revision",
+    to: "under_hr_review",
+    requires: PREPARE,
+    labelAr: "إعادة الرفع",
+    icon: "resend",
+    descriptionAr: "إرسال الطلب مرة أخرى بعد تعديله.",
+  },
 
   // ٢) الموارد البشرية: تنتهي مراجعتها، أو ترفض، أو تعيد للتعديل.
-  { from: "under_hr_review", to: "hr_reviewed", requires: RECOMMEND, labelAr: "تمت المراجعة" },
-  { from: "under_hr_review", to: "rejected", requires: RECOMMEND, requiresNote: true, labelAr: "رفض الطلب" },
-  { from: "under_hr_review", to: "returned_for_revision", requires: RECOMMEND, requiresNote: true, labelAr: "إعادة للتعديل" },
+  {
+    from: "under_hr_review",
+    to: "hr_reviewed",
+    requires: RECOMMEND,
+    labelAr: "تمت المراجعة",
+    icon: "reviewed",
+    descriptionAr: "إنهاء مراجعة الموارد البشرية وإحالة الطلب للاعتماد.",
+  },
+  {
+    from: "under_hr_review",
+    to: "rejected",
+    requires: RECOMMEND,
+    requiresNote: true,
+    labelAr: "رفض الطلب",
+    icon: "reject",
+    descriptionAr: "رفض الطلب مع بيان السبب. لا يُستأنف بعدها.",
+  },
+  {
+    from: "under_hr_review",
+    to: "returned_for_revision",
+    requires: RECOMMEND,
+    requiresNote: true,
+    labelAr: "إعادة للتعديل",
+    icon: "returnForRevision",
+    descriptionAr: "إعادة الطلب إلى صاحبه ليعدّله، مع بيان السبب.",
+  },
 
   // التراجع عن المراجعة — بجوار الحالة لا في عمود الإجراءات، حفاظًا على نمط
   // "التصحيح أيقونة لا زر" الذي أُقرّ سابقًا.
-  { from: "hr_reviewed", to: "under_hr_review", requires: RECOMMEND, statusAdjacent: true, labelAr: "التراجع عن المراجعة" },
+  {
+    from: "hr_reviewed",
+    to: "under_hr_review",
+    requires: RECOMMEND,
+    statusAdjacent: true,
+    labelAr: "التراجع عن المراجعة",
+    icon: "undo",
+    descriptionAr: "إرجاع الطلب إلى مراجعة الموارد البشرية.",
+  },
 
   // ٣) الأدمن: اعتماد — ومعه الإدراج التلقائي في الخطة — أو رفض أو إعادة.
-  { from: "hr_reviewed", to: "approved", requires: APPROVE, labelAr: "اعتماد" },
-  { from: "hr_reviewed", to: "rejected", requires: APPROVE, requiresNote: true, labelAr: "رفض" },
-  { from: "hr_reviewed", to: "returned_for_revision", requires: APPROVE, requiresNote: true, labelAr: "إعادة للتعديل" },
+  {
+    from: "hr_reviewed",
+    to: "approved",
+    requires: APPROVE,
+    labelAr: "اعتماد",
+    icon: "approve",
+    descriptionAr: "اعتماد الطلب، ويُدرج تلقائيًا في أحدث خطة توظيف مسودة.",
+  },
+  {
+    from: "hr_reviewed",
+    to: "rejected",
+    requires: APPROVE,
+    requiresNote: true,
+    labelAr: "رفض",
+    icon: "reject",
+    descriptionAr: "رفض الطلب مع بيان السبب. لا يُستأنف بعدها.",
+  },
+  {
+    from: "hr_reviewed",
+    to: "returned_for_revision",
+    requires: APPROVE,
+    requiresNote: true,
+    labelAr: "إعادة للتعديل",
+    icon: "returnForRevision",
+    descriptionAr: "إعادة الطلب إلى صاحبه ليعدّله، مع بيان السبب.",
+  },
 ];
 
 /**
