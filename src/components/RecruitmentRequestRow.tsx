@@ -83,7 +83,6 @@ export function RecruitmentRequestRow({
   competencies,
   selectedCompetencies,
   canEdit,
-  isMine,
   columnCount,
 }: {
   request: RecruitmentRequestRowData;
@@ -95,8 +94,6 @@ export function RecruitmentRequestRow({
   /** What this request currently asks for — the editor's starting point. */
   selectedCompetencies: CompetencyDraft[];
   canEdit: boolean;
-  /** Is the viewer this request's own author? Owner-only actions depend on it. */
-  isMine: boolean;
   columnCount: number;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
@@ -185,7 +182,6 @@ export function RecruitmentRequestRow({
             requestId={request.id}
             status={request.status}
             permissions={permissions}
-            isMine={isMine}
           />
         </td>
         <td className="sru-col-actions">
@@ -194,7 +190,6 @@ export function RecruitmentRequestRow({
               requestId={request.id}
               status={request.status}
               permissions={permissions}
-              isMine={isMine}
             />
             {canEdit && (isEditable || isDeletable) && (
               <div className="sru-icon-action-group">

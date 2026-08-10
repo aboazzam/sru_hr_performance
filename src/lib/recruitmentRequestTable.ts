@@ -9,7 +9,11 @@
  */
 
 import { includesIgnoringHamza } from "./arabicSearch";
-import { requestStatusLabel } from "./recruitmentWorkflow";
+import {
+  requestStatusLabel,
+  requestStatusSelfLabels,
+  type RequestStatus,
+} from "./recruitmentWorkflow";
 
 /** The fields the table can search and order by. */
 export interface RecruitmentRequestSortable {
@@ -47,7 +51,12 @@ export function matchesRequestQuery(row: RecruitmentRequestSortable, query: stri
     includesIgnoringHamza(row.jobTitle, q) ||
     includesIgnoringHamza(row.orgUnit, q) ||
     includesIgnoringHamza(row.qualifications ?? "", q) ||
-    includesIgnoringHamza(requestStatusLabel(row.status), q)
+    includesIgnoringHamza(requestStatusLabel(row.status), q) ||
+    // A status can read differently to the person being waited on ("بانتظار
+    // المراجعة" for HR). Typing what is actually ON YOUR SCREEN must find the
+    // row — and the short form is not a substring of the long one ("المراجعة"
+    // vs "مراجعة"), so it has to be matched in its own right.
+    includesIgnoringHamza(requestStatusSelfLabels[row.status as RequestStatus] ?? "", q)
   );
 }
 
