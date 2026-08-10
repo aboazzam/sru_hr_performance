@@ -32,10 +32,13 @@ export function RecruitmentRequestActions({
   requestId,
   status,
   permissions,
+  isMine,
 }: {
   requestId: string;
   status: string;
   permissions: RecruitmentPermissions;
+  /** Owner-only actions (raising the request) render only for its author. */
+  isMine: boolean;
 }) {
   const t = useTranslations("RecruitmentRequestsPage");
   const router = useRouter();
@@ -46,7 +49,9 @@ export function RecruitmentRequestActions({
 
   // Transitions flagged `statusAdjacent` render beside the status instead
   // (RequestStatusCell), so they are excluded here rather than duplicated.
-  const options = availableRequestTransitions(status, permissions).filter((rule) => !rule.statusAdjacent);
+  const options = availableRequestTransitions(status, permissions, isMine).filter(
+    (rule) => !rule.statusAdjacent
+  );
   if (options.length === 0) {
     return <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>—</span>;
   }

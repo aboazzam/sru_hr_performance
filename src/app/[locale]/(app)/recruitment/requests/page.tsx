@@ -50,11 +50,24 @@ export default async function RecruitmentRequestsPage() {
           // `qualifications` is not shown as a column, but the inline editor
           // sends every field `updateRecruitmentRequest` takes — it has to
           // arrive here so saving an edit cannot blank it out.
-          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
+          //
+          // `requested_by` is not shown either: it decides whether "رفع الطلب"
+          // is this reader's own action, since raising is owner-only.
+          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, requested_by, created_at"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
     : { data: null };
+
+  // The viewer's own profile id, to tell their own requests from the ones they
+  // merely oversee. The self row is visible regardless of grant.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: myProfile } = user
+    ? await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle()
+    : { data: null };
+  const myProfileId = myProfile?.id ?? null;
 
   // Reference tables fetched separately and joined in JS rather than via
   // PostgREST embeds — the same approach used on /promotions/history, and it
@@ -144,6 +157,7 @@ export default async function RecruitmentRequestsPage() {
                   : (request.custom_job_title ?? "—"),
                 orgUnit: orgUnitName.get(request.org_unit_id) ?? "—",
                 createdAt: request.created_at,
+                isMine: myProfileId !== null && request.requested_by === myProfileId,
               }))}
               permissions={permissions}
               competencies={(competencies ?? []) as CompetencyOption[]}

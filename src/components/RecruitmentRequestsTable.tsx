@@ -28,6 +28,8 @@ export interface RecruitmentRequestView {
   jobTitle: string;
   orgUnit: string;
   createdAt: string;
+  /** Is the viewer this request's own author? Decides owner-only actions. */
+  isMine: boolean;
 }
 
 const sortLabelKeys: Record<RequestSortOption, string> = {
@@ -96,6 +98,25 @@ export function RecruitmentRequestsTable({
     () => sortRequests(filterRequests(sortable, { query, status: statusFilter }), sort),
     [sortable, query, statusFilter, sort]
   );
+
+  /**
+   * قسم لكل وحدة تنظيمية، «كما فعلنا في الموظفين» — بنفس شكل `/employees`
+   * تمامًا: أقسام مرتّبة أبجديًا عربيًا، وعدد الطلبات بجانب اسم كل وحدة،
+   * وعمود الوحدة باقٍ داخل الأقسام كما هو باقٍ هناك.
+   *
+   * الترشيح والفرز يسبقان التقسيم، فيسري الفرز المختار داخل كل قسم، ولا
+   * يظهر قسمٌ فرّغه البحث بدل أن يبقى عنوانًا فوق جدول فارغ.
+   */
+  const sections = useMemo(() => {
+    const byOrgUnit = new Map<string, typeof visible>();
+    for (const row of visible) {
+      const key = row.view.orgUnit;
+      const list = byOrgUnit.get(key) ?? [];
+      list.push(row);
+      byOrgUnit.set(key, list);
+    }
+    return [...byOrgUnit.entries()].sort(([a], [b]) => a.localeCompare(b, "ar"));
+  }, [visible]);
 
   const filtering = query.trim() !== "" || statusFilter !== "";
 
@@ -190,44 +211,55 @@ export function RecruitmentRequestsTable({
         </div>
       </div>
 
-      {visible.length === 0 ? (
+      {sections.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noMatches")}</p>
       ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnJobTitle")}</th>
-                  <th>{t("columnOrgUnit")}</th>
-                  <th>{t("columnHeadcount")}</th>
-                  <th>{t("columnReason")}</th>
-                  <th>{t("columnContract")}</th>
-                  <th>{t("columnGender")}</th>
-                  <th>{t("columnQuarter")}</th>
-                  <th>{t("columnCost")}</th>
-                  <th>{t("columnStatus")}</th>
-                  <th className="sru-col-actions">{t("columnActions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(({ view }) => (
-                  <RecruitmentRequestRow
-                    key={view.request.id}
-                    request={view.request}
-                    jobTitle={view.jobTitle}
-                    orgUnit={view.orgUnit}
-                    permissions={permissions}
-                    competencies={competencies}
-                    selectedCompetencies={competenciesByRequest[view.request.id] ?? []}
-                    canEdit={canEdit}
-                    columnCount={columnCount}
-                  />
-                ))}
-              </tbody>
-            </table>
+        sections.map(([orgUnitName, list]) => (
+          <div key={orgUnitName} className="sru-card" style={{ marginBottom: 20 }}>
+            <div style={{ padding: "12px 16px 0" }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700 }}>
+                {orgUnitName}{" "}
+                <span style={{ color: "var(--sru-muted)", fontWeight: 400, fontSize: 13 }}>
+                  ({list.length})
+                </span>
+              </h2>
+            </div>
+            <div className="table-scroll">
+              <table className="admin-matrix">
+                <thead>
+                  <tr>
+                    <th>{t("columnJobTitle")}</th>
+                    <th>{t("columnOrgUnit")}</th>
+                    <th>{t("columnHeadcount")}</th>
+                    <th>{t("columnReason")}</th>
+                    <th>{t("columnContract")}</th>
+                    <th>{t("columnGender")}</th>
+                    <th>{t("columnQuarter")}</th>
+                    <th>{t("columnCost")}</th>
+                    <th>{t("columnStatus")}</th>
+                    <th className="sru-col-actions">{t("columnActions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map(({ view }) => (
+                    <RecruitmentRequestRow
+                      key={view.request.id}
+                      request={view.request}
+                      jobTitle={view.jobTitle}
+                      orgUnit={view.orgUnit}
+                      permissions={permissions}
+                      competencies={competencies}
+                      selectedCompetencies={competenciesByRequest[view.request.id] ?? []}
+                      canEdit={canEdit}
+                      isMine={view.isMine}
+                      columnCount={columnCount}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ))
       )}
     </div>
   );

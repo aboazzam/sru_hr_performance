@@ -110,12 +110,22 @@ export const planStatuses = [
 ] as const;
 export type PlanStatus = (typeof planStatuses)[number];
 
-/** Fixed Arabic domain vocabulary, same convention as `evaluationStateLabels`. */
+/**
+ * Fixed Arabic domain vocabulary, same convention as `evaluationStateLabels`.
+ *
+ * كل حالة تقول **مَن ينتظره الطلب الآن**، لا ما جرى له آخر مرة. بلاغ مباشر:
+ * «مراجعة الموارد البشرية» و«تمت المراجعة» تصفان ما انتهى للتوّ، فلا يعرف
+ * القارئ أعليه فعلُ شيء أم ينتظر غيره.
+ *
+ * والعبارة واحدة لكل من يقرأها: طُلب أن ترى الموارد البشرية «بانتظار
+ * المراجعة» وحدها، لكن «بانتظار مراجعة الموارد البشرية» تقولها كاملةً لهم
+ * ولغيرهم، وحالةٌ تتبدّل بحسب مَن ينظر إليها تجعل لقطتَي شاشة لصفٍّ واحد
+ * متناقضتين ظاهريًا.
+ */
 export const requestStatusLabels: Record<RequestStatus, string> = {
   draft: "مسودة",
-  under_hr_review: "مراجعة الموارد البشرية",
-  // انتهت الموارد البشرية منه وينتظر قرار الأدمن.
-  hr_reviewed: "تمت المراجعة",
+  under_hr_review: "بانتظار مراجعة الموارد البشرية",
+  hr_reviewed: "بانتظار الاعتماد",
   returned_for_revision: "معاد للتعديل",
   approved: "معتمد",
   rejected: "مرفوض",
@@ -213,6 +223,20 @@ export interface TransitionRule<S extends string> {
    * single authority and no component re-derives which action goes where.
    */
   statusAdjacent?: boolean;
+  /**
+   * Only the request's own author may do this.
+   *
+   * Raising a request is the requester's act, not an approval step — but
+   * `prepare` is a level EVERY higher actor also clears, so HR and the
+   * approver were both offered "رفع الطلب" on someone else's draft, and read
+   * it as their own next step. Reported live, twice.
+   *
+   * A permission level cannot express this on its own: the distinction is not
+   * "how much authority" but "whose request", which is a row fact. The rule
+   * therefore carries it, and `evaluate` refuses with `forbidden` when the
+   * caller is not the author — the same answer as any other missing right.
+   */
+  ownerOnly?: boolean;
   /** Short Arabic label for the action button that performs it. */
   labelAr: string;
 }
@@ -232,8 +256,14 @@ export const requestTransitions: TransitionRule<RequestStatus>[] = [
   //    الموارد البشرية مباشرةً. لا حالة وسيطة "مرفوع" بينهما: كانت تعني أن
   //    المنسّق يرى "مسودة" بينما يرى الأدمن "رفع الطلب" لنفس الصف، وأن
   //    الأدمن يؤدي خطوة الموارد البشرية بنفسه.
-  { from: "draft", to: "under_hr_review", requires: PREPARE, labelAr: "رفع الطلب" },
-  { from: "returned_for_revision", to: "under_hr_review", requires: PREPARE, labelAr: "إعادة الرفع" },
+  { from: "draft", to: "under_hr_review", requires: PREPARE, ownerOnly: true, labelAr: "رفع الطلب" },
+  {
+    from: "returned_for_revision",
+    to: "under_hr_review",
+    requires: PREPARE,
+    ownerOnly: true,
+    labelAr: "إعادة الرفع",
+  },
 
   // ٢) الموارد البشرية: تنتهي مراجعتها، أو ترفض، أو تعيد للتعديل.
   { from: "under_hr_review", to: "hr_reviewed", requires: RECOMMEND, labelAr: "تمت المراجعة" },
@@ -323,6 +353,14 @@ export interface TransitionContext {
   financeReviewed?: boolean;
   /** How many of the plan's requests are still `submitted`/`under_hr_review`. */
   undecidedRequestCount?: number;
+  /**
+   * Is the caller the request's own author (`requested_by` = their profile)?
+   *
+   * Defaults to FALSE when omitted, so an `ownerOnly` rule is refused unless
+   * ownership is positively established — the safe direction, and the same
+   * posture `undecidedRequestCount` takes for the plan.
+   */
+  isOwnRequest?: boolean;
 }
 
 function isBlank(value: string | null | undefined): boolean {
@@ -339,6 +377,9 @@ function evaluate<S extends string>(
   if (!rule) return { allowed: false, refusal: "unknown_transition" };
 
   if (!meets(context.permissions, rule.requires)) {
+    return { allowed: false, refusal: "forbidden" };
+  }
+  if (rule.ownerOnly && !context.isOwnRequest) {
     return { allowed: false, refusal: "forbidden" };
   }
   if (rule.requiresNote && isBlank(context.note)) {
@@ -381,11 +422,22 @@ export function evaluatePlanTransition(
  * outright (the project's established "no disabled button for a permission
  * you don't hold" rule).
  */
+/**
+ * `isOwnRequest` defaults to false, so a caller who is merely permitted is
+ * never offered an owner-only action on someone else's request — which is
+ * exactly how "رفع الطلب" ended up rendered for HR and the approver.
+ */
 export function availableRequestTransitions(
   from: string,
-  permissions: RecruitmentPermissions
+  permissions: RecruitmentPermissions,
+  isOwnRequest = false
 ): TransitionRule<RequestStatus>[] {
-  return requestTransitions.filter((rule) => rule.from === from && meets(permissions, rule.requires));
+  return requestTransitions.filter(
+    (rule) =>
+      rule.from === from &&
+      meets(permissions, rule.requires) &&
+      (!rule.ownerOnly || isOwnRequest)
+  );
 }
 
 export function availablePlanTransitions(

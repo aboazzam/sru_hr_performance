@@ -124,6 +124,11 @@ const createSchema = z
     evaluationId: z.string().uuid().optional(),
     estimatedCostByRequester: z.number().min(0).optional(),
     strategicProjectRef: z.string().trim().optional(),
+    /**
+     * ارفع الطلب فور إنشائه بدل حفظه مسودة. القيمتان هما حالتا صاحب الطلب
+     * وحدهما؛ ما بعدهما لا يُبلغ من هنا إطلاقًا.
+     */
+    submit: z.boolean().optional(),
     // Each selected competency carries its own required level (2026-08-08).
     // The column has always existed but nothing ever wrote it, so every link
     // this form created sat at NULL — a request could name a competency
@@ -147,9 +152,20 @@ const createSchema = z
 export type CreateRecruitmentRequestInput = z.input<typeof createSchema>;
 
 /**
- * Raises a demand request. Always starts at `draft` — the status is never
- * accepted from the caller, so nothing can be created already-submitted and
- * skip its own unit's review.
+ * Raises a demand request.
+ *
+ * `submit` chooses between the requester's own two states, and nothing more:
+ * `false` keeps it a `draft` they are still working on, `true` sends it
+ * straight to `under_hr_review`. Reported live — the form only ever saved a
+ * draft, so a request the requester considered submitted still read «مسودة»
+ * to everyone, and the raise needed a second click from a different screen.
+ *
+ * This is NOT a status accepted from the client: the caller picks between
+ * exactly two values, and the submitted one is reachable anyway through
+ * `draft -> under_hr_review`, whose guard requires `recruitmentPlan>=prepare`
+ * — the very level `recruitment_requests_insert`'s own RLS already demands to
+ * create the row at all. So creating it already-raised grants nothing that a
+ * create-then-raise pair would not. Every later state stays unreachable here.
  *
  * Real authorization is `recruitment_requests_insert`'s RLS:
  * `check_vpra('recruitmentPlan','prepare', org_unit_id)` AND
@@ -173,6 +189,7 @@ export async function createRecruitmentRequest(
   if (!profileId) return { status: "error", message: "no_profile" };
 
   const data = parsed.data;
+  const initialStatus = data.submit ? "under_hr_review" : "draft";
   const { data: created, error } = await supabase
     .from("recruitment_requests")
     .insert({
@@ -191,7 +208,7 @@ export async function createRecruitmentRequest(
       evaluation_id: data.evaluationId ?? null,
       estimated_cost_by_requester: data.estimatedCostByRequester ?? null,
       strategic_project_ref: data.strategicProjectRef ?? null,
-      status: "draft",
+      status: initialStatus,
     })
     .select("id")
     .single();
@@ -214,8 +231,21 @@ export async function createRecruitmentRequest(
   await auditLog(actor.id, "recruitment_request_created", created.id, null, {
     org_unit_id: data.orgUnitId,
     headcount: data.headcount,
-    status: "draft",
+    status: initialStatus,
   });
+
+  // رُفع فور إنشائه، فالموارد البشرية تُخطَر كما لو ضُغط «رفع الطلب» — وإلا
+  // لاختفى الطلب في قائمةٍ لا ينظر إليها أحد.
+  if (data.submit) {
+    await notifyRequestTransition({
+      requestId: created.id,
+      toStatus: "under_hr_review",
+      requestedBy: profileId,
+      jobTitleId: data.jobTitleId ?? null,
+      customJobTitle: data.jobTitleId ? null : (data.customJobTitle ?? null),
+      supabase,
+    });
+  }
   return { status: "success" };
 }
 
@@ -475,9 +505,14 @@ export async function transitionRecruitmentRequest(input: {
   if (!current) return { status: "error", message: "not_found" };
 
   const permissions = await myPermissions(supabase);
+  // Ownership is read from the row, never from the caller — the same rule as
+  // the current status. Hiding an owner-only button is a courtesy; this is
+  // what actually refuses it.
+  const myProfile = await myProfileId(supabase);
   const verdict = evaluateRequestTransition(current.status, parsed.data.toStatus, {
     permissions,
     note: parsed.data.note,
+    isOwnRequest: myProfile !== null && current.requested_by === myProfile,
   });
   if (!verdict.allowed) return { status: "error", message: verdict.refusal };
 
