@@ -41,6 +41,11 @@ export function UserMenu({ userName }: { userName?: string }) {
     { href: "/kpis", label: t("myKpis") },
     { href: "/profile#my-tasks", label: t("myTasks") },
     { href: "/profile#my-performance", label: t("myPerformance") },
+    // /change-password already existed for the forced first-login change, but
+    // nothing linked to it — so anyone who simply WANTED to change their
+    // password had no way in. Last in the list: it is account upkeep, not one
+    // of the profile sections above it.
+    { href: "/change-password", label: t("changePassword") },
   ];
 
   return (
