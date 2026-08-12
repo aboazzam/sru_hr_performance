@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Plus } from "lucide-react";
 import {
   createRecruitmentPlan,
   type RecruitmentPlanActionState,
@@ -17,14 +17,34 @@ const errorKeys: Record<string, string> = {
   unknown: "errorUnknown",
 };
 
+/**
+ * "خطة توظيف جديدة" — a button that opens the form, not a form that is always
+ * open. Asked for directly: the create panel sat permanently above the list,
+ * so the page led with a form for something done a few times a year and
+ * pushed the plans themselves — the reason to visit — below the fold.
+ *
+ * Native `<dialog>`, the same modal this project already uses for the Excel
+ * import: Escape-to-close and a real backdrop come for free rather than being
+ * re-implemented, and a click on the backdrop closes it.
+ *
+ * The form clears and the dialog closes on success, so the next "new plan"
+ * starts empty instead of showing the previous one's text.
+ */
 export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number }) {
   const t = useTranslations("RecruitmentPlanPage");
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentPlanActionState | null>(null);
   const [nameAr, setNameAr] = useState("");
   const [planYear, setPlanYear] = useState(String(defaultYear));
   const [notes, setNotes] = useState("");
+
+  function open() {
+    // A failure message from a previous attempt must not greet the next one.
+    setState(null);
+    dialogRef.current?.showModal();
+  }
 
   function submit() {
     startTransition(async () => {
@@ -33,63 +53,85 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
       if (result.status === "success") {
         setNameAr("");
         setNotes("");
+        dialogRef.current?.close();
         router.refresh();
       }
     });
   }
 
   return (
-    <div className="sru-formsection">
-      <div className="sru-formsection-head">
-        <span className="sru-formsection-badge">
-          <CalendarRange size={16} aria-hidden />
-        </span>
-        <h2>{t("newPlanHeading")}</h2>
-      </div>
+    <>
+      <button type="button" className="sru-btn sru-btn-primary" onClick={open}>
+        <Plus size={15} aria-hidden style={{ verticalAlign: "-2px", marginLeft: 4 }} />
+        {t("newPlanHeading")}
+      </button>
 
-      <div className="sru-formgrid">
-        <label className="sru-field">
-          <span>{t("fieldPlanName")}</span>
-          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
-        </label>
-        <label className="sru-field">
-          <span>{t("fieldPlanYear")}</span>
-          <input
-            type="number"
-            min={2020}
-            max={2100}
-            dir="ltr"
-            value={planYear}
-            onChange={(e) => setPlanYear(e.target.value)}
-            required
-          />
-        </label>
-        <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
-          <span>{t("fieldNotes")}</span>
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </label>
-      </div>
+      <dialog
+        ref={dialogRef}
+        className="sru-modal"
+        onClick={(e) => {
+          if (e.target === dialogRef.current) dialogRef.current?.close();
+        }}
+      >
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <CalendarRange size={16} aria-hidden />
+          </span>
+          <h2 style={{ flex: 1 }}>{t("newPlanHeading")}</h2>
+          <button
+            type="button"
+            className="sru-modal-close"
+            onClick={() => dialogRef.current?.close()}
+            aria-label={t("closeButton")}
+          >
+            ×
+          </button>
+        </div>
 
-      <div className="sru-form-submitrow">
-        <button
-          type="button"
-          className="sru-btn sru-btn-primary"
-          disabled={pending || nameAr.trim() === "" || planYear.trim() === ""}
-          onClick={submit}
-        >
-          {pending ? t("creating") : t("createPlanButton")}
-        </button>
-        {state?.status === "error" && (
-          <span role="alert" className="text-sm text-red-600">
-            {t(errorKeys[state.message] ?? "errorUnknown")}
-          </span>
-        )}
-        {state?.status === "success" && (
-          <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
-            {t("planCreated")}
-          </span>
-        )}
-      </div>
-    </div>
+        <div className="sru-formgrid">
+          <label className="sru-field">
+            <span>{t("fieldPlanName")}</span>
+            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
+          </label>
+          <label className="sru-field">
+            <span>{t("fieldPlanYear")}</span>
+            <input
+              type="number"
+              min={2020}
+              max={2100}
+              dir="ltr"
+              value={planYear}
+              onChange={(e) => setPlanYear(e.target.value)}
+              required
+            />
+          </label>
+          <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <span>{t("fieldNotes")}</span>
+            <input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </label>
+        </div>
+
+        <div className="sru-form-submitrow">
+          <button
+            type="button"
+            className="sru-btn sru-btn-primary"
+            disabled={pending || nameAr.trim() === "" || planYear.trim() === ""}
+            onClick={submit}
+          >
+            {pending ? t("creating") : t("createPlanButton")}
+          </button>
+          <button type="button" className="sru-btn" disabled={pending} onClick={() => dialogRef.current?.close()}>
+            {t("cancelButton")}
+          </button>
+          {/* Errors stay INSIDE the dialog: the success path closes it, so a
+              message shown behind it would never be read. */}
+          {state?.status === "error" && (
+            <span role="alert" className="text-sm text-red-600">
+              {t(errorKeys[state.message] ?? "errorUnknown")}
+            </span>
+          )}
+        </div>
+      </dialog>
+    </>
   );
 }

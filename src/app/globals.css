@@ -1350,3 +1350,42 @@ th.sru-en {
     display: none !important;
   }
 }
+
+/* ===== Clickable table row (2026-08-10) =====
+   طلب مباشر في قائمة خطط التوظيف: «ألغِ زر فتح الخطة، وبمجرد المرور على
+   الخطة تتحول الإشارة وبمجرد الضغط تنفتح الخطة».
+
+   A row that navigates has to announce itself BEFORE the click: the cursor
+   alone is easy to miss on a wide table, so the tint and the pointer arrive
+   together. The tint is the same purple wash `.sru-icon-action:hover` already
+   uses, so a hovered row reads as part of the same family.
+
+   The title keeps the ink colour rather than looking like a blue link — the
+   whole row is the target, and underlining one cell would suggest the rest
+   is not clickable. It underlines on hover, which is where the question
+   "is this clickable?" actually gets asked. */
+tr.sru-row-link {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+tr.sru-row-link:hover > td {
+  background: var(--sru-purple-light);
+}
+.sru-row-link-title {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+tr.sru-row-link:hover .sru-row-link-title {
+  text-decoration: underline;
+}
+/* Keyboard users get the same promise: Tab lands on the title, and the row
+   it belongs to lights up exactly as it would under the mouse. */
+tr.sru-row-link:focus-within > td {
+  background: var(--sru-purple-light);
+}
+@media print {
+  tr.sru-row-link {
+    cursor: auto;
+  }
+}
