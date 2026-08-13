@@ -135,3 +135,99 @@ export async function updateEmployee(_prevState: EditEmployeeState, formData: Fo
 
   return { status: "success" };
 }
+
+const setPasswordSchema = z.object({
+  profileId: z.string().uuid(),
+  // Same floor the self-service form enforces, so an admin-set password can
+  // never be weaker than one the employee could choose for themselves.
+  password: z.string().min(8).max(72),
+});
+
+export type SetPasswordState =
+  | { status: "success" }
+  | {
+      status: "error";
+      message: "invalid_input" | "unauthenticated" | "forbidden" | "no_account" | "unknown";
+    }
+  | null;
+
+/**
+ * Sets an employee's password directly — «أضف خاصية تغيير الرقم السري وكذلك
+ * أضفها عند الأدمن».
+ *
+ * This is the answer to a real, standing problem: the accounts created
+ * without a mailbox (`@no-email.internal`) can never use "نسيت كلمة المرور",
+ * because there is nowhere to send the link. Without this, an employee who
+ * forgets their password has no route back in at all.
+ *
+ * THREE THINGS THIS DELIBERATELY DOES:
+ *
+ * 1. Re-checks `userManagement>=approve` HERE, not just in the page that
+ *    renders the field. Everything else on this screen is gated by RLS on
+ *    `profiles`, but a password lives in `auth.users`, which is reached
+ *    through the service-role client — RLS does not apply to it at all, so
+ *    this check IS the boundary. Nothing else stands behind it.
+ *
+ * 2. Forces `must_change_password`, so an administrator never keeps a working
+ *    password to somebody else's account: the employee is made to replace it
+ *    the moment they sign in, by the same mechanism the direct-create flow
+ *    already uses (20260725000007).
+ *
+ * 3. Records the act, never the secret. `audit_log` says who reset whose
+ *    password and when — a password reset by an administrator is exactly the
+ *    kind of act CLAUDE.md §5 wants a trail for — and the password itself
+ *    appears in no column and no log line.
+ */
+export async function setEmployeePassword(input: {
+  profileId: string;
+  password: string;
+}): Promise<SetPasswordState> {
+  const parsed = setPasswordSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: allowed } = await supabase.rpc("check_vpra", {
+    p_process_area: "userManagement",
+    p_min_level: "approve",
+  });
+  if (!allowed) return { status: "error", message: "forbidden" };
+
+  // Read through the CALLER's client: an admin who cannot see this profile
+  // under `profiles_select` has no business setting its password either.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, auth_user_id, employee_number")
+    .eq("id", parsed.data.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!profile) return { status: "error", message: "forbidden" };
+  // An invited employee who has not accepted yet has no auth account to set a
+  // password on — say so plainly instead of failing with something opaque.
+  if (!profile.auth_user_id) return { status: "error", message: "no_account" };
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(profile.auth_user_id, {
+    password: parsed.data.password,
+  });
+  if (error) return { status: "error", message: "unknown" };
+
+  await admin.from("profiles").update({ must_change_password: true }).eq("id", profile.id);
+
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "employee_password_set",
+    entity: "profiles",
+    entity_id: profile.id,
+    before_data: null,
+    // The employee number identifies WHOSE password was reset without
+    // repeating anything sensitive. The password is not recorded anywhere.
+    after_data: { employee_number: profile.employee_number, must_change_password: true },
+  });
+
+  return { status: "success" };
+}
