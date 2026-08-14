@@ -28,7 +28,7 @@ export default async function RecruitmentPlanPage() {
   const { data: planRows } = canView
     ? await supabase
         .from("recruitment_plans")
-        .select("id, name_ar, plan_year, status, notes")
+        .select("id, name_ar, plan_year, status, notes, finance_reviewed_at")
         .is("deleted_at", null)
         .order("plan_year", { ascending: false })
     : { data: null };
@@ -98,6 +98,7 @@ export default async function RecruitmentPlanPage() {
                         notes={plan.notes}
                         planYear={plan.plan_year}
                         status={plan.status}
+                        financeReviewed={plan.finance_reviewed_at !== null}
                         headcount={headcountByPlan.get(plan.id) ?? 0}
                       />
                     ))}

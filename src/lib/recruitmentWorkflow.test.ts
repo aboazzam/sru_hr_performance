@@ -6,6 +6,7 @@ import {
   evaluateRequestTransition,
   isRequestDecided,
   planStatusLabel,
+  planStatusLabelFor,
   planStatuses,
   planTransitions,
   requestStatusLabel,
@@ -73,6 +74,30 @@ describe("status vocabularies", () => {
     for (const status of planStatuses) expect(planStatusLabel(status)).not.toBe(status);
     expect(requestStatusLabel("something_else")).toBe("something_else");
     expect(planStatusLabel("something_else")).toBe("something_else");
+  });
+
+  it("says the finance review is DONE once finance has stamped it", () => {
+    // Reported directly: the plan was sitting with the approver and still
+    // announced «قيد المراجعة المالية», which reads as "finance still has it".
+    expect(planStatusLabelFor("finance_review", { financeReviewed: true })).toBe(
+      "تمت المراجعة المالية"
+    );
+
+    // THE CASE THAT RULES OUT SIMPLY RENAMING THE STATUS: before finance has
+    // stamped anything, the plan really is still with them — claiming a
+    // completed review here would be worse than the bug being fixed.
+    expect(planStatusLabelFor("finance_review", { financeReviewed: false })).toBe(
+      "قيد المراجعة المالية"
+    );
+    // Unknown is the same as not reviewed — never assume a review happened.
+    expect(planStatusLabelFor("finance_review")).toBe("قيد المراجعة المالية");
+
+    // Every other status is untouched by the finance stamp.
+    for (const status of planStatuses) {
+      if (status === "finance_review") continue;
+      expect(planStatusLabelFor(status, { financeReviewed: true })).toBe(planStatusLabel(status));
+    }
+    expect(planStatusLabelFor("something_else", { financeReviewed: true })).toBe("something_else");
   });
 
   it("counts a request as undecided until the approver rules on it", () => {

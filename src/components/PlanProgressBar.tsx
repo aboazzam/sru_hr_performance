@@ -1,4 +1,4 @@
-import { planStatusLabel, type PlanStatus } from "@/lib/recruitmentWorkflow";
+import { planStatusLabel, planFinanceReviewedLabel, type PlanStatus } from "@/lib/recruitmentWorkflow";
 
 /**
  * شريط تقدّم دورة الخطة. Shows the happy path only — the six states a plan
@@ -20,9 +20,32 @@ const HAPPY_PATH: PlanStatus[] = [
   "ready_for_execution",
 ];
 
-export function PlanProgressBar({ status }: { status: string }) {
+export function PlanProgressBar({
+  status,
+  financeReviewed = false,
+}: {
+  status: string;
+  /** `finance_reviewed_at` is set — finance is done with this plan. */
+  financeReviewed?: boolean;
+}) {
   const offPath = status === "returned_for_revision" || status === "rejected";
   const currentIndex = HAPPY_PATH.indexOf(status as PlanStatus);
+
+  /**
+   * The finance step reads as DONE once finance has stamped it, and also
+   * whenever the plan has moved past it — a plan sitting at `approved` was
+   * obviously reviewed, so labelling that step «قيد المراجعة المالية» would
+   * be describing a stage that ended.
+   *
+   * A step still ahead keeps the pending wording: it names what that stage
+   * will be, which is what an unreached step should say.
+   */
+  function stepLabel(step: PlanStatus, index: number): string {
+    if (step !== "finance_review") return planStatusLabel(step);
+    const past = !offPath && index < currentIndex;
+    const doneNow = !offPath && index === currentIndex && financeReviewed;
+    return past || doneNow ? planFinanceReviewedLabel : planStatusLabel(step);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -46,7 +69,7 @@ export function PlanProgressBar({ status }: { status: string }) {
                   fontWeight: current ? 700 : 400,
                 }}
               >
-                {planStatusLabel(step)}
+                {stepLabel(step, index)}
               </span>
               {index < HAPPY_PATH.length - 1 && (
                 <span aria-hidden style={{ color: "var(--sru-muted)", opacity: offPath ? 0.45 : 1 }}>
