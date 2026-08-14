@@ -16,7 +16,7 @@ import {
 } from "@/lib/recruitmentPlanAnalytics";
 import { PlanWorkflowActions } from "@/components/PlanWorkflowActions";
 import { PlanProgressBar } from "@/components/PlanProgressBar";
-import { planStatusLabel, type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
+import { planStatusLabelFor, type RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 import type { Locale } from "@/i18n/config";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -165,7 +165,10 @@ export default async function RecruitmentPlanDetailPage({
             {plan.name_ar}
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
-            {t("planMeta", { year: plan.plan_year, status: planStatusLabel(plan.status) })}
+            {t("planMeta", {
+              year: plan.plan_year,
+              status: planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null }),
+            })}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -200,7 +203,7 @@ export default async function RecruitmentPlanDetailPage({
       <GroupTabs groupKey="recruitment" current="recruitment/plan" />
 
       <div className="sru-card" style={{ marginTop: 20 }}>
-        <PlanProgressBar status={plan.status} />
+        <PlanProgressBar status={plan.status} financeReviewed={plan.finance_reviewed_at !== null} />
         <div style={{ marginTop: 14 }}>
           <PlanWorkflowActions planId={plan.id} status={plan.status} permissions={permissions} />
         </div>

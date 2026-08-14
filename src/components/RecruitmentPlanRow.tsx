@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, Link } from "@/i18n/navigation";
-import { planStatusLabel } from "@/lib/recruitmentWorkflow";
+import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
 
 /**
  * One plan in the list — the whole row opens it.
@@ -28,6 +28,7 @@ export function RecruitmentPlanRow({
   notes,
   planYear,
   status,
+  financeReviewed,
   headcount,
 }: {
   planId: string;
@@ -35,6 +36,8 @@ export function RecruitmentPlanRow({
   notes: string | null;
   planYear: number;
   status: string;
+  /** Finance has stamped its review — changes what `finance_review` reads as. */
+  financeReviewed: boolean;
   headcount: number;
 }) {
   const router = useRouter();
@@ -59,7 +62,7 @@ export function RecruitmentPlanRow({
       </td>
       <td className="sru-en">{planYear}</td>
       <td>
-        <span className="pill">{planStatusLabel(status)}</span>
+        <span className="pill">{planStatusLabelFor(status, { financeReviewed })}</span>
       </td>
       <td className="sru-en">{headcount}</td>
     </tr>
