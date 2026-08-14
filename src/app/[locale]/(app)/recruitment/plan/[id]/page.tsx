@@ -172,6 +172,15 @@ export default async function RecruitmentPlanDetailPage({
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {/* The finance reviewer's own screen belongs with the page's other
+              top-level destinations, not buried among the HR item actions far
+              down the page — asked for directly, after reaching it meant
+              scrolling past the whole item table. */}
+          {canReviewBudget && (
+            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn sru-btn-primary">
+              {t("financeReviewScreen")}
+            </Link>
+          )}
           {canConsolidate && plan.status === "draft" && (
             <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn sru-btn-primary">
               {t("consolidateRequests")}
@@ -329,19 +338,12 @@ export default async function RecruitmentPlanDetailPage({
         </div>
       )}
 
-      {(canPrepare || canReviewBudget) && (
+      {/* Import and "add item" now sit on one row: both add items to the
+          plan, and the finance link that used to share it has moved to the
+          page header where the other destinations live. */}
+      {canPrepare && (
         <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <RecruitmentPlanHeaderActions planId={plan.id} canPrepare={canPrepare} />
-          {canReviewBudget && (
-            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn sru-btn-primary">
-              {t("financeReviewScreen")}
-            </Link>
-          )}
-        </div>
-      )}
-
-      {canPrepare && (
-        <div style={{ marginTop: 16 }}>
           <AddRecruitmentPlanItemForm
             planId={plan.id}
             orgUnits={orgUnits ?? []}
