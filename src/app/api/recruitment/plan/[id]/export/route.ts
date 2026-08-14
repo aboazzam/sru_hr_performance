@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
-import { planStatusLabel } from "@/lib/recruitmentWorkflow";
+import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
 import { contractTypeLabel, quarterLabel } from "@/lib/recruitmentPlanAnalytics";
 
 // Excluded from src/proxy.ts's matcher (which skips /api entirely), so no
@@ -60,7 +60,7 @@ export async function GET(
 
   const { data: plan } = await supabase
     .from("recruitment_plans")
-    .select("id, name_ar, plan_year, status, approved_budget, hr_recommendation, finance_note")
+    .select("id, name_ar, plan_year, status, approved_budget, hr_recommendation, finance_note, finance_reviewed_at")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -155,7 +155,7 @@ export async function GET(
   const sheet = workbook.addWorksheet("بنود الخطة", { views: [{ rightToLeft: true }] });
 
   sheet.addRow([`خطة التوظيف ${plan.plan_year} — ${plan.name_ar}`]);
-  sheet.addRow([`الحالة: ${planStatusLabel(plan.status)}`]);
+  sheet.addRow([`الحالة: ${planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })}`]);
   sheet.addRow([
     `إجمالي الوظائف: ${totals.totalHeadcount}`,
     `التكلفة السنوية: ${totals.totalAnnualCost}`,

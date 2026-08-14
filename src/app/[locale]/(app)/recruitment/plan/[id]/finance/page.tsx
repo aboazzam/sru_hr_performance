@@ -76,7 +76,15 @@ export default async function PlanFinanceReviewPage({
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="sru-card">
-              <PlanProgressBar status={plan.status} />
+              {/* `financeReviewed` matters most on THIS screen: the reviewer
+                  saves here, and the bar is the first thing they look at to
+                  confirm it registered. Omitting it left the bar saying «قيد
+                  المراجعة المالية» directly beside «تم حفظ المراجعة المالية»
+                  — reported right after a real review was recorded. */}
+              <PlanProgressBar
+                status={plan.status}
+                financeReviewed={plan.finance_reviewed_at !== null}
+              />
             </div>
 
             <div className="sru-card">

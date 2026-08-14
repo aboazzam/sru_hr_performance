@@ -6,7 +6,7 @@ import { PrintButton } from "@/components/PrintButton";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
 import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
-import { planStatusLabel } from "@/lib/recruitmentWorkflow";
+import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import type { Locale } from "@/i18n/config";
 
@@ -41,7 +41,7 @@ export default async function PlanPrintPage({
   const { data: plan } = await supabase
     .from("recruitment_plans")
     .select(
-      "id, name_ar, plan_year, status, notes, approved_budget, hr_recommendation, finance_note, approval_note, approved_at"
+      "id, name_ar, plan_year, status, notes, approved_budget, hr_recommendation, finance_note, finance_reviewed_at, approval_note, approved_at"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -111,7 +111,8 @@ export default async function PlanPrintPage({
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{t("documentTitle")}</h1>
           <p style={{ fontSize: 13, margin: "4px 0 0", color: "var(--sru-muted)" }}>
-            {plan.name_ar} — {plan.plan_year} — {planStatusLabel(plan.status)}
+            {plan.name_ar} — {plan.plan_year} —{" "}
+            {planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })}
           </p>
         </div>
         <Image src="/sru-logo.png" alt="جامعة سليمان الراجحي" width={110} height={40} style={{ height: 40, width: "auto" }} />
