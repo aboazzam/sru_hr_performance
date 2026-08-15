@@ -1876,7 +1876,7 @@
     "confirm": "تأكيد",
     "cancel": "إلغاء",
     "auditTab": "سجل التدقيق",
-    "compareTab": "مقارنة بالسنة السابقة",
+    "compareTab": "مقارنة بخطة سابقة",
     "exportExcel": "تصدير Excel",
     "exportCsv": "تصدير CSV",
     "printView": "عرض للطباعة"
@@ -2105,7 +2105,11 @@
     "columnNote": "الملاحظة"
   },
   "RecruitmentComparePage": {
-    "title": "مقارنة بالسنة السابقة",
+    "title": "مقارنة بخطة سابقة",
+    "pickLabel": "قارن بـ",
+    "pickSubmit": "قارن",
+    "noOtherPlans": "لا توجد خطط أخرى للمقارنة بها.",
+    "pickNone": "لم تُختر خطة بعد — اختر خطة من القائمة لتبدأ المقارنة.",
     "backToPlan": "العودة للخطة",
     "forbidden": "لا تملك صلاحية مشاهدة المقارنة.",
     "planNotFound": "الخطة غير موجودة.",

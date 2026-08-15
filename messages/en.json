@@ -1876,7 +1876,7 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "auditTab": "Audit log",
-    "compareTab": "Compare with last year",
+    "compareTab": "Compare with another plan",
     "exportExcel": "Export Excel",
     "exportCsv": "Export CSV",
     "printView": "Print view"
@@ -2105,7 +2105,11 @@
     "columnNote": "Note"
   },
   "RecruitmentComparePage": {
-    "title": "Comparison with last year",
+    "title": "Compare with Another Plan",
+    "pickLabel": "Compare with",
+    "pickSubmit": "Compare",
+    "noOtherPlans": "There are no other plans to compare with.",
+    "pickNone": "No plan chosen yet — pick one from the list to start the comparison.",
     "backToPlan": "Back to the plan",
     "forbidden": "You do not have permission to view the comparison.",
     "planNotFound": "Plan not found.",
