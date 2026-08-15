@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Wallet } from "lucide-react";
 import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
+import { isFinanceReviewEditable } from "@/lib/recruitmentWorkflow";
 import { PlanWorkflowActions } from "@/components/PlanWorkflowActions";
 import type { RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 import {
@@ -17,6 +18,7 @@ const errorKeys: Record<string, string> = {
   unauthenticated: "errorUnauthenticated",
   forbidden: "errorForbidden",
   not_found: "errorNotFound",
+  plan_decided: "errorPlanDecided",
   unknown: "errorUnknown",
 };
 
@@ -87,6 +89,11 @@ export function FinanceReviewPanel({
   // correction the reviewer means to make.
   const dirty = budgetInput.trim() !== savedBudget.trim() || note.trim() !== savedNote.trim();
 
+  // The approver has ruled, so the review is closed. The server refuses the
+  // write regardless; this only stops the screen from inviting an edit it
+  // knows will be rejected, and says why.
+  const locked = !isFinanceReviewEditable(status);
+
   function save() {
     startTransition(async () => {
       const result = await saveFinanceReview({
@@ -121,6 +128,7 @@ export function FinanceReviewPanel({
             step="0.01"
             dir="ltr"
             value={budgetInput}
+            disabled={locked}
             onChange={(event) => setBudgetInput(event.target.value)}
           />
         </label>
@@ -153,7 +161,7 @@ export function FinanceReviewPanel({
 
         <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
           <span>{t("fieldFinanceNote")}</span>
-          <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} required />
+          <textarea rows={3} value={note} disabled={locked} onChange={(event) => setNote(event.target.value)} required />
         </label>
       </div>
 
@@ -167,16 +175,23 @@ export function FinanceReviewPanel({
         <button
           type="button"
           className="sru-btn sru-btn-primary"
-          disabled={pending || note.trim() === "" || !budgetIsValid || !dirty}
+          disabled={locked || pending || note.trim() === "" || !budgetIsValid || !dirty}
           onClick={save}
         >
           {pending ? t("saving") : alreadyReviewed ? t("updateReview") : t("saveReview")}
         </button>
         {alreadyReviewed && <span className="pill">{t("alreadyReviewed")}</span>}
         {/* Says WHY the button is inert. Without it a disabled button reads as
-            a fault, which is how the active one read before. */}
-        {alreadyReviewed && !dirty && !pending && (
-          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noChangesToSave")}</span>
+            a fault, which is how the active one read before. The closed
+            reason wins: it is the one the reader cannot undo. */}
+        {locked ? (
+          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("reviewLocked")}</span>
+        ) : (
+          alreadyReviewed &&
+          !dirty &&
+          !pending && (
+            <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noChangesToSave")}</span>
+          )
         )}
         {state?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">

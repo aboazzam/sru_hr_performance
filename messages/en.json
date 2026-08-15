@@ -2087,6 +2087,8 @@
     "reviewSaved": "Finance review saved.",
     "alreadyReviewed": "Reviewed",
     "financeActionsHint": "After saving the review, choose the appropriate action on the plan.",
+    "reviewLocked": "The finance review is closed — the plan has already been decided.",
+    "errorPlanDecided": "The finance review cannot be edited after the plan has been decided.",
     "errorInvalid": "Please fill the required fields correctly.",
     "errorUnauthenticated": "Your session expired, please sign in again.",
     "errorForbidden": "You do not have permission to perform this action.",

@@ -4,6 +4,7 @@ import {
   availableRequestTransitions,
   evaluatePlanTransition,
   evaluateRequestTransition,
+  isFinanceReviewEditable,
   isRequestDecided,
   planStatusLabel,
   planStatusLabelFor,
@@ -109,6 +110,24 @@ describe("status vocabularies", () => {
     expect(isRequestDecided("approved")).toBe(true);
     expect(isRequestDecided("rejected")).toBe(true);
     expect(isRequestDecided("draft")).toBe(true);
+  });
+
+  it("closes the finance review once the approver has ruled", () => {
+    // The gap this fixes: finance could rewrite the approved budget and the
+    // finance note AFTER approval — moving the very figures the approval
+    // rested on, with no re-approval and nothing to show they moved.
+    expect(isFinanceReviewEditable("approved")).toBe(false);
+    expect(isFinanceReviewEditable("ready_for_execution")).toBe(false);
+    expect(isFinanceReviewEditable("rejected")).toBe(false);
+
+    // Still open before anyone has ruled — including the stage where finance
+    // is actually working, and the return-for-revision detour, where the
+    // finance note is often the very thing being corrected.
+    expect(isFinanceReviewEditable("finance_review")).toBe(true);
+    expect(isFinanceReviewEditable("returned_for_revision")).toBe(true);
+    for (const status of ["draft", "consolidated", "submitted"]) {
+      expect(isFinanceReviewEditable(status), status).toBe(true);
+    }
   });
 
   it("has an Arabic message for every refusal reason", () => {
