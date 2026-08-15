@@ -56,12 +56,36 @@ export function FinanceReviewPanel({
   );
   const [note, setNote] = useState(initialFinanceNote);
 
+  /**
+   * What is actually stored, kept apart from what is being typed.
+   *
+   * Reported directly: after saving, the button stayed active — so it looked
+   * as though the review had not registered, and pressing it again would
+   * re-stamp the very same figures. Re-saving is NOT removed, because
+   * finance correcting its own number before approval is a real need and the
+   * alternative is a "return for revision" round trip over a typo; it is the
+   * NO-OP save that had to go.
+   *
+   * Updated from the successful save rather than from the props: the props do
+   * refresh afterwards, but React keeps this component's state across that
+   * re-render, so reading them here would leave the baseline behind.
+   */
+  const [savedBudget, setSavedBudget] = useState(
+    initialApprovedBudget === null ? "" : String(initialApprovedBudget)
+  );
+  const [savedNote, setSavedNote] = useState(initialFinanceNote);
+
   const parsedBudget = budgetInput.trim() === "" ? null : Number(budgetInput);
   const budgetIsValid = parsedBudget === null || (Number.isFinite(parsedBudget) && parsedBudget >= 0);
   const preview = computeBudgetVariance(totalAnnualCost, budgetIsValid ? parsedBudget : null);
 
   const formatNumber = (value: number) => value.toLocaleString("ar-SA");
   const overBudget = preview.status === "over";
+
+  // Compared as typed, so "500000" vs "500000.00" counts as a change — the
+  // stored value genuinely differs, and claiming otherwise would block a
+  // correction the reviewer means to make.
+  const dirty = budgetInput.trim() !== savedBudget.trim() || note.trim() !== savedNote.trim();
 
   function save() {
     startTransition(async () => {
@@ -71,7 +95,11 @@ export function FinanceReviewPanel({
         financeNote: note,
       });
       setState(result);
-      if (result.status === "success") router.refresh();
+      if (result.status === "success") {
+        setSavedBudget(budgetInput);
+        setSavedNote(note);
+        router.refresh();
+      }
     });
   }
 
@@ -132,15 +160,24 @@ export function FinanceReviewPanel({
       <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 6 }}>{t("noteMandatoryHint")}</p>
 
       <div className="sru-form-submitrow">
+        {/* Inert until something actually differs from what is stored — the
+            same rule the role editor and the org-structure rows already
+            follow. And once a review exists the verb changes: pressing this
+            amends a recorded review rather than creating one. */}
         <button
           type="button"
           className="sru-btn sru-btn-primary"
-          disabled={pending || note.trim() === "" || !budgetIsValid}
+          disabled={pending || note.trim() === "" || !budgetIsValid || !dirty}
           onClick={save}
         >
-          {pending ? t("saving") : t("saveReview")}
+          {pending ? t("saving") : alreadyReviewed ? t("updateReview") : t("saveReview")}
         </button>
         {alreadyReviewed && <span className="pill">{t("alreadyReviewed")}</span>}
+        {/* Says WHY the button is inert. Without it a disabled button reads as
+            a fault, which is how the active one read before. */}
+        {alreadyReviewed && !dirty && !pending && (
+          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noChangesToSave")}</span>
+        )}
         {state?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">
             {t(errorKeys[state.message] ?? "errorUnknown")}
