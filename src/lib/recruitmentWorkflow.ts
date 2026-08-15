@@ -233,6 +233,26 @@ export function isRequestMergeable(status: string): boolean {
   return mergeableRequestStatuses.includes(status as RequestStatus);
 }
 
+/**
+ * الحالات التي فصل فيها صاحب الاعتماد، فأُغلقت المراجعة المالية.
+ *
+ * `saveFinanceReview` كان بلا أي فحص للحالة، فتستطيع المالية تعديل الميزانية
+ * المعتمدة والملاحظة **بعد** الاعتماد — أي تتبدّل الأرقام التي بُني عليها
+ * قرار الاعتماد دون أن يُعاد، ولا يظهر ذلك لصاحب القرار. أُغلقت بقرار صريح.
+ *
+ * `rejected` منها: الخطة انتهت، وتعديل مراجعة مالية لخطة مرفوضة يغيّر سجلًّا
+ * تاريخيًّا لا قرارًا قائمًا.
+ *
+ * و`returned_for_revision` ليست منها عمدًا: لم يفصل فيها أحد بعد، وغالبًا
+ * ملاحظة المالية نفسها هي سبب الإعادة — فمنع تصحيحها يحبس التصحيح خارج
+ * النظام.
+ */
+const financeDecidedPlanStatuses: PlanStatus[] = ["approved", "ready_for_execution", "rejected"];
+
+export function isFinanceReviewEditable(status: string): boolean {
+  return !financeDecidedPlanStatuses.includes(status as PlanStatus);
+}
+
 // ---------------------------------------------------------------------------
 // Transition tables
 // ---------------------------------------------------------------------------

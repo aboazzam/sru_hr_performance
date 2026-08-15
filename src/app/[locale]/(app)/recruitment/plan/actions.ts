@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import {
   evaluatePlanTransition,
+  isFinanceReviewEditable,
   isRequestDecided,
   planTransitions,
   type RecruitmentPermissions,
@@ -23,6 +24,8 @@ export type RecruitmentPlanErrorMessage =
   | "duplicate"
   | "not_found"
   | "already_posted"
+  // المراجعة المالية أُغلقت بفصل صاحب الاعتماد في الخطة.
+  | "plan_decided"
   | "unknown"
   // Refusals raised by the workflow guard, surfaced with their own Arabic
   // messages from `transitionRefusalMessages` rather than a generic error.
@@ -630,6 +633,24 @@ export async function saveFinanceReview(input: {
   const permissions = await myPermissions(supabase);
   if (!hasVpraAccess(permissions.recruitmentBudget ?? "none", "recommend")) {
     return { status: "error", message: "forbidden" };
+  }
+
+  // Once the approver has ruled, the review is closed. Until this existed,
+  // finance could rewrite `approved_budget` and `finance_note` AFTER approval
+  // — silently changing the very figures the approval rested on, with no
+  // re-approval and nothing on the approver's screen to show it moved.
+  //
+  // Read from the row, never from the caller: the status is a fact about the
+  // plan, exactly like the current status in every transition guard here.
+  const { data: current } = await supabase
+    .from("recruitment_plans")
+    .select("status")
+    .eq("id", parsed.data.planId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!current) return { status: "error", message: "not_found" };
+  if (!isFinanceReviewEditable(current.status)) {
+    return { status: "error", message: "plan_decided" };
   }
 
   const { data: profile } = await supabase
