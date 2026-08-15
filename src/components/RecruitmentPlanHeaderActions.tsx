@@ -54,7 +54,10 @@ export function RecruitmentPlanHeaderActions({
 
   return (
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-      <button type="button" className="sru-btn" disabled={pending} onClick={runImport}>
+      {/* Primary, like "add a new item" beside it: both add items to the plan
+          and are equally the point of that row. One filled and one outlined
+          read as a main action and a lesser one, which is not the case. */}
+      <button type="button" className="sru-btn sru-btn-primary" disabled={pending} onClick={runImport}>
         <Network size={15} aria-hidden style={{ marginInlineEnd: 6, verticalAlign: "-2px" }} />
         {t("importVacantPositions")}
       </button>

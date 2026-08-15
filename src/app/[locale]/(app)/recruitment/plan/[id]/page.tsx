@@ -188,22 +188,22 @@ export default async function RecruitmentPlanDetailPage({
           )}
           {/* Export goes through a Route Handler under /api (not a [locale]
               route), so it is a plain <a>, not the locale-aware <Link>. */}
-          <a href={`/api/recruitment/plan/${plan.id}/export?format=xlsx`} className="sru-btn">
+          <a href={`/api/recruitment/plan/${plan.id}/export?format=xlsx`} className="sru-btn sru-btn-primary">
             {t("exportExcel")}
           </a>
-          <a href={`/api/recruitment/plan/${plan.id}/export?format=csv`} className="sru-btn">
+          <a href={`/api/recruitment/plan/${plan.id}/export?format=csv`} className="sru-btn sru-btn-primary">
             {t("exportCsv")}
           </a>
-          <Link href={`/recruitment/plan/${plan.id}/print`} className="sru-btn">
+          <Link href={`/recruitment/plan/${plan.id}/print`} className="sru-btn sru-btn-primary">
             {t("printView")}
           </Link>
-          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn">
+          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn sru-btn-primary">
             {t("compareTab")}
           </Link>
-          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn">
+          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn sru-btn-primary">
             {t("auditTab")}
           </Link>
-          <Link href="/recruitment/plan" className="sru-btn">
+          <Link href="/recruitment/plan" className="sru-btn sru-btn-primary">
             {t("backToPlans")}
           </Link>
         </div>
@@ -338,20 +338,6 @@ export default async function RecruitmentPlanDetailPage({
         </div>
       )}
 
-      {/* Import and "add item" now sit on one row: both add items to the
-          plan, and the finance link that used to share it has moved to the
-          page header where the other destinations live. */}
-      {canPrepare && (
-        <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <RecruitmentPlanHeaderActions planId={plan.id} canPrepare={canPrepare} />
-          <AddRecruitmentPlanItemForm
-            planId={plan.id}
-            orgUnits={orgUnits ?? []}
-            jobTitles={jobTitles ?? []}
-          />
-        </div>
-      )}
-
       <div className="sru-card" style={{ marginTop: 16 }}>
         {items.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noItems")}</p>
@@ -397,6 +383,24 @@ export default async function RecruitmentPlanDetailPage({
           </div>
         )}
       </div>
+
+      {/* Below the plan's own items, not above them — asked for directly.
+          The two ways of adding an item belong after what they add to: the
+          reader comes here to see the plan, and a row of actions ahead of it
+          pushed the table itself down the page.
+
+          Both are primary: each adds items to the plan, and one filled next
+          to one outlined would rank them when they are peers. */}
+      {canPrepare && (
+        <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <RecruitmentPlanHeaderActions planId={plan.id} canPrepare={canPrepare} />
+          <AddRecruitmentPlanItemForm
+            planId={plan.id}
+            orgUnits={orgUnits ?? []}
+            jobTitles={jobTitles ?? []}
+          />
+        </div>
+      )}
     </div>
   );
 }
