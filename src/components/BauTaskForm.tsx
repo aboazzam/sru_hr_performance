@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { AlertCircle, CheckCircle2, ListChecks, UserCheck } from "lucide-react";
 import { assignBauTask, type AssignBauTaskState } from "@/app/[locale]/(app)/bau-tasks/actions";
 
 interface EmployeeOption {
@@ -56,94 +57,117 @@ export function BauTaskForm({
     });
   }
 
-  const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
+  // Restyled to the add-employee form's shape, asked for directly: labelled
+  // sections with an icon badge, the shared `sru-field` controls, and a
+  // submit row — instead of this screen's own one-off Tailwind utility
+  // classes, which were the last place in the app still styling inputs by
+  // hand.
+  //
+  // Two sections rather than one flat stack, split the way the questions
+  // actually differ: WHO the task is for and in which cycle, then WHAT the
+  // task is. The same reasoning that gives the employee form its sections.
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 max-w-lg">
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("employeeLabel")}</label>
-        <select name="employeeId" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            {t("employeePlaceholder")}
-          </option>
-          {employees.map((employee) => (
-            <option key={employee.id} value={employee.id}>
-              {employee.employee_number} — {employee.full_name_ar}
-            </option>
-          ))}
-        </select>
-      </div>
+    <form ref={formRef} onSubmit={handleSubmit}>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <UserCheck size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionAssignTitle")}</h3>
+            <span>{t("sectionAssignSubtitle")}</span>
+          </div>
+        </div>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("employeeLabel")}</label>
+            <select name="employeeId" required defaultValue="">
+              <option value="" disabled>
+                {t("employeePlaceholder")}
+              </option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.employee_number} — {employee.full_name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field">
+            <label>{t("cycleLabel")}</label>
+            <select name="cycleId" required defaultValue="">
+              <option value="" disabled>
+                {t("cyclePlaceholder")}
+              </option>
+              {cycles.map((cycle) => (
+                <option key={cycle.id} value={cycle.id}>
+                  {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("cycleLabel")}</label>
-        <select name="cycleId" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            {t("cyclePlaceholder")}
-          </option>
-          {cycles.map((cycle) => (
-            <option key={cycle.id} value={cycle.id}>
-              {cycle.name_ar} ({cycle.start_date} – {cycle.end_date})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("titleArLabel")}</label>
-        <input
-          type="text"
-          name="titleAr"
-          required
-          dir="rtl"
-          className={inputClass}
-          placeholder={t("titleArPlaceholder")}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("titleEnLabel")}</label>
-        <input
-          type="text"
-          name="titleEn"
-          dir="ltr"
-          className={inputClass}
-          placeholder={t("titleEnPlaceholder")}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("weightLabel")}</label>
-        <input
-          type="number"
-          name="weight"
-          min="0.01"
-          max="100"
-          step="0.01"
-          className={inputClass}
-          placeholder={t("weightPlaceholder")}
-        />
-      </div>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <ListChecks size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionTaskTitle")}</h3>
+            <span>{t("sectionTaskSubtitle")}</span>
+          </div>
+        </div>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("titleArLabel")}</label>
+            <input type="text" name="titleAr" required dir="rtl" placeholder={t("titleArPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("titleEnLabel")}</label>
+            <input
+              type="text"
+              name="titleEn"
+              dir="ltr"
+              style={{ textAlign: "left" }}
+              placeholder={t("titleEnPlaceholder")}
+            />
+          </div>
+          <div className="sru-field">
+            <label>{t("weightLabel")}</label>
+            <input
+              type="number"
+              name="weight"
+              min="0.01"
+              max="100"
+              step="0.01"
+              dir="ltr"
+              style={{ textAlign: "left" }}
+              placeholder={t("weightPlaceholder")}
+            />
+          </div>
+        </div>
+      </section>
 
       {state?.status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[state.message])}
         </p>
       )}
 
       {state?.status === "success" && (
-        <p role="status" className="text-sm text-green-700">
+        <p role="status" className="sru-auth-alert success">
+          <CheckCircle2 size={15} aria-hidden />
           {t("successMessage")}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
-        {pending ? t("submitting") : t("submit")}
-      </button>
+      <div className="sru-form-submitrow">
+        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+          {pending ? t("submitting") : t("submit")}
+        </button>
+      </div>
     </form>
   );
 }
