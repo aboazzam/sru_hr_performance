@@ -8,6 +8,7 @@ import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
 import { UpdateProgressForm } from "@/components/UpdateProgressForm";
 import { PrintButton } from "@/components/PrintButton";
 import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
+import { InitiativesPanel, type InitiativeTargetOption, type InitiativeView } from "@/components/InitiativesPanel";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -606,13 +607,110 @@ export default async function StrategicPlanDetailPage({
     </div>
   );
 
+  // ---- المبادرات: what will actually achieve this plan's targets ----
+  // Requested 2026-08-19, placed directly after الأهداف الاستراتيجية ("وبعد
+  // اضافة المستهدفات اضف المبادرات"). A link points at either a KPI (its
+  // plan-level target) or one annual target — the XOR the link table
+  // enforces — so both meanings of "المستهدف" on this screen are covered.
+  const { data: initiativesData } = await supabase
+    .from("strategic_initiatives")
+    .select("id, title_ar, title_en, description_ar, owner_position_id, start_date, end_date, status")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const initiativeRows = (initiativesData ?? []) as Array<{
+    id: string;
+    title_ar: string;
+    title_en: string | null;
+    description_ar: string | null;
+    owner_position_id: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    status: string;
+  }>;
+
+  const { data: initiativeLinksData } = await supabase
+    .from("strategic_initiative_targets")
+    .select("id, initiative_id, kpi_id, kpi_annual_target_id")
+    .is("deleted_at", null);
+  const initiativeLinkRows = ((initiativeLinksData ?? []) as Array<{
+    id: string;
+    initiative_id: string;
+    kpi_id: string | null;
+    kpi_annual_target_id: string | null;
+  }>).filter((l) => initiativeRows.some((i) => i.id === l.initiative_id));
+
+  const { data: annualTargetsData } = await supabase
+    .from("kpi_annual_targets")
+    .select("id, kpi_id, cycle_id, target_value")
+    .is("deleted_at", null);
+  const annualTargetRows = ((annualTargetsData ?? []) as Array<{
+    id: string;
+    kpi_id: string;
+    cycle_id: string;
+    target_value: number;
+  }>).filter((a) => kpis.some((k) => k.id === a.kpi_id));
+
+  const { data: cyclesData } =
+    annualTargetRows.length > 0
+      ? await supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null)
+      : { data: [] };
+  const cycleNameById = new Map(((cyclesData ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
+  const kpiById = new Map(kpis.map((k) => [k.id, k]));
+
+  const targetOptions: InitiativeTargetOption[] = [
+    ...kpis.map((k) => ({
+      value: `kpi:${k.id}`,
+      label: `${k.title_ar} — ${t("planTargetLabel")}: ${k.plan_target_value ?? "—"} ${k.unit_ar}`,
+    })),
+    ...annualTargetRows.map((a) => {
+      const k = kpiById.get(a.kpi_id);
+      return {
+        value: `annual:${a.id}`,
+        label: `${k?.title_ar ?? "—"} — ${cycleNameById.get(a.cycle_id) ?? "—"}: ${a.target_value} ${k?.unit_ar ?? ""}`,
+      };
+    }),
+  ];
+  const targetLabelByValue = new Map(targetOptions.map((o) => [o.value, o.label]));
+
+  const initiatives: InitiativeView[] = initiativeRows.map((row) => ({
+    id: row.id,
+    titleAr: row.title_ar,
+    titleEn: row.title_en,
+    descriptionAr: row.description_ar,
+    ownerPositionName: row.owner_position_id ? positionNameById.get(row.owner_position_id) ?? null : null,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    links: initiativeLinkRows
+      .filter((l) => l.initiative_id === row.id)
+      .map((l) => ({
+        id: l.id,
+        label:
+          targetLabelByValue.get(l.kpi_id ? `kpi:${l.kpi_id}` : `annual:${l.kpi_annual_target_id}`) ??
+          t("unknownTarget"),
+      })),
+  }));
+
+  const initiativesContent = (
+    <InitiativesPanel
+      planId={plan.id}
+      initiatives={initiatives}
+      targetOptions={targetOptions}
+      positionOptions={Array.from(positionNameById.entries()).map(([id, name]) => ({ id, name }))}
+      canManage={canManageGoals}
+    />
+  );
+
   // Order requested directly (2026-08-01): vision/mission first (the
-  // foundation), then strategic goals (main + sub-goals + KPIs), then
+  // foundation), then strategic goals (main + sub-goals + KPIs), then --
+  // added 2026-08-19 -- the initiatives that achieve those targets, then
   // assigned goals (deferred follow-up work per the same request), then the
   // goal library last.
   const tabs: ProfileTab[] = [
     { id: "identity", label: tIdentity("title"), content: identityContent },
     { id: "goals", label: tGoals("title"), content: goalsContent },
+    { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
     { id: "assigned", label: tKpis("title"), content: assignedContent },
     { id: "library", label: tLibrary("title"), content: libraryContent },
   ];
