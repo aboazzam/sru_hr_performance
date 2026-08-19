@@ -1740,7 +1740,22 @@
   },
   "StrategicPlanDetailPage": {
     "backToList": "Back to Plans List",
-    "errorNotFound": "This strategic plan could not be found."
+    "errorNotFound": "This strategic plan could not be found.",
+    "exportButton": "Export to Excel",
+    "importButton": "Import from Excel",
+    "importHeading": "Import plan data from Excel",
+    "importNote": "Export the plan first to get the correct file shape, then edit it and import it back. Sheets: vision & mission, values, strategic goals, sub-goals, KPIs, annual targets — all optional. Rows are matched by name and updated, new rows are added, nothing is deleted. The assigned-targets sheet is export-only. Note: vision, mission and values are university-wide records, not per-plan.",
+    "importChooseFile": "Choose file",
+    "importNoFile": "No file chosen",
+    "importSubmit": "Import file",
+    "importSubmitting": "Importing...",
+    "importSuccess": "Imported: {goals} strategic goals, {subGoals} sub-goals, {kpis} KPIs, {targets} annual targets, {values} values.",
+    "importErrorInvalidInput": "Invalid file — choose an .xlsx file exported from this page.",
+    "importErrorUnauthenticated": "You must sign in first.",
+    "importErrorNotFound": "This strategic plan could not be found.",
+    "importErrorNoSheets": "No recognized sheet found in the file — make sure you are importing a file exported from this page.",
+    "importErrorUnknown": "An unexpected error occurred during the import.",
+    "closeButton": "Close"
   },
   "ManageKpisPage": {
     "title": "Manage KPIs & Targets",
