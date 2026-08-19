@@ -1358,7 +1358,16 @@
     "resetFilters": "إعادة تعيين",
     "noMatches": "لا توجد ترقيات مطابقة.",
     "onCareerPath": "ضمن المسار الوظيفي المعتمد",
-    "offCareerPath": "خارج المسار الوظيفي المعتمد"
+    "offCareerPath": "خارج المسار الوظيفي المعتمد",
+    "exportExcel": "تصدير إلى إكسل",
+    "printedOn": "تاريخ الطباعة: {date}",
+    "printedCount": "عرض {shown} من {total}",
+    "employeeNumberHeader": "الرقم الوظيفي",
+    "employeeNameHeader": "اسم الموظف",
+    "fromGradeHeader": "الدرجة الحالية",
+    "toGradeHeader": "الدرجة الجديدة",
+    "careerPathHeader": "المسار الوظيفي",
+    "createdAtHeader": "تاريخ الإنشاء"
   },
   "ProposePromotionPage": {
     "title": "اقتراح ترقية",

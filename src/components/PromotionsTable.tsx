@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { FileSpreadsheet } from "lucide-react";
+import { PrintButton } from "@/components/PrintButton";
+import { filterPromotions } from "@/lib/promotionTable";
 import { PromotionReviewActions } from "@/components/PromotionReviewActions";
 import {
   countPromotionStatuses,
@@ -37,9 +39,13 @@ export interface PromotionRowView {
 export function PromotionsTable({
   promotions,
   canReview,
+  printedOn,
 }: {
   promotions: PromotionRowView[];
   canReview: boolean;
+  /** Formatted server-side (display timezone) — a Date created in this client
+   *  component would differ between the server and client renders. */
+  printedOn: string;
 }) {
   const t = useTranslations("PromotionsPage");
   const [query, setQuery] = useState("");
@@ -47,19 +53,17 @@ export function PromotionsTable({
 
   const counts = useMemo(() => countPromotionStatuses(promotions.map((p) => p.status)), [promotions]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim();
-    return promotions.filter((p) => {
-      if (statusFilter && p.status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        includesIgnoringHamza(p.employeeName ?? "", q) ||
-        (p.employeeNumber ?? "").includes(q) ||
-        includesIgnoringHamza(p.fromTitleName ?? "", q) ||
-        includesIgnoringHamza(p.toTitleName ?? "", q)
-      );
-    });
-  }, [promotions, query, statusFilter]);
+  const filtered = useMemo(
+    () => filterPromotions(promotions, { query, status: statusFilter }),
+    [promotions, query, statusFilter]
+  );
+
+  // The export re-fetches on the server through the caller's own RLS; these
+  // params only tell it to narrow the same way the screen currently is.
+  const exportParams = new URLSearchParams();
+  if (query.trim() !== "") exportParams.set("q", query.trim());
+  if (statusFilter !== "") exportParams.set("status", statusFilter);
+  const exportHref = `/api/promotions/export${exportParams.size ? `?${exportParams}` : ""}`;
 
   const summary = [
     { key: "total", label: t("summaryTotal"), value: counts.total },
@@ -87,7 +91,10 @@ export function PromotionsTable({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        className="no-print"
+        style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}
+      >
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -119,6 +126,30 @@ export function PromotionsTable({
             {t("resetFilters")}
           </button>
         )}
+        <a
+          href={exportHref}
+          className="sru-btn"
+          download
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          <FileSpreadsheet size={15} aria-hidden />
+          {t("exportExcel")}
+        </a>
+        <PrintButton />
+      </div>
+
+      {/* On paper the controls above are gone, so the sheet has to say what it
+          is: the screen's title, when it was printed, and which filter produced
+          these rows. */}
+      <div className="print-only">
+        <strong style={{ fontSize: 15 }}>{t("title")}</strong>
+        <div style={{ fontSize: 12 }}>
+          {t("printedOn", { date: printedOn })}
+          {" — "}
+          {t("printedCount", { shown: filtered.length, total: promotions.length })}
+          {statusFilter ? ` — ${t("columnStatus")}: ${promotionStatusLabel(statusFilter)}` : ""}
+          {query.trim() ? ` — "${query.trim()}"` : ""}
+        </div>
       </div>
 
       <div className="sru-card">
@@ -136,7 +167,7 @@ export function PromotionsTable({
                   <th>{t("columnFrom")}</th>
                   <th>{t("columnTo")}</th>
                   <th>{t("columnStatus")}</th>
-                  {canReview && <th>{t("columnActions")}</th>}
+                  {canReview && <th className="sru-col-actions">{t("columnActions")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -181,7 +212,7 @@ export function PromotionsTable({
                       <span className="pill">{promotionStatusLabel(promotion.status)}</span>
                     </td>
                     {canReview && (
-                      <td>
+                      <td className="sru-col-actions">
                         {promotion.status === "pending" && <PromotionReviewActions promotionId={promotion.id} />}
                       </td>
                     )}
