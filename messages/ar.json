@@ -1720,6 +1720,8 @@
     "empty": "لا توجد خطط استراتيجية بعد.",
     "columnName": "اسم الخطة",
     "columnYears": "السنوات",
+    "addPlanTriggerButton": "إضافة خطة جديدة",
+    "closeButton": "إغلاق",
     "formHeading": "إضافة خطة استراتيجية",
     "formSubtitle": "الاسم ونطاق السنوات",
     "nameArLabel": "اسم الخطة (عربي)",

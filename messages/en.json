@@ -1720,6 +1720,8 @@
     "empty": "No strategic plans yet.",
     "columnName": "Plan Name",
     "columnYears": "Years",
+    "addPlanTriggerButton": "New Plan",
+    "closeButton": "Close",
     "formHeading": "Add a Strategic Plan",
     "formSubtitle": "Name and year range",
     "nameArLabel": "Plan Name (Arabic)",
