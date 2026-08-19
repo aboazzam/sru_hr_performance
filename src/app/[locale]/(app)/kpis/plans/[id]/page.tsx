@@ -7,6 +7,7 @@ import { StrategicValueRow } from "@/components/StrategicValueRow";
 import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
 import { UpdateProgressForm } from "@/components/UpdateProgressForm";
 import { PrintButton } from "@/components/PrintButton";
+import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -626,20 +627,34 @@ export default async function StrategicPlanDetailPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backToList")}
       </Link>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
-          {plan.name_ar}
-        </h1>
+      {/* Export/import sit beside the plan's own title, since the workbook
+          is per-plan, not app-wide. Import shows only at 'approve' — the
+          level the goals/sub-goals/KPIs/annual-targets policies actually
+          require; the identity/values sheets sit lower at 'prepare', so a
+          prepare-level caller keeps editing those through the tab itself. */}
+      <div
+        style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
+            <h1 className="sru-title" style={{ fontSize: 24 }}>
+              {plan.name_ar}
+            </h1>
+          </div>
+          {plan.name_en && (
+            <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
+              {plan.name_en}
+            </p>
+          )}
+          <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, textAlign: "start" }}>
+            {plan.start_year}–{plan.end_year}
+          </p>
+        </div>
+        <div className="no-print" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
+        </div>
       </div>
-      {plan.name_en && (
-        <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
-          {plan.name_en}
-        </p>
-      )}
-      <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20, textAlign: "start" }}>
-        {plan.start_year}–{plan.end_year}
-      </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <ProfileTabs tabs={tabs} />
