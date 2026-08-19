@@ -59,7 +59,8 @@
     "recruitmentPortalInternal": "بوابة التوظيف الداخلي",
     "recruitmentPortalExternal": "بوابة التوظيف الخارجي",
     "executivePlan": "الخطة التنفيذية",
-    "executivePlans": "قائمة الخطط التنفيذية"
+    "executivePlans": "قائمة الخطط التنفيذية",
+    "initiativeAssignments": "إسناد المبادرات"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -2319,6 +2320,48 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إضافة خطة تنفيذية.",
     "errorDuplicate": "توجد خطة تنفيذية لهذه الدورة على هذه الخطة الاستراتيجية بالفعل.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "InitiativeAssignmentsPage": {
+    "title": "إسناد المبادرات",
+    "subtitle": "كل مبادرات الخطة الاستراتيجية — المسندة وغير المسندة — ومعها المستهدف الذي تخدمه، لتُسند كل مبادرة إلى الإدارة أو الكلية المسؤولة عنها والإدارات المشاركة والداعمة.",
+    "noInitiatives": "لا توجد مبادرات بعد. أضف المبادرات من تاب «المبادرات» داخل الخطة الاستراتيجية.",
+    "assignedHeading": "المبادرات المسندة ({count})",
+    "assignedIntro": "لكل مبادرة الجهة المسؤولة أساسًا، والجهات المشاركة بنسبها، والجهات الداعمة.",
+    "assignedEmpty": "لم تُسند أي مبادرة بعد.",
+    "unassignedHeading": "المبادرات غير المسندة ({count})",
+    "unassignedIntro": "اضغط «إسناد المبادرة» ليظهر النموذج داخل الصفحة نفسها.",
+    "unassignedEmpty": "كل المبادرات مسندة.",
+    "planTargetLabel": "مستهدف الخطة",
+    "annualTargetLabel": "مستهدف الخطة السنوية",
+    "noTarget": "غير مرتبطة بمستهدف خطة",
+    "noAnnualTarget": "غير مرتبطة بمستهدف سنوي",
+    "assignButton": "إسناد المبادرة",
+    "editAssignment": "تعديل الإسناد",
+    "clearAssignment": "حذف الإسناد",
+    "clearConfirm": "هل تريد حذف إسناد هذه المبادرة بالكامل؟",
+    "formHeading": "إسناد المبادرة إلى الوحدات التنظيمية",
+    "formNote": "أضف الجهة المسؤولة والجهات المشاركة بنسب مجموعها 100%. الجهات الداعمة تُضاف بلا نسبة.",
+    "columnUnit": "الإدارة / الكلية",
+    "columnRole": "نوع الإسناد",
+    "columnPercentage": "النسبة %",
+    "unitPlaceholder": "اختر الوحدة...",
+    "roleLead": "مسؤولة أساسًا",
+    "roleParticipant": "مشاركة",
+    "roleSupporter": "داعمة",
+    "noPercentage": "بلا نسبة",
+    "addUnitRow": "إضافة وحدة أخرى",
+    "removeRow": "حذف السطر",
+    "totalLabel": "مجموع النسب: {total}%",
+    "save": "حفظ الإسناد",
+    "saving": "جارٍ الحفظ...",
+    "cancel": "إلغاء",
+    "errorInvalidInput": "تحقق من الحقول — اختر وحدة لكل سطر، والنسبة بين 0 و100.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إسناد المبادرات.",
+    "errorNotHundred": "مجموع نسب الجهة المسؤولة والجهات المشاركة يجب أن يساوي 100% بالضبط.",
+    "errorNoLead": "يجب تحديد جهة مسؤولة أساسًا واحدة فقط.",
+    "errorDuplicateUnit": "لا يمكن تكرار الوحدة نفسها في الإسناد.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }

@@ -59,7 +59,8 @@
     "recruitmentPortalInternal": "Internal Portal",
     "recruitmentPortalExternal": "External Portal",
     "executivePlan": "Executive Plan",
-    "executivePlans": "Executive Plans"
+    "executivePlans": "Executive Plans",
+    "initiativeAssignments": "Initiative Assignments"
   },
   "PrintButton": {
     "print": "Print"
@@ -2319,6 +2320,48 @@
     "errorUnauthenticated": "You must sign in first.",
     "errorForbidden": "You do not have permission to add an executive plan.",
     "errorDuplicate": "An executive plan already exists for that cycle on this strategic plan.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "InitiativeAssignmentsPage": {
+    "title": "Initiative Assignments",
+    "subtitle": "Every initiative in the strategic plans — assigned and unassigned — shown with the target it serves, so each can be assigned to the responsible department or college plus participating and supporting units.",
+    "noInitiatives": "No initiatives yet. Add them from the Initiatives tab inside the strategic plan.",
+    "assignedHeading": "Assigned initiatives ({count})",
+    "assignedIntro": "Each shows the primarily responsible unit, the participating units with their shares, and the supporting units.",
+    "assignedEmpty": "No initiative has been assigned yet.",
+    "unassignedHeading": "Unassigned initiatives ({count})",
+    "unassignedIntro": "Press Assign to open the form inline, on this same page.",
+    "unassignedEmpty": "Every initiative is assigned.",
+    "planTargetLabel": "Plan target",
+    "annualTargetLabel": "Annual target",
+    "noTarget": "Not linked to a plan target",
+    "noAnnualTarget": "Not linked to an annual target",
+    "assignButton": "Assign initiative",
+    "editAssignment": "Edit assignment",
+    "clearAssignment": "Clear assignment",
+    "clearConfirm": "Clear this initiative's assignment entirely?",
+    "formHeading": "Assign the initiative to organizational units",
+    "formNote": "Add the responsible unit and participating units with shares totalling 100%. Supporting units carry no share.",
+    "columnUnit": "Department / College",
+    "columnRole": "Assignment type",
+    "columnPercentage": "Share %",
+    "unitPlaceholder": "Choose a unit...",
+    "roleLead": "Primarily responsible",
+    "roleParticipant": "Participating",
+    "roleSupporter": "Supporting",
+    "noPercentage": "No share",
+    "addUnitRow": "Add another unit",
+    "removeRow": "Remove row",
+    "totalLabel": "Total share: {total}%",
+    "save": "Save assignment",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "errorInvalidInput": "Check the fields — pick a unit for every row, with a share between 0 and 100.",
+    "errorUnauthenticated": "You must sign in first.",
+    "errorForbidden": "You do not have permission to assign initiatives.",
+    "errorNotHundred": "The responsible and participating shares must total exactly 100%.",
+    "errorNoLead": "Exactly one primarily-responsible unit is required.",
+    "errorDuplicateUnit": "The same unit cannot appear twice in one assignment.",
     "errorUnknown": "An unexpected error occurred."
   }
 }
