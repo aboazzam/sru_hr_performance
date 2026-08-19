@@ -1755,7 +1755,10 @@
     "importErrorNotFound": "لم يتم العثور على هذه الخطة الاستراتيجية.",
     "importErrorNoSheets": "لا توجد أي ورقة معروفة في الملف — تأكد من أنك تستورد ملفًا مصدَّرًا من هذه الصفحة.",
     "importErrorUnknown": "حدث خطأ غير متوقع أثناء الاستيراد.",
-    "closeButton": "إغلاق"
+    "closeButton": "إغلاق",
+    "initiativesTab": "المبادرات",
+    "planTargetLabel": "مستهدف الخطة",
+    "unknownTarget": "مستهدف غير معروف"
   },
   "ManageKpisPage": {
     "title": "إدارة المؤشرات والمستهدفات",
@@ -2168,5 +2171,36 @@
     "financeNote": "ملاحظة الشؤون المالية:",
     "approvalNote": "ملاحظة الاعتماد:",
     "footerOrg": "جامعة سليمان الراجحي — إدارة رأس المال البشري"
+  },
+  "InitiativesPanel": {
+    "intro": "المبادرات التي ستحقق مستهدفات هذه الخطة. اربط كل مبادرة بالمستهدف الذي تخدمه — إمّا مستهدف الخطة لمؤشر معيّن، أو مستهدف سنوي لدورة محدّدة.",
+    "empty": "لا توجد مبادرات في هذه الخطة بعد.",
+    "addHeading": "إضافة مبادرة",
+    "addSubtitle": "اسم المبادرة ومالكها وفترتها",
+    "addSubmit": "إضافة المبادرة",
+    "addSubmitting": "جارٍ الإضافة...",
+    "titleArLabel": "اسم المبادرة (عربي)",
+    "titleEnLabel": "اسم المبادرة (إنجليزي)",
+    "ownerLabel": "المنصب المالك",
+    "ownerNone": "— بلا مالك محدّد —",
+    "statusLabel": "الحالة",
+    "statusPlaceholder": "مثال: مخطّطة",
+    "startDateLabel": "تاريخ البداية",
+    "endDateLabel": "تاريخ النهاية",
+    "descriptionLabel": "الوصف",
+    "linkedTargets": "المستهدفات المرتبطة",
+    "noLinkedTargets": "لم تُربط بأي مستهدف بعد.",
+    "linkPlaceholder": "اختر المستهدف...",
+    "linkButton": "ربط",
+    "unlinkButton": "إلغاء الربط",
+    "deleteButton": "حذف المبادرة",
+    "deleteConfirm": "هل تريد حذف هذه المبادرة وإلغاء ارتباطاتها؟",
+    "statusValue": "الحالة: {status}",
+    "ownerValue": "المالك: {owner}",
+    "errorInvalidInput": "تحقق من الحقول — اسم المبادرة مطلوب، وتاريخ النهاية يجب ألا يسبق تاريخ البداية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إدارة المبادرات.",
+    "errorDuplicate": "هذه المبادرة مرتبطة بهذا المستهدف بالفعل.",
+    "errorUnknown": "حدث خطأ غير متوقع."
   }
 }

@@ -1755,7 +1755,10 @@
     "importErrorNotFound": "This strategic plan could not be found.",
     "importErrorNoSheets": "No recognized sheet found in the file — make sure you are importing a file exported from this page.",
     "importErrorUnknown": "An unexpected error occurred during the import.",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "initiativesTab": "Initiatives",
+    "planTargetLabel": "Plan target",
+    "unknownTarget": "Unknown target"
   },
   "ManageKpisPage": {
     "title": "Manage KPIs & Targets",
@@ -2168,5 +2171,36 @@
     "financeNote": "Finance note:",
     "approvalNote": "Approval note:",
     "footerOrg": "Sulaiman Alrajhi University — Human Capital"
+  },
+  "InitiativesPanel": {
+    "intro": "The initiatives that will achieve this plan targets. Link each initiative to the target it serves — either a KPI plan target, or an annual target for a specific cycle.",
+    "empty": "No initiatives in this plan yet.",
+    "addHeading": "Add an initiative",
+    "addSubtitle": "Name, owner and period",
+    "addSubmit": "Add initiative",
+    "addSubmitting": "Adding...",
+    "titleArLabel": "Initiative name (Arabic)",
+    "titleEnLabel": "Initiative name (English)",
+    "ownerLabel": "Owning position",
+    "ownerNone": "— no owner set —",
+    "statusLabel": "Status",
+    "statusPlaceholder": "e.g. planned",
+    "startDateLabel": "Start date",
+    "endDateLabel": "End date",
+    "descriptionLabel": "Description",
+    "linkedTargets": "Linked targets",
+    "noLinkedTargets": "Not linked to any target yet.",
+    "linkPlaceholder": "Choose a target...",
+    "linkButton": "Link",
+    "unlinkButton": "Unlink",
+    "deleteButton": "Delete initiative",
+    "deleteConfirm": "Delete this initiative and remove its links?",
+    "statusValue": "Status: {status}",
+    "ownerValue": "Owner: {owner}",
+    "errorInvalidInput": "Check the fields — the name is required and the end date cannot precede the start date.",
+    "errorUnauthenticated": "You must sign in first.",
+    "errorForbidden": "You do not have permission to manage initiatives.",
+    "errorDuplicate": "This initiative is already linked to that target.",
+    "errorUnknown": "An unexpected error occurred."
   }
 }
