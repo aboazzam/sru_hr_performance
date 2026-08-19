@@ -23,7 +23,7 @@ export async function GroupTabs({
   groupKey,
   current,
 }: {
-  groupKey: "strategicPlan" | "administration" | "evaluationMethods" | "evaluationResults" | "recruitment";
+  groupKey: "strategicPlan" | "executivePlan" | "administration" | "evaluationMethods" | "evaluationResults" | "recruitment";
   current: string;
 }) {
   const t = await getTranslations("NavBar");
