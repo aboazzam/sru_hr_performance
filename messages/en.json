@@ -57,7 +57,9 @@
     "recruitmentPortal": "Recruitment Portal",
     "recruitmentRequests": "Demand Requests",
     "recruitmentPortalInternal": "Internal Portal",
-    "recruitmentPortalExternal": "External Portal"
+    "recruitmentPortalExternal": "External Portal",
+    "executivePlan": "Executive Plan",
+    "executivePlans": "Executive Plans"
   },
   "PrintButton": {
     "print": "Print"
@@ -2282,6 +2284,41 @@
     "errorUnauthenticated": "You must sign in first.",
     "errorForbidden": "You do not have permission to edit this program.",
     "errorDuplicate": "That initiative is already included.",
+    "errorUnknown": "An unexpected error occurred."
+  },
+  "ExecutivePlansPage": {
+    "title": "Executive Plans",
+    "subtitle": "An executive plan is a period you choose — usually one year tied to an evaluation cycle — during which the strategic plan is carried out.",
+    "empty": "No executive plans yet.",
+    "noStrategicPlans": "Create a strategic plan first — an executive plan carries out an existing strategic plan.",
+    "columnName": "Plan",
+    "columnStrategicPlan": "Strategic plan",
+    "columnPeriod": "Period",
+    "columnCycle": "Evaluation cycle",
+    "columnStatus": "Status",
+    "addPlanTriggerButton": "New executive plan",
+    "formHeading": "Add an executive plan",
+    "formSubtitle": "Strategic plan and period",
+    "periodHeading": "Plan details",
+    "periodSubtitle": "Choose the period: an existing evaluation cycle, or dates you set yourself",
+    "strategicPlanLabel": "Strategic plan",
+    "cycleLabel": "Evaluation cycle (optional)",
+    "cycleNone": "No cycle",
+    "cycleNoneAvailable": "No evaluation cycles — set the dates manually",
+    "nameArLabel": "Plan name (Arabic)",
+    "nameEnLabel": "Plan name (English)",
+    "startDateLabel": "Start date",
+    "endDateLabel": "End date",
+    "periodSummaryMonths": "Duration: {months, plural, one {# month} other {# months}} ({days, plural, one {# day} other {# days}}).",
+    "periodSummaryDays": "Duration: {days, plural, one {# day} other {# days}}.",
+    "errorRange": "The end date cannot precede the start date.",
+    "submit": "Add plan",
+    "submitting": "Adding...",
+    "closeButton": "Close",
+    "errorInvalidInput": "Check the fields — name and dates are required, and the end date cannot precede the start.",
+    "errorUnauthenticated": "You must sign in first.",
+    "errorForbidden": "You do not have permission to add an executive plan.",
+    "errorDuplicate": "An executive plan already exists for that cycle on this strategic plan.",
     "errorUnknown": "An unexpected error occurred."
   }
 }

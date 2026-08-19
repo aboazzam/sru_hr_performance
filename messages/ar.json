@@ -57,7 +57,9 @@
     "recruitmentPortal": "بوابة التوظيف",
     "recruitmentRequests": "طلبات الاحتياج",
     "recruitmentPortalInternal": "بوابة التوظيف الداخلي",
-    "recruitmentPortalExternal": "بوابة التوظيف الخارجي"
+    "recruitmentPortalExternal": "بوابة التوظيف الخارجي",
+    "executivePlan": "الخطة التنفيذية",
+    "executivePlans": "قائمة الخطط التنفيذية"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -2282,6 +2284,41 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية تعديل البرنامج.",
     "errorDuplicate": "هذه المبادرة مدرجة بالفعل.",
+    "errorUnknown": "حدث خطأ غير متوقع."
+  },
+  "ExecutivePlansPage": {
+    "title": "الخطط التنفيذية",
+    "subtitle": "الخطة التنفيذية نافذة زمنية تختارها — غالبًا سنة واحدة مرتبطة بدورة تقييم — تُنفَّذ خلالها الخطة الاستراتيجية.",
+    "empty": "لا توجد خطط تنفيذية بعد.",
+    "noStrategicPlans": "أنشئ خطة استراتيجية أولًا، فالخطة التنفيذية تُنفّذ خطة استراتيجية قائمة.",
+    "columnName": "اسم الخطة",
+    "columnStrategicPlan": "الخطة الاستراتيجية",
+    "columnPeriod": "الفترة",
+    "columnCycle": "دورة التقييم",
+    "columnStatus": "الحالة",
+    "addPlanTriggerButton": "إضافة خطة تنفيذية",
+    "formHeading": "إضافة خطة تنفيذية",
+    "formSubtitle": "الخطة الاستراتيجية والفترة الزمنية",
+    "periodHeading": "بيانات الخطة",
+    "periodSubtitle": "اختر الفترة: دورة تقييم جاهزة أو تواريخ تحدّدها بنفسك",
+    "strategicPlanLabel": "الخطة الاستراتيجية",
+    "cycleLabel": "دورة التقييم (اختياري)",
+    "cycleNone": "بلا دورة",
+    "cycleNoneAvailable": "لا توجد دورات تقييم — حدّد التواريخ يدويًا",
+    "nameArLabel": "اسم الخطة (عربي)",
+    "nameEnLabel": "اسم الخطة (إنجليزي)",
+    "startDateLabel": "تاريخ البداية",
+    "endDateLabel": "تاريخ النهاية",
+    "periodSummaryMonths": "المدة: {months, plural, few {# أشهر} many {# شهرًا} other {# شهر}} ({days, plural, few {# أيام} many {# يومًا} other {# يوم}}).",
+    "periodSummaryDays": "المدة: {days, plural, few {# أيام} many {# يومًا} other {# يوم}}.",
+    "errorRange": "تاريخ النهاية يجب ألا يسبق تاريخ البداية.",
+    "submit": "إضافة الخطة",
+    "submitting": "جارٍ الإضافة...",
+    "closeButton": "إغلاق",
+    "errorInvalidInput": "تحقق من الحقول — الاسم والتواريخ مطلوبة، وتاريخ النهاية يجب ألا يسبق البداية.",
+    "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "errorForbidden": "ليست لديك صلاحية إضافة خطة تنفيذية.",
+    "errorDuplicate": "توجد خطة تنفيذية لهذه الدورة على هذه الخطة الاستراتيجية بالفعل.",
     "errorUnknown": "حدث خطأ غير متوقع."
   }
 }
