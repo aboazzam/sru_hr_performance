@@ -9,6 +9,7 @@ import { UpdateProgressForm } from "@/components/UpdateProgressForm";
 import { PrintButton } from "@/components/PrintButton";
 import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
 import { InitiativesPanel, type InitiativeTargetOption, type InitiativeView } from "@/components/InitiativesPanel";
+import { ProgramsPanel, type ProgramSummary } from "@/components/ProgramsPanel";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -702,6 +703,50 @@ export default async function StrategicPlanDetailPage({
     />
   );
 
+  // ---- برامج الاستراتيجية: programs grouping this plan's initiatives ----
+  // A committee member with no strategicPlanning grant still sees their own
+  // programs here — strategic_programs_select lets membership alone grant
+  // read (20260819000002), which is the "لكل عضو في اللجنة أكسس" ask.
+  const { data: programRows } = await supabase
+    .from("strategic_programs")
+    .select("id, name_ar, name_en, status, start_date, end_date")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const programList = (programRows ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+
+  const { data: programInitiativeCounts } = await supabase
+    .from("strategic_program_initiatives")
+    .select("program_id")
+    .is("deleted_at", null);
+  const { data: programCommitteeCounts } = await supabase
+    .from("strategic_program_committee_members")
+    .select("program_id")
+    .is("deleted_at", null);
+  function countFor(rows: Array<{ program_id: string }> | null, programId: string): number {
+    return (rows ?? []).filter((r) => r.program_id === programId).length;
+  }
+
+  const programs: ProgramSummary[] = programList.map((p) => ({
+    id: p.id,
+    nameAr: p.name_ar,
+    nameEn: p.name_en,
+    status: p.status,
+    startDate: p.start_date,
+    endDate: p.end_date,
+    initiativeCount: countFor(programInitiativeCounts as Array<{ program_id: string }> | null, p.id),
+    committeeCount: countFor(programCommitteeCounts as Array<{ program_id: string }> | null, p.id),
+  }));
+
+  const programsContent = <ProgramsPanel planId={plan.id} programs={programs} canManage={canManageGoals} />;
+
   // Order requested directly (2026-08-01): vision/mission first (the
   // foundation), then strategic goals (main + sub-goals + KPIs), then --
   // added 2026-08-19 -- the initiatives that achieve those targets, then
@@ -711,6 +756,7 @@ export default async function StrategicPlanDetailPage({
     { id: "identity", label: tIdentity("title"), content: identityContent },
     { id: "goals", label: tGoals("title"), content: goalsContent },
     { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
+    { id: "programs", label: t("programsTab"), content: programsContent },
     { id: "assigned", label: tKpis("title"), content: assignedContent },
     { id: "library", label: tLibrary("title"), content: libraryContent },
   ];
