@@ -1383,7 +1383,16 @@
     "resetFilters": "Reset",
     "noMatches": "No matching promotions.",
     "onCareerPath": "On the approved career path",
-    "offCareerPath": "Off the approved career path"
+    "offCareerPath": "Off the approved career path",
+    "exportExcel": "Export to Excel",
+    "printedOn": "Printed on: {date}",
+    "printedCount": "Showing {shown} of {total}",
+    "employeeNumberHeader": "Employee number",
+    "employeeNameHeader": "Employee name",
+    "fromGradeHeader": "Current grade",
+    "toGradeHeader": "New grade",
+    "careerPathHeader": "Career path",
+    "createdAtHeader": "Created on"
   },
   "ProposePromotionPage": {
     "title": "Propose Promotion",

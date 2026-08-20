@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { PromotionsTable, type PromotionRowView } from "@/components/PromotionsTable";
@@ -80,6 +81,16 @@ export default async function PromotionsPage() {
         : classifyPromotionAgainstCareerPath(promotion.from_job_title_id, promotion.to_job_title_id, edges),
   }));
 
+  // Printed-on stamp: formatted here, not in the client component, so the
+  // server and client renders cannot disagree, and it follows the configured
+  // display timezone like every other date in this app.
+  const displayTimezone = await getDisplayTimezone(supabase);
+  const printedOn = new Intl.DateTimeFormat("ar", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: displayTimezone,
+  }).format(new Date());
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div
@@ -99,7 +110,7 @@ export default async function PromotionsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/promotions/history" className="sru-btn">
             {t("approvalHistory")}
           </Link>
@@ -119,7 +130,7 @@ export default async function PromotionsPage() {
       <GroupTabs groupKey="recruitment" current="promotions" />
       <div style={{ height: 20 }} />
 
-      <PromotionsTable promotions={rows} canReview={canReview} />
+      <PromotionsTable promotions={rows} canReview={canReview} printedOn={printedOn} />
     </div>
   );
 }
