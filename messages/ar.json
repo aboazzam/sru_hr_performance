@@ -2218,7 +2218,11 @@
     "subGoalPlaceholder": "— اختر الهدف الفرعي —",
     "subGoalValue": "الهدف الفرعي: {subGoal}",
     "datesRequiredNote": "اختر تاريخي البداية والنهاية لتفعيل الإضافة.",
-    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا."
+    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا.",
+    "progressReported": "نسبة الإنجاز",
+    "progressFromStatus": "مكتملة",
+    "progressElapsed": "مضى من المدة",
+    "progressUnknown": "لم تُقيَّم بعد"
   },
   "ProgramsPanel": {
     "intro": "البرامج الاستراتيجية تجمع عدة مبادرات تحت مظلة واحدة، وتديرها لجنة مشرفة. اضغط «فتح البرنامج» للاطلاع على اللجنة والداشبورد وتفاصيل المبادرات.",
@@ -2480,7 +2484,9 @@
     "ownerPlaceholder": "— اختر الإدارة —",
     "titleArLabel": "اسم المبادرة (عربي)",
     "titleEnLabel": "اسم المبادرة (إنجليزي)",
-    "deliverableLabel": "المخرج"
+    "deliverableLabel": "المخرج",
+    "progressLabel": "نسبة الإنجاز (%)",
+    "progressPlaceholder": "اتركه فارغًا إن لم تُقيَّم بعد"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",

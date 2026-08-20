@@ -1574,3 +1574,92 @@ tr.sru-row-link:focus-within > td {
   width: auto;
   height: auto;
 }
+
+/* ---- initiative cards (المبادرات tab) ---------------------------------- */
+/* The whole card is one target: hovering lifts it, and a single stretched
+   link inside the title covers it. The controls that live on the card
+   (delete, link, unlink) are raised above that overlay so they keep their own
+   click, which is why the card is not simply wrapped in an <a>. */
+.sru-initiative-card {
+  position: relative;
+  padding: 16px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.sru-initiative-card:hover,
+.sru-initiative-card:focus-within {
+  border-color: var(--sru-purple);
+  box-shadow: 0 8px 22px rgba(80, 30, 140, 0.13);
+  transform: translateY(-2px);
+}
+.sru-initiative-card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.sru-initiative-card-title {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sru-initiative-card:hover .sru-initiative-card-title {
+  color: var(--sru-purple);
+  text-decoration: underline;
+}
+.sru-initiative-card-go {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  color: var(--sru-purple);
+}
+.sru-initiative-card:hover .sru-initiative-card-go {
+  opacity: 1;
+}
+.sru-stretched::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+/* Everything interactive sits above the stretched overlay. */
+.sru-initiative-card form,
+.sru-initiative-card-foot {
+  position: relative;
+  z-index: 1;
+}
+.sru-initiative-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+}
+.sru-initiative-chip.is-plain {
+  background: transparent;
+  color: var(--sru-muted);
+  border: 1px solid var(--sru-border, #e5e7eb);
+}
+/* Status colours stay inside the identity palette: the two brand hues plus
+   the shared success/danger tokens already used elsewhere in this app. */
+.sru-initiative-chip.is-in_progress {
+  background: color-mix(in srgb, var(--sru-blue, #1f7ae0) 14%, #fff);
+  color: var(--sru-blue, #1f7ae0);
+}
+.sru-initiative-chip.is-done {
+  background: color-mix(in srgb, var(--sru-success, #15803d) 14%, #fff);
+  color: var(--sru-success, #15803d);
+}
+.sru-initiative-chip.is-delayed {
+  background: color-mix(in srgb, var(--sru-danger, #b91c1c) 12%, #fff);
+  color: var(--sru-danger, #b91c1c);
+}
+@media print {
+  .sru-initiative-card:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}

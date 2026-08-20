@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
-import { AlertCircle, Link2, Plus, Trash2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
+import { AlertCircle, ArrowLeft, Link2, Plus, Trash2, X } from "lucide-react";
 import {
   createInitiative,
   deleteInitiative,
@@ -12,6 +12,9 @@ import {
   type InitiativeActionState,
 } from "@/app/[locale]/(app)/kpis/plans/[id]/initiatives/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
+import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
+import { initiativeProgress } from "@/lib/initiativeProgress";
+import { formatDateDmy } from "@/lib/dateParts";
 
 export interface InitiativeTargetOption {
   /** "kpi:<id>" or "annual:<id>" — one value space, matching the link table's XOR. */
@@ -36,12 +39,26 @@ export interface InitiativeView {
   startDate: string | null;
   endDate: string | null;
   statusLabel: string;
+  statusCode: string;
+  /** Reported completion 0-100 (20260820000008); null = not assessed yet. */
+  progressPercent: number | string | null;
   links: InitiativeLinkView[];
 }
 
 export interface InitiativeStatusOption {
   code: string;
   label: string;
+}
+
+/**
+ * Today as `YYYY-MM-DD` in the viewer's own calendar. Built from the local
+ * date PARTS, never `toISOString()` — that converts to UTC first and would
+ * report yesterday for anyone east of Greenwich before 03:00.
+ */
+function todayIso(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 const errorKeys: Record<string, string> = {
@@ -247,6 +264,7 @@ function InitiativeCard({
   canManage: boolean;
 }) {
   const t = useTranslations("InitiativesPanel");
+  const locale = useLocale();
   const router = useRouter();
   const [linkState, linkAction, linking] = useActionState<InitiativeActionState, FormData>(linkInitiativeTarget, null);
   const [unlinkState, unlinkAction] = useActionState<InitiativeActionState, FormData>(unlinkInitiativeTarget, null);
@@ -261,28 +279,50 @@ function InitiativeCard({
   const linkedValues = new Set(initiative.links.map((l) => l.label));
   const available = targetOptions.filter((o) => !linkedValues.has(o.label));
 
+  const progress = initiativeProgress(
+    {
+      progressPercent: initiative.progressPercent,
+      startDate: initiative.startDate,
+      endDate: initiative.endDate,
+      statusCode: initiative.statusCode,
+    },
+    todayIso()
+  );
+
+  const startText = initiative.startDate ? formatDateDmy(initiative.startDate, locale) : "—";
+  const endText = initiative.endDate ? formatDateDmy(initiative.endDate, locale) : "—";
+  const period = initiative.startDate || initiative.endDate ? `${startText} → ${endText}` : null;
+
   return (
-    <div className="sru-card" style={{ padding: 16 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h4 style={{ fontSize: 15, fontWeight: 700 }}>{initiative.titleAr}</h4>
+    <div className="sru-card sru-initiative-card">
+      <div className="sru-initiative-card-body">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h4 style={{ fontSize: 15, fontWeight: 700 }}>
+            {/* The whole card follows this one link: `sru-stretched` casts an
+                overlay across the card, and the controls below sit above it,
+                so delete / link / unlink still work as their own targets. */}
+            <Link href={`/initiatives/${initiative.id}`} className="sru-stretched sru-initiative-card-title">
+              {initiative.titleAr}
+              <ArrowLeft size={14} aria-hidden className="sru-initiative-card-go" />
+            </Link>
+          </h4>
           {initiative.titleEn && (
             <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
               {initiative.titleEn}
             </span>
           )}
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
-            {t("statusValue", { status: initiative.statusLabel })}
-            {initiative.ownerOrgUnitName ? ` · ${t("ownerValue", { owner: initiative.ownerOrgUnitName })}` : ""}
-            {initiative.subGoalTitle ? ` · ${t("subGoalValue", { subGoal: initiative.subGoalTitle })}` : ""}
-            {initiative.startDate || initiative.endDate
-              ? ` · ${initiative.startDate ?? "—"} → ${initiative.endDate ?? "—"}`
-              : ""}
-          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <span className={`sru-initiative-chip is-${initiative.statusCode}`}>{initiative.statusLabel}</span>
+            {initiative.ownerOrgUnitName && <span className="sru-initiative-chip">{initiative.ownerOrgUnitName}</span>}
+            {initiative.subGoalTitle && <span className="sru-initiative-chip">{initiative.subGoalTitle}</span>}
+            {period && <span className="sru-initiative-chip is-plain">{period}</span>}
+          </div>
           {initiative.descriptionAr && (
-            <p style={{ fontSize: 13, marginTop: 6, lineHeight: 1.7 }}>{initiative.descriptionAr}</p>
+            <p style={{ fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>{initiative.descriptionAr}</p>
           )}
         </div>
+        {/* Placed after the text, so in an RTL row it renders on the LEFT. */}
+        <InitiativeProgressRing progress={progress} />
         {canManage && (
           <form
             action={(formData) => {
@@ -298,7 +338,7 @@ function InitiativeCard({
         )}
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="sru-initiative-card-foot" style={{ marginTop: 12 }}>
         <span style={{ fontSize: 12, fontWeight: 700 }}>{t("linkedTargets")}</span>
         {initiative.links.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("noLinkedTargets")}</p>

@@ -21,6 +21,8 @@ export interface InitiativeCardFormValues {
   statusCode: string;
   startDate: string;
   endDate: string;
+  /** Reported completion 0-100; "" when not assessed yet. */
+  progressPercent: string;
 }
 
 const errorKeys: Record<string, string> = {
@@ -305,6 +307,23 @@ export function InitiativeCardEditor({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="sru-field">
+            {/* Not in the missing-fields list: progress is reported over time,
+                not part of what makes a card complete on the day it is filed. */}
+            <label>{t("progressLabel")}</label>
+            <input
+              type="number"
+              name="progressPercent"
+              min={0}
+              max={100}
+              step={1}
+              dir="ltr"
+              style={{ textAlign: "left" }}
+              placeholder={t("progressPlaceholder")}
+              value={values.progressPercent}
+              onChange={(e) => set("progressPercent")(e.target.value)}
+            />
           </div>
           <div className="sru-field">
             <label>
