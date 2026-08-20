@@ -134,3 +134,112 @@ export async function deleteInitiativeActivity(_prev: ActivityActionState, formD
   revalidatePath("/[locale]/initiatives/[id]", "page");
   return { status: "success" };
 }
+
+export type InitiativeCardState =
+  | { status: "success" }
+  | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "duplicate_code" | "unknown" }
+  | null;
+
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v === "" ? undefined : v));
+
+const optionalUuid = optionalText.refine(
+  (v) => v === undefined || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+);
+
+/**
+ * The card fields, all optional except the two the table itself declares NOT
+ * NULL (title_ar, status_code).
+ *
+ * This is DELIBERATELY looser than the two add-initiative forms, which demand
+ * every field (2026-08-20). Those records are created in one sitting; this
+ * screen exists to complete initiatives entered BEFORE that rule, and
+ * refusing a partial save would mean an old card could not be improved at all
+ * until every blank was filled at once. `missingInitiativeFields` keeps what
+ * is still blank visible on the screen instead.
+ */
+const cardSchema = z
+  .object({
+    initiativeId: z.string().uuid(),
+    titleAr: z.string().trim().min(1),
+    statusCode: z.string().trim().min(1),
+    titleEn: optionalText,
+    code: optionalText,
+    deliverableAr: optionalText,
+    descriptionAr: optionalText,
+    horizon: optionalText,
+    budgetNote: optionalText,
+    subGoalId: optionalUuid,
+    ownerOrgUnitId: optionalUuid,
+    startDate: optionalDate,
+    endDate: optionalDate,
+  })
+  // Mirrors the DB's own strategic_initiatives_dates_valid CHECK.
+  .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, { path: ["endDate"] });
+
+/**
+ * Saves the initiative's own card fields.
+ *
+ * Real authorization is strategic_initiatives_update (20260819000001):
+ * check_vpra_global('strategicPlanning','approve'). The write goes through
+ * the caller's own client, and an UPDATE blocked by RLS affects zero rows
+ * WITHOUT erroring, so the affected rows are read back rather than assumed.
+ */
+export async function updateInitiativeCard(_prev: InitiativeCardState, formData: FormData): Promise<InitiativeCardState> {
+  const parsed = cardSchema.safeParse({
+    initiativeId: formData.get("initiativeId"),
+    titleAr: formData.get("titleAr"),
+    statusCode: formData.get("statusCode"),
+    titleEn: formData.get("titleEn") ?? undefined,
+    code: formData.get("code") ?? undefined,
+    deliverableAr: formData.get("deliverableAr") ?? undefined,
+    descriptionAr: formData.get("descriptionAr") ?? undefined,
+    horizon: formData.get("horizon") ?? undefined,
+    budgetNote: formData.get("budgetNote") ?? undefined,
+    subGoalId: formData.get("subGoalId") ?? undefined,
+    ownerOrgUnitId: formData.get("ownerOrgUnitId") ?? undefined,
+    startDate: formData.get("startDate") ?? undefined,
+    endDate: formData.get("endDate") ?? undefined,
+  });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const d = parsed.data;
+  // `?? null` throughout, so clearing a field really clears it rather than
+  // silently keeping the old value.
+  const { data: updated, error } = await supabase
+    .from("strategic_initiatives")
+    .update({
+      title_ar: d.titleAr,
+      title_en: d.titleEn ?? null,
+      code: d.code ?? null,
+      deliverable_ar: d.deliverableAr ?? null,
+      description_ar: d.descriptionAr ?? null,
+      horizon: d.horizon ?? null,
+      budget_note: d.budgetNote ?? null,
+      sub_goal_id: d.subGoalId ?? null,
+      owner_org_unit_id: d.ownerOrgUnitId ?? null,
+      status_code: d.statusCode,
+      start_date: d.startDate ?? null,
+      end_date: d.endDate ?? null,
+    })
+    .eq("id", d.initiativeId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) {
+    if (error.code === "23505") return { status: "error", message: "duplicate_code" };
+    return mapError(error) as InitiativeCardState;
+  }
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  revalidatePath("/[locale]/initiatives/[id]", "page");
+  return { status: "success" };
+}

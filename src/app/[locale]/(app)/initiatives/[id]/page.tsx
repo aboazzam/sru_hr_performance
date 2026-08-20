@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { PrintButton } from "@/components/PrintButton";
 import { InitiativeActivitiesEditor, type ActivityView } from "@/components/InitiativeActivitiesEditor";
+import { InitiativeCardEditor } from "@/components/InitiativeCardEditor";
 import { coversMonth, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
 import { formatDateDmy } from "@/lib/dateParts";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -142,6 +143,37 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
     label: `${e.employee_number} — ${e.full_name_ar}`,
   }));
 
+  // The card editor's own options, fetched only for a caller who can save:
+  // strategic_initiatives_update requires strategicPlanning='approve', so
+  // anyone below that would be shown a form the database would refuse.
+  const canEditCard = hasVpraAccess(level, "approve");
+  const { data: planSubGoalRows } = canEditCard
+    ? await supabase
+        .from("sub_goals")
+        .select("id, title_ar, strategic_goal_id, strategic_goals!inner(plan_id)")
+        .eq("strategic_goals.plan_id", initiative.plan_id)
+        .is("deleted_at", null)
+        .order("title_ar")
+    : { data: [] };
+  const cardSubGoalOptions = ((planSubGoalRows ?? []) as Array<{ id: string; title_ar: string }>).map((sg) => ({
+    id: sg.id,
+    title: sg.title_ar,
+  }));
+  const { data: allOrgUnitRows } = canEditCard
+    ? await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar")
+    : { data: [] };
+  const cardOrgUnitOptions = ((allOrgUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
+    id: u.id,
+    name: u.name_ar,
+  }));
+  const { data: allStatusRows } = canEditCard
+    ? await supabase.from("initiative_statuses").select("code, label_ar").order("display_order")
+    : { data: [] };
+  const cardStatusOptions = ((allStatusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
+    code: r.code,
+    label: r.label_ar,
+  }));
+
   const cell = (label: string, value: string) => (
     <div style={{ display: "flex", gap: 6, fontSize: 13 }}>
       <span style={{ color: "var(--sru-muted)", whiteSpace: "nowrap" }}>{label}:</span>
@@ -277,6 +309,29 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
           )}
         </div>
       </div>
+
+      {canEditCard && (
+        <InitiativeCardEditor
+          initiativeId={initiative.id}
+          initial={{
+            code: initiative.code ?? "",
+            horizon: initiative.horizon ?? "",
+            titleAr: initiative.title_ar ?? "",
+            titleEn: initiative.title_en ?? "",
+            deliverableAr: initiative.deliverable_ar ?? "",
+            descriptionAr: initiative.description_ar ?? "",
+            subGoalId: initiative.sub_goal_id ?? "",
+            ownerOrgUnitId: initiative.owner_org_unit_id ?? "",
+            budgetNote: initiative.budget_note ?? "",
+            statusCode: initiative.status_code ?? "",
+            startDate: initiative.start_date ?? "",
+            endDate: initiative.end_date ?? "",
+          }}
+          subGoalOptions={cardSubGoalOptions}
+          orgUnitOptions={cardOrgUnitOptions}
+          statusOptions={cardStatusOptions}
+        />
+      )}
 
       {canEditActivities && (
         <InitiativeActivitiesEditor initiativeId={initiative.id} activities={activities} employeeOptions={employeeOptions} />
