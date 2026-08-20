@@ -23,10 +23,11 @@ const createSchema = z
     titleAr: z.string().trim().min(1),
     titleEn: z.string().trim().optional(),
     descriptionAr: z.string().trim().optional(),
-    ownerPositionId: z.string().uuid().optional(),
+    ownerOrgUnitId: z.string().uuid().optional(),
+    subGoalId: z.string().uuid().optional(),
     startDate: optionalDate,
     endDate: optionalDate,
-    status: z.string().trim().optional(),
+    statusCode: z.string().trim().optional(),
   })
   // Mirrors the DB's own strategic_initiatives_dates_valid CHECK so the
   // caller gets a real message instead of an opaque constraint violation.
@@ -55,10 +56,11 @@ export async function createInitiative(_prev: InitiativeActionState, formData: F
     titleAr: formData.get("titleAr"),
     titleEn: formData.get("titleEn") || undefined,
     descriptionAr: formData.get("descriptionAr") || undefined,
-    ownerPositionId: formData.get("ownerPositionId") || undefined,
+    ownerOrgUnitId: formData.get("ownerOrgUnitId") || undefined,
+    subGoalId: formData.get("subGoalId") || undefined,
     startDate: formData.get("startDate") ?? undefined,
     endDate: formData.get("endDate") ?? undefined,
-    status: formData.get("status") || undefined,
+    statusCode: formData.get("statusCode") || undefined,
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
@@ -77,10 +79,11 @@ export async function createInitiative(_prev: InitiativeActionState, formData: F
       title_ar: d.titleAr,
       title_en: d.titleEn ?? null,
       description_ar: d.descriptionAr ?? null,
-      owner_position_id: d.ownerPositionId ?? null,
+      owner_org_unit_id: d.ownerOrgUnitId ?? null,
+      sub_goal_id: d.subGoalId ?? null,
       start_date: d.startDate ?? null,
       end_date: d.endDate ?? null,
-      ...(d.status ? { status: d.status } : {}),
+      ...(d.statusCode ? { status_code: d.statusCode } : {}),
       created_by: myProfile?.id ?? null,
     })
     .select("id")

@@ -2185,10 +2185,9 @@
     "addSubmitting": "Adding...",
     "titleArLabel": "Initiative name (Arabic)",
     "titleEnLabel": "Initiative name (English)",
-    "ownerLabel": "Owning position",
-    "ownerNone": "— no owner set —",
+    "ownerLabel": "Owning department",
+    "ownerNone": "— no owning department —",
     "statusLabel": "Status",
-    "statusPlaceholder": "e.g. planned",
     "startDateLabel": "Start date",
     "endDateLabel": "End date",
     "descriptionLabel": "Description",
@@ -2205,7 +2204,10 @@
     "errorUnauthenticated": "You must sign in first.",
     "errorForbidden": "You do not have permission to manage initiatives.",
     "errorDuplicate": "This initiative is already linked to that target.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "subGoalLabel": "Sub-goal",
+    "subGoalNone": "— no sub-goal —",
+    "subGoalValue": "Sub-goal: {subGoal}"
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",
