@@ -959,7 +959,11 @@
     "sectionVisionTitle": "Vision",
     "sectionVisionSubtitle": "In Arabic and English",
     "sectionMissionTitle": "Mission",
-    "sectionMissionSubtitle": "In Arabic and English"
+    "sectionMissionSubtitle": "In Arabic and English",
+    "valueTitleArLabel": "Value (Arabic)",
+    "valueTitleEnLabel": "Value (English)",
+    "valueDescriptionLabel": "Description",
+    "closeButton": "Close"
   },
   "StrategicGoalsPage": {
     "title": "Strategic Goals",
