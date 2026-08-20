@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { AlertCircle, ClipboardList, Link2, Plus, X } from "lucide-react";
 import {
   attachProgramInitiatives,
@@ -302,7 +302,11 @@ export function ProgramInitiativesTab({
                       {row.code ?? "—"}
                     </td>
                     <td>
-                      <span style={{ fontWeight: 700 }}>{row.titleAr}</span>
+                      {/* The card page: the initiative in full, and what the
+                          committee opens to follow the owning department. */}
+                      <Link href={`/initiatives/${row.initiativeId}`} style={{ color: "var(--color-primary)", fontWeight: 700, textDecoration: "none" }}>
+                        {row.titleAr}
+                      </Link>
                       {row.deliverableAr && (
                         <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
                           {t("deliverableInline", { deliverable: row.deliverableAr })}
