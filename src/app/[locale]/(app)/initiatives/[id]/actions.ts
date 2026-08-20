@@ -176,6 +176,12 @@ const cardSchema = z
     ownerOrgUnitId: optionalUuid,
     startDate: optionalDate,
     endDate: optionalDate,
+    // Reported completion (20260820000008). Optional: an initiative that has
+    // not been assessed keeps NULL, and the ring then shows elapsed time
+    // instead of claiming 0% done.
+    progressPercent: optionalText.refine(
+      (v) => v === undefined || (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100)
+    ),
   })
   // Mirrors the DB's own strategic_initiatives_dates_valid CHECK.
   .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, { path: ["endDate"] });
@@ -203,6 +209,7 @@ export async function updateInitiativeCard(_prev: InitiativeCardState, formData:
     ownerOrgUnitId: formData.get("ownerOrgUnitId") ?? undefined,
     startDate: formData.get("startDate") ?? undefined,
     endDate: formData.get("endDate") ?? undefined,
+    progressPercent: formData.get("progressPercent") ?? undefined,
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
@@ -230,6 +237,7 @@ export async function updateInitiativeCard(_prev: InitiativeCardState, formData:
       status_code: d.statusCode,
       start_date: d.startDate ?? null,
       end_date: d.endDate ?? null,
+      progress_percent: d.progressPercent === undefined ? null : Number(d.progressPercent),
     })
     .eq("id", d.initiativeId)
     .is("deleted_at", null)

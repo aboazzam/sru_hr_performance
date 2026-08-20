@@ -2218,7 +2218,11 @@
     "subGoalPlaceholder": "— Select a sub-goal —",
     "subGoalValue": "Sub-goal: {subGoal}",
     "datesRequiredNote": "Choose both the start and end dates to enable adding.",
-    "subGoalEmptyHint": "Add a sub-goal to the plan first."
+    "subGoalEmptyHint": "Add a sub-goal to the plan first.",
+    "progressReported": "Reported progress",
+    "progressFromStatus": "Completed",
+    "progressElapsed": "Of the period elapsed",
+    "progressUnknown": "Not assessed yet"
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",
@@ -2480,7 +2484,9 @@
     "ownerPlaceholder": "— Select a department —",
     "titleArLabel": "Initiative name (Arabic)",
     "titleEnLabel": "Initiative name (English)",
-    "deliverableLabel": "Deliverable"
+    "deliverableLabel": "Deliverable",
+    "progressLabel": "Progress (%)",
+    "progressPlaceholder": "Leave empty if not assessed yet"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",

@@ -623,7 +623,9 @@ export default async function StrategicPlanDetailPage({
   // enforces — so both meanings of "المستهدف" on this screen are covered.
   const { data: initiativesData } = await supabase
     .from("strategic_initiatives")
-    .select("id, title_ar, title_en, description_ar, owner_org_unit_id, sub_goal_id, start_date, end_date, status_code")
+    .select(
+      "id, title_ar, title_en, description_ar, owner_org_unit_id, sub_goal_id, start_date, end_date, status_code, progress_percent"
+    )
     .eq("plan_id", id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
@@ -637,6 +639,7 @@ export default async function StrategicPlanDetailPage({
     start_date: string | null;
     end_date: string | null;
     status_code: string;
+    progress_percent: number | string | null;
   }>;
 
   const { data: initiativeLinksData } = await supabase
@@ -726,6 +729,8 @@ export default async function StrategicPlanDetailPage({
     startDate: row.start_date,
     endDate: row.end_date,
     statusLabel: statusLabelByCode.get(row.status_code) ?? row.status_code,
+    statusCode: row.status_code,
+    progressPercent: row.progress_percent,
     links: initiativeLinkRows
       .filter((l) => l.initiative_id === row.id)
       .map((l) => ({

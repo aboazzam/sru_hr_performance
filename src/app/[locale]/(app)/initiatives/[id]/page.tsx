@@ -32,7 +32,7 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
   const { data: initiative } = await supabase
     .from("strategic_initiatives")
     .select(
-      "id, plan_id, title_ar, title_en, code, deliverable_ar, description_ar, sub_goal_id, owner_org_unit_id, horizon, budget_note, status_code, start_date, end_date"
+      "id, plan_id, title_ar, title_en, code, deliverable_ar, description_ar, sub_goal_id, owner_org_unit_id, horizon, budget_note, status_code, start_date, end_date, progress_percent"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -326,6 +326,7 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
             statusCode: initiative.status_code ?? "",
             startDate: initiative.start_date ?? "",
             endDate: initiative.end_date ?? "",
+            progressPercent: initiative.progress_percent == null ? "" : String(initiative.progress_percent),
           }}
           subGoalOptions={cardSubGoalOptions}
           orgUnitOptions={cardOrgUnitOptions}
