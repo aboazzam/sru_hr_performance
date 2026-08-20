@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { NewExecutivePlanForm } from "@/components/NewExecutivePlanForm";
 import { formatDateDmy } from "@/lib/dateParts";
@@ -112,7 +113,12 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
                 {plans.map((plan) => (
                   <tr key={plan.id}>
                     <td>
-                      <span style={{ fontWeight: 700 }}>{plan.name_ar}</span>
+                      <Link
+                        href={`/executive-plans/${plan.id}`}
+                        style={{ color: "var(--color-primary)", fontWeight: 700, textDecoration: "none" }}
+                      >
+                        {plan.name_ar}
+                      </Link>
                       {plan.name_en && (
                         <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
                           {plan.name_en}
