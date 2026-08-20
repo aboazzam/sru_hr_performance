@@ -71,11 +71,13 @@ export default async function ProgramDetailPage({
   // ---- committee ----
   const { data: memberRows } = await supabase
     .from("strategic_program_committee_members")
-    .select("id, member_profile_id, committee_role")
+    .select("id, member_profile_id, committee_role, external_name, external_org, external_email, display_order")
     .eq("program_id", programId)
     .is("deleted_at", null)
-    .order("created_at", { ascending: true });
-  const memberProfileIds = (memberRows ?? []).map((m) => m.member_profile_id as string);
+    .order("display_order", { ascending: true });
+  const memberProfileIds = (memberRows ?? [])
+    .map((m) => m.member_profile_id as string | null)
+    .filter((v): v is string => v !== null);
 
   const { data: memberProfiles } =
     memberProfileIds.length > 0
@@ -85,6 +87,16 @@ export default async function ProgramDetailPage({
     ((memberProfiles ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>).map((p) => [p.id, p])
   );
   const members: CommitteeMemberView[] = (memberRows ?? []).map((m) => {
+    const externalName = (m.external_name as string | null) ?? null;
+    if (externalName) {
+      return {
+        rowId: m.id as string,
+        name: externalName,
+        subtitle: ((m.external_org as string | null) ?? (m.external_email as string | null)) ?? tCommittee("externalNoOrg"),
+        committeeRole: (m.committee_role as string | null) ?? null,
+        isExternal: true,
+      };
+    }
     const profile = profileById.get(m.member_profile_id as string);
     return {
       rowId: m.id as string,
@@ -92,8 +104,9 @@ export default async function ProgramDetailPage({
       // colleagues' profile rows, so the name may legitimately be missing —
       // shown as a placeholder rather than an empty cell.
       name: profile?.full_name_ar ?? tCommittee("unknownMember"),
-      employeeNumber: profile?.employee_number ?? "—",
+      subtitle: profile?.employee_number ?? "—",
       committeeRole: (m.committee_role as string | null) ?? null,
+      isExternal: false,
     };
   });
 
