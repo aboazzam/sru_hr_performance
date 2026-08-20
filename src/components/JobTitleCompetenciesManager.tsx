@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Trash2, Award } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { AddFormDialog } from "@/components/AddFormDialog";
 import { assignJobTitleCompetency, removeJobTitleCompetency } from "@/app/[locale]/(app)/career-path/job-titles/[id]/actions";
 import { behavioralLevelLabels, type BehavioralLevel } from "@/lib/data/competencies";
 
@@ -185,12 +186,17 @@ export function JobTitleCompetenciesManager({
   const competencyId = selectedCompetencyId ?? availableOptions[0]?.id ?? "";
   const [requiredLevel, setRequiredLevel] = useState<BehavioralLevel>("basic");
 
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   function handleAdd() {
     if (!competencyId) return;
     setError(null);
     startTransition(async () => {
       const res = await assignJobTitleCompetency(jobTitleId, competencyId, requiredLevel);
       if (res.status === "success") {
+        // Closed only on success: an error keeps the dialog open with its
+        // message inside it.
+        dialogRef.current?.close();
         setSelectedCompetencyId(null);
         router.refresh();
       } else {
@@ -211,16 +217,66 @@ export function JobTitleCompetenciesManager({
     });
   }
 
+  const addCompetencyForm = (
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label className="block text-sm font-medium mb-1">{t("competencyLabel")}</label>
+            <select
+              value={competencyId}
+              onChange={(e) => setSelectedCompetencyId(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
+            >
+              {[...byPillar.entries()].map(([pillar, opts]) => (
+                <optgroup key={pillar} label={pillar}>
+                  {opts.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.nameAr}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("requiredLevelLabel")}</label>
+            <select
+              value={requiredLevel}
+              onChange={(e) => setRequiredLevel(e.target.value as BehavioralLevel)}
+              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
+            >
+              {levels.map((level) => (
+                <option key={level} value={level}>
+                  {behavioralLevelLabels[level]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="button" disabled={isPending} onClick={handleAdd} className="sru-btn sru-btn-primary">
+            {isPending ? t("adding") : t("addCompetency")}
+          </button>
+        </div>
+  );
+
   return (
     <section className="sru-formsection">
       <div className="sru-formsection-head">
         <span className="sru-formsection-badge">
           <Award size={17} aria-hidden />
         </span>
-        <div>
+        <div style={{ flex: 1 }}>
           <h3>{t("competenciesHeading")}</h3>
           <span>{t("competenciesSubtitle")}</span>
         </div>
+        {canEdit && availableOptions.length > 0 && (
+          <AddFormDialog
+            dialogRef={dialogRef}
+            triggerLabel={t("addCompetency")}
+            heading={t("addCompetency")}
+            closeLabel={t("closeButton")}
+          >
+            {addCompetencyForm}
+          </AddFormDialog>
+        )}
       </div>
 
       <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("coreCompetenciesHeading")}</h4>
@@ -280,45 +336,6 @@ export function JobTitleCompetenciesManager({
         </div>
       )}
 
-      {canEdit && availableOptions.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("competencyLabel")}</label>
-            <select
-              value={competencyId}
-              onChange={(e) => setSelectedCompetencyId(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
-            >
-              {[...byPillar.entries()].map(([pillar, opts]) => (
-                <optgroup key={pillar} label={pillar}>
-                  {opts.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.nameAr}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("requiredLevelLabel")}</label>
-            <select
-              value={requiredLevel}
-              onChange={(e) => setRequiredLevel(e.target.value as BehavioralLevel)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
-            >
-              {levels.map((level) => (
-                <option key={level} value={level}>
-                  {behavioralLevelLabels[level]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="button" disabled={isPending} onClick={handleAdd} className="sru-btn sru-btn-primary">
-            {isPending ? t("adding") : t("addCompetency")}
-          </button>
-        </div>
-      )}
 
       {error && (
         <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>

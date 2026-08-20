@@ -959,7 +959,11 @@
     "sectionVisionTitle": "الرؤية",
     "sectionVisionSubtitle": "بالعربي والإنجليزي",
     "sectionMissionTitle": "الرسالة",
-    "sectionMissionSubtitle": "بالعربي والإنجليزي"
+    "sectionMissionSubtitle": "بالعربي والإنجليزي",
+    "valueTitleArLabel": "القيمة (عربي)",
+    "valueTitleEnLabel": "القيمة (إنجليزي)",
+    "valueDescriptionLabel": "الوصف",
+    "closeButton": "إغلاق"
   },
   "StrategicGoalsPage": {
     "title": "الأهداف الاستراتيجية",
