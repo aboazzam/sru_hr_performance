@@ -3,12 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowRight, Boxes } from "lucide-react";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
-import {
-  ProgramCommitteeManager,
-  ProgramInitiativesManager,
-  type CommitteeMemberView,
-  type ProgramInitiativeView,
-} from "@/components/ProgramCommitteeManager";
+import { ProgramCommitteeManager, type CommitteeMemberView } from "@/components/ProgramCommitteeManager";
+import { ProgramInitiativesTab, type ProgramInitiativeRow } from "@/components/ProgramInitiativesTab";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 /**
@@ -38,7 +34,7 @@ export default async function ProgramDetailPage({
   const { id, programId } = await params;
   const t = await getTranslations("ProgramDetailPage");
   const tCommittee = await getTranslations("ProgramCommittee");
-  const tDetail = await getTranslations("ProgramDetail");
+  const tInitiatives = await getTranslations("ProgramInitiativesTab");
   const tDashboard = await getTranslations("ProgramDashboard");
   const supabase = await createClient();
 
@@ -111,20 +107,54 @@ export default async function ProgramDetailPage({
 
   const { data: planInitiatives } = await supabase
     .from("strategic_initiatives")
-    .select("id, title_ar, owner_position_id, status, start_date, end_date")
+    .select("id, title_ar, code, deliverable_ar, sub_goal_id, owner_org_unit_id, horizon, status_code, start_date, end_date")
     .eq("plan_id", id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
-  const initiativeById = new Map(
-    ((planInitiatives ?? []) as Array<{
-      id: string;
-      title_ar: string;
-      owner_position_id: string | null;
-      status: string;
-      start_date: string | null;
-      end_date: string | null;
-    }>).map((i) => [i.id, i])
+  const planInitiativeRows = (planInitiatives ?? []) as Array<{
+    id: string;
+    title_ar: string;
+    code: string | null;
+    deliverable_ar: string | null;
+    sub_goal_id: string | null;
+    owner_org_unit_id: string | null;
+    horizon: string | null;
+    status_code: string;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+  const initiativeById = new Map(planInitiativeRows.map((i) => [i.id, i]));
+
+  // Lookups the card view needs: owning department, sub-goal (and the
+  // strategic goal it rolls up to), and the admin-managed status labels.
+  const { data: orgUnitRows } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null).order("name_ar");
+  const orgUnitOptions = ((orgUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({ id: u.id, name: u.name_ar }));
+  const orgUnitNameById = new Map(orgUnitOptions.map((u) => [u.id, u.name]));
+
+  const { data: subGoalRows } = await supabase
+    .from("sub_goals")
+    .select("id, title_ar, strategic_goal_id")
+    .is("deleted_at", null)
+    .order("created_at");
+  const { data: goalRows } = await supabase
+    .from("strategic_goals")
+    .select("id, title_ar")
+    .eq("plan_id", id)
+    .is("deleted_at", null);
+  const goalTitleById = new Map(((goalRows ?? []) as Array<{ id: string; title_ar: string }>).map((g) => [g.id, g.title_ar]));
+  const planSubGoals = ((subGoalRows ?? []) as Array<{ id: string; title_ar: string; strategic_goal_id: string }>).filter((sg) =>
+    goalTitleById.has(sg.strategic_goal_id)
   );
+  const subGoalOptions = planSubGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
+  const subGoalById = new Map(planSubGoals.map((sg) => [sg.id, sg]));
+
+  const { data: statusRows } = await supabase
+    .from("initiative_statuses")
+    .select("code, label_ar")
+    .eq("is_active", true)
+    .order("display_order");
+  const statusOptions = ((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({ code: r.code, label: r.label_ar }));
+  const statusLabelByCode = new Map(statusOptions.map((s) => [s.code, s.label]));
 
   const { data: initiativeTargetRows } = await supabase
     .from("strategic_initiative_targets")
@@ -151,41 +181,45 @@ export default async function ProgramDetailPage({
       .map((l) => {
         if (l.kpi_id) {
           const k = kpiById.get(l.kpi_id);
-          return k ? `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})` : tDetail("unknownTarget");
+          return k ? `${k.title_ar} (${k.plan_target_value ?? "—"} ${k.unit_ar})` : tInitiatives("unknownTarget");
         }
         const a = l.kpi_annual_target_id ? annualById.get(l.kpi_annual_target_id) : undefined;
         const k = a ? kpiById.get(a.kpi_id) : undefined;
-        return a && k ? `${k.title_ar} (${a.target_value} ${k.unit_ar})` : tDetail("unknownTarget");
+        return a && k ? `${k.title_ar} (${a.target_value} ${k.unit_ar})` : tInitiatives("unknownTarget");
       });
   }
 
-  const programInitiatives: ProgramInitiativeView[] = (programInitiativeRows ?? [])
+  const programInitiatives: ProgramInitiativeRow[] = (programInitiativeRows ?? [])
     .map((row) => {
       const initiative = initiativeById.get(row.initiative_id as string);
       if (!initiative) return null;
+      const sub = initiative.sub_goal_id ? subGoalById.get(initiative.sub_goal_id) : undefined;
       return {
         rowId: row.id as string,
         initiativeId: initiative.id,
+        code: initiative.code,
         titleAr: initiative.title_ar,
-        ownerPositionName: null as string | null,
-        status: initiative.status,
+        deliverableAr: initiative.deliverable_ar,
+        subGoalTitle: sub?.title_ar ?? null,
+        strategicGoalTitle: sub ? goalTitleById.get(sub.strategic_goal_id) ?? null : null,
+        ownerOrgUnitName: initiative.owner_org_unit_id ? orgUnitNameById.get(initiative.owner_org_unit_id) ?? null : null,
+        horizon: initiative.horizon,
+        statusLabel: statusLabelByCode.get(initiative.status_code) ?? initiative.status_code,
         startDate: initiative.start_date,
         endDate: initiative.end_date,
-        targetLabels: targetLabelsFor(initiative.id),
       };
     })
-    .filter((v): v is ProgramInitiativeView => v !== null);
+    .filter((v): v is ProgramInitiativeRow => v !== null);
 
-  const { data: positions } = await supabase.rpc("list_org_structure_positions");
-  const positionNameById = new Map(((positions ?? []) as Array<{ id: string; name_ar: string }>).map((p) => [p.id, p.name_ar]));
-  for (const row of programInitiatives) {
-    const initiative = initiativeById.get(row.initiativeId);
-    row.ownerPositionName = initiative?.owner_position_id ? positionNameById.get(initiative.owner_position_id) ?? null : null;
-  }
-
-  const availableInitiatives = ((planInitiatives ?? []) as Array<{ id: string; title_ar: string }>)
+  // Deliberately NOT filtered by goal: a program pulls related initiatives
+  // from different goals together, which is its whole purpose.
+  const availableInitiatives = planInitiativeRows
     .filter((i) => !linkedInitiativeIds.includes(i.id))
-    .map((i) => ({ id: i.id, titleAr: i.title_ar }));
+    .map((i) => ({
+      id: i.id,
+      titleAr: i.title_ar,
+      subGoalTitle: i.sub_goal_id ? subGoalById.get(i.sub_goal_id)?.title_ar ?? null : null,
+    }));
 
   // Employee options for adding committee members: RLS-scoped, so a caller
   // without employeeData access simply gets a short list (or only
@@ -204,9 +238,9 @@ export default async function ProgramDetailPage({
   }));
 
   // ---- dashboard: only real, already-stored facts ----
-  const withTarget = programInitiatives.filter((i) => i.targetLabels.length > 0).length;
+  const withTarget = programInitiatives.filter((i) => targetLabelsFor(i.initiativeId).length > 0).length;
   const statusCounts = new Map<string, number>();
-  for (const i of programInitiatives) statusCounts.set(i.status, (statusCounts.get(i.status) ?? 0) + 1);
+  for (const i of programInitiatives) statusCounts.set(i.statusLabel, (statusCounts.get(i.statusLabel) ?? 0) + 1);
 
   const dashboardContent = (
     <div>
@@ -247,13 +281,17 @@ export default async function ProgramDetailPage({
     },
     { id: "dashboard", label: tDashboard("title"), content: dashboardContent },
     {
-      id: "detail",
-      label: tDetail("title"),
+      id: "initiatives",
+      label: tInitiatives("title"),
       content: (
-        <ProgramInitiativesManager
+        <ProgramInitiativesTab
           programId={program.id}
-          initiatives={programInitiatives}
+          planId={id}
+          rows={programInitiatives}
           availableInitiatives={availableInitiatives}
+          orgUnitOptions={orgUnitOptions}
+          subGoalOptions={subGoalOptions}
+          statusOptions={statusOptions}
           canManage={canManage}
         />
       ),
