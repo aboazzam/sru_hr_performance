@@ -2408,7 +2408,12 @@
     "errorForbidden": "You do not have permission to manage this program's initiatives.",
     "errorDuplicate": "That initiative is already under this program.",
     "errorDuplicateCode": "That initiative code is already used by another initiative.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "suggestEn": "Suggest name",
+    "suggesting": "Suggesting...",
+    "suggestEnHint": "Suggests an English name from the Arabic one; it stays editable.",
+    "suggestFailed": "Could not generate a suggestion right now — type the English name yourself.",
+    "suggestRateLimited": "You have used all suggestions allowed this hour."
   },
   "InitiativePage": {
     "errorNotFound": "This initiative was not found, or you do not have access to it.",

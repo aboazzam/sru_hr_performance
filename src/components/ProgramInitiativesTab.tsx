@@ -3,13 +3,14 @@
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { AlertCircle, ClipboardList, Link2, Plus, X } from "lucide-react";
+import { AlertCircle, ClipboardList, Languages, Link2, Plus, X } from "lucide-react";
 import {
   attachProgramInitiatives,
   createProgramInitiative,
   type ProgramInitiativeState,
 } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/initiative-actions";
 import { removeProgramInitiative, type ProgramActionState } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/actions";
+import { suggestInitiativeTitleEn } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/translate-actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 
 export interface ProgramInitiativeRow {
@@ -76,6 +77,11 @@ export function ProgramInitiativesTab({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
+  // The English name is a normal editable field; the button only fills it in.
+  const [titleAr, setTitleAr] = useState("");
+  const [titleEn, setTitleEn] = useState("");
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
   const [createState, createAction, creating] = useActionState<ProgramInitiativeState, FormData>(createProgramInitiative, null);
   const [attachState, attachAction, attaching] = useActionState<ProgramInitiativeState, FormData>(attachProgramInitiatives, null);
@@ -87,6 +93,9 @@ export function ProgramInitiativesTab({
     if (createState?.status === "success") {
       setStartDate("");
       setEndDate("");
+      setTitleAr("");
+      setTitleEn("");
+      setSuggestError(null);
       setMode("none");
     }
   }
@@ -102,6 +111,16 @@ export function ProgramInitiativesTab({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     startTransition(() => createAction(formData));
+  }
+
+  async function suggestEnglishName() {
+    if (titleAr.trim().length < 2) return;
+    setSuggesting(true);
+    setSuggestError(null);
+    const result = await suggestInitiativeTitleEn({ titleAr });
+    setSuggesting(false);
+    if (result?.status === "success") setTitleEn(result.titleEn);
+    else setSuggestError(result?.status === "error" ? result.message : "ai_error");
   }
 
   function submitAttach() {
@@ -205,11 +224,36 @@ export function ProgramInitiativesTab({
               </div>
               <div className="sru-field">
                 <label>{t("titleArLabel")}</label>
-                <input type="text" name="titleAr" required dir="rtl" />
+                <input type="text" name="titleAr" required dir="rtl" value={titleAr} onChange={(e) => setTitleAr(e.target.value)} />
               </div>
               <div className="sru-field">
                 <label>{t("titleEnLabel")}</label>
-                <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} />
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    name="titleEn"
+                    dir="ltr"
+                    style={{ textAlign: "left", flex: 1 }}
+                    value={titleEn}
+                    onChange={(e) => setTitleEn(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="sru-btn"
+                    onClick={suggestEnglishName}
+                    disabled={suggesting || titleAr.trim().length < 2}
+                    title={t("suggestEnHint")}
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    <Languages size={14} aria-hidden />
+                    {suggesting ? t("suggesting") : t("suggestEn")}
+                  </button>
+                </div>
+                {suggestError && (
+                  <span style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12, marginTop: 4, display: "block" }}>
+                    {t(suggestError === "rate_limited" ? "suggestRateLimited" : "suggestFailed")}
+                  </span>
+                )}
               </div>
               <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
                 <label>{t("deliverableLabel")}</label>
