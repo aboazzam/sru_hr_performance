@@ -1,30 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
+import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
-  datePartLabels,
   daysInMonth,
+  formatDateDmy,
   formatDateValue,
+  monthGrid,
   monthNames,
   parseDateParts,
+  shiftMonth,
+  weekdayNamesShort,
   yearOptions,
 } from "@/lib/dateParts";
 
 /**
- * A date control that shows the month as a NAME — `03 / أكتوبر / 2026` —
- * instead of the browser's own `08 / 09 / 2026`, which is ambiguous between
- * day-month and month-day order.
+ * A date control that opens a real CALENDAR, and reads back as
+ * `5 أغسطس 2026` — day, month NAME, year.
  *
- * This is a replacement for `<input type="date">`, not a restyling of it: a
- * native date input is drawn by the browser in its own locale format, and no
- * CSS or attribute can change that. Three selects also make an impossible
- * date unreachable, and the day list re-lengths with the chosen month (31
- * disappears when September is picked, and the value clamps rather than
- * silently becoming invalid).
+ * This replaces `<input type="date">` rather than restyling it: a native date
+ * input is drawn by the browser in its own locale format (the project owner
+ * saw `08 / 09 / 2026`, ambiguous between day-month and month-day) and no CSS
+ * or attribute can change that. An earlier version of this component used
+ * three selects; choosing a day out of a 31-item dropdown was the part that
+ * still read as clumsy, so a day grid replaced it (2026-08-20 request).
  *
- * The value in and out stays `YYYY-MM-DD` (or "" when incomplete), so callers
- * and the database keep the exact shape they already use.
+ * The value in and out stays `YYYY-MM-DD` (or "" when unset), so every caller
+ * and the database keep the exact shape they already used.
  */
 export function DateFieldDmy({
   value,
@@ -41,9 +44,9 @@ export function DateFieldDmy({
   defaultValue?: string;
   /**
    * When set, a hidden input carries the `YYYY-MM-DD` value under this name —
-   * so the control drops into FormData-based forms (employee invite/edit) and
-   * plain `method="get"` filter forms exactly like the native input it
-   * replaces, with no change to what the server receives.
+   * so the control drops into FormData-based forms and plain `method="get"`
+   * filter forms exactly like the native input it replaces, with no change to
+   * what the server receives.
    */
   name?: string;
   disabled?: boolean;
@@ -51,119 +54,224 @@ export function DateFieldDmy({
 }) {
   const locale = useLocale();
   const names = monthNames(locale);
-  const partLabels = datePartLabels(locale);
+  const weekdays = weekdayNamesShort(locale);
   const isControlled = value !== undefined;
   const externalValue = isControlled ? value : defaultValue;
 
-  // The parts live in local state, NOT derived from `value` alone. Found live:
-  // deriving them purely from the prop makes a date impossible to enter —
-  // choosing the day emits "" (still incomplete), the parent stores "", and
-  // the next render forgets the day that was just chosen, so the three parts
-  // can never accumulate. Local state holds the in-progress entry; `value`
-  // still wins whenever the parent changes it from outside (initial load, or
-  // the form resetting after a save).
-  const initial = parseDateParts(externalValue);
-  const [draft, setDraft] = useState({
-    day: initial?.day ?? 0,
-    month: initial?.month ?? 0,
-    year: initial?.year ?? 0,
-  });
+  const [internalValue, setInternalValue] = useState(externalValue);
   const [syncedValue, setSyncedValue] = useState(externalValue);
-  // Only a controlled parent can move the value from outside; in uncontrolled
-  // use `defaultValue` is a starting point, not a continuing source of truth.
+  // A controlled parent can move the value from outside (initial load, or a
+  // form resetting after a save); in uncontrolled use `defaultValue` is only
+  // a starting point. Adopted during render, never in an effect
+  // (react-hooks/set-state-in-effect).
   if (isControlled && value !== syncedValue) {
     setSyncedValue(value);
-    const incoming = parseDateParts(value);
-    // Adopt a real external value; ignore the "" this component itself emits
-    // while the entry is still incomplete, which would otherwise wipe the draft.
-    if (incoming) setDraft(incoming);
-    else if (draft.day && draft.month && draft.year) setDraft({ day: 0, month: 0, year: 0 });
+    setInternalValue(value);
+  }
+  const current = isControlled ? (value as string) : internalValue;
+  const parts = parseDateParts(current);
+
+  const [open, setOpen] = useState(false);
+  const today = new Date();
+  const [view, setView] = useState<{ year: number; month: number }>(
+    parts ? { year: parts.year, month: parts.month } : { year: today.getFullYear(), month: today.getMonth() + 1 }
+  );
+  // Re-open on the month the value belongs to, not wherever it was left.
+  const [viewAnchor, setViewAnchor] = useState(current);
+  if (current !== viewAnchor) {
+    setViewAnchor(current);
+    if (parts) setView({ year: parts.year, month: parts.month });
   }
 
-  const currentYear = new Date().getFullYear();
-  const years = yearOptions(currentYear);
-  // Years already stored outside the offered range must stay selectable, so an
-  // old value is never silently rewritten just by opening the form.
-  if (draft.year && !years.includes(draft.year)) years.unshift(draft.year);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
-  const { day, month, year } = draft;
+  const years = yearOptions(today.getFullYear());
+  // A year already stored outside the offered range stays selectable, so an
+  // old value is never silently rewritten just by opening the picker.
+  if (parts && !years.includes(parts.year)) years.unshift(parts.year);
+  if (!years.includes(view.year)) years.unshift(view.year);
 
-  // 31 while the month is unknown, so every day stays reachable before a month
-  // is chosen; afterwards the list matches the real month length.
-  const dayCount = month && year ? daysInMonth(year, month) : 31;
-
-  function emit(next: { day?: number; month?: number; year?: number }) {
-    const candidate = { day, month, year, ...next };
-    // Clamp the kept draft too, so switching to a shorter month leaves the day
-    // select showing what will actually be saved (31 Jan -> Sep becomes 30).
-    if (candidate.day && candidate.month && candidate.year) {
-      candidate.day = Math.min(candidate.day, daysInMonth(candidate.year, candidate.month));
-    }
-    setDraft(candidate);
-    setSyncedValue(formatDateValue(candidate));
-    // A part still unchosen (or cleared back to "—") means no date yet: the
-    // parent gets "", never a half-set value.
-    onChange?.(formatDateValue(candidate));
+  function emit(next: string) {
+    if (!isControlled) setInternalValue(next);
+    setSyncedValue(next);
+    onChange?.(next);
   }
 
-  const isoValue = formatDateValue(draft);
+  function pick(day: number) {
+    emit(formatDateValue({ year: view.year, month: view.month, day }));
+    setOpen(false);
+  }
 
-  const selectStyle: React.CSSProperties = { maxWidth: "100%" };
+  const weeks = monthGrid(view.year, view.month);
+  const todayKey = formatDateValue({
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    day: today.getDate(),
+  });
 
   return (
-    <div
-      style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}
-      role="group"
-      aria-label={ariaLabel}
-    >
+    <div ref={wrapRef} style={{ position: "relative" }}>
       {/* Carries the same `YYYY-MM-DD` the native input used to submit, so
           FormData-based and plain GET forms need no other change. */}
-      {name && <input type="hidden" name={name} value={isoValue} />}
-      <select
-        value={day || ""}
-        disabled={disabled}
-        onChange={(e) => emit({ day: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.day}` : partLabels.day}
-        style={{ ...selectStyle, flex: "0 1 auto", minWidth: 78 }}
-      >
-        <option value="">{partLabels.day}</option>
-        {/* Unpadded, matching how the value reads back: `5 أغسطس 2026`. */}
-        {Array.from({ length: dayCount }, (_, i) => i + 1).map((d) => (
-          <option key={d} value={d}>
-            {d}
-          </option>
-        ))}
-      </select>
+      {name && <input type="hidden" name={name} value={current} />}
 
-      <select
-        value={month || ""}
+      <button
+        type="button"
+        className="sru-datefield-trigger"
         disabled={disabled}
-        onChange={(e) => emit({ month: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.month}` : partLabels.month}
-        style={{ ...selectStyle, flex: "1 1 120px", minWidth: 112 }}
+        aria-label={ariaLabel}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
       >
-        <option value="">{partLabels.month}</option>
-        {names.map((name, index) => (
-          <option key={name} value={index + 1}>
-            {name}
-          </option>
-        ))}
-      </select>
+        <CalendarDays size={15} aria-hidden />
+        <span className={parts ? undefined : "sru-datefield-placeholder"}>
+          {parts ? formatDateDmy(current, locale) : locale === "en" ? "Choose a date" : "اختر التاريخ"}
+        </span>
+        {parts && !disabled && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={locale === "en" ? "Clear the date" : "مسح التاريخ"}
+            className="sru-datefield-clear"
+            onClick={(e) => {
+              e.stopPropagation();
+              emit("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                emit("");
+              }
+            }}
+          >
+            <X size={13} aria-hidden />
+          </span>
+        )}
+      </button>
 
-      <select
-        value={year || ""}
-        disabled={disabled}
-        onChange={(e) => emit({ year: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.year}` : partLabels.year}
-        style={{ ...selectStyle, flex: "0 1 auto", minWidth: 92 }}
-      >
-        <option value="">{partLabels.year}</option>
-        {years.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
-      </select>
+      {open && !disabled && (
+        <div className="sru-datefield-pop" role="dialog" aria-label={ariaLabel}>
+          <div className="sru-datefield-head">
+            <button
+              type="button"
+              className="sru-datefield-nav"
+              aria-label={locale === "en" ? "Previous month" : "الشهر السابق"}
+              onClick={() => setView((v) => shiftMonth(v.year, v.month, -1))}
+            >
+              <ChevronRight size={16} aria-hidden />
+            </button>
+            <div style={{ display: "flex", gap: 6, flex: 1, justifyContent: "center" }}>
+              <select
+                value={view.month}
+                aria-label={locale === "en" ? "Month" : "الشهر"}
+                onChange={(e) => setView((v) => ({ ...v, month: Number(e.target.value) }))}
+              >
+                {names.map((monthName, index) => (
+                  <option key={monthName} value={index + 1}>
+                    {monthName}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={view.year}
+                aria-label={locale === "en" ? "Year" : "السنة"}
+                onChange={(e) => setView((v) => ({ ...v, year: Number(e.target.value) }))}
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className="sru-datefield-nav"
+              aria-label={locale === "en" ? "Next month" : "الشهر التالي"}
+              onClick={() => setView((v) => shiftMonth(v.year, v.month, 1))}
+            >
+              <ChevronLeft size={16} aria-hidden />
+            </button>
+          </div>
+
+          <table className="sru-datefield-grid">
+            <thead>
+              <tr>
+                {weekdays.map((w) => (
+                  <th key={w} scope="col">
+                    {w}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((week, wi) => (
+                <tr key={wi}>
+                  {week.map((day, di) => {
+                    if (day === null) return <td key={di} />;
+                    const key = formatDateValue({ year: view.year, month: view.month, day });
+                    const selected = key === current;
+                    return (
+                      <td key={di}>
+                        <button
+                          type="button"
+                          onClick={() => pick(day)}
+                          className={
+                            selected
+                              ? "sru-datefield-day is-selected"
+                              : key === todayKey
+                                ? "sru-datefield-day is-today"
+                                : "sru-datefield-day"
+                          }
+                          aria-current={selected ? "date" : undefined}
+                        >
+                          {day}
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="sru-datefield-foot">
+            <button
+              type="button"
+              className="sru-datefield-quick"
+              onClick={() => {
+                const y = today.getFullYear();
+                const m = today.getMonth() + 1;
+                setView({ year: y, month: m });
+                emit(formatDateValue({ year: y, month: m, day: Math.min(today.getDate(), daysInMonth(y, m)) }));
+                setOpen(false);
+              }}
+            >
+              {locale === "en" ? "Today" : "اليوم"}
+            </button>
+            <button type="button" className="sru-datefield-quick" onClick={() => setOpen(false)}>
+              {locale === "en" ? "Close" : "إغلاق"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

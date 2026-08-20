@@ -1389,3 +1389,188 @@ tr.sru-row-link:focus-within > td {
     cursor: auto;
   }
 }
+
+/* Compact action row: the primary action and the secondary tools (export /
+   import) sit on ONE line and share ONE shape, instead of the tools floating
+   up beside the page title in a different style. The font is 60% of the
+   kit's own 14px button size, per the 2026-08-20 request, with the padding
+   scaled to match so the buttons stay proportionate rather than merely
+   holding smaller text. `.sru-btn` itself is untouched (SRU_IDENTITY.md: the
+   kit is never overridden) — this only applies inside an action bar. */
+.sru-actionbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sru-actionbar .sru-btn {
+  font-size: calc(14px * 0.6);
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.7;
+}
+.sru-actionbar .sru-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---- calendar date field (DateFieldDmy) -------------------------------- */
+/* The trigger deliberately matches `.sru-field input` so a date sits in a
+   form row like any other field, and the popup uses the identity palette
+   only (SRU_IDENTITY.md) rather than introducing new colours. */
+.sru-datefield-trigger {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: inherit;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: var(--sru-radius, 6px);
+  cursor: pointer;
+  text-align: start;
+}
+.sru-datefield-trigger:hover:not(:disabled) {
+  border-color: var(--sru-purple);
+}
+.sru-datefield-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.sru-datefield-trigger span:first-of-type {
+  flex: 1;
+}
+.sru-datefield-placeholder {
+  color: var(--sru-muted);
+}
+.sru-datefield-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--sru-muted);
+}
+.sru-datefield-clear:hover {
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+}
+.sru-datefield-pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  inset-inline-start: 0;
+  background: #fff;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+  padding: 10px;
+  min-width: 258px;
+}
+.sru-datefield-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sru-datefield-head select {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+}
+.sru-datefield-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  color: var(--sru-purple);
+}
+.sru-datefield-nav:hover {
+  background: var(--sru-purple-light);
+}
+.sru-datefield-grid {
+  border-collapse: collapse;
+  width: 100%;
+}
+.sru-datefield-grid th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  padding: 2px 0 6px;
+  text-align: center;
+}
+.sru-datefield-grid td {
+  padding: 1px;
+  text-align: center;
+}
+.sru-datefield-day {
+  width: 32px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  color: inherit;
+}
+.sru-datefield-day:hover {
+  background: var(--sru-purple-light);
+}
+.sru-datefield-day.is-today {
+  border-color: var(--sru-blue, #1f7ae0);
+  font-weight: 700;
+}
+.sru-datefield-day.is-selected {
+  background: var(--sru-purple);
+  color: #fff;
+  font-weight: 700;
+}
+.sru-datefield-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--sru-border, #e5e7eb);
+  padding-top: 8px;
+}
+.sru-datefield-quick {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-purple);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.sru-datefield-quick:hover {
+  background: var(--sru-purple-light);
+}
+/* A modal opened FROM an action bar is not part of the bar: its own buttons
+   keep the kit's normal size (found live — the import dialog inherited the
+   60% scale and became unreadable). */
+.sru-actionbar dialog .sru-btn {
+  font-size: 14px;
+  padding: 9px 18px;
+  line-height: normal;
+}
+.sru-actionbar dialog .sru-btn svg {
+  width: auto;
+  height: auto;
+}

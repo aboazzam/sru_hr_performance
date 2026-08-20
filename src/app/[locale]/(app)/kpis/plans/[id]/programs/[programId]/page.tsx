@@ -292,7 +292,6 @@ export default async function ProgramDetailPage({
         <ProgramCommitteeManager programId={program.id} members={members} employeeOptions={employeeOptions} canManage={canManage} />
       ),
     },
-    { id: "dashboard", label: tDashboard("title"), content: dashboardContent },
     {
       id: "initiatives",
       label: tInitiatives("title"),
@@ -309,6 +308,7 @@ export default async function ProgramDetailPage({
         />
       ),
     },
+    { id: "dashboard", label: tDashboard("title"), content: dashboardContent },
   ];
 
   return (
