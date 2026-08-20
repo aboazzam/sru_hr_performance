@@ -10,35 +10,39 @@ export type ProgramInitiativeState =
   | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "duplicate" | "duplicate_code" | "unknown" }
   | null;
 
-const optionalDate = z
+const requiredDate = z
   .string()
   .trim()
-  .optional()
-  .transform((v) => (v === "" ? undefined : v))
-  .refine((v) => v === undefined || /^\d{4}-\d{2}-\d{2}$/.test(v));
+  .regex(/^\d{4}-\d{2}-\d{2}$/);
 
 /**
  * Full initiative form, matching the real initiative cards supplied by the
  * project owner: code, deliverable, definition, sub-goal, horizon, budget,
  * owning department, period and status. The strategic goal is NOT a field —
  * it is derived from the sub-goal, exactly as the cards present it.
+ *
+ * Every field except the definition (the free-prose description) is required,
+ * matching the plan-level add-initiative form (2026-08-20 request). The form
+ * marks them `required`, but that is only a convenience: the two dates travel
+ * in hidden inputs, which a browser never validates, so this schema is the
+ * actual guard.
  */
 const createSchema = z
   .object({
     programId: z.string().uuid(),
     planId: z.string().uuid(),
     titleAr: z.string().trim().min(1),
-    titleEn: z.string().trim().optional(),
-    code: z.string().trim().optional(),
-    deliverableAr: z.string().trim().optional(),
+    titleEn: z.string().trim().min(1),
+    code: z.string().trim().min(1),
+    deliverableAr: z.string().trim().min(1),
     descriptionAr: z.string().trim().optional(),
-    subGoalId: z.string().uuid().optional(),
-    ownerOrgUnitId: z.string().uuid().optional(),
-    horizon: z.string().trim().optional(),
-    budgetNote: z.string().trim().optional(),
-    statusCode: z.string().trim().optional(),
-    startDate: optionalDate,
-    endDate: optionalDate,
+    subGoalId: z.string().uuid(),
+    ownerOrgUnitId: z.string().uuid(),
+    horizon: z.string().trim().min(1),
+    budgetNote: z.string().trim().min(1),
+    statusCode: z.string().trim().min(1),
+    startDate: requiredDate,
+    endDate: requiredDate,
   })
   .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, { path: ["endDate"] });
 
@@ -70,17 +74,17 @@ export async function createProgramInitiative(
     programId: formData.get("programId"),
     planId: formData.get("planId"),
     titleAr: formData.get("titleAr"),
-    titleEn: formData.get("titleEn") || undefined,
-    code: formData.get("code") || undefined,
-    deliverableAr: formData.get("deliverableAr") || undefined,
+    titleEn: formData.get("titleEn"),
+    code: formData.get("code"),
+    deliverableAr: formData.get("deliverableAr"),
     descriptionAr: formData.get("descriptionAr") || undefined,
-    subGoalId: formData.get("subGoalId") || undefined,
-    ownerOrgUnitId: formData.get("ownerOrgUnitId") || undefined,
-    horizon: formData.get("horizon") || undefined,
-    budgetNote: formData.get("budgetNote") || undefined,
-    statusCode: formData.get("statusCode") || undefined,
-    startDate: formData.get("startDate") ?? undefined,
-    endDate: formData.get("endDate") ?? undefined,
+    subGoalId: formData.get("subGoalId"),
+    ownerOrgUnitId: formData.get("ownerOrgUnitId"),
+    horizon: formData.get("horizon"),
+    budgetNote: formData.get("budgetNote"),
+    statusCode: formData.get("statusCode"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
@@ -98,17 +102,17 @@ export async function createProgramInitiative(
     .insert({
       plan_id: d.planId,
       title_ar: d.titleAr,
-      title_en: d.titleEn ?? null,
-      code: d.code ?? null,
-      deliverable_ar: d.deliverableAr ?? null,
+      title_en: d.titleEn,
+      code: d.code,
+      deliverable_ar: d.deliverableAr,
       description_ar: d.descriptionAr ?? null,
-      sub_goal_id: d.subGoalId ?? null,
-      owner_org_unit_id: d.ownerOrgUnitId ?? null,
-      horizon: d.horizon ?? null,
-      budget_note: d.budgetNote ?? null,
-      ...(d.statusCode ? { status_code: d.statusCode } : {}),
-      start_date: d.startDate ?? null,
-      end_date: d.endDate ?? null,
+      sub_goal_id: d.subGoalId,
+      owner_org_unit_id: d.ownerOrgUnitId,
+      horizon: d.horizon,
+      budget_note: d.budgetNote,
+      status_code: d.statusCode,
+      start_date: d.startDate,
+      end_date: d.endDate,
       created_by: myProfileId,
     })
     .select("id")

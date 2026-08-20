@@ -216,11 +216,11 @@ export function ProgramInitiativesTab({
               <input type="hidden" name="endDate" value={endDate} />
               <div className="sru-field">
                 <label>{t("codeLabel")}</label>
-                <input type="text" name="code" dir="ltr" style={{ textAlign: "left" }} placeholder={t("codePlaceholder")} />
+                <input type="text" name="code" required dir="ltr" style={{ textAlign: "left" }} placeholder={t("codePlaceholder")} />
               </div>
               <div className="sru-field">
                 <label>{t("horizonLabel")}</label>
-                <input type="text" name="horizon" dir="ltr" style={{ textAlign: "left" }} placeholder={t("horizonPlaceholder")} />
+                <input type="text" name="horizon" required dir="ltr" style={{ textAlign: "left" }} placeholder={t("horizonPlaceholder")} />
               </div>
               <div className="sru-field">
                 <label>{t("titleArLabel")}</label>
@@ -232,6 +232,7 @@ export function ProgramInitiativesTab({
                   <input
                     type="text"
                     name="titleEn"
+                    required
                     dir="ltr"
                     style={{ textAlign: "left", flex: 1 }}
                     value={titleEn}
@@ -257,7 +258,7 @@ export function ProgramInitiativesTab({
               </div>
               <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
                 <label>{t("deliverableLabel")}</label>
-                <input type="text" name="deliverableAr" dir="rtl" placeholder={t("deliverablePlaceholder")} />
+                <input type="text" name="deliverableAr" required dir="rtl" placeholder={t("deliverablePlaceholder")} />
               </div>
               <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
                 <label>{t("definitionLabel")}</label>
@@ -265,19 +266,24 @@ export function ProgramInitiativesTab({
               </div>
               <div className="sru-field">
                 <label>{t("subGoalLabel")}</label>
-                <select name="subGoalId" defaultValue="">
-                  <option value="">{t("subGoalNone")}</option>
+                <select name="subGoalId" required defaultValue="">
+                  <option value="">{t("subGoalPlaceholder")}</option>
                   {subGoalOptions.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.title}
                     </option>
                   ))}
                 </select>
+                {/* Required now, so a plan with no sub-goals yet would be a
+                    dead end without saying why. */}
+                {subGoalOptions.length === 0 && (
+                  <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalEmptyHint")}</span>
+                )}
               </div>
               <div className="sru-field">
                 <label>{t("ownerLabel")}</label>
-                <select name="ownerOrgUnitId" defaultValue="">
-                  <option value="">{t("ownerNone")}</option>
+                <select name="ownerOrgUnitId" required defaultValue="">
+                  <option value="">{t("ownerPlaceholder")}</option>
                   {orgUnitOptions.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
@@ -287,11 +293,11 @@ export function ProgramInitiativesTab({
               </div>
               <div className="sru-field">
                 <label>{t("budgetLabel")}</label>
-                <input type="text" name="budgetNote" dir="rtl" placeholder={t("budgetPlaceholder")} />
+                <input type="text" name="budgetNote" required dir="rtl" placeholder={t("budgetPlaceholder")} />
               </div>
               <div className="sru-field">
                 <label>{t("statusLabel")}</label>
-                <select name="statusCode" defaultValue={statusOptions[0]?.code ?? ""}>
+                <select name="statusCode" required defaultValue={statusOptions[0]?.code ?? ""}>
                   {statusOptions.map((s) => (
                     <option key={s.code} value={s.code}>
                       {s.label}
@@ -301,22 +307,29 @@ export function ProgramInitiativesTab({
               </div>
               <div className="sru-field">
                 <label>{t("startDateLabel")}</label>
-                <DateFieldDmy value={startDate} onChange={setStartDate} />
+                <DateFieldDmy value={startDate} onChange={setStartDate} ariaLabel={t("startDateLabel")} />
               </div>
               <div className="sru-field">
                 <label>{t("endDateLabel")}</label>
-                <DateFieldDmy value={endDate} onChange={setEndDate} />
+                <DateFieldDmy value={endDate} onChange={setEndDate} ariaLabel={t("endDateLabel")} />
               </div>
             </div>
           </section>
 
           <div className="sru-form-submitrow">
-            <button type="submit" disabled={creating} className="sru-btn sru-btn-primary">
+            <button
+              type="submit"
+              disabled={creating || startDate === "" || endDate === ""}
+              className="sru-btn sru-btn-primary"
+            >
               {creating ? t("creating") : t("createSubmit")}
             </button>
             <button type="button" className="sru-btn" onClick={() => setMode("none")}>
               {t("cancel")}
             </button>
+            {(startDate === "" || endDate === "") && (
+              <span style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("datesRequiredNote")}</span>
+            )}
           </div>
         </form>
       )}

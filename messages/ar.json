@@ -2395,9 +2395,9 @@
     "deliverablePlaceholder": "مثال: نظام ال ERP مفعل",
     "definitionLabel": "التعريف",
     "subGoalLabel": "الهدف الفرعي",
-    "subGoalNone": "— بلا هدف فرعي —",
+    "subGoalPlaceholder": "— اختر الهدف الفرعي —",
     "ownerLabel": "الإدارة المالكة",
-    "ownerNone": "— بلا إدارة محدّدة —",
+    "ownerPlaceholder": "— اختر الإدارة —",
     "budgetLabel": "الموازنة",
     "budgetPlaceholder": "مثال: x أو مبلغ",
     "statusLabel": "الحالة",
@@ -2424,7 +2424,9 @@
     "suggesting": "جارٍ الاقتراح...",
     "suggestEnHint": "يقترح اسمًا إنجليزيًا من الاسم العربي، ويبقى قابلًا للتعديل.",
     "suggestFailed": "تعذّر توليد اقتراح الآن — اكتب الاسم الإنجليزي يدويًا.",
-    "suggestRateLimited": "تجاوزت عدد الاقتراحات المسموح بها خلال ساعة."
+    "suggestRateLimited": "تجاوزت عدد الاقتراحات المسموح بها خلال ساعة.",
+    "datesRequiredNote": "اختر تاريخي الابتداء والانتهاء لتفعيل الإضافة.",
+    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا."
   },
   "InitiativePage": {
     "errorNotFound": "لم يتم العثور على هذه المبادرة، أو لا تملك صلاحية الاطلاع عليها.",
