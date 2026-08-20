@@ -2486,7 +2486,19 @@
     "titleEnLabel": "Initiative name (English)",
     "deliverableLabel": "Deliverable",
     "progressLabel": "Progress (%)",
-    "progressPlaceholder": "Leave empty if not assessed yet"
+    "progressPlaceholder": "Leave empty if not assessed yet",
+    "identityBlock": "Initiative details",
+    "goalChainBlock": "Organisational link",
+    "outcomesLabel": "Outcomes / deliverables",
+    "dependenciesLabel": "Dependencies on other initiatives",
+    "perspectiveLabel": "Perspective",
+    "perspectiveNone": "— No perspective —",
+    "outcomesEditLabel": "Outcomes / deliverables (one per line)",
+    "dependenciesEditLabel": "Dependencies on other initiatives",
+    "dependencyAdd": "Add dependency",
+    "dependencyRemove": "Remove dependency",
+    "dependencyPlaceholder": "— Select an initiative —",
+    "dependencyNone": "No dependencies recorded."
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",

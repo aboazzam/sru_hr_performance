@@ -12,6 +12,7 @@ import {
   monthGrid,
   shiftMonth,
   firstWeekdayOfMonth,
+  todayInTimezone,
 } from "./dateParts";
 
 describe("daysInMonth", () => {
@@ -142,5 +143,18 @@ describe("shiftMonth", () => {
   it("handles a whole year in one step, in both directions", () => {
     expect(shiftMonth(2026, 5, 12)).toEqual({ year: 2027, month: 5 });
     expect(shiftMonth(2026, 5, -12)).toEqual({ year: 2025, month: 5 });
+  });
+});
+
+describe("todayInTimezone", () => {
+  it("reports the local calendar day, not the UTC one", () => {
+    // 22:30 UTC on the 19th is already 01:30 on the 20th in Riyadh.
+    const instant = new Date("2026-08-19T22:30:00Z");
+    expect(todayInTimezone("Asia/Riyadh", instant)).toBe("2026-08-20");
+    expect(todayInTimezone("UTC", instant)).toBe("2026-08-19");
+  });
+
+  it("formats as YYYY-MM-DD so it compares directly with stored dates", () => {
+    expect(todayInTimezone("Asia/Riyadh", new Date("2026-01-05T09:00:00Z"))).toBe("2026-01-05");
   });
 });

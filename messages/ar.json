@@ -2486,7 +2486,19 @@
     "titleEnLabel": "اسم المبادرة (إنجليزي)",
     "deliverableLabel": "المخرج",
     "progressLabel": "نسبة الإنجاز (%)",
-    "progressPlaceholder": "اتركه فارغًا إن لم تُقيَّم بعد"
+    "progressPlaceholder": "اتركه فارغًا إن لم تُقيَّم بعد",
+    "identityBlock": "بيانات المبادرة",
+    "goalChainBlock": "الارتباط التنظيمي",
+    "outcomesLabel": "النتائج / المخرجات",
+    "dependenciesLabel": "التبعية مع المبادرات الأخرى",
+    "perspectiveLabel": "المنظور",
+    "perspectiveNone": "— بلا منظور —",
+    "outcomesEditLabel": "النتائج / المخرجات (سطر لكل نتيجة)",
+    "dependenciesEditLabel": "التبعية مع المبادرات الأخرى",
+    "dependencyAdd": "إضافة تبعية",
+    "dependencyRemove": "إزالة التبعية",
+    "dependencyPlaceholder": "— اختر المبادرة —",
+    "dependencyNone": "لا توجد تبعيات مسجّلة."
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",

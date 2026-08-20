@@ -167,3 +167,19 @@ export function shiftMonth(year: number, month: number, delta: number): { year: 
   const zeroBased = (year * 12 + (month - 1)) + delta;
   return { year: Math.floor(zeroBased / 12), month: (zeroBased % 12) + 1 };
 }
+
+/**
+ * Today as `YYYY-MM-DD` in a named IANA timezone.
+ *
+ * `en-CA` formats as an ISO-like date, which is why it is used rather than
+ * assembling parts by hand. The timezone matters: without it the server's own
+ * zone decides, and "today" would flip a day early or late for the reader.
+ */
+export function todayInTimezone(timeZone: string, now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}

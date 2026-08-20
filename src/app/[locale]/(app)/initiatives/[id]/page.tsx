@@ -6,7 +6,10 @@ import { PrintButton } from "@/components/PrintButton";
 import { InitiativeActivitiesEditor, type ActivityView } from "@/components/InitiativeActivitiesEditor";
 import { InitiativeCardEditor } from "@/components/InitiativeCardEditor";
 import { coversMonth, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
-import { formatDateDmy } from "@/lib/dateParts";
+import { formatDateDmy, todayInTimezone } from "@/lib/dateParts";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { initiativeProgress } from "@/lib/initiativeProgress";
+import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { Locale } from "@/i18n/config";
 
@@ -32,7 +35,7 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
   const { data: initiative } = await supabase
     .from("strategic_initiatives")
     .select(
-      "id, plan_id, title_ar, title_en, code, deliverable_ar, description_ar, sub_goal_id, owner_org_unit_id, horizon, budget_note, status_code, start_date, end_date, progress_percent"
+      "id, plan_id, title_ar, title_en, code, deliverable_ar, description_ar, sub_goal_id, owner_org_unit_id, horizon, budget_note, status_code, start_date, end_date, progress_percent, perspective_code, outcomes_ar"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -174,6 +177,78 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
     label: r.label_ar,
   }));
 
+  // The balanced-scorecard strip across the top of the real cards, and the
+  // "التبعية مع المبادرات الاخرى" list beneath them (20260820000009).
+  const displayTimezone = await getDisplayTimezone(supabase);
+
+  const { data: perspectiveRows } = await supabase
+    .from("initiative_perspectives")
+    .select("code, label_ar")
+    .eq("is_active", true)
+    .order("display_order");
+  const perspectives = ((perspectiveRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
+    code: r.code,
+    label: r.label_ar,
+  }));
+
+  const { data: dependencyRows } = await supabase
+    .from("initiative_dependencies")
+    .select("id, depends_on_initiative_id")
+    .eq("initiative_id", id)
+    .is("deleted_at", null);
+  const dependencyIds = ((dependencyRows ?? []) as Array<{ id: string; depends_on_initiative_id: string }>).map(
+    (r) => r.depends_on_initiative_id
+  );
+  const { data: dependencyInitiatives } =
+    dependencyIds.length > 0
+      ? await supabase.from("strategic_initiatives").select("id, code, title_ar").in("id", dependencyIds)
+      : { data: [] };
+  const dependencies = ((dependencyRows ?? []) as Array<{ id: string; depends_on_initiative_id: string }>).map((row) => {
+    const target = ((dependencyInitiatives ?? []) as Array<{ id: string; code: string | null; title_ar: string }>).find(
+      (i) => i.id === row.depends_on_initiative_id
+    );
+    return {
+      id: row.id,
+      initiativeId: row.depends_on_initiative_id,
+      code: target?.code ?? null,
+      // A dependency whose target this reader cannot see is still real: it is
+      // named "—" rather than dropped, so the count never silently shrinks.
+      title: target?.title_ar ?? "—",
+    };
+  });
+
+  // Other initiatives in the same plan, offered as dependency options.
+  const { data: siblingRows } = canEditCard
+    ? await supabase
+        .from("strategic_initiatives")
+        .select("id, code, title_ar")
+        .eq("plan_id", initiative.plan_id)
+        .neq("id", id)
+        .is("deleted_at", null)
+        .order("created_at")
+    : { data: [] };
+  const siblingOptions = ((siblingRows ?? []) as Array<{ id: string; code: string | null; title_ar: string }>).map((i) => ({
+    id: i.id,
+    label: i.code ? `${i.code} — ${i.title_ar}` : i.title_ar,
+  }));
+
+  // One outcome per line (20260820000009) — the bullets on the printed card.
+  const outcomesRaw = (initiative.outcomes_ar as string | null) ?? "";
+  const outcomes = outcomesRaw
+    .split(/\r?\n/)
+    .map((line: string) => line.trim())
+    .filter(Boolean);
+
+  const progress = initiativeProgress(
+    {
+      progressPercent: initiative.progress_percent,
+      startDate: initiative.start_date,
+      endDate: initiative.end_date,
+      statusCode: initiative.status_code,
+    },
+    todayInTimezone(displayTimezone)
+  );
+
   const cell = (label: string, value: string) => (
     <div style={{ display: "flex", gap: 6, fontSize: 13 }}>
       <span style={{ color: "var(--sru-muted)", whiteSpace: "nowrap" }}>{label}:</span>
@@ -195,10 +270,12 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
         <PrintButton />
       </div>
 
-      {/* ---- the card, in the order the real decks use ---- */}
-      <div className="sru-card" style={{ padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div>
+      {/* ---- the card, laid out like the real decks: a titled band, then a
+           three-column body (identity | definition | goal chain), then the
+           outcomes / dependencies pair, then the month strip ---- */}
+      <div className="sru-card sru-initiative-sheet">
+        <header className="sru-initiative-sheet-head">
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h1 className="sru-title" style={{ fontSize: 22 }}>
               {initiative.title_ar}
             </h1>
@@ -208,53 +285,96 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
               </p>
             )}
             {initiative.deliverable_ar && (
-              <p style={{ fontSize: 14, marginTop: 8, fontWeight: 700 }}>• {initiative.deliverable_ar}</p>
+              <p className="sru-initiative-sheet-deliverable">{initiative.deliverable_ar}</p>
             )}
           </div>
-          <div style={{ textAlign: "start" }}>
-            {cell(t("codeLabel"), initiative.code ?? "—")}
-            {cell(t("statusLabel"), statusRow?.label_ar ?? initiative.status_code)}
-          </div>
+          <InitiativeProgressRing progress={progress} size={82} />
+        </header>
+
+        {/* The balanced-scorecard strip: every perspective is shown, the
+            initiative's own one lit — exactly as the printed cards read. */}
+        <div className="sru-initiative-perspectives">
+          {perspectives.map((p) => (
+            <span
+              key={p.code}
+              className={p.code === initiative.perspective_code ? "sru-perspective is-on" : "sru-perspective"}
+            >
+              {p.label}
+            </span>
+          ))}
         </div>
 
-        {initiative.description_ar && (
-          <div style={{ marginTop: 14 }}>
-            <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("definitionLabel")}</span>
-            <p style={{ fontSize: 13, lineHeight: 1.9, marginTop: 4 }}>{initiative.description_ar}</p>
-          </div>
-        )}
+        <div className="sru-initiative-sheet-grid">
+          <section className="sru-initiative-block">
+            <h2>{t("identityBlock")}</h2>
+            {cell(t("codeLabel"), initiative.code ?? "—")}
+            {cell(t("statusLabel"), statusRow?.label_ar ?? initiative.status_code)}
+            {cell(t("horizonLabel"), initiative.horizon ?? "—")}
+            {cell(t("budgetLabel"), initiative.budget_note ?? "—")}
+            {cell(t("startDateLabel"), initiative.start_date ? formatDateDmy(initiative.start_date, locale) : t("tbd"))}
+            {cell(t("endDateLabel"), initiative.end_date ? formatDateDmy(initiative.end_date, locale) : t("tbd"))}
+          </section>
 
-        <div
-          style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 10,
-            borderTop: "1px solid var(--sru-border, #e5e7eb)",
-            paddingTop: 14,
-          }}
-        >
-          {cell(t("mainGoalLabel"), goal?.title_ar ?? "—")}
-          {cell(t("subGoalLabel"), subGoal?.title_ar ?? "—")}
-          {cell(t("horizonLabel"), initiative.horizon ?? "—")}
-          {cell(t("budgetLabel"), initiative.budget_note ?? "—")}
-          {cell(t("ownerLabel"), ownerName ?? "—")}
-          {cell(
-            t("participatingLabel"),
-            participating.length > 0
-              ? participating.map((a) => `${orgUnitNameById.get(a.org_unit_id) ?? "—"} (${a.percentage}%)`).join("، ")
-              : "—"
-          )}
-          {cell(
-            t("supportingLabel"),
-            supporting.length > 0 ? supporting.map((a) => orgUnitNameById.get(a.org_unit_id) ?? "—").join("، ") : "—"
-          )}
-          {cell(t("startDateLabel"), initiative.start_date ? formatDateDmy(initiative.start_date, locale) : t("tbd"))}
-          {cell(t("endDateLabel"), initiative.end_date ? formatDateDmy(initiative.end_date, locale) : t("tbd"))}
+          <section className="sru-initiative-block is-wide">
+            <h2>{t("definitionLabel")}</h2>
+            {initiative.description_ar ? (
+              <p style={{ fontSize: 13, lineHeight: 1.9 }}>{initiative.description_ar}</p>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+            )}
+          </section>
+
+          <section className="sru-initiative-block">
+            <h2>{t("goalChainBlock")}</h2>
+            {cell(t("mainGoalLabel"), goal?.title_ar ?? "—")}
+            {cell(t("subGoalLabel"), subGoal?.title_ar ?? "—")}
+            {cell(t("ownerLabel"), ownerName ?? "—")}
+            {cell(
+              t("participatingLabel"),
+              participating.length > 0
+                ? participating.map((a) => `${orgUnitNameById.get(a.org_unit_id) ?? "—"} (${a.percentage}%)`).join("، ")
+                : "—"
+            )}
+            {cell(
+              t("supportingLabel"),
+              supporting.length > 0 ? supporting.map((a) => orgUnitNameById.get(a.org_unit_id) ?? "—").join("، ") : "—"
+            )}
+          </section>
+
+          <section className="sru-initiative-block">
+            <h2>{t("outcomesLabel")}</h2>
+            {outcomes.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+            ) : (
+              <ul className="sru-initiative-outcomes">
+                {outcomes.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="sru-initiative-block">
+            <h2>{t("dependenciesLabel")}</h2>
+            {dependencies.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+            ) : (
+              <ul className="sru-initiative-outcomes">
+                {dependencies.map((d) => (
+                  <li key={d.id}>
+                    {d.code ? <span className="sru-en" style={{ fontWeight: 700 }}>{d.code} </span> : null}
+                    <Link href={`/initiatives/${d.initiativeId}`} style={{ color: "inherit" }}>
+                      {d.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
 
         {/* ---- month strip: أبرز الأنشطة × الأشهر ---- */}
-        <div style={{ marginTop: 20 }}>
+        <div className="sru-initiative-timeline">
           <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{t("activitiesHeading")}</h2>
           {activities.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noActivities")}</p>
@@ -327,10 +447,15 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
             startDate: initiative.start_date ?? "",
             endDate: initiative.end_date ?? "",
             progressPercent: initiative.progress_percent == null ? "" : String(initiative.progress_percent),
+            perspectiveCode: initiative.perspective_code ?? "",
+            outcomesAr: outcomesRaw,
           }}
           subGoalOptions={cardSubGoalOptions}
           orgUnitOptions={cardOrgUnitOptions}
           statusOptions={cardStatusOptions}
+          perspectiveOptions={perspectives}
+          dependencies={dependencies.map((d) => ({ id: d.id, label: d.code ? d.code + " — " + d.title : d.title }))}
+          dependencyOptions={siblingOptions}
         />
       )}
 
