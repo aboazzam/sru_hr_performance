@@ -179,6 +179,8 @@ const cardSchema = z
     // Reported completion (20260820000008). Optional: an initiative that has
     // not been assessed keeps NULL, and the ring then shows elapsed time
     // instead of claiming 0% done.
+    perspectiveCode: optionalText,
+    outcomesAr: optionalText,
     progressPercent: optionalText.refine(
       (v) => v === undefined || (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100)
     ),
@@ -209,6 +211,8 @@ export async function updateInitiativeCard(_prev: InitiativeCardState, formData:
     ownerOrgUnitId: formData.get("ownerOrgUnitId") ?? undefined,
     startDate: formData.get("startDate") ?? undefined,
     endDate: formData.get("endDate") ?? undefined,
+    perspectiveCode: formData.get("perspectiveCode") ?? undefined,
+    outcomesAr: formData.get("outcomesAr") ?? undefined,
     progressPercent: formData.get("progressPercent") ?? undefined,
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
@@ -238,6 +242,8 @@ export async function updateInitiativeCard(_prev: InitiativeCardState, formData:
       start_date: d.startDate ?? null,
       end_date: d.endDate ?? null,
       progress_percent: d.progressPercent === undefined ? null : Number(d.progressPercent),
+      perspective_code: d.perspectiveCode ?? null,
+      outcomes_ar: d.outcomesAr ?? null,
     })
     .eq("id", d.initiativeId)
     .is("deleted_at", null)
@@ -246,6 +252,89 @@ export async function updateInitiativeCard(_prev: InitiativeCardState, formData:
     if (error.code === "23505") return { status: "error", message: "duplicate_code" };
     return mapError(error) as InitiativeCardState;
   }
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  revalidatePath("/[locale]/initiatives/[id]", "page");
+  return { status: "success" };
+}
+
+/**
+ * Dependencies between initiatives (التبعية مع المبادرات الاخرى,
+ * 20260820000009). Two narrow actions rather than folding them into the
+ * card form: each is a single row, and the card form is one big save whose
+ * failure must not take a dependency edit with it.
+ *
+ * Real authorization is initiative_dependencies' own RLS
+ * (strategicPlanning='approve'). Both go through the caller's own client,
+ * and the affected rows are read back — an RLS-blocked write affects zero
+ * rows WITHOUT erroring.
+ */
+const dependencySchema = z.object({
+  initiativeId: z.string().uuid(),
+  dependsOnInitiativeId: z.string().uuid(),
+});
+
+export async function addInitiativeDependency(
+  _prev: InitiativeCardState,
+  formData: FormData
+): Promise<InitiativeCardState> {
+  const parsed = dependencySchema.safeParse({
+    initiativeId: formData.get("initiativeId"),
+    dependsOnInitiativeId: formData.get("dependsOnInitiativeId"),
+  });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+  // Mirrors initiative_dependencies_not_self; caught here so the reader gets
+  // a real message instead of an opaque constraint violation.
+  if (parsed.data.initiativeId === parsed.data.dependsOnInitiativeId)
+    return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+  const { data: myProfile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle();
+
+  const { data: created, error } = await supabase
+    .from("initiative_dependencies")
+    .insert({
+      initiative_id: parsed.data.initiativeId,
+      depends_on_initiative_id: parsed.data.dependsOnInitiativeId,
+      created_by: myProfile?.id ?? null,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    if (error.code === "23505") return { status: "error", message: "duplicate_code" };
+    return mapError(error) as InitiativeCardState;
+  }
+  if (!created) return { status: "error", message: "forbidden" };
+
+  revalidatePath("/[locale]/initiatives/[id]", "page");
+  return { status: "success" };
+}
+
+export async function removeInitiativeDependency(
+  _prev: InitiativeCardState,
+  formData: FormData
+): Promise<InitiativeCardState> {
+  const parsed = z.object({ dependencyId: z.string().uuid() }).safeParse({ dependencyId: formData.get("dependencyId") });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  // Soft-delete: the table has no DELETE policy at all.
+  const { data: updated, error } = await supabase
+    .from("initiative_dependencies")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data.dependencyId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return mapError(error) as InitiativeCardState;
   if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
 
   revalidatePath("/[locale]/initiatives/[id]", "page");

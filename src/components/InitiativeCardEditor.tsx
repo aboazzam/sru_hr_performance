@@ -3,8 +3,13 @@
 import { useActionState, useEffect, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { AlertCircle, CheckCircle2, Pencil } from "lucide-react";
-import { updateInitiativeCard, type InitiativeCardState } from "@/app/[locale]/(app)/initiatives/[id]/actions";
+import { AlertCircle, CheckCircle2, Link2, Pencil, X } from "lucide-react";
+import {
+  addInitiativeDependency,
+  removeInitiativeDependency,
+  updateInitiativeCard,
+  type InitiativeCardState,
+} from "@/app/[locale]/(app)/initiatives/[id]/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { missingInitiativeFields, type InitiativeFieldKey } from "@/lib/initiativeCompleteness";
 
@@ -23,6 +28,10 @@ export interface InitiativeCardFormValues {
   endDate: string;
   /** Reported completion 0-100; "" when not assessed yet. */
   progressPercent: string;
+  /** Balanced-scorecard perspective code; "" when unclassified. */
+  perspectiveCode: string;
+  /** النتائج / المخرجات — one per line. */
+  outcomesAr: string;
 }
 
 const errorKeys: Record<string, string> = {
@@ -64,12 +73,20 @@ export function InitiativeCardEditor({
   subGoalOptions,
   orgUnitOptions,
   statusOptions,
+  perspectiveOptions,
+  dependencies,
+  dependencyOptions,
 }: {
   initiativeId: string;
   initial: InitiativeCardFormValues;
   subGoalOptions: Array<{ id: string; title: string }>;
   orgUnitOptions: Array<{ id: string; name: string }>;
   statusOptions: Array<{ code: string; label: string }>;
+  perspectiveOptions: Array<{ code: string; label: string }>;
+  /** Already-recorded dependencies, newest last. */
+  dependencies: Array<{ id: string; label: string }>;
+  /** Other initiatives in the same plan, offered as new dependencies. */
+  dependencyOptions: Array<{ id: string; label: string }>;
 }) {
   const t = useTranslations("InitiativePage");
   const router = useRouter();
@@ -119,7 +136,7 @@ export function InitiativeCardEditor({
       </span>
     ) : null;
 
-  return (
+  const cardForm = (
     <form className="no-print" onSubmit={handleSubmit} style={{ marginTop: 20 }}>
       <input type="hidden" name="initiativeId" value={initiativeId} />
       <input type="hidden" name="startDate" value={values.startDate} />
@@ -255,6 +272,33 @@ export function InitiativeCardEditor({
             />
           </div>
           <div className="sru-field">
+            {/* Not in the missing-fields list: the four-perspective strip is a
+                classification, not part of what makes a card complete. */}
+            <label>{t("perspectiveLabel")}</label>
+            <select
+              name="perspectiveCode"
+              value={values.perspectiveCode}
+              onChange={(e) => set("perspectiveCode")(e.target.value)}
+            >
+              <option value="">{t("perspectiveNone")}</option>
+              {perspectiveOptions.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <label>{t("outcomesEditLabel")}</label>
+            <textarea
+              name="outcomesAr"
+              rows={3}
+              dir="rtl"
+              value={values.outcomesAr}
+              onChange={(e) => set("outcomesAr")(e.target.value)}
+            />
+          </div>
+          <div className="sru-field">
             <label>
               {t("subGoalLabel")}
               {mark("subGoalId")}
@@ -357,5 +401,107 @@ export function InitiativeCardEditor({
         </button>
       </div>
     </form>
+  );
+
+  return (
+    <>
+      {cardForm}
+      <InitiativeDependenciesEditor
+        initiativeId={initiativeId}
+        dependencies={dependencies}
+        options={dependencyOptions}
+      />
+    </>
+  );
+}
+
+/**
+ * التبعية مع المبادرات الاخرى — add / remove, one row at a time.
+ *
+ * Deliberately outside the card form: nesting forms is invalid HTML, and a
+ * failed card save must not lose a dependency edit (or the other way round).
+ */
+function InitiativeDependenciesEditor({
+  initiativeId,
+  dependencies,
+  options,
+}: {
+  initiativeId: string;
+  dependencies: Array<{ id: string; label: string }>;
+  options: Array<{ id: string; label: string }>;
+}) {
+  const t = useTranslations("InitiativePage");
+  const router = useRouter();
+  const [addState, addAction, adding] = useActionState<InitiativeCardState, FormData>(addInitiativeDependency, null);
+  const [removeState, removeAction] = useActionState<InitiativeCardState, FormData>(removeInitiativeDependency, null);
+
+  useEffect(() => {
+    if (addState?.status === "success" || removeState?.status === "success") router.refresh();
+  }, [addState, removeState, router]);
+
+  const taken = new Set(dependencies.map((d) => d.label));
+  const available = options.filter((o) => !taken.has(o.label));
+
+  return (
+    <section className="sru-formsection no-print" style={{ marginTop: 16 }}>
+      <div className="sru-formsection-head">
+        <span className="sru-formsection-badge">
+          <Link2 size={17} aria-hidden />
+        </span>
+        <div>
+          <h3>{t("dependenciesEditLabel")}</h3>
+        </div>
+      </div>
+
+      {dependencies.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("dependencyNone")}</p>
+      ) : (
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {dependencies.map((d) => (
+            <li key={d.id} className="pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {d.label}
+              <form action={(formData) => startTransition(() => removeAction(formData))} style={{ display: "inline" }}>
+                <input type="hidden" name="dependencyId" value={d.id} />
+                <button
+                  type="submit"
+                  className="sru-icon-action"
+                  title={t("dependencyRemove")}
+                  aria-label={t("dependencyRemove")}
+                  style={{ padding: 2 }}
+                >
+                  <X size={12} aria-hidden />
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {available.length > 0 && (
+        <form
+          action={(formData) => startTransition(() => addAction(formData))}
+          style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}
+        >
+          <input type="hidden" name="initiativeId" value={initiativeId} />
+          <select name="dependsOnInitiativeId" required defaultValue="" style={{ maxWidth: 420, flex: 1 }}>
+            <option value="">{t("dependencyPlaceholder")}</option>
+            {available.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="sru-btn" disabled={adding}>
+            {t("dependencyAdd")}
+          </button>
+        </form>
+      )}
+
+      {(addState?.status === "error" || removeState?.status === "error") && (
+        <p style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 13, marginTop: 8 }}>
+          {t(errorKeys[(addState ?? removeState)?.status === "error" ? ((addState ?? removeState) as { message: string }).message : "unknown"] ?? "cardErrorUnknown")}
+        </p>
+      )}
+    </section>
   );
 }
