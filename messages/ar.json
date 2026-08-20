@@ -528,7 +528,8 @@
     "aiSuggestNeedsFields": "أكمل الاسم والعائلة والدرجة والفئة أولًا لتفعيل الاقتراح.",
     "aiErrorInvalidInput": "بيانات غير مكتملة لتوليد اقتراح.",
     "aiErrorRateLimited": "عدد كبير من المحاولات — حاول بعد قليل.",
-    "aiErrorGeneric": "تعذّر توليد اقتراح حاليًا — حاول مرة أخرى."
+    "aiErrorGeneric": "تعذّر توليد اقتراح حاليًا — حاول مرة أخرى.",
+    "closeButton": "إغلاق"
   },
   "CareerPathNewJobTitlePage": {
     "title": "إنشاء وظيفة جديدة",
@@ -1816,7 +1817,8 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية تعديل المؤشرات.",
     "errorDuplicate": "يوجد مستهدف سنوي لهذه الدورة بالفعل.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "closeButton": "إغلاق"
   },
   "RecruitmentPlanPage": {
     "title": "خطة التوظيف",
@@ -2222,7 +2224,8 @@
     "progressReported": "نسبة الإنجاز",
     "progressFromStatus": "مكتملة",
     "progressElapsed": "مضى من المدة",
-    "progressUnknown": "لم تُقيَّم بعد"
+    "progressUnknown": "لم تُقيَّم بعد",
+    "closeButton": "إغلاق"
   },
   "ProgramsPanel": {
     "intro": "البرامج الاستراتيجية تجمع عدة مبادرات تحت مظلة واحدة، وتديرها لجنة مشرفة. اضغط «فتح البرنامج» للاطلاع على اللجنة والداشبورد وتفاصيل المبادرات.",
@@ -2248,7 +2251,8 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorForbidden": "ليست لديك صلاحية إدارة البرامج.",
     "errorDuplicate": "هذا العنصر مضاف بالفعل.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "closeButton": "إغلاق"
   },
   "ProgramDetailPage": {
     "backToPlan": "العودة إلى الخطة",
@@ -2430,7 +2434,8 @@
     "suggestFailed": "تعذّر توليد اقتراح الآن — اكتب الاسم الإنجليزي يدويًا.",
     "suggestRateLimited": "تجاوزت عدد الاقتراحات المسموح بها خلال ساعة.",
     "datesRequiredNote": "اختر تاريخي الابتداء والانتهاء لتفعيل الإضافة.",
-    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا."
+    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا.",
+    "closeButton": "إغلاق"
   },
   "InitiativePage": {
     "errorNotFound": "لم يتم العثور على هذه المبادرة، أو لا تملك صلاحية الاطلاع عليها.",
