@@ -2395,9 +2395,9 @@
     "deliverablePlaceholder": "e.g. ERP system activated",
     "definitionLabel": "Definition",
     "subGoalLabel": "Sub-goal",
-    "subGoalNone": "— no sub-goal —",
+    "subGoalPlaceholder": "— Select a sub-goal —",
     "ownerLabel": "Owning department",
-    "ownerNone": "— no owning department —",
+    "ownerPlaceholder": "— Select a department —",
     "budgetLabel": "Budget",
     "budgetPlaceholder": "e.g. x or an amount",
     "statusLabel": "Status",
@@ -2424,7 +2424,9 @@
     "suggesting": "Suggesting...",
     "suggestEnHint": "Suggests an English name from the Arabic one; it stays editable.",
     "suggestFailed": "Could not generate a suggestion right now — type the English name yourself.",
-    "suggestRateLimited": "You have used all suggestions allowed this hour."
+    "suggestRateLimited": "You have used all suggestions allowed this hour.",
+    "datesRequiredNote": "Choose both the start and end dates to enable adding.",
+    "subGoalEmptyHint": "Add a sub-goal to the plan first."
   },
   "InitiativePage": {
     "errorNotFound": "This initiative was not found, or you do not have access to it.",
