@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLocale } from "next-intl";
 import {
+  datePartLabels,
   daysInMonth,
   formatDateValue,
   monthNames,
@@ -50,6 +51,7 @@ export function DateFieldDmy({
 }) {
   const locale = useLocale();
   const names = monthNames(locale);
+  const partLabels = datePartLabels(locale);
   const isControlled = value !== undefined;
   const externalValue = isControlled ? value : defaultValue;
 
@@ -106,11 +108,11 @@ export function DateFieldDmy({
 
   const isoValue = formatDateValue(draft);
 
-  const selectStyle: React.CSSProperties = { minWidth: 0 };
+  const selectStyle: React.CSSProperties = { maxWidth: "100%" };
 
   return (
     <div
-      style={{ display: "flex", gap: 6, alignItems: "center" }}
+      style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}
       role="group"
       aria-label={ariaLabel}
     >
@@ -121,10 +123,10 @@ export function DateFieldDmy({
         value={day || ""}
         disabled={disabled}
         onChange={(e) => emit({ day: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — day` : "day"}
-        style={{ ...selectStyle, flex: "0 0 auto" }}
+        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.day}` : partLabels.day}
+        style={{ ...selectStyle, flex: "0 1 auto", minWidth: 78 }}
       >
-        <option value="">—</option>
+        <option value="">{partLabels.day}</option>
         {/* Unpadded, matching how the value reads back: `5 أغسطس 2026`. */}
         {Array.from({ length: dayCount }, (_, i) => i + 1).map((d) => (
           <option key={d} value={d}>
@@ -137,10 +139,10 @@ export function DateFieldDmy({
         value={month || ""}
         disabled={disabled}
         onChange={(e) => emit({ month: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — month` : "month"}
-        style={{ ...selectStyle, flex: "1 1 auto" }}
+        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.month}` : partLabels.month}
+        style={{ ...selectStyle, flex: "1 1 120px", minWidth: 112 }}
       >
-        <option value="">—</option>
+        <option value="">{partLabels.month}</option>
         {names.map((name, index) => (
           <option key={name} value={index + 1}>
             {name}
@@ -152,10 +154,10 @@ export function DateFieldDmy({
         value={year || ""}
         disabled={disabled}
         onChange={(e) => emit({ year: Number(e.target.value) })}
-        aria-label={ariaLabel ? `${ariaLabel} — year` : "year"}
-        style={{ ...selectStyle, flex: "0 0 auto" }}
+        aria-label={ariaLabel ? `${ariaLabel} — ${partLabels.year}` : partLabels.year}
+        style={{ ...selectStyle, flex: "0 1 auto", minWidth: 92 }}
       >
-        <option value="">—</option>
+        <option value="">{partLabels.year}</option>
         {years.map((y) => (
           <option key={y} value={y}>
             {y}

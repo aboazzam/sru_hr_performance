@@ -58,6 +58,18 @@ export function monthNames(locale: string): readonly string[] {
 }
 
 /** Days in a Gregorian month; February follows the real leap-year rule. */
+/**
+ * Names for the three parts of the control. They are used as the EMPTY
+ * option of each select, so an unset date reads `اليوم / الشهر / السنة`
+ * rather than three identical dashes that give the reader no way to tell
+ * which box is which before opening it.
+ */
+export function datePartLabels(locale: string): { day: string; month: string; year: string } {
+  return locale === "en"
+    ? { day: "Day", month: "Month", year: "Year" }
+    : { day: "اليوم", month: "الشهر", year: "السنة" };
+}
+
 export function daysInMonth(year: number, month: number): number {
   if (month === 2) {
     const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;

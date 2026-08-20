@@ -10,24 +10,28 @@ export type InitiativeActionState =
   | { status: "error"; message: "invalid_input" | "unauthenticated" | "forbidden" | "duplicate" | "unknown" }
   | null;
 
-const optionalDate = z
+// Every field except the description is required when adding an initiative
+// (2026-08-20 request). The client marks them `required`, but that is only a
+// convenience — a hidden input (which is how the two dates submit) is never
+// validated by the browser at all, so this schema is the actual guard.
+// The initiative page has its own edit action (initiatives/[id]) and is
+// deliberately untouched: it patches one field at a time.
+const requiredDate = z
   .string()
   .trim()
-  .optional()
-  .transform((v) => (v === "" ? undefined : v))
-  .refine((v) => v === undefined || /^\d{4}-\d{2}-\d{2}$/.test(v), { message: "invalid date" });
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "invalid date" });
 
 const createSchema = z
   .object({
     planId: z.string().uuid(),
     titleAr: z.string().trim().min(1),
-    titleEn: z.string().trim().optional(),
+    titleEn: z.string().trim().min(1),
     descriptionAr: z.string().trim().optional(),
-    ownerOrgUnitId: z.string().uuid().optional(),
-    subGoalId: z.string().uuid().optional(),
-    startDate: optionalDate,
-    endDate: optionalDate,
-    statusCode: z.string().trim().optional(),
+    ownerOrgUnitId: z.string().uuid(),
+    subGoalId: z.string().uuid(),
+    startDate: requiredDate,
+    endDate: requiredDate,
+    statusCode: z.string().trim().min(1),
   })
   // Mirrors the DB's own strategic_initiatives_dates_valid CHECK so the
   // caller gets a real message instead of an opaque constraint violation.
@@ -54,13 +58,13 @@ export async function createInitiative(_prev: InitiativeActionState, formData: F
   const parsed = createSchema.safeParse({
     planId: formData.get("planId"),
     titleAr: formData.get("titleAr"),
-    titleEn: formData.get("titleEn") || undefined,
+    titleEn: formData.get("titleEn"),
     descriptionAr: formData.get("descriptionAr") || undefined,
-    ownerOrgUnitId: formData.get("ownerOrgUnitId") || undefined,
-    subGoalId: formData.get("subGoalId") || undefined,
-    startDate: formData.get("startDate") ?? undefined,
-    endDate: formData.get("endDate") ?? undefined,
-    statusCode: formData.get("statusCode") || undefined,
+    ownerOrgUnitId: formData.get("ownerOrgUnitId"),
+    subGoalId: formData.get("subGoalId"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    statusCode: formData.get("statusCode"),
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
@@ -77,13 +81,13 @@ export async function createInitiative(_prev: InitiativeActionState, formData: F
     .insert({
       plan_id: d.planId,
       title_ar: d.titleAr,
-      title_en: d.titleEn ?? null,
+      title_en: d.titleEn,
       description_ar: d.descriptionAr ?? null,
-      owner_org_unit_id: d.ownerOrgUnitId ?? null,
-      sub_goal_id: d.subGoalId ?? null,
-      start_date: d.startDate ?? null,
-      end_date: d.endDate ?? null,
-      ...(d.statusCode ? { status_code: d.statusCode } : {}),
+      owner_org_unit_id: d.ownerOrgUnitId,
+      sub_goal_id: d.subGoalId,
+      start_date: d.startDate,
+      end_date: d.endDate,
+      status_code: d.statusCode,
       created_by: myProfile?.id ?? null,
     })
     .select("id")
