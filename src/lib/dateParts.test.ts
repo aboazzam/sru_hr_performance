@@ -8,6 +8,7 @@ import {
   monthNamesAr,
   monthNamesEn,
   yearOptions,
+  datePartLabels,
 } from "./dateParts";
 
 describe("daysInMonth", () => {
@@ -92,5 +93,16 @@ describe("yearOptions", () => {
     expect(years[0]).toBe(2025);
     expect(years[years.length - 1]).toBe(2036);
     expect(years).toContain(2026);
+  });
+});
+
+describe("datePartLabels", () => {
+  it("names each part in Arabic by default, so an unset date is not three identical dashes", () => {
+    expect(datePartLabels("ar")).toEqual({ day: "اليوم", month: "الشهر", year: "السنة" });
+  });
+
+  it("switches to English only for the en locale", () => {
+    expect(datePartLabels("en")).toEqual({ day: "Day", month: "Month", year: "Year" });
+    expect(datePartLabels("fr")).toEqual(datePartLabels("ar"));
   });
 });

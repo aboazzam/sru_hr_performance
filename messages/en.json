@@ -2195,7 +2195,7 @@
     "titleArLabel": "Initiative name (Arabic)",
     "titleEnLabel": "Initiative name (English)",
     "ownerLabel": "Owning department",
-    "ownerNone": "— no owning department —",
+    "ownerPlaceholder": "— Select a department —",
     "statusLabel": "Status",
     "startDateLabel": "Start date",
     "endDateLabel": "End date",
@@ -2215,8 +2215,10 @@
     "errorDuplicate": "This initiative is already linked to that target.",
     "errorUnknown": "An unexpected error occurred.",
     "subGoalLabel": "Sub-goal",
-    "subGoalNone": "— no sub-goal —",
-    "subGoalValue": "Sub-goal: {subGoal}"
+    "subGoalPlaceholder": "— Select a sub-goal —",
+    "subGoalValue": "Sub-goal: {subGoal}",
+    "datesRequiredNote": "Choose both the start and end dates to enable adding.",
+    "subGoalEmptyHint": "Add a sub-goal to the plan first."
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",

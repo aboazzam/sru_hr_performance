@@ -2195,7 +2195,7 @@
     "titleArLabel": "اسم المبادرة (عربي)",
     "titleEnLabel": "اسم المبادرة (إنجليزي)",
     "ownerLabel": "الإدارة المالكة",
-    "ownerNone": "— بلا إدارة محدّدة —",
+    "ownerPlaceholder": "— اختر الإدارة —",
     "statusLabel": "الحالة",
     "startDateLabel": "تاريخ البداية",
     "endDateLabel": "تاريخ النهاية",
@@ -2215,8 +2215,10 @@
     "errorDuplicate": "هذه المبادرة مرتبطة بهذا المستهدف بالفعل.",
     "errorUnknown": "حدث خطأ غير متوقع.",
     "subGoalLabel": "الهدف الفرعي",
-    "subGoalNone": "— بلا هدف فرعي —",
-    "subGoalValue": "الهدف الفرعي: {subGoal}"
+    "subGoalPlaceholder": "— اختر الهدف الفرعي —",
+    "subGoalValue": "الهدف الفرعي: {subGoal}",
+    "datesRequiredNote": "اختر تاريخي البداية والنهاية لتفعيل الإضافة.",
+    "subGoalEmptyHint": "أضف هدفًا فرعيًا إلى الخطة أولًا."
   },
   "ProgramsPanel": {
     "intro": "البرامج الاستراتيجية تجمع عدة مبادرات تحت مظلة واحدة، وتديرها لجنة مشرفة. اضغط «فتح البرنامج» للاطلاع على اللجنة والداشبورد وتفاصيل المبادرات.",

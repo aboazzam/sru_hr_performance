@@ -680,6 +680,39 @@ export default async function StrategicPlanDetailPage({
   ];
   const targetLabelByValue = new Map(targetOptions.map((o) => [o.value, o.label]));
 
+  const { data: initiativeOrgUnits } = await supabase
+    .from("org_units")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("name_ar");
+  const orgUnitOptions = ((initiativeOrgUnits ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
+    id: u.id,
+    name: u.name_ar,
+  }));
+  const orgUnitNameById = new Map(orgUnitOptions.map((u) => [u.id, u.name]));
+
+  // The initiative's own sub-goal ("الهدف الفرعي (LOGIC)" on the real cards),
+  // limited to this plan's sub-goals.
+  const subGoalOptions = subGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
+  const subGoalTitleById = new Map(subGoalOptions.map((sg) => [sg.id, sg.title]));
+
+
+  const { data: statusRows } = await supabase
+    .from("initiative_statuses")
+    .select("code, label_ar")
+    .eq("is_active", true)
+    .order("display_order");
+  const statusOptions: InitiativeStatusOption[] = ((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
+    code: r.code,
+    label: r.label_ar,
+  }));
+  const statusLabelByCode = new Map(statusOptions.map((s) => [s.code, s.label]));
+
+  // Built AFTER the org-unit and sub-goal lookups above: reading them from
+  // here while they were still declared below crashed the whole page with a
+  // temporal-dead-zone ReferenceError as soon as the plan had one initiative
+  // (an empty list never evaluated the map body, which is why it stayed
+  // hidden until the first one was added).
   const initiatives: InitiativeView[] = initiativeRows.map((row) => ({
     id: row.id,
     titleAr: row.title_ar,
@@ -699,33 +732,6 @@ export default async function StrategicPlanDetailPage({
           t("unknownTarget"),
       })),
   }));
-
-  const { data: initiativeOrgUnits } = await supabase
-    .from("org_units")
-    .select("id, name_ar")
-    .is("deleted_at", null)
-    .order("name_ar");
-  const orgUnitOptions = ((initiativeOrgUnits ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
-    id: u.id,
-    name: u.name_ar,
-  }));
-  const orgUnitNameById = new Map(orgUnitOptions.map((u) => [u.id, u.name]));
-
-  // The initiative's own sub-goal ("الهدف الفرعي (LOGIC)" on the real cards),
-  // limited to this plan's sub-goals.
-  const subGoalOptions = subGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
-  const subGoalTitleById = new Map(subGoalOptions.map((sg) => [sg.id, sg.title]));
-
-  const { data: statusRows } = await supabase
-    .from("initiative_statuses")
-    .select("code, label_ar")
-    .eq("is_active", true)
-    .order("display_order");
-  const statusOptions: InitiativeStatusOption[] = ((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
-    code: r.code,
-    label: r.label_ar,
-  }));
-  const statusLabelByCode = new Map(statusOptions.map((s) => [s.code, s.label]));
 
   const initiativesContent = (
     <InitiativesPanel
