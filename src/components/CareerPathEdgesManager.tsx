@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { Trash2, Route } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { AddFormDialog } from "@/components/AddFormDialog";
 import { createCareerPathEdge, removeCareerPathEdge } from "@/app/[locale]/(app)/career-path/job-titles/actions";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 
@@ -47,6 +48,7 @@ export function CareerPathEdgesManager({
 }) {
   const t = useTranslations("CareerPathJobTitleDetailPage");
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -85,16 +87,66 @@ export function CareerPathEdgesManager({
     });
   }
 
+  const addEdgeForm = (
+    <div>
+          <div className="sru-formgrid">
+            <div className="sru-field">
+              <label>{t("edgeDirectionLabel")}</label>
+              <select value={direction} onChange={(e) => setDirection(e.target.value as "predecessor" | "successor")}>
+                <option value="successor">{t("edgeLeadsTo")}</option>
+                <option value="predecessor">{t("edgeComesFrom")}</option>
+              </select>
+            </div>
+            <div className="sru-field">
+              <label>{t("edgeTargetLabel")}</label>
+              <input
+                type="text"
+                value={targetSearch}
+                onChange={(e) => setTargetSearch(e.target.value)}
+                placeholder={t("edgeTargetSearchPlaceholder")}
+                dir="rtl"
+                style={{ marginBottom: 6 }}
+              />
+              <select value={effectiveTargetId} onChange={(e) => setTargetId(e.target.value)} disabled={filteredOptions.length === 0}>
+                {filteredOptions.length === 0 ? (
+                  <option value="">{t("edgeTargetNoMatches")}</option>
+                ) : (
+                  filteredOptions.map((jt) => (
+                    <option key={jt.id} value={jt.id}>
+                      {jt.nameAr} ({t("gradeLabel", { grade: jt.gradeLevel })})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="sru-field">
+              <label>{t("edgeRequirementsLabel")}</label>
+              <input value={requirementsAr} onChange={(e) => setRequirementsAr(e.target.value)} dir="rtl" />
+            </div>
+          </div>
+          <div className="sru-form-submitrow">
+            <button type="button" disabled={isPending || !effectiveTargetId} onClick={handleAdd} className="sru-btn sru-btn-primary">
+              {isPending ? t("adding") : t("addEdge")}
+            </button>
+          </div>
+    </div>
+  );
+
   return (
     <section className="sru-formsection">
       <div className="sru-formsection-head">
         <span className="sru-formsection-badge">
           <Route size={17} aria-hidden />
         </span>
-        <div>
+        <div style={{ flex: 1 }}>
           <h3>{t("edgesHeading")}</h3>
           <span>{t("edgesSubtitle")}</span>
         </div>
+        {canEdit && otherOptions.length > 0 && (
+          <AddFormDialog dialogRef={dialogRef} triggerLabel={t("addEdge")} heading={t("edgesHeading")} closeLabel={t("closeButton")}>
+            {addEdgeForm}
+          </AddFormDialog>
+        )}
       </div>
 
       {edges.length === 0 ? (
@@ -137,43 +189,6 @@ export function CareerPathEdgesManager({
         </ul>
       )}
 
-      {canEdit && otherOptions.length > 0 && (
-        <div className="sru-formgrid">
-          <div className="sru-field">
-            <label>{t("edgeDirectionLabel")}</label>
-            <select value={direction} onChange={(e) => setDirection(e.target.value as "predecessor" | "successor")}>
-              <option value="successor">{t("edgeLeadsTo")}</option>
-              <option value="predecessor">{t("edgeComesFrom")}</option>
-            </select>
-          </div>
-          <div className="sru-field">
-            <label>{t("edgeTargetLabel")}</label>
-            <input
-              type="text"
-              value={targetSearch}
-              onChange={(e) => setTargetSearch(e.target.value)}
-              placeholder={t("edgeTargetSearchPlaceholder")}
-              dir="rtl"
-              style={{ marginBottom: 6 }}
-            />
-            <select value={effectiveTargetId} onChange={(e) => setTargetId(e.target.value)} disabled={filteredOptions.length === 0}>
-              {filteredOptions.length === 0 ? (
-                <option value="">{t("edgeTargetNoMatches")}</option>
-              ) : (
-                filteredOptions.map((jt) => (
-                  <option key={jt.id} value={jt.id}>
-                    {jt.nameAr} ({t("gradeLabel", { grade: jt.gradeLevel })})
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          <div className="sru-field">
-            <label>{t("edgeRequirementsLabel")}</label>
-            <input value={requirementsAr} onChange={(e) => setRequirementsAr(e.target.value)} dir="rtl" />
-          </div>
-        </div>
-      )}
 
       {error && (
         <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>
@@ -181,13 +196,6 @@ export function CareerPathEdgesManager({
         </p>
       )}
 
-      {canEdit && otherOptions.length > 0 && (
-        <div className="sru-form-submitrow">
-          <button type="button" disabled={isPending || !effectiveTargetId} onClick={handleAdd} className="sru-btn sru-btn-primary">
-            {isPending ? t("adding") : t("addEdge")}
-          </button>
-        </div>
-      )}
     </section>
   );
 }

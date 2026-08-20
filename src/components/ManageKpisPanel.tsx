@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, CheckCircle2, Gauge, Trash2 } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { AddFormDialog } from "@/components/AddFormDialog";
 import { createKpi, deleteKpi, setKpiAnnualTarget, type KpiActionState } from "@/app/[locale]/(app)/kpis/manage-kpis/actions";
 
 export interface KpiItem {
@@ -143,7 +144,8 @@ export function ManageKpisPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleting] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Clear the add-KPI form after a successful submit, same pattern as
   // AssignGoalForm/BauTaskForm/Feedback360Form -- otherwise the previously
@@ -151,7 +153,12 @@ export function ManageKpisPanel({
   // uncontrolled inputs, making it look like the KPI wasn't actually added
   // and risking an accidental duplicate resubmit.
   useEffect(() => {
-    if (state?.status === "success") formRef.current?.reset();
+    if (state?.status === "success") {
+      formRef.current?.reset();
+      // Closed only on success: an error keeps the dialog open with its
+      // message inside it.
+      dialogRef.current?.close();
+    }
   }, [state]);
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
@@ -181,6 +188,74 @@ export function ManageKpisPanel({
 
   return (
     <>
+      {canEdit && (
+        <AddFormDialog
+          dialogRef={dialogRef}
+          triggerLabel={t("addHeading")}
+          closeLabel={t("closeButton")}
+        >
+            <form ref={formRef} onSubmit={handleSubmit}>
+              <input type="hidden" name={parentKind === "goal" ? "goalId" : "subGoalId"} value={parentId} />
+              <section className="sru-formsection">
+                <div className="sru-formsection-head">
+                  <span className="sru-formsection-badge">
+                    <Gauge size={17} aria-hidden />
+                  </span>
+                  <div>
+                    <h3>{t("addHeading")}</h3>
+                    <span>{t("addSubtitle")}</span>
+                  </div>
+                </div>
+                <div className="sru-formgrid">
+                  <div className="sru-field">
+                    <label>{t("titleArLabel")}</label>
+                    <input type="text" name="titleAr" required dir="rtl" placeholder={t("titleArPlaceholder")} />
+                  </div>
+                  <div className="sru-field">
+                    <label>{t("titleEnLabel")}</label>
+                    <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("titleEnPlaceholder")} />
+                  </div>
+                  <div className="sru-field">
+                    <label>{t("unitArLabel")}</label>
+                    <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitArPlaceholder")} />
+                  </div>
+                  <div className="sru-field">
+                    <label>{t("unitEnLabel")}</label>
+                    <input type="text" name="unitEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("unitEnPlaceholder")} />
+                  </div>
+                  <div className="sru-field">
+                    <label>{t("planTargetFieldLabel")}</label>
+                    <input type="number" name="planTargetValue" step="0.01" placeholder={t("planTargetPlaceholder")} />
+                  </div>
+                  <div className="sru-field">
+                    <label>{t("weightFieldLabel")}</label>
+                    <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
+                  </div>
+                </div>
+              </section>
+    
+              {state?.status === "error" && (
+                <p role="alert" className="sru-auth-alert error">
+                  <AlertCircle size={15} aria-hidden />
+                  {t(errorMessageKeys[state.message] ?? "errorUnknown")}
+                </p>
+              )}
+              {state?.status === "success" && (
+                <p role="status" className="sru-auth-alert success">
+                  <CheckCircle2 size={15} aria-hidden />
+                  {t("successMessage")}
+                </p>
+              )}
+    
+              <div className="sru-form-submitrow">
+                <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+                  {pending ? t("submitting") : t("submit")}
+                </button>
+              </div>
+            </form>
+        </AddFormDialog>
+      )}
+
       {kpis.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 24 }}>{t("empty")}</p>
       ) : (
@@ -251,67 +326,6 @@ export function ManageKpisPanel({
         </p>
       )}
 
-      {canEdit && (
-        <form ref={formRef} onSubmit={handleSubmit}>
-          <input type="hidden" name={parentKind === "goal" ? "goalId" : "subGoalId"} value={parentId} />
-          <section className="sru-formsection">
-            <div className="sru-formsection-head">
-              <span className="sru-formsection-badge">
-                <Gauge size={17} aria-hidden />
-              </span>
-              <div>
-                <h3>{t("addHeading")}</h3>
-                <span>{t("addSubtitle")}</span>
-              </div>
-            </div>
-            <div className="sru-formgrid">
-              <div className="sru-field">
-                <label>{t("titleArLabel")}</label>
-                <input type="text" name="titleAr" required dir="rtl" placeholder={t("titleArPlaceholder")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("titleEnLabel")}</label>
-                <input type="text" name="titleEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("titleEnPlaceholder")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("unitArLabel")}</label>
-                <input type="text" name="unitAr" required dir="rtl" placeholder={t("unitArPlaceholder")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("unitEnLabel")}</label>
-                <input type="text" name="unitEn" dir="ltr" style={{ textAlign: "left" }} placeholder={t("unitEnPlaceholder")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("planTargetFieldLabel")}</label>
-                <input type="number" name="planTargetValue" step="0.01" placeholder={t("planTargetPlaceholder")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("weightFieldLabel")}</label>
-                <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
-              </div>
-            </div>
-          </section>
-
-          {state?.status === "error" && (
-            <p role="alert" className="sru-auth-alert error">
-              <AlertCircle size={15} aria-hidden />
-              {t(errorMessageKeys[state.message] ?? "errorUnknown")}
-            </p>
-          )}
-          {state?.status === "success" && (
-            <p role="status" className="sru-auth-alert success">
-              <CheckCircle2 size={15} aria-hidden />
-              {t("successMessage")}
-            </p>
-          )}
-
-          <div className="sru-form-submitrow">
-            <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
-              {pending ? t("submitting") : t("submit")}
-            </button>
-          </div>
-        </form>
-      )}
     </>
   );
 }

@@ -528,7 +528,8 @@
     "aiSuggestNeedsFields": "Fill in the name, family, grade, and category first to enable suggestions.",
     "aiErrorInvalidInput": "Incomplete data to generate a suggestion.",
     "aiErrorRateLimited": "Too many attempts — try again shortly.",
-    "aiErrorGeneric": "Could not generate a suggestion right now — try again."
+    "aiErrorGeneric": "Could not generate a suggestion right now — try again.",
+    "closeButton": "Close"
   },
   "CareerPathNewJobTitlePage": {
     "title": "Create New Job Title",
@@ -1816,7 +1817,8 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorForbidden": "You do not have permission to edit KPIs.",
     "errorDuplicate": "An annual target already exists for this cycle.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "closeButton": "Close"
   },
   "RecruitmentPlanPage": {
     "title": "Recruitment Plan",
@@ -2222,7 +2224,8 @@
     "progressReported": "Reported progress",
     "progressFromStatus": "Completed",
     "progressElapsed": "Of the period elapsed",
-    "progressUnknown": "Not assessed yet"
+    "progressUnknown": "Not assessed yet",
+    "closeButton": "Close"
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",
@@ -2248,7 +2251,8 @@
     "errorUnauthenticated": "You must sign in first.",
     "errorForbidden": "You do not have permission to manage programs.",
     "errorDuplicate": "That item is already added.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "closeButton": "Close"
   },
   "ProgramDetailPage": {
     "backToPlan": "Back to the plan",
@@ -2430,7 +2434,8 @@
     "suggestFailed": "Could not generate a suggestion right now — type the English name yourself.",
     "suggestRateLimited": "You have used all suggestions allowed this hour.",
     "datesRequiredNote": "Choose both the start and end dates to enable adding.",
-    "subGoalEmptyHint": "Add a sub-goal to the plan first."
+    "subGoalEmptyHint": "Add a sub-goal to the plan first.",
+    "closeButton": "Close"
   },
   "InitiativePage": {
     "errorNotFound": "This initiative was not found, or you do not have access to it.",

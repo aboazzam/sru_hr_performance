@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { AlertCircle, ArrowLeft, Link2, Plus, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Link2, Trash2, X } from "lucide-react";
 import {
   createInitiative,
   deleteInitiative,
@@ -13,6 +13,7 @@ import {
 } from "@/app/[locale]/(app)/kpis/plans/[id]/initiatives/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
+import { AddFormDialog } from "@/components/AddFormDialog";
 import { initiativeProgress } from "@/lib/initiativeProgress";
 import { formatDateDmy } from "@/lib/dateParts";
 
@@ -110,6 +111,7 @@ export function InitiativesPanel({
   const t = useTranslations("InitiativesPanel");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [createState, createAction, creating] = useActionState<InitiativeActionState, FormData>(createInitiative, null);
@@ -127,6 +129,9 @@ export function InitiativesPanel({
   useEffect(() => {
     if (createState?.status === "success") {
       formRef.current?.reset();
+      // Closed only on success: an error keeps the dialog open with its
+      // message inside, rather than dropping the reader back to the list.
+      dialogRef.current?.close();
       router.refresh();
     }
   }, [createState, router]);
@@ -139,9 +144,113 @@ export function InitiativesPanel({
     });
   }
 
+  const addForm = (
+    <form ref={formRef} onSubmit={handleCreate}>
+      <div className="sru-formgrid">
+          <input type="hidden" name="planId" value={planId} />
+          <input type="hidden" name="startDate" value={startDate} />
+          <input type="hidden" name="endDate" value={endDate} />
+          <div className="sru-field">
+            <label>{t("titleArLabel")}</label>
+            <input type="text" name="titleAr" required dir="rtl" />
+          </div>
+          <div className="sru-field">
+            <label>{t("titleEnLabel")}</label>
+            <input type="text" name="titleEn" required dir="ltr" style={{ textAlign: "left" }} />
+          </div>
+          <div className="sru-field">
+            <label>{t("ownerLabel")}</label>
+            <select name="ownerOrgUnitId" required defaultValue="">
+              <option value="">{t("ownerPlaceholder")}</option>
+              {orgUnitOptions.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field">
+            <label>{t("subGoalLabel")}</label>
+            <select name="subGoalId" required defaultValue="">
+              <option value="">{t("subGoalPlaceholder")}</option>
+              {subGoalOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+            {/* Required now, so a plan with no sub-goals yet would be a
+                dead end without saying why. */}
+            {subGoalOptions.length === 0 && (
+              <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalEmptyHint")}</span>
+            )}
+          </div>
+          <div className="sru-field">
+            <label>{t("statusLabel")}</label>
+            <select name="statusCode" required defaultValue={statusOptions[0]?.code ?? ""}>
+              {statusOptions.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sru-field">
+            <label>{t("startDateLabel")}</label>
+            <DateFieldDmy value={startDate} onChange={setStartDate} ariaLabel={t("startDateLabel")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("endDateLabel")}</label>
+            <DateFieldDmy value={endDate} onChange={setEndDate} ariaLabel={t("endDateLabel")} />
+          </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <label>{t("descriptionLabel")}</label>
+            <textarea name="descriptionAr" rows={2} dir="rtl" />
+          </div>
+        </div>
+
+      <ActionError state={createState} />
+
+      <div className="sru-form-submitrow">
+        <button
+          type="submit"
+          disabled={creating || startDate === "" || endDate === ""}
+          className="sru-btn sru-btn-primary"
+        >
+          {creating ? t("addSubmitting") : t("addSubmit")}
+        </button>
+        {(startDate === "" || endDate === "") && (
+          <span style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("datesRequiredNote")}</span>
+        )}
+      </div>
+    </form>
+  );
+
   return (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>{t("intro")}</p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
+        {canManage && (
+          <AddFormDialog
+            dialogRef={dialogRef}
+            triggerLabel={t("addSubmit")}
+            heading={t("addHeading")}
+            subtitle={t("addSubtitle")}
+            closeLabel={t("closeButton")}
+          >
+            {addForm}
+          </AddFormDialog>
+        )}
+      </div>
 
       {initiatives.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
@@ -158,98 +267,6 @@ export function InitiativesPanel({
         </div>
       )}
 
-      {canManage && (
-        <form ref={formRef} onSubmit={handleCreate}>
-          <section className="sru-formsection">
-            <div className="sru-formsection-head">
-              <span className="sru-formsection-badge">
-                <Plus size={17} aria-hidden />
-              </span>
-              <div>
-                <h3>{t("addHeading")}</h3>
-                <span>{t("addSubtitle")}</span>
-              </div>
-            </div>
-            <div className="sru-formgrid">
-              <input type="hidden" name="planId" value={planId} />
-              <input type="hidden" name="startDate" value={startDate} />
-              <input type="hidden" name="endDate" value={endDate} />
-              <div className="sru-field">
-                <label>{t("titleArLabel")}</label>
-                <input type="text" name="titleAr" required dir="rtl" />
-              </div>
-              <div className="sru-field">
-                <label>{t("titleEnLabel")}</label>
-                <input type="text" name="titleEn" required dir="ltr" style={{ textAlign: "left" }} />
-              </div>
-              <div className="sru-field">
-                <label>{t("ownerLabel")}</label>
-                <select name="ownerOrgUnitId" required defaultValue="">
-                  <option value="">{t("ownerPlaceholder")}</option>
-                  {orgUnitOptions.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sru-field">
-                <label>{t("subGoalLabel")}</label>
-                <select name="subGoalId" required defaultValue="">
-                  <option value="">{t("subGoalPlaceholder")}</option>
-                  {subGoalOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
-                    </option>
-                  ))}
-                </select>
-                {/* Required now, so a plan with no sub-goals yet would be a
-                    dead end without saying why. */}
-                {subGoalOptions.length === 0 && (
-                  <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalEmptyHint")}</span>
-                )}
-              </div>
-              <div className="sru-field">
-                <label>{t("statusLabel")}</label>
-                <select name="statusCode" required defaultValue={statusOptions[0]?.code ?? ""}>
-                  {statusOptions.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sru-field">
-                <label>{t("startDateLabel")}</label>
-                <DateFieldDmy value={startDate} onChange={setStartDate} ariaLabel={t("startDateLabel")} />
-              </div>
-              <div className="sru-field">
-                <label>{t("endDateLabel")}</label>
-                <DateFieldDmy value={endDate} onChange={setEndDate} ariaLabel={t("endDateLabel")} />
-              </div>
-              <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
-                <label>{t("descriptionLabel")}</label>
-                <textarea name="descriptionAr" rows={2} dir="rtl" />
-              </div>
-            </div>
-          </section>
-
-          <ActionError state={createState} />
-
-          <div className="sru-form-submitrow">
-            <button
-              type="submit"
-              disabled={creating || startDate === "" || endDate === ""}
-              className="sru-btn sru-btn-primary"
-            >
-              {creating ? t("addSubmitting") : t("addSubmit")}
-            </button>
-            {(startDate === "" || endDate === "") && (
-              <span style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("datesRequiredNote")}</span>
-            )}
-          </div>
-        </form>
-      )}
     </div>
   );
 }
