@@ -161,16 +161,26 @@ export async function removeProgramInitiative(_prev: ProgramActionState, formDat
   return { status: "success" };
 }
 
-const addMemberSchema = z.object({
-  programId: z.string().uuid(),
-  memberProfileId: z.string().uuid(),
-  committeeRole: z.string().trim().optional(),
-});
+// Internal (a real profile) or external (a name, and optionally an
+// affiliation/email) — never both, mirroring the table's own XOR CHECK.
+const addMemberSchema = z
+  .object({
+    programId: z.string().uuid(),
+    memberProfileId: z.string().uuid().optional(),
+    externalName: z.string().trim().optional(),
+    externalOrg: z.string().trim().optional(),
+    externalEmail: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
+    committeeRole: z.string().trim().optional(),
+  })
+  .refine((d) => Boolean(d.memberProfileId) !== Boolean(d.externalName), { path: ["memberProfileId"] });
 
 export async function addCommitteeMember(_prev: ProgramActionState, formData: FormData): Promise<ProgramActionState> {
   const parsed = addMemberSchema.safeParse({
     programId: formData.get("programId"),
-    memberProfileId: formData.get("memberProfileId"),
+    memberProfileId: formData.get("memberProfileId") || undefined,
+    externalName: formData.get("externalName") || undefined,
+    externalOrg: formData.get("externalOrg") || undefined,
+    externalEmail: formData.get("externalEmail") || undefined,
     committeeRole: formData.get("committeeRole") || undefined,
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
@@ -178,19 +188,36 @@ export async function addCommitteeMember(_prev: ProgramActionState, formData: Fo
   const { supabase, user, profileId } = await callerContext();
   if (!user) return { status: "error", message: "unauthenticated" };
 
-  const { data: existing } = await supabase
+  if (parsed.data.memberProfileId) {
+    const { data: existing } = await supabase
+      .from("strategic_program_committee_members")
+      .select("id")
+      .eq("program_id", parsed.data.programId)
+      .eq("member_profile_id", parsed.data.memberProfileId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (existing) return { status: "error", message: "duplicate" };
+  }
+
+  // New members join at the end of the roster; the order is then editable.
+  const { data: lastRow } = await supabase
     .from("strategic_program_committee_members")
-    .select("id")
+    .select("display_order")
     .eq("program_id", parsed.data.programId)
-    .eq("member_profile_id", parsed.data.memberProfileId)
     .is("deleted_at", null)
+    .order("display_order", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  if (existing) return { status: "error", message: "duplicate" };
+  const nextOrder = ((lastRow?.display_order as number | undefined) ?? 0) + 1;
 
   const { error } = await supabase.from("strategic_program_committee_members").insert({
     program_id: parsed.data.programId,
-    member_profile_id: parsed.data.memberProfileId,
+    member_profile_id: parsed.data.memberProfileId ?? null,
+    external_name: parsed.data.externalName ?? null,
+    external_org: parsed.data.externalOrg ?? null,
+    external_email: parsed.data.externalEmail ?? null,
     committee_role: parsed.data.committeeRole ?? null,
+    display_order: nextOrder,
     created_by: profileId,
   });
   if (error) return mapError(error);
@@ -202,7 +229,11 @@ export async function addCommitteeMember(_prev: ProgramActionState, formData: Fo
       action: "strategic_program_committee_member_added",
       entity: "strategic_programs",
       entity_id: parsed.data.programId,
-      after_data: { member_profile_id: parsed.data.memberProfileId, committee_role: parsed.data.committeeRole ?? null },
+      after_data: {
+        member_profile_id: parsed.data.memberProfileId ?? null,
+        external_name: parsed.data.externalName ?? null,
+        committee_role: parsed.data.committeeRole ?? null,
+      },
     });
   } catch {
     // ignored on purpose
@@ -240,6 +271,38 @@ export async function removeCommitteeMember(_prev: ProgramActionState, formData:
   } catch {
     // ignored on purpose
   }
+
+  revalidatePath("/[locale]/kpis/plans/[id]/programs/[programId]", "page");
+  return { status: "success" };
+}
+
+const reorderSchema = z.object({ programId: z.string().uuid(), memberIds: z.array(z.string().uuid()).min(1) });
+
+/**
+ * Reorders the whole committee in one statement via
+ * reorder_program_committee (20260820000005), which refuses a partial or
+ * foreign id list rather than silently reshuffling around rows the caller
+ * never saw. SECURITY INVOKER, so RLS still decides who may reorder.
+ */
+export async function reorderCommitteeMembers(_prev: ProgramActionState, formData: FormData): Promise<ProgramActionState> {
+  const raw = formData.get("memberIds");
+  let ids: unknown;
+  try {
+    ids = JSON.parse(typeof raw === "string" ? raw : "null");
+  } catch {
+    return { status: "error", message: "invalid_input" };
+  }
+  const parsed = reorderSchema.safeParse({ programId: formData.get("programId"), memberIds: ids });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, user } = await callerContext();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const { error } = await supabase.rpc("reorder_program_committee", {
+    p_program_id: parsed.data.programId,
+    p_member_ids: parsed.data.memberIds,
+  });
+  if (error) return mapError(error);
 
   revalidatePath("/[locale]/kpis/plans/[id]/programs/[programId]", "page");
   return { status: "success" };

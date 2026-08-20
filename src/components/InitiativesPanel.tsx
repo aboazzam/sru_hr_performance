@@ -29,11 +29,19 @@ export interface InitiativeView {
   titleAr: string;
   titleEn: string | null;
   descriptionAr: string | null;
-  ownerPositionName: string | null;
+  /** الإدارة المالكة — an org unit since 20260820000003, not a position. */
+  ownerOrgUnitName: string | null;
+  /** الهدف الفرعي the initiative serves, shown on the real initiative cards. */
+  subGoalTitle: string | null;
   startDate: string | null;
   endDate: string | null;
-  status: string;
+  statusLabel: string;
   links: InitiativeLinkView[];
+}
+
+export interface InitiativeStatusOption {
+  code: string;
+  label: string;
 }
 
 const errorKeys: Record<string, string> = {
@@ -69,13 +77,17 @@ export function InitiativesPanel({
   planId,
   initiatives,
   targetOptions,
-  positionOptions,
+  orgUnitOptions,
+  subGoalOptions,
+  statusOptions,
   canManage,
 }: {
   planId: string;
   initiatives: InitiativeView[];
   targetOptions: InitiativeTargetOption[];
-  positionOptions: Array<{ id: string; name: string }>;
+  orgUnitOptions: Array<{ id: string; name: string }>;
+  subGoalOptions: Array<{ id: string; title: string }>;
+  statusOptions: InitiativeStatusOption[];
   canManage: boolean;
 }) {
   const t = useTranslations("InitiativesPanel");
@@ -155,18 +167,35 @@ export function InitiativesPanel({
               </div>
               <div className="sru-field">
                 <label>{t("ownerLabel")}</label>
-                <select name="ownerPositionId" defaultValue="">
+                <select name="ownerOrgUnitId" defaultValue="">
                   <option value="">{t("ownerNone")}</option>
-                  {positionOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
+                  {orgUnitOptions.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sru-field">
+                <label>{t("subGoalLabel")}</label>
+                <select name="subGoalId" defaultValue="">
+                  <option value="">{t("subGoalNone")}</option>
+                  {subGoalOptions.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.title}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="sru-field">
                 <label>{t("statusLabel")}</label>
-                <input type="text" name="status" dir="rtl" placeholder={t("statusPlaceholder")} />
+                <select name="statusCode" defaultValue={statusOptions[0]?.code ?? ""}>
+                  {statusOptions.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="sru-field">
                 <label>{t("startDateLabel")}</label>
@@ -231,8 +260,9 @@ function InitiativeCard({
             </span>
           )}
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
-            {t("statusValue", { status: initiative.status })}
-            {initiative.ownerPositionName ? ` · ${t("ownerValue", { owner: initiative.ownerPositionName })}` : ""}
+            {t("statusValue", { status: initiative.statusLabel })}
+            {initiative.ownerOrgUnitName ? ` · ${t("ownerValue", { owner: initiative.ownerOrgUnitName })}` : ""}
+            {initiative.subGoalTitle ? ` · ${t("subGoalValue", { subGoal: initiative.subGoalTitle })}` : ""}
             {initiative.startDate || initiative.endDate
               ? ` · ${initiative.startDate ?? "—"} → ${initiative.endDate ?? "—"}`
               : ""}

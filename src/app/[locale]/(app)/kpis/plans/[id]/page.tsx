@@ -8,7 +8,12 @@ import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
 import { UpdateProgressForm } from "@/components/UpdateProgressForm";
 import { PrintButton } from "@/components/PrintButton";
 import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
-import { InitiativesPanel, type InitiativeTargetOption, type InitiativeView } from "@/components/InitiativesPanel";
+import {
+  InitiativesPanel,
+  type InitiativeStatusOption,
+  type InitiativeTargetOption,
+  type InitiativeView,
+} from "@/components/InitiativesPanel";
 import { ProgramsPanel, type ProgramSummary } from "@/components/ProgramsPanel";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -615,7 +620,7 @@ export default async function StrategicPlanDetailPage({
   // enforces — so both meanings of "المستهدف" on this screen are covered.
   const { data: initiativesData } = await supabase
     .from("strategic_initiatives")
-    .select("id, title_ar, title_en, description_ar, owner_position_id, start_date, end_date, status")
+    .select("id, title_ar, title_en, description_ar, owner_org_unit_id, sub_goal_id, start_date, end_date, status_code")
     .eq("plan_id", id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
@@ -624,10 +629,11 @@ export default async function StrategicPlanDetailPage({
     title_ar: string;
     title_en: string | null;
     description_ar: string | null;
-    owner_position_id: string | null;
+    owner_org_unit_id: string | null;
+    sub_goal_id: string | null;
     start_date: string | null;
     end_date: string | null;
-    status: string;
+    status_code: string;
   }>;
 
   const { data: initiativeLinksData } = await supabase
@@ -679,10 +685,11 @@ export default async function StrategicPlanDetailPage({
     titleAr: row.title_ar,
     titleEn: row.title_en,
     descriptionAr: row.description_ar,
-    ownerPositionName: row.owner_position_id ? positionNameById.get(row.owner_position_id) ?? null : null,
+    ownerOrgUnitName: row.owner_org_unit_id ? orgUnitNameById.get(row.owner_org_unit_id) ?? null : null,
+    subGoalTitle: row.sub_goal_id ? subGoalTitleById.get(row.sub_goal_id) ?? null : null,
     startDate: row.start_date,
     endDate: row.end_date,
-    status: row.status,
+    statusLabel: statusLabelByCode.get(row.status_code) ?? row.status_code,
     links: initiativeLinkRows
       .filter((l) => l.initiative_id === row.id)
       .map((l) => ({
@@ -693,12 +700,41 @@ export default async function StrategicPlanDetailPage({
       })),
   }));
 
+  const { data: initiativeOrgUnits } = await supabase
+    .from("org_units")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("name_ar");
+  const orgUnitOptions = ((initiativeOrgUnits ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
+    id: u.id,
+    name: u.name_ar,
+  }));
+  const orgUnitNameById = new Map(orgUnitOptions.map((u) => [u.id, u.name]));
+
+  // The initiative's own sub-goal ("الهدف الفرعي (LOGIC)" on the real cards),
+  // limited to this plan's sub-goals.
+  const subGoalOptions = subGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
+  const subGoalTitleById = new Map(subGoalOptions.map((sg) => [sg.id, sg.title]));
+
+  const { data: statusRows } = await supabase
+    .from("initiative_statuses")
+    .select("code, label_ar")
+    .eq("is_active", true)
+    .order("display_order");
+  const statusOptions: InitiativeStatusOption[] = ((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
+    code: r.code,
+    label: r.label_ar,
+  }));
+  const statusLabelByCode = new Map(statusOptions.map((s) => [s.code, s.label]));
+
   const initiativesContent = (
     <InitiativesPanel
       planId={plan.id}
       initiatives={initiatives}
       targetOptions={targetOptions}
-      positionOptions={Array.from(positionNameById.entries()).map(([id, name]) => ({ id, name }))}
+      orgUnitOptions={orgUnitOptions}
+      subGoalOptions={subGoalOptions}
+      statusOptions={statusOptions}
       canManage={canManageGoals}
     />
   );

@@ -179,7 +179,13 @@ export const navGroups: NavGroup[] = [
     icon: ClipboardCheck,
     children: [
       { segment: "executive-plans", labelKey: "executivePlans", icon: CalendarRange },
-      { segment: "kpis", labelKey: "assignedGoals", icon: Gauge },
+      // 2026-08-20: replaces "الأهداف المسندة" (`kpis`) here — "ادمج بنك
+      // الأهداف مع الأهداف المسندة بحيث يكون العنوان اسناد المبادرات". The
+      // /kpis page still exists and is still reachable directly; it just no
+      // longer occupies this tab. Ungated for the same reason as the plans
+      // lists: reading is decided row-by-row by each initiative's own RLS,
+      // and assigning is gated on the page itself.
+      { segment: "initiative-assignments", labelKey: "initiativeAssignments", icon: Gauge },
     ],
   },
   {
