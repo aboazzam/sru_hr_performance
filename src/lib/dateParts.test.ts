@@ -9,6 +9,9 @@ import {
   monthNamesEn,
   yearOptions,
   datePartLabels,
+  monthGrid,
+  shiftMonth,
+  firstWeekdayOfMonth,
 } from "./dateParts";
 
 describe("daysInMonth", () => {
@@ -104,5 +107,40 @@ describe("datePartLabels", () => {
   it("switches to English only for the en locale", () => {
     expect(datePartLabels("en")).toEqual({ day: "Day", month: "Month", year: "Year" });
     expect(datePartLabels("fr")).toEqual(datePartLabels("ar"));
+  });
+});
+
+describe("monthGrid", () => {
+  it("pads the lead-in and the tail so every row holds exactly seven cells", () => {
+    const grid = monthGrid(2026, 8); // 1 August 2026 is a Saturday
+    expect(grid.every((week) => week.length === 7)).toBe(true);
+    expect(grid[0]).toEqual([null, null, null, null, null, null, 1]);
+    expect(grid.flat().filter((d) => d !== null)).toHaveLength(31);
+  });
+
+  it("follows the real leap-year rule for February", () => {
+    expect(monthGrid(2028, 2).flat().filter(Boolean)).toHaveLength(29);
+    expect(monthGrid(2026, 2).flat().filter(Boolean)).toHaveLength(28);
+  });
+
+  it("starts the week on Sunday", () => {
+    // 1 November 2026 is a Sunday, so it sits in the first column.
+    expect(monthGrid(2026, 11)[0][0]).toBe(1);
+    expect(firstWeekdayOfMonth(2026, 11)).toBe(0);
+  });
+});
+
+describe("shiftMonth", () => {
+  it("rolls forward across a year boundary", () => {
+    expect(shiftMonth(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
+  });
+
+  it("rolls backward across a year boundary", () => {
+    expect(shiftMonth(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
+  });
+
+  it("handles a whole year in one step, in both directions", () => {
+    expect(shiftMonth(2026, 5, 12)).toEqual({ year: 2027, month: 5 });
+    expect(shiftMonth(2026, 5, -12)).toEqual({ year: 2025, month: 5 });
   });
 });

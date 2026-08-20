@@ -285,11 +285,14 @@ export default async function StrategicPlanDetailPage({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tGoals("subtitle")}</p>
-        {canManageGoals && (
-          <Link href="/kpis/strategic-goals/new" className="sru-btn sru-btn-primary" style={{ whiteSpace: "nowrap" }}>
-            {tGoals("addGoalButton")}
-          </Link>
-        )}
+        <div className="sru-actionbar no-print">
+          {canManageGoals && (
+            <Link href="/kpis/strategic-goals/new" className="sru-btn sru-btn-primary" style={{ whiteSpace: "nowrap" }}>
+              {tGoals("addGoalButton")}
+            </Link>
+          )}
+          <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
+        </div>
       </div>
       {goals.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{tGoals("empty")}</p>
@@ -734,15 +737,20 @@ export default async function StrategicPlanDetailPage({
   }));
 
   const initiativesContent = (
-    <InitiativesPanel
-      planId={plan.id}
-      initiatives={initiatives}
-      targetOptions={targetOptions}
-      orgUnitOptions={orgUnitOptions}
-      subGoalOptions={subGoalOptions}
-      statusOptions={statusOptions}
-      canManage={canManageGoals}
-    />
+    <div>
+      <div className="sru-actionbar no-print" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
+        <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
+      </div>
+      <InitiativesPanel
+        planId={plan.id}
+        initiatives={initiatives}
+        targetOptions={targetOptions}
+        orgUnitOptions={orgUnitOptions}
+        subGoalOptions={subGoalOptions}
+        statusOptions={statusOptions}
+        canManage={canManageGoals}
+      />
+    </div>
   );
 
   // ---- برامج الاستراتيجية: programs grouping this plan's initiatives ----
@@ -813,10 +821,12 @@ export default async function StrategicPlanDetailPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backToList")}
       </Link>
-      {/* Export/import sit beside the plan's own title, since the workbook
-          is per-plan, not app-wide. Import shows only at 'approve' — the
-          level the goals/sub-goals/KPIs/annual-targets policies actually
-          require; the identity/values sheets sit lower at 'prepare', so a
+      {/* The export/import tools used to float up here beside the plan's
+          title in their own style. They now live in each tab's action row
+          next to that tab's primary action, all one shape (2026-08-20
+          request). Import still shows only at 'approve' — the level the
+          goals/sub-goals/KPIs/annual-targets policies actually require;
+          the identity/values sheets sit lower at 'prepare', so a
           prepare-level caller keeps editing those through the tab itself. */}
       <div
         style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}
@@ -836,9 +846,6 @@ export default async function StrategicPlanDetailPage({
           <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, textAlign: "start" }}>
             {plan.start_year}–{plan.end_year}
           </p>
-        </div>
-        <div className="no-print" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

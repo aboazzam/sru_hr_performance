@@ -123,3 +123,47 @@ export function yearOptions(currentYear: number): number[] {
   for (let y = currentYear - 1; y <= currentYear + 10; y += 1) years.push(y);
   return years;
 }
+
+/**
+ * Weekday names for the calendar grid header, Sunday first (the week start
+ * used across Saudi calendars).
+ */
+export function weekdayNamesShort(locale: string): readonly string[] {
+  return locale === "en"
+    ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    : ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+}
+
+/**
+ * Weekday index (0 = Sunday) of the first day of a month.
+ *
+ * `Date.UTC` with explicit numeric components is safe here — unlike
+ * `new Date("2026-08-05")`, which parses a STRING as UTC midnight and then
+ * reads back a shifted local day. Nothing here ever parses a date string.
+ */
+export function firstWeekdayOfMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+}
+
+/**
+ * The month laid out as calendar weeks: 7 cells per row, `null` where the
+ * grid spills before the 1st or past the last day.
+ */
+export function monthGrid(year: number, month: number): Array<Array<number | null>> {
+  const lead = firstWeekdayOfMonth(year, month);
+  const days = daysInMonth(year, month);
+  const cells: Array<number | null> = [
+    ...Array.from({ length: lead }, () => null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: Array<Array<number | null>> = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+/** Step a (year, month) pair by whole months, rolling the year over. */
+export function shiftMonth(year: number, month: number, delta: number): { year: number; month: number } {
+  const zeroBased = (year * 12 + (month - 1)) + delta;
+  return { year: Math.floor(zeroBased / 12), month: (zeroBased % 12) + 1 };
+}
