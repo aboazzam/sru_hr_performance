@@ -261,7 +261,10 @@ export const navGroups: NavGroup[] = [
     labelKey: "evaluationResults",
     icon: FileBarChart,
     children: [
-      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: [{ processArea: "promotions", minLevel: "view" }] },
+      // 2026-08-20: moved off `promotions` onto its own area — the two were
+      // coupled only because rewards/recommendations reused that area's
+      // policies, which the split ended.
+      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: [{ processArea: "rewardsAndRecommendations", minLevel: "view" }] },
     ],
   },
 ];

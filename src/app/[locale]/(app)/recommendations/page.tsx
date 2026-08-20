@@ -26,7 +26,7 @@ export default async function RecommendationsPage() {
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
   const promotionsLevel =
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "promotions"
+      (row) => row.process_area === "rewardsAndRecommendations"
     )?.vpra_level ?? "none";
   const canCreate = hasVpraAccess(promotionsLevel, "recommend");
 

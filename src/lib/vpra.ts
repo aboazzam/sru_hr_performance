@@ -37,6 +37,7 @@ export type ProcessArea =
   | "evaluation"
   | "calibration"
   | "promotions"
+  | "rewardsAndRecommendations"
   | "vacancies"
   | "careerPath"
   | "employeeData"
@@ -65,6 +66,7 @@ export const processAreas: ProcessArea[] = [
   "evaluation",
   "calibration",
   "promotions",
+  "rewardsAndRecommendations",
   "vacancies",
   "careerPath",
   "employeeData",
@@ -101,6 +103,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   evaluation: "التقييم",
   calibration: "المعايرة",
   promotions: "الترقيات والمكافآت",
+  rewardsAndRecommendations: "المكافآت والتوصيات",
   vacancies: "الشواغر",
   careerPath: "المسار الوظيفي",
   employeeData: "بيانات جميع الموظفين",
@@ -196,7 +199,15 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "التوظيف",
-    areas: ["recruitmentPlan", "recruitmentRequests", "recruitmentBudget", "promotions", "vacancies", "recruitmentPortal"],
+    areas: [
+      "recruitmentPlan",
+      "recruitmentRequests",
+      "recruitmentBudget",
+      "promotions",
+      "rewardsAndRecommendations",
+      "vacancies",
+      "recruitmentPortal",
+    ],
   },
   {
     titleAr: "الإدارة والنظام",
