@@ -39,9 +39,12 @@ describe("hasVpraAccess", () => {
 });
 
 describe("static reference lists", () => {
-  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings/strategicPlanning/performanceReports/competencyReports/bauTasksReports/feedback360Reports/recruitmentPlan/recruitmentBudget (added 2026-07-22, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-08-04, and 2026-08-07)", () => {
-    expect(processAreas).toHaveLength(26);
-    expect(new Set(processAreas).size).toBe(26);
+  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings/strategicPlanning/performanceReports/competencyReports/bauTasksReports/feedback360Reports/recruitmentPlan/recruitmentBudget/rewardsAndRecommendations (added 2026-07-22, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-08-04, 2026-08-07, and 2026-08-20)", () => {
+    expect(processAreas).toHaveLength(27);
+    expect(new Set(processAreas).size).toBe(27);
+    // 2026-08-20: rewards and recommendations were split off `promotions`,
+    // which had gated all three at once.
+    expect(processAreas).toContain("rewardsAndRecommendations");
     expect(processAreas).toContain("orgStructure");
     expect(processAreas).toContain("staffing");
     expect(processAreas).toContain("identity");

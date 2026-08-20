@@ -48,9 +48,10 @@ describe("navItems (top-level, ungrouped)", () => {
 });
 
 describe("navGroups (2026-07-24 grouped nav)", () => {
-  it("has exactly 5 groups: strategicPlan, administration, evaluationMethods, recruitment, evaluationResults", () => {
+  it("has exactly 6 groups, with executivePlan added after strategicPlan (2026-08-20)", () => {
     expect(navGroups.map((g) => g.groupKey)).toEqual([
       "strategicPlan",
+      "executivePlan",
       "administration",
       "evaluationMethods",
       "recruitment",
@@ -119,7 +120,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(visibleNavItems(recruitment.children, {})).toEqual([]);
   });
 
-  it("every child in every group declares an access requirement, except the two deliberately ungated strategicPlan tabs", () => {
+  it("every child in every group declares an access requirement, except the three deliberately ungated plan tabs", () => {
     // Two deliberate exceptions across all groups:
     //   "kpis" (الأهداف المسندة) — real access is entirely row-level via the
     //     strategic-goal cascade's own RLS, not a role_permissions grant.
@@ -131,7 +132,11 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     // only as a tab inside the per-plan detail page (/kpis/plans/[id]),
     // which has no static NavItem segment to gate here; their standalone
     // routes are still reachable directly, just not from this tab bar.
-    const ungated = new Set(["kpis", "kpis/plans"]);
+    // 2026-08-20: "executive-plans" joins them, for the same reason as
+    // "kpis/plans" -- browsing which plans exist is for all staff, and
+    // creating one is gated on the page itself. "kpis" moved into the new
+    // executivePlan group but stays ungated for the same row-level reason.
+    const ungated = new Set(["kpis/plans", "executive-plans", "initiative-assignments"]);
     for (const group of navGroups) {
       for (const child of group.children) {
         if (ungated.has(child.segment)) {
@@ -143,14 +148,19 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     }
   });
 
-  it("the strategicPlan group has exactly two children, both ungated (2026-08-01 simplification)", () => {
+  it("the strategicPlan group is now the plans list alone, and executivePlan owns الأهداف المسندة (2026-08-20)", () => {
     // Per direct feedback: the plans-list page's own tab bar should not show
     // the vision/mission, strategic-goals, or goal-library tabs anymore --
     // "لأن لكل لها عناوينها الخاص بها" (each already has its own header,
     // now inside the per-plan detail page) -- only "قائمة الخطط" and
     // "الأهداف المسندة" remain as top-level tabs for this group.
     const plan = navGroups.find((g) => g.groupKey === "strategicPlan")!;
-    expect(plan.children.map((c) => c.segment)).toEqual(["kpis/plans", "kpis"]);
+    expect(plan.children.map((c) => c.segment)).toEqual(["kpis/plans"]);
+
+    // "تنقل تاب الاهداف المسندة وبنك الاهداف الى موديول جديد بمسمى الخطة
+    // التنفيذية" — the move, asserted from the other side too.
+    const executive = navGroups.find((g) => g.groupKey === "executivePlan")!;
+    expect(executive.children.map((c) => c.segment)).toEqual(["executive-plans", "initiative-assignments"]);
   });
 
   it("no segment is duplicated across navItems and all group children combined", () => {
@@ -246,20 +256,24 @@ describe("visibleNavItems", () => {
 });
 
 describe("visibleNavGroups", () => {
-  it("always shows strategicPlan (both children ungated) regardless of permissions", () => {
+  it("always shows both plan groups (every child ungated) regardless of permissions", () => {
     // 2026-08-01: after removing the vision/mission, strategic-goals, and
     // goal-library tabs from this group, its only two remaining children
     // ("kpis/plans", "kpis") are both ungated -- so this group's visibility
     // no longer varies by permission at all, unlike before.
     const groups = visibleNavGroups(navGroups, {});
-    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan"]);
-    expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans", "kpis"]);
+    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan"]);
+    expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans"]);
+    expect(groups[1].children.map((c) => c.segment)).toEqual(["executive-plans", "initiative-assignments"]);
   });
 
-  it("still shows both strategicPlan children for a strategy_admin-level permission set", () => {
+  it("still shows both plan groups for a strategy_admin-level permission set", () => {
     const groups = visibleNavGroups(navGroups, { strategicPlanning: "approve", goalsLibrary: "prepare" });
-    const plan = groups.find((g) => g.groupKey === "strategicPlan")!;
-    expect(plan.children.map((c) => c.segment)).toEqual(["kpis/plans", "kpis"]);
+    expect(groups.find((g) => g.groupKey === "strategicPlan")!.children.map((c) => c.segment)).toEqual(["kpis/plans"]);
+    expect(groups.find((g) => g.groupKey === "executivePlan")!.children.map((c) => c.segment)).toEqual([
+      "executive-plans",
+      "initiative-assignments",
+    ]);
   });
 
   it("hides only the ungranted children within an otherwise-visible group (employee perms)", () => {

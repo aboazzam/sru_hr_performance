@@ -6,6 +6,7 @@ import { Briefcase, IdCard, ShieldCheck, User, AlertCircle } from "lucide-react"
 import { useRouter } from "@/i18n/navigation";
 import { updateEmployee, type EditEmployeeState } from "@/app/[locale]/(app)/employees/[id]/edit/actions";
 import { UserRoleAssignRow } from "@/components/UserRoleAssignRow";
+import { SetEmployeePasswordRow } from "@/components/SetEmployeePasswordRow";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 
 interface OrgUnitOption {
@@ -278,6 +279,12 @@ export function EditEmployeeForm({
                 roles={roles}
                 initialRoleIds={initialRoleIds}
               />
+            </div>
+            {/* Saves on its own button, like the role row beside it — a
+                password must never ride along on an unrelated profile save. */}
+            <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+              <label>{t("passwordSectionLabel")}</label>
+              <SetEmployeePasswordRow profileId={profile.id} />
             </div>
           </div>
         </section>

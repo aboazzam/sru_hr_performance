@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getDisplayTimezone } from "@/lib/systemSettings";
 import { classifyPromotionAgainstCareerPath, promotionStatusLabel } from "@/lib/promotionStatus";
 import { filterPromotions } from "@/lib/promotionTable";
 
@@ -93,6 +94,17 @@ export async function GET(request: NextRequest) {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("الترقيات");
   sheet.views = [{ rightToLeft: true }];
+
+  // created_at is a timestamptz; slicing the raw ISO string prints the UTC
+  // day, which is the previous day for anything created before 03:00 in
+  // Riyadh. Format it in the configured display timezone instead — the same
+  // one the printed header stamp uses. en-CA yields YYYY-MM-DD.
+  const dayInDisplayTz = new Intl.DateTimeFormat("en-CA", {
+    timeZone: await getDisplayTimezone(supabase),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
   sheet.addRow([
     t("employeeNumberHeader"),
     t("employeeNameHeader"),
@@ -124,7 +136,7 @@ export async function GET(request: NextRequest) {
         : row.careerPathMatch === "on_path"
           ? t("onCareerPath")
           : t("offCareerPath"),
-      row.createdAt.slice(0, 10),
+      dayInDisplayTz.format(new Date(row.createdAt)),
     ]);
   }
 

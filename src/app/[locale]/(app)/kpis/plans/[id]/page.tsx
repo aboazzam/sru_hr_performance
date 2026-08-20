@@ -7,6 +7,14 @@ import { StrategicValueRow } from "@/components/StrategicValueRow";
 import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
 import { UpdateProgressForm } from "@/components/UpdateProgressForm";
 import { PrintButton } from "@/components/PrintButton";
+import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
+import {
+  InitiativesPanel,
+  type InitiativeStatusOption,
+  type InitiativeTargetOption,
+  type InitiativeView,
+} from "@/components/InitiativesPanel";
+import { ProgramsPanel, type ProgramSummary } from "@/components/ProgramsPanel";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -605,13 +613,186 @@ export default async function StrategicPlanDetailPage({
     </div>
   );
 
+  // ---- المبادرات: what will actually achieve this plan's targets ----
+  // Requested 2026-08-19, placed directly after الأهداف الاستراتيجية ("وبعد
+  // اضافة المستهدفات اضف المبادرات"). A link points at either a KPI (its
+  // plan-level target) or one annual target — the XOR the link table
+  // enforces — so both meanings of "المستهدف" on this screen are covered.
+  const { data: initiativesData } = await supabase
+    .from("strategic_initiatives")
+    .select("id, title_ar, title_en, description_ar, owner_org_unit_id, sub_goal_id, start_date, end_date, status_code")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const initiativeRows = (initiativesData ?? []) as Array<{
+    id: string;
+    title_ar: string;
+    title_en: string | null;
+    description_ar: string | null;
+    owner_org_unit_id: string | null;
+    sub_goal_id: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    status_code: string;
+  }>;
+
+  const { data: initiativeLinksData } = await supabase
+    .from("strategic_initiative_targets")
+    .select("id, initiative_id, kpi_id, kpi_annual_target_id")
+    .is("deleted_at", null);
+  const initiativeLinkRows = ((initiativeLinksData ?? []) as Array<{
+    id: string;
+    initiative_id: string;
+    kpi_id: string | null;
+    kpi_annual_target_id: string | null;
+  }>).filter((l) => initiativeRows.some((i) => i.id === l.initiative_id));
+
+  const { data: annualTargetsData } = await supabase
+    .from("kpi_annual_targets")
+    .select("id, kpi_id, cycle_id, target_value")
+    .is("deleted_at", null);
+  const annualTargetRows = ((annualTargetsData ?? []) as Array<{
+    id: string;
+    kpi_id: string;
+    cycle_id: string;
+    target_value: number;
+  }>).filter((a) => kpis.some((k) => k.id === a.kpi_id));
+
+  const { data: cyclesData } =
+    annualTargetRows.length > 0
+      ? await supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null)
+      : { data: [] };
+  const cycleNameById = new Map(((cyclesData ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
+  const kpiById = new Map(kpis.map((k) => [k.id, k]));
+
+  const targetOptions: InitiativeTargetOption[] = [
+    ...kpis.map((k) => ({
+      value: `kpi:${k.id}`,
+      label: `${k.title_ar} — ${t("planTargetLabel")}: ${k.plan_target_value ?? "—"} ${k.unit_ar}`,
+    })),
+    ...annualTargetRows.map((a) => {
+      const k = kpiById.get(a.kpi_id);
+      return {
+        value: `annual:${a.id}`,
+        label: `${k?.title_ar ?? "—"} — ${cycleNameById.get(a.cycle_id) ?? "—"}: ${a.target_value} ${k?.unit_ar ?? ""}`,
+      };
+    }),
+  ];
+  const targetLabelByValue = new Map(targetOptions.map((o) => [o.value, o.label]));
+
+  const initiatives: InitiativeView[] = initiativeRows.map((row) => ({
+    id: row.id,
+    titleAr: row.title_ar,
+    titleEn: row.title_en,
+    descriptionAr: row.description_ar,
+    ownerOrgUnitName: row.owner_org_unit_id ? orgUnitNameById.get(row.owner_org_unit_id) ?? null : null,
+    subGoalTitle: row.sub_goal_id ? subGoalTitleById.get(row.sub_goal_id) ?? null : null,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    statusLabel: statusLabelByCode.get(row.status_code) ?? row.status_code,
+    links: initiativeLinkRows
+      .filter((l) => l.initiative_id === row.id)
+      .map((l) => ({
+        id: l.id,
+        label:
+          targetLabelByValue.get(l.kpi_id ? `kpi:${l.kpi_id}` : `annual:${l.kpi_annual_target_id}`) ??
+          t("unknownTarget"),
+      })),
+  }));
+
+  const { data: initiativeOrgUnits } = await supabase
+    .from("org_units")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("name_ar");
+  const orgUnitOptions = ((initiativeOrgUnits ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
+    id: u.id,
+    name: u.name_ar,
+  }));
+  const orgUnitNameById = new Map(orgUnitOptions.map((u) => [u.id, u.name]));
+
+  // The initiative's own sub-goal ("الهدف الفرعي (LOGIC)" on the real cards),
+  // limited to this plan's sub-goals.
+  const subGoalOptions = subGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
+  const subGoalTitleById = new Map(subGoalOptions.map((sg) => [sg.id, sg.title]));
+
+  const { data: statusRows } = await supabase
+    .from("initiative_statuses")
+    .select("code, label_ar")
+    .eq("is_active", true)
+    .order("display_order");
+  const statusOptions: InitiativeStatusOption[] = ((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((r) => ({
+    code: r.code,
+    label: r.label_ar,
+  }));
+  const statusLabelByCode = new Map(statusOptions.map((s) => [s.code, s.label]));
+
+  const initiativesContent = (
+    <InitiativesPanel
+      planId={plan.id}
+      initiatives={initiatives}
+      targetOptions={targetOptions}
+      orgUnitOptions={orgUnitOptions}
+      subGoalOptions={subGoalOptions}
+      statusOptions={statusOptions}
+      canManage={canManageGoals}
+    />
+  );
+
+  // ---- برامج الاستراتيجية: programs grouping this plan's initiatives ----
+  // A committee member with no strategicPlanning grant still sees their own
+  // programs here — strategic_programs_select lets membership alone grant
+  // read (20260819000002), which is the "لكل عضو في اللجنة أكسس" ask.
+  const { data: programRows } = await supabase
+    .from("strategic_programs")
+    .select("id, name_ar, name_en, status, start_date, end_date")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const programList = (programRows ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+
+  const { data: programInitiativeCounts } = await supabase
+    .from("strategic_program_initiatives")
+    .select("program_id")
+    .is("deleted_at", null);
+  const { data: programCommitteeCounts } = await supabase
+    .from("strategic_program_committee_members")
+    .select("program_id")
+    .is("deleted_at", null);
+  function countFor(rows: Array<{ program_id: string }> | null, programId: string): number {
+    return (rows ?? []).filter((r) => r.program_id === programId).length;
+  }
+
+  const programs: ProgramSummary[] = programList.map((p) => ({
+    id: p.id,
+    nameAr: p.name_ar,
+    nameEn: p.name_en,
+    status: p.status,
+    startDate: p.start_date,
+    endDate: p.end_date,
+    initiativeCount: countFor(programInitiativeCounts as Array<{ program_id: string }> | null, p.id),
+    committeeCount: countFor(programCommitteeCounts as Array<{ program_id: string }> | null, p.id),
+  }));
+
+  const programsContent = <ProgramsPanel planId={plan.id} programs={programs} canManage={canManageGoals} />;
+
   // Order requested directly (2026-08-01): vision/mission first (the
-  // foundation), then strategic goals (main + sub-goals + KPIs), then
+  // foundation), then strategic goals (main + sub-goals + KPIs), then --
+  // added 2026-08-19 -- the initiatives that achieve those targets, then
   // assigned goals (deferred follow-up work per the same request), then the
   // goal library last.
   const tabs: ProfileTab[] = [
     { id: "identity", label: tIdentity("title"), content: identityContent },
     { id: "goals", label: tGoals("title"), content: goalsContent },
+    { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
+    { id: "programs", label: t("programsTab"), content: programsContent },
     { id: "assigned", label: tKpis("title"), content: assignedContent },
     { id: "library", label: tLibrary("title"), content: libraryContent },
   ];
@@ -626,20 +807,34 @@ export default async function StrategicPlanDetailPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backToList")}
       </Link>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
-          {plan.name_ar}
-        </h1>
+      {/* Export/import sit beside the plan's own title, since the workbook
+          is per-plan, not app-wide. Import shows only at 'approve' — the
+          level the goals/sub-goals/KPIs/annual-targets policies actually
+          require; the identity/values sheets sit lower at 'prepare', so a
+          prepare-level caller keeps editing those through the tab itself. */}
+      <div
+        style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
+            <h1 className="sru-title" style={{ fontSize: 24 }}>
+              {plan.name_ar}
+            </h1>
+          </div>
+          {plan.name_en && (
+            <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
+              {plan.name_en}
+            </p>
+          )}
+          <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, textAlign: "start" }}>
+            {plan.start_year}–{plan.end_year}
+          </p>
+        </div>
+        <div className="no-print" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
+        </div>
       </div>
-      {plan.name_en && (
-        <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
-          {plan.name_en}
-        </p>
-      )}
-      <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20, textAlign: "start" }}>
-        {plan.start_year}–{plan.end_year}
-      </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <ProfileTabs tabs={tabs} />

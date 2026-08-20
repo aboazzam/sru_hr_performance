@@ -12,6 +12,7 @@ import {
   Wallet,
   ListChecks,
   ClipboardList,
+  ClipboardCheck,
   Award,
   BarChart3,
   ShieldCheck,
@@ -158,7 +159,33 @@ export const navGroups: NavGroup[] = [
       // `kpis/strategic-goals`, `goals/library`) still exist and are still
       // linked to directly from other screens (e.g. the manage-KPIs flow),
       // just no longer as a top-level tab in this group.
-      { segment: "kpis", labelKey: "assignedGoals", icon: Gauge },
+      //
+      // 2026-08-20: "الأهداف المسندة" (`kpis`) moved OUT of this group into
+      // the new "الخطة التنفيذية" module below, per the explicit "تنقل تاب
+      // الاهداف المسندة وبنك الاهداف الى موديول جديد بمسمى الخطة
+      // التنفيذية". This group is now the plans list alone — everything
+      // else already lives as tabs inside a plan.
+    ],
+  },
+  // "الخطة التنفيذية" (2026-08-20): the operational face of a strategic
+  // plan. Its first tab mirrors the strategic-plans list ("اول تاب شبيه
+  // بقائمة الخطط الاستراتيجية"), and it now owns "الأهداف المسندة", moved
+  // here out of the strategic-plan group. No `access` gate on either child,
+  // matching `kpis/plans`: browsing is for everyone and creating is gated
+  // on the page itself.
+  {
+    groupKey: "executivePlan",
+    labelKey: "executivePlan",
+    icon: ClipboardCheck,
+    children: [
+      { segment: "executive-plans", labelKey: "executivePlans", icon: CalendarRange },
+      // 2026-08-20: replaces "الأهداف المسندة" (`kpis`) here — "ادمج بنك
+      // الأهداف مع الأهداف المسندة بحيث يكون العنوان اسناد المبادرات". The
+      // /kpis page still exists and is still reachable directly; it just no
+      // longer occupies this tab. Ungated for the same reason as the plans
+      // lists: reading is decided row-by-row by each initiative's own RLS,
+      // and assigning is gated on the page itself.
+      { segment: "initiative-assignments", labelKey: "initiativeAssignments", icon: Gauge },
     ],
   },
   {
@@ -234,7 +261,10 @@ export const navGroups: NavGroup[] = [
     labelKey: "evaluationResults",
     icon: FileBarChart,
     children: [
-      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: [{ processArea: "promotions", minLevel: "view" }] },
+      // 2026-08-20: moved off `promotions` onto its own area — the two were
+      // coupled only because rewards/recommendations reused that area's
+      // policies, which the split ended.
+      { segment: "recommendations", labelKey: "recommendations", icon: Sparkles, access: [{ processArea: "rewardsAndRecommendations", minLevel: "view" }] },
     ],
   },
 ];
@@ -280,7 +310,15 @@ export function navItemHref(segment: string): string {
  * at large.
  */
 export function sidebarGroupLabelKey(group: NavGroup & { children: NavItem[] }): string {
-  return group.children.length === 1 ? group.children[0].labelKey : group.labelKey;
+  // 2026-08-20: the substitution applies only when PERMISSIONS narrowed the
+  // group to one child -- compare against what the group actually declares.
+  // Without this, a module that genuinely has a single child (the strategic
+  // plan, once "الأهداف المسندة" moved to the executive-plan module) lost its
+  // own name in the sidebar and read "قائمة الخطط", which is both less
+  // informative and ambiguous next to the new module. Caught live.
+  const declared = navGroups.find((g) => g.groupKey === group.groupKey)?.children.length ?? group.children.length;
+  const narrowedByPermissions = declared > 1 && group.children.length === 1;
+  return narrowedByPermissions ? group.children[0].labelKey : group.labelKey;
 }
 
 // Flattened list of every real segment in the app (top-level items + every

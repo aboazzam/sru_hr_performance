@@ -1,0 +1,299 @@
+import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+import { Link } from "@/i18n/navigation";
+import { ArrowRight, CalendarRange } from "lucide-react";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
+import { splitByWindow, targetCycleInScope } from "@/lib/executivePlanScope";
+import { formatDateDmy } from "@/lib/dateParts";
+import type { Locale } from "@/i18n/config";
+
+/**
+ * One executive plan: the strategic plan's targets and initiatives, narrowed
+ * to this plan's own window ("لا يظهر الا المبادرات المحددة في نفس توقيت
+ * الخطة التنفيذية").
+ *
+ * Nothing is duplicated into the executive plan — both tabs read the
+ * strategic plan's own rows and filter them, so an initiative edited in the
+ * strategic module is immediately correct here. The filtering rule itself
+ * lives in lib/executivePlanScope.ts with its tests, not inline.
+ *
+ * Items with no dates are shown in their own group rather than dropped: on
+ * the real initiative cards most dates still read "TBD", and silently hiding
+ * them would make them look deleted.
+ */
+export default async function ExecutivePlanDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string; locale: Locale }>;
+}) {
+  const { id, locale } = await params;
+  const t = await getTranslations("ExecutivePlanDetailPage");
+  const supabase = await createClient();
+
+  const { data: plan } = await supabase
+    .from("executive_plans")
+    .select("id, strategic_plan_id, cycle_id, name_ar, name_en, start_date, end_date, status")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (!plan) {
+    return (
+      <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <Link
+          href="/executive-plans"
+          className="sru-btn"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
+        >
+          <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
+          {t("backToList")}
+        </Link>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+      </div>
+    );
+  }
+
+  const window = { startDate: plan.start_date as string, endDate: plan.end_date as string };
+
+  const { data: strategicPlan } = await supabase
+    .from("strategic_plans")
+    .select("name_ar")
+    .eq("id", plan.strategic_plan_id)
+    .maybeSingle();
+
+  // ---- المستهدفات: the strategic plan's annual targets, by cycle ----
+  const { data: goalRows } = await supabase
+    .from("strategic_goals")
+    .select("id, title_ar")
+    .eq("plan_id", plan.strategic_plan_id)
+    .is("deleted_at", null);
+  const goalIds = new Set(((goalRows ?? []) as Array<{ id: string }>).map((g) => g.id));
+
+  const { data: subGoalRows } = await supabase
+    .from("sub_goals")
+    .select("id, strategic_goal_id, title_ar")
+    .is("deleted_at", null);
+  const planSubGoals = ((subGoalRows ?? []) as Array<{ id: string; strategic_goal_id: string; title_ar: string }>).filter((sg) =>
+    goalIds.has(sg.strategic_goal_id)
+  );
+  const subGoalIds = new Set(planSubGoals.map((sg) => sg.id));
+
+  const { data: kpiRows } = await supabase
+    .from("strategic_kpis")
+    .select("id, strategic_goal_id, sub_goal_id, title_ar, unit_ar, plan_target_value")
+    .is("deleted_at", null);
+  const planKpis = ((kpiRows ?? []) as Array<{
+    id: string;
+    strategic_goal_id: string | null;
+    sub_goal_id: string | null;
+    title_ar: string;
+    unit_ar: string;
+    plan_target_value: number | null;
+  }>).filter((k) => (k.strategic_goal_id && goalIds.has(k.strategic_goal_id)) || (k.sub_goal_id && subGoalIds.has(k.sub_goal_id)));
+  const kpiById = new Map(planKpis.map((k) => [k.id, k]));
+
+  const { data: cycleRows } = await supabase
+    .from("evaluation_cycles")
+    .select("id, name_ar, start_date, end_date")
+    .is("deleted_at", null);
+  const cycles = (cycleRows ?? []) as Array<{ id: string; name_ar: string; start_date: string | null; end_date: string | null }>;
+  const cyclesInScope = cycles.filter((c) =>
+    targetCycleInScope({ id: c.id, startDate: c.start_date, endDate: c.end_date }, window, (plan.cycle_id as string | null) ?? null)
+  );
+  const cycleInScopeIds = new Set(cyclesInScope.map((c) => c.id));
+  const cycleNameById = new Map(cycles.map((c) => [c.id, c.name_ar]));
+
+  const { data: annualRows } = await supabase
+    .from("kpi_annual_targets")
+    .select("id, kpi_id, cycle_id, target_value, actual_value")
+    .is("deleted_at", null);
+  const annualTargets = ((annualRows ?? []) as Array<{
+    id: string;
+    kpi_id: string;
+    cycle_id: string;
+    target_value: number;
+    actual_value: number | null;
+  }>).filter((a) => kpiById.has(a.kpi_id));
+  const targetsInScope = annualTargets.filter((a) => cycleInScopeIds.has(a.cycle_id));
+  const targetsOutside = annualTargets.length - targetsInScope.length;
+
+  // ---- المبادرات: the strategic plan's initiatives, by their own period ----
+  const { data: initiativeRows } = await supabase
+    .from("strategic_initiatives")
+    .select("id, title_ar, code, owner_org_unit_id, status_code, start_date, end_date")
+    .eq("plan_id", plan.strategic_plan_id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const initiatives = ((initiativeRows ?? []) as Array<{
+    id: string;
+    title_ar: string;
+    code: string | null;
+    owner_org_unit_id: string | null;
+    status_code: string;
+    start_date: string | null;
+    end_date: string | null;
+  }>).map((i) => ({ ...i, startDate: i.start_date, endDate: i.end_date }));
+
+  const scoped = splitByWindow(initiatives, window);
+
+  const orgUnitIds = Array.from(new Set(initiatives.map((i) => i.owner_org_unit_id).filter((v): v is string => Boolean(v))));
+  const { data: orgUnitRows } =
+    orgUnitIds.length > 0 ? await supabase.from("org_units").select("id, name_ar").in("id", orgUnitIds) : { data: [] };
+  const orgUnitNameById = new Map(((orgUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => [u.id, u.name_ar]));
+
+  const { data: statusRows } = await supabase.from("initiative_statuses").select("code, label_ar");
+  const statusLabelByCode = new Map(((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((s) => [s.code, s.label_ar]));
+
+  const targetsContent = (
+    <div>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>
+        {plan.cycle_id ? t("targetsIntroCycle", { cycle: cycleNameById.get(plan.cycle_id as string) ?? "—" }) : t("targetsIntroWindow")}
+      </p>
+      {targetsInScope.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
+          {annualTargets.length === 0 ? t("targetsNone") : t("targetsNoneInWindow", { total: annualTargets.length })}
+        </p>
+      ) : (
+        <div className="sru-card">
+          <div className="table-scroll">
+            <table className="admin-matrix">
+              <thead>
+                <tr>
+                  <th>{t("columnKpi")}</th>
+                  <th>{t("columnCycle")}</th>
+                  <th>{t("columnTarget")}</th>
+                  <th>{t("columnActual")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {targetsInScope.map((target) => {
+                  const kpi = kpiById.get(target.kpi_id)!;
+                  return (
+                    <tr key={target.id}>
+                      <td style={{ fontWeight: 700 }}>{kpi.title_ar}</td>
+                      <td>{cycleNameById.get(target.cycle_id) ?? "—"}</td>
+                      <td dir="ltr" style={{ textAlign: "start" }}>
+                        {target.target_value} {kpi.unit_ar}
+                      </td>
+                      <td dir="ltr" style={{ textAlign: "start" }}>
+                        {target.actual_value != null ? `${target.actual_value} ${kpi.unit_ar}` : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {targetsOutside > 0 && (
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 10 }}>{t("targetsOutsideNote", { count: targetsOutside })}</p>
+      )}
+    </div>
+  );
+
+  const initiativeTable = (rows: typeof scoped.inWindow) => (
+    <div className="sru-card" style={{ marginBottom: 12 }}>
+      <div className="table-scroll">
+        <table className="admin-matrix">
+          <thead>
+            <tr>
+              <th>{t("columnCode")}</th>
+              <th>{t("columnInitiative")}</th>
+              <th>{t("columnOwner")}</th>
+              <th>{t("columnStatus")}</th>
+              <th>{t("columnPeriod")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((initiative) => (
+              <tr key={initiative.id}>
+                <td dir="ltr" style={{ textAlign: "start" }}>
+                  {initiative.code ?? "—"}
+                </td>
+                <td>
+                  <Link
+                    href={`/initiatives/${initiative.id}`}
+                    style={{ color: "var(--color-primary)", fontWeight: 700, textDecoration: "none" }}
+                  >
+                    {initiative.title_ar}
+                  </Link>
+                </td>
+                <td>{initiative.owner_org_unit_id ? orgUnitNameById.get(initiative.owner_org_unit_id) ?? "—" : "—"}</td>
+                <td>{statusLabelByCode.get(initiative.status_code) ?? initiative.status_code}</td>
+                <td dir="ltr" style={{ textAlign: "start" }}>
+                  {initiative.startDate || initiative.endDate
+                    ? `${initiative.startDate ?? "—"} → ${initiative.endDate ?? "—"}`
+                    : t("noDates")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const initiativesContent = (
+    <div>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>{t("initiativesIntro")}</p>
+
+      {scoped.inWindow.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 12 }}>{t("initiativesNoneInWindow")}</p>
+      ) : (
+        initiativeTable(scoped.inWindow)
+      )}
+
+      {scoped.undated.length > 0 && (
+        <section style={{ marginTop: 18 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("undatedHeading", { count: scoped.undated.length })}</h3>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("undatedNote")}</p>
+          {initiativeTable(scoped.undated)}
+        </section>
+      )}
+
+      {scoped.outside.length > 0 && (
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 10 }}>
+          {t("outsideNote", { count: scoped.outside.length })}
+        </p>
+      )}
+    </div>
+  );
+
+  const tabs: ProfileTab[] = [
+    { id: "targets", label: t("targetsTab"), content: targetsContent },
+    { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
+  ];
+
+  return (
+    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <Link
+        href="/executive-plans"
+        className="sru-btn"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
+      >
+        <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
+        {t("backToList")}
+      </Link>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+        <CalendarRange size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
+        <h1 className="sru-title" style={{ fontSize: 24 }}>
+          {plan.name_ar}
+        </h1>
+      </div>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+        {t("windowLabel", {
+          from: formatDateDmy(plan.start_date as string, locale),
+          to: formatDateDmy(plan.end_date as string, locale),
+        })}
+        {" · "}
+        {t("strategicPlanLabel", { plan: strategicPlan?.name_ar ?? "—" })}
+        {plan.cycle_id ? ` · ${t("cycleLabel", { cycle: cycleNameById.get(plan.cycle_id as string) ?? "—" })}` : ""}
+      </p>
+      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      <ProfileTabs tabs={tabs} />
+    </div>
+  );
+}

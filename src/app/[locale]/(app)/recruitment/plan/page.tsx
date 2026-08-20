@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { CreateRecruitmentPlanForm } from "@/components/CreateRecruitmentPlanForm";
+import { RecruitmentPlanRow } from "@/components/RecruitmentPlanRow";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import { planStatusLabel } from "@/lib/recruitmentWorkflow";
+import { sortPlansForList } from "@/lib/recruitmentPlanList";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 //
@@ -25,13 +25,19 @@ export default async function RecruitmentPlanPage() {
   const canView = hasVpraAccess(level, "view");
   const canPrepare = hasVpraAccess(level, "prepare");
 
-  const { data: plans } = canView
+  const { data: planRows } = canView
     ? await supabase
         .from("recruitment_plans")
-        .select("id, name_ar, plan_year, status, notes")
+        .select("id, name_ar, plan_year, status, notes, finance_reviewed_at")
         .is("deleted_at", null)
         .order("plan_year", { ascending: false })
     : { data: null };
+
+  // Ordered in JS rather than by the query: "open first" is a rule about what
+  // a status MEANS, and it belongs with the other workflow rules where it can
+  // be unit-tested — not spelt out as an ORDER BY clause nothing tests. The
+  // year ordering above still stands as the tie-break the sort then refines.
+  const plans = sortPlansForList(planRows ?? []);
 
   // Per-plan headcount, computed from the items the caller can actually read
   // (same RLS), so the list column can never claim more than the detail page
@@ -57,9 +63,16 @@ export default async function RecruitmentPlanPage() {
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 24 }}>{t("forbidden")}</p>
       ) : (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
-          {canPrepare && <CreateRecruitmentPlanForm defaultYear={new Date().getFullYear()} />}
+          {/* The action row sits above the list. In RTL the first child lands
+              at the top RIGHT, which is where the button was asked for — no
+              float or explicit alignment needed. */}
+          {canPrepare && (
+            <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <CreateRecruitmentPlanForm defaultYear={new Date().getFullYear()} />
+            </div>
+          )}
 
-          {!plans || plans.length === 0 ? (
+          {plans.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
           ) : (
             <div className="sru-card">
@@ -71,29 +84,23 @@ export default async function RecruitmentPlanPage() {
                       <th>{t("columnYear")}</th>
                       <th>{t("columnStatus")}</th>
                       <th>{t("columnHeadcount")}</th>
-                      <th />
                     </tr>
                   </thead>
                   <tbody>
+                    {/* No "open plan" column any more — the row itself opens
+                        it, so the trailing button and its empty header are
+                        gone rather than left as a dead cell. */}
                     {plans.map((plan) => (
-                      <tr key={plan.id}>
-                        <td>
-                          {plan.name_ar}
-                          {plan.notes && (
-                            <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>{plan.notes}</div>
-                          )}
-                        </td>
-                        <td className="sru-en">{plan.plan_year}</td>
-                        <td>
-                          <span className="pill">{planStatusLabel(plan.status)}</span>
-                        </td>
-                        <td className="sru-en">{headcountByPlan.get(plan.id) ?? 0}</td>
-                        <td>
-                          <Link href={`/recruitment/plan/${plan.id}`} className="sru-btn">
-                            {t("openPlan")}
-                          </Link>
-                        </td>
-                      </tr>
+                      <RecruitmentPlanRow
+                        key={plan.id}
+                        planId={plan.id}
+                        nameAr={plan.name_ar}
+                        notes={plan.notes}
+                        planYear={plan.plan_year}
+                        status={plan.status}
+                        financeReviewed={plan.finance_reviewed_at !== null}
+                        headcount={headcountByPlan.get(plan.id) ?? 0}
+                      />
                     ))}
                   </tbody>
                 </table>

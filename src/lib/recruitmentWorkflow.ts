@@ -167,6 +167,35 @@ export function planStatusLabel(status: string): string {
 }
 
 /**
+ * `finance_review` covers two genuinely different situations, and the stored
+ * status alone cannot tell them apart:
+ *
+ *   finance has NOT stamped its review → the plan is still with FINANCE;
+ *   finance HAS stamped it             → finance is done, and the plan is
+ *                                        waiting on the approver.
+ *
+ * The distinguishing fact is already in the row — `finance_reviewed_at` —
+ * because finance "passing" a plan was deliberately recorded by that stamp
+ * rather than by a status of its own (see the plan transition table's own
+ * note). So a plan sitting with the approver kept announcing «قيد المراجعة
+ * المالية», which reads as "finance still has it". Reported directly.
+ *
+ * NOT fixed by renaming the status: a plan finance has never touched would
+ * then claim a review that never happened — worse than the bug.
+ */
+export const planFinanceReviewedLabel = "تمت المراجعة المالية";
+
+export function planStatusLabelFor(
+  status: string,
+  context: { financeReviewed?: boolean } = {}
+): string {
+  if (status === "finance_review" && context.financeReviewed) {
+    return planFinanceReviewedLabel;
+  }
+  return planStatusLabel(status);
+}
+
+/**
  * A status nobody has ruled on yet. The plan may not reach final approval
  * while any of its requests is still here — the spec's own rule
  * ("الخطة لا تُرفع للاعتماد النهائي وفيها بنود لم يُفصل فيها").
@@ -202,6 +231,26 @@ export const mergeableRequestStatuses: RequestStatus[] = [
 
 export function isRequestMergeable(status: string): boolean {
   return mergeableRequestStatuses.includes(status as RequestStatus);
+}
+
+/**
+ * الحالات التي فصل فيها صاحب الاعتماد، فأُغلقت المراجعة المالية.
+ *
+ * `saveFinanceReview` كان بلا أي فحص للحالة، فتستطيع المالية تعديل الميزانية
+ * المعتمدة والملاحظة **بعد** الاعتماد — أي تتبدّل الأرقام التي بُني عليها
+ * قرار الاعتماد دون أن يُعاد، ولا يظهر ذلك لصاحب القرار. أُغلقت بقرار صريح.
+ *
+ * `rejected` منها: الخطة انتهت، وتعديل مراجعة مالية لخطة مرفوضة يغيّر سجلًّا
+ * تاريخيًّا لا قرارًا قائمًا.
+ *
+ * و`returned_for_revision` ليست منها عمدًا: لم يفصل فيها أحد بعد، وغالبًا
+ * ملاحظة المالية نفسها هي سبب الإعادة — فمنع تصحيحها يحبس التصحيح خارج
+ * النظام.
+ */
+const financeDecidedPlanStatuses: PlanStatus[] = ["approved", "ready_for_execution", "rejected"];
+
+export function isFinanceReviewEditable(status: string): boolean {
+  return !financeDecidedPlanStatuses.includes(status as PlanStatus);
 }
 
 // ---------------------------------------------------------------------------

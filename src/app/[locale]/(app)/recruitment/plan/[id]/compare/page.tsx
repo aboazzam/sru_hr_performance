@@ -7,19 +7,28 @@ import { computeDistribution } from "@/lib/recruitmentPlanAnalytics";
 import { comparePlans } from "@/lib/recruitmentPlanComparison";
 import type { Locale } from "@/i18n/config";
 
-// مقارنة بالسنة السابقة، side by side per org unit.
+// مقارنة بخطة سابقة، side by side per org unit.
 //
-// Which plan is "previous" is resolved in two steps: an explicit
+// WHICH plan to compare against is the reader's choice (`?with=`), asked for
+// directly: "تظهر له الخطط السابقة فيختار منها فتتم المطابقة". A year is not
+// always the right axis — a university may skip a year, or want this year
+// measured against one two years back.
+//
+// With nothing chosen it still resolves as it always did, so the button lands
+// on a real comparison rather than an empty picker: an explicit
 // `previous_plan_id` link if one was set, otherwise the plan for
-// `plan_year - 1`. The explicit link wins because a university may skip a
-// year, and inferring "last year" would then silently compare against
-// nothing while looking like it compared against something.
+// `plan_year - 1`. The explicit link wins because inferring "last year" would
+// silently compare against nothing while looking like it compared against
+// something.
 export default async function PlanComparePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale; id: string }>;
+  searchParams: Promise<{ with?: string }>;
 }) {
   const { locale, id } = await params;
+  const { with: requestedId } = await searchParams;
   const t = await getTranslations("RecruitmentComparePage");
   const supabase = await createClient();
 
@@ -39,24 +48,31 @@ export default async function PlanComparePage({
     .is("deleted_at", null)
     .maybeSingle();
 
+  // Every other plan this caller may read — the choices offered. RLS decides
+  // what is in here, so the picker can never name a plan the reader could not
+  // open anyway.
+  const { data: candidateRows } = canView && plan
+    ? await supabase
+        .from("recruitment_plans")
+        .select("id, name_ar, plan_year")
+        .neq("id", plan.id)
+        .is("deleted_at", null)
+        .order("plan_year", { ascending: false })
+    : { data: null };
+  const candidates = candidateRows ?? [];
+
   let previous: { id: string; name_ar: string; plan_year: number } | null = null;
   if (canView && plan) {
-    if (plan.previous_plan_id) {
-      const { data } = await supabase
-        .from("recruitment_plans")
-        .select("id, name_ar, plan_year")
-        .eq("id", plan.previous_plan_id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      previous = data ?? null;
+    // The requested id is honoured only if it is one of the choices above —
+    // so a hand-edited `?with=` cannot reach a plan RLS hides, and a stale
+    // link to a since-deleted plan falls back instead of erroring.
+    const requested = requestedId ? candidates.find((c) => c.id === requestedId) : undefined;
+    if (requested) {
+      previous = requested;
+    } else if (plan.previous_plan_id) {
+      previous = candidates.find((c) => c.id === plan.previous_plan_id) ?? null;
     } else {
-      const { data } = await supabase
-        .from("recruitment_plans")
-        .select("id, name_ar, plan_year")
-        .eq("plan_year", plan.plan_year - 1)
-        .is("deleted_at", null)
-        .maybeSingle();
-      previous = data ?? null;
+      previous = candidates.find((c) => c.plan_year === plan.plan_year - 1) ?? null;
     }
   }
 
@@ -106,17 +122,44 @@ export default async function PlanComparePage({
         {t("backToPlan")}
       </Link>
 
+      {/* The picker. A plain GET form — no client JS for what is one select
+          and a submit, the same approach the employees and requests filters
+          use. `previous?.id` preselects whatever is actually being compared,
+          so the control always shows the truth rather than a blank. */}
+      {canView && plan && candidates.length > 0 && (
+        <form
+          method="get"
+          style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}
+        >
+          <label className="sru-field" style={{ minWidth: 260 }}>
+            <span>{t("pickLabel")}</span>
+            <select name="with" defaultValue={previous?.id ?? ""}>
+              {candidates.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name_ar} — {candidate.plan_year}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="sru-btn sru-btn-primary">
+            {t("pickSubmit")}
+          </button>
+        </form>
+      )}
+
       <div style={{ marginTop: 20 }}>
         {!canView ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
         ) : !plan ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("planNotFound")}</p>
+        ) : candidates.length === 0 ? (
+          // Nothing to compare against at all — a real answer, not an error,
+          // and not a table of zeroes pretending to be one.
+          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noOtherPlans")}</p>
         ) : !previous ? (
-          // Honest empty state: nothing to compare against is a real answer,
-          // not an error, and not a table of zeroes pretending to be one.
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
-            {t("noPreviousPlan", { year: plan.plan_year - 1 })}
-          </p>
+          // Other plans exist but none is picked yet, so say which move is
+          // missing rather than repeating "nothing to compare".
+          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("pickNone")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="sru-card">

@@ -1,0 +1,190 @@
+"use client";
+
+import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
+import { AlertCircle, ArrowLeft, Boxes } from "lucide-react";
+import { createProgram, type ProgramActionState } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/actions";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
+
+export interface ProgramSummary {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+  initiativeCount: number;
+  committeeCount: number;
+}
+
+const errorKeys: Record<string, string> = {
+  invalid_input: "errorInvalidInput",
+  unauthenticated: "errorUnauthenticated",
+  forbidden: "errorForbidden",
+  duplicate: "errorDuplicate",
+  unknown: "errorUnknown",
+};
+
+/**
+ * The برامج الاستراتيجية tab: programs belonging to one plan. Each row opens
+ * its own page (three sub-tabs: committee / dashboard / detail), rather than
+ * nesting tabs inside tabs.
+ *
+ * A committee member with no strategicPlanning grant reaches this list too —
+ * strategic_programs_select lets membership alone grant read — but sees only
+ * their own programs and no create form.
+ */
+export function ProgramsPanel({
+  planId,
+  programs,
+  canManage,
+}: {
+  planId: string;
+  programs: ProgramSummary[];
+  canManage: boolean;
+}) {
+  const t = useTranslations("ProgramsPanel");
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [state, formAction, pending] = useActionState<ProgramActionState, FormData>(createProgram, null);
+  const [handled, setHandled] = useState<ProgramActionState>(null);
+
+  if (state !== handled) {
+    setHandled(state);
+    if (state?.status === "success") {
+      setStartDate("");
+      setEndDate("");
+    }
+  }
+
+  useEffect(() => {
+    if (state?.status === "success") {
+      formRef.current?.reset();
+      router.refresh();
+    }
+  }, [state, router]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
+
+  return (
+    <div>
+      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>{t("intro")}</p>
+
+      {programs.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
+      ) : (
+        <div className="sru-card" style={{ marginBottom: 24 }}>
+          <div className="table-scroll">
+            <table className="admin-matrix">
+              <thead>
+                <tr>
+                  <th>{t("columnName")}</th>
+                  <th>{t("columnStatus")}</th>
+                  <th>{t("columnPeriod")}</th>
+                  <th>{t("columnInitiatives")}</th>
+                  <th>{t("columnCommittee")}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {programs.map((program) => (
+                  <tr key={program.id}>
+                    <td>
+                      <span style={{ fontWeight: 700 }}>{program.nameAr}</span>
+                      {program.nameEn && (
+                        <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
+                          {program.nameEn}
+                        </span>
+                      )}
+                    </td>
+                    <td>{program.status}</td>
+                    <td dir="ltr" style={{ textAlign: "start" }}>
+                      {program.startDate || program.endDate ? `${program.startDate ?? "—"} → ${program.endDate ?? "—"}` : "—"}
+                    </td>
+                    <td>{program.initiativeCount}</td>
+                    <td>{program.committeeCount}</td>
+                    <td>
+                      <Link
+                        href={`/kpis/plans/${planId}/programs/${program.id}`}
+                        className="sru-btn"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}
+                      >
+                        {t("openButton")}
+                        <ArrowLeft size={14} aria-hidden />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {canManage && (
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <section className="sru-formsection">
+            <div className="sru-formsection-head">
+              <span className="sru-formsection-badge">
+                <Boxes size={17} aria-hidden />
+              </span>
+              <div>
+                <h3>{t("addHeading")}</h3>
+                <span>{t("addSubtitle")}</span>
+              </div>
+            </div>
+            <div className="sru-formgrid">
+              <input type="hidden" name="planId" value={planId} />
+              <input type="hidden" name="startDate" value={startDate} />
+              <input type="hidden" name="endDate" value={endDate} />
+              <div className="sru-field">
+                <label>{t("nameArLabel")}</label>
+                <input type="text" name="nameAr" required dir="rtl" />
+              </div>
+              <div className="sru-field">
+                <label>{t("nameEnLabel")}</label>
+                <input type="text" name="nameEn" dir="ltr" style={{ textAlign: "left" }} />
+              </div>
+              <div className="sru-field">
+                <label>{t("statusLabel")}</label>
+                <input type="text" name="status" dir="rtl" placeholder={t("statusPlaceholder")} />
+              </div>
+              <div className="sru-field">
+                <label>{t("startDateLabel")}</label>
+                <DateFieldDmy value={startDate} onChange={setStartDate} />
+              </div>
+              <div className="sru-field">
+                <label>{t("endDateLabel")}</label>
+                <DateFieldDmy value={endDate} onChange={setEndDate} />
+              </div>
+              <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+                <label>{t("descriptionLabel")}</label>
+                <textarea name="descriptionAr" rows={2} dir="rtl" />
+              </div>
+            </div>
+          </section>
+
+          {state?.status === "error" && (
+            <p role="alert" className="sru-auth-alert error">
+              <AlertCircle size={15} aria-hidden />
+              {t(errorKeys[state.message] ?? "errorUnknown")}
+            </p>
+          )}
+
+          <div className="sru-form-submitrow">
+            <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+              {pending ? t("addSubmitting") : t("addSubmit")}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}

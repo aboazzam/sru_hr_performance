@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import {
   evaluatePlanTransition,
+  isFinanceReviewEditable,
   isRequestDecided,
   planTransitions,
   type RecruitmentPermissions,
@@ -23,6 +24,8 @@ export type RecruitmentPlanErrorMessage =
   | "duplicate"
   | "not_found"
   | "already_posted"
+  // المراجعة المالية أُغلقت بفصل صاحب الاعتماد في الخطة.
+  | "plan_decided"
   | "unknown"
   // Refusals raised by the workflow guard, surfaced with their own Arabic
   // messages from `transitionRefusalMessages` rather than a generic error.
@@ -596,10 +599,22 @@ const financeReviewSchema = z.object({
  * the guard's `requiresFinanceReview` reads, so this action is what makes
  * the finance stage genuinely unskippable rather than decorative.
  *
- * Gated on `recruitmentBudget>=recommend`, checked here because
- * `recruitment_plans_update`'s RLS gates the ROW at `recruitmentPlan`
- * `prepare` and Postgres policies cannot express "only finance may write
- * these particular columns".
+ * Gated on `recruitmentBudget>=recommend`, checked HERE because Postgres
+ * policies gate rows, not columns: `recruitment_plans_update` cannot express
+ * "only finance may write these particular columns", so without this check a
+ * plan preparer could stamp the finance review themselves.
+ *
+ * That policy admits the finance reviewer through a branch of its own —
+ * `recruitmentPlan>=prepare` OR `recruitmentBudget>=recommend`, the second
+ * added by 20260807000005 once finance turned out to be able to read the
+ * requests but not write the plan it reviews.
+ *
+ * Worth stating plainly, because this comment used to claim the row gate was
+ * `recruitmentPlan>=prepare` alone: the finance manager role holds only
+ * `recruitmentPlan=view`, so that OR branch is the ONLY reason their save is
+ * accepted. Verified by simulating their session — the first branch returns
+ * false, the second true, and the UPDATE affects its row. Drop the branch and
+ * the finance stage breaks while every application-level check still passes.
  */
 export async function saveFinanceReview(input: {
   planId: string;
@@ -618,6 +633,24 @@ export async function saveFinanceReview(input: {
   const permissions = await myPermissions(supabase);
   if (!hasVpraAccess(permissions.recruitmentBudget ?? "none", "recommend")) {
     return { status: "error", message: "forbidden" };
+  }
+
+  // Once the approver has ruled, the review is closed. Until this existed,
+  // finance could rewrite `approved_budget` and `finance_note` AFTER approval
+  // — silently changing the very figures the approval rested on, with no
+  // re-approval and nothing on the approver's screen to show it moved.
+  //
+  // Read from the row, never from the caller: the status is a fact about the
+  // plan, exactly like the current status in every transition guard here.
+  const { data: current } = await supabase
+    .from("recruitment_plans")
+    .select("status")
+    .eq("id", parsed.data.planId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!current) return { status: "error", message: "not_found" };
+  if (!isFinanceReviewEditable(current.status)) {
+    return { status: "error", message: "plan_decided" };
   }
 
   const { data: profile } = await supabase

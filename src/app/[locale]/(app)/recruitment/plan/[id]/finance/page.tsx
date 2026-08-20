@@ -54,19 +54,25 @@ export default async function PlanFinanceReviewPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
-        {t("title")}
-      </h1>
-      {plan && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
-          {plan.name_ar} — {plan.plan_year}
-        </p>
-      )}
+      {/* Title on the reading side, the way out opposite it — the same header
+          shape the plan page itself uses. It used to sit under the divider as
+          a bare link, easy to miss on a screen whose whole job is one save. */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <h1 className="sru-title" style={{ fontSize: 24 }}>
+            {t("title")}
+          </h1>
+          {plan && (
+            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+              {plan.name_ar} — {plan.plan_year}
+            </p>
+          )}
+        </div>
+        <Link href={`/recruitment/plan/${id}`} className="sru-btn">
+          {t("backToPlan")}
+        </Link>
+      </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
-
-      <Link href={`/recruitment/plan/${id}`} className="sru-btn">
-        {t("backToPlan")}
-      </Link>
 
       <div style={{ marginTop: 20 }}>
         {!canReview ? (
@@ -76,7 +82,15 @@ export default async function PlanFinanceReviewPage({
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="sru-card">
-              <PlanProgressBar status={plan.status} />
+              {/* `financeReviewed` matters most on THIS screen: the reviewer
+                  saves here, and the bar is the first thing they look at to
+                  confirm it registered. Omitting it left the bar saying «قيد
+                  المراجعة المالية» directly beside «تم حفظ المراجعة المالية»
+                  — reported right after a real review was recorded. */}
+              <PlanProgressBar
+                status={plan.status}
+                financeReviewed={plan.finance_reviewed_at !== null}
+              />
             </div>
 
             <div className="sru-card">

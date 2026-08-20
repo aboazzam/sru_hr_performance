@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Plus } from "lucide-react";
@@ -35,6 +35,7 @@ export function AddRecruitmentPlanItemForm({
 }) {
   const t = useTranslations("RecruitmentPlanPage");
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentPlanActionState | null>(null);
 
@@ -78,18 +79,54 @@ export function AddRecruitmentPlanItemForm({
         setJustification("");
         setCost("");
         setHeadcount("1");
+        dialogRef.current?.close();
         router.refresh();
       }
     });
   }
 
   return (
-    <div className="sru-formsection">
+    <>
+      {/* A button, not a permanently open form. Adding an item is occasional,
+          and the expanded form pushed the plan's own items — the reason to
+          open this page — below the fold. Same native <dialog> the create-plan
+          and Excel-import panels already use, so Escape and the backdrop come
+          from the platform rather than being re-implemented. */}
+      <button
+        type="button"
+        className="sru-btn sru-btn-primary"
+        onClick={() => {
+          setState(null);
+          dialogRef.current?.showModal();
+        }}
+      >
+        <Plus size={15} aria-hidden style={{ verticalAlign: "-2px", marginLeft: 4 }} />
+        {t("addItemTrigger")}
+      </button>
+
+      <dialog
+        ref={dialogRef}
+        className="sru-modal"
+        // Wider than the default modal: this form is a two-column grid, and
+        // squeezing it into 520px would stack every field into one column.
+        style={{ width: "min(760px, calc(100vw - 32px))" }}
+        onClick={(e) => {
+          if (e.target === dialogRef.current) dialogRef.current?.close();
+        }}
+      >
       <div className="sru-formsection-head">
         <span className="sru-formsection-badge">
           <Plus size={16} aria-hidden />
         </span>
-        <h2>{t("addItemHeading")}</h2>
+        <h2 style={{ flex: 1 }}>{t("addItemHeading")}</h2>
+        <button
+          type="button"
+          className="sru-modal-close"
+          onClick={() => dialogRef.current?.close()}
+          aria-label={t("closeButton")}
+        >
+          ×
+        </button>
       </div>
       <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 10 }}>{t("addItemNote")}</p>
 
@@ -202,12 +239,13 @@ export function AddRecruitmentPlanItemForm({
             {t(errorKeys[state.message] ?? "errorUnknown")}
           </span>
         )}
-        {state?.status === "success" && (
-          <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
-            {t("itemAdded")}
-          </span>
-        )}
+        {/* No success message here: the dialog closes on success and the new
+            item appears in the table behind it, which says it better. */}
+        <button type="button" className="sru-btn" disabled={pending} onClick={() => dialogRef.current?.close()}>
+          {t("cancelButton")}
+        </button>
       </div>
-    </div>
+      </dialog>
+    </>
   );
 }

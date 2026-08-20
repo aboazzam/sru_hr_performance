@@ -46,16 +46,25 @@ export default async function StrategicPlansPage() {
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="strategicPlan" current="kpis/plans" />
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
-        {t("title")}
-      </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      {/* Trigger sits to the LEFT of the title and slightly below it
+          (2026-08-19 request) -- alignItems: flex-end lines it up with the
+          subtitle rather than the heading, and it wraps underneath on
+          narrow screens. */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+        <div>
+          <h1 className="sru-title" style={{ fontSize: 24 }}>
+            {t("title")}
+          </h1>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+        </div>
+        {canCreate && <NewStrategicPlanForm />}
+      </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {plans.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 24 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card" style={{ marginBottom: 24 }}>
+        <div className="sru-card">
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
@@ -88,7 +97,6 @@ export default async function StrategicPlansPage() {
         </div>
       )}
 
-      {canCreate && <NewStrategicPlanForm />}
     </div>
   );
 }

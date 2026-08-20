@@ -1,0 +1,556 @@
+"use server";
+
+import ExcelJS from "exceljs";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
+import {
+  cellNumber,
+  cellText,
+  headerIndex,
+  missingColumns,
+  STRATEGIC_PLAN_COLUMNS,
+  STRATEGIC_PLAN_SHEETS,
+} from "@/lib/strategicPlanExcel";
+
+export type ImportStrategicPlanState =
+  | {
+      status: "success";
+      summary: {
+        identityUpdated: boolean;
+        valuesCreated: number;
+        valuesUpdated: number;
+        goalsCreated: number;
+        goalsUpdated: number;
+        subGoalsCreated: number;
+        subGoalsUpdated: number;
+        kpisCreated: number;
+        kpisUpdated: number;
+        annualTargetsCreated: number;
+        annualTargetsUpdated: number;
+      };
+      warnings: string[];
+    }
+  | { status: "error"; message: "invalid_input" | "unauthenticated" | "not_found" | "no_sheets" | "unknown"; detail?: string }
+  | null;
+
+const idSchema = z.string().uuid();
+
+/**
+ * Imports a workbook produced by /api/strategic-plans/[id]/export back into
+ * the same plan. There is deliberately no separate hand-built template:
+ * export IS the template, so the two can never drift (unlike the employees
+ * / org-structure imports, each of which ships its own .xlsx).
+ *
+ * Behaviour, matching every other import in this app: rows are matched by
+ * NAME and updated in place, unmatched names are created, and nothing is
+ * ever deleted — a row removed from the sheet stays in the database. A row
+ * that cannot be resolved (unknown cycle, unknown owner position, ambiguous
+ * parent) is skipped with an explanatory warning rather than aborting the
+ * whole file.
+ *
+ * Every write goes through the CALLER's own RLS-respecting client, so real
+ * authorization stays where it already lives: strategic_goals/sub_goals/
+ * strategic_kpis/kpi_annual_targets require
+ * check_vpra_global('strategicPlanning','approve'), while
+ * strategic_identity/strategic_values sit at 'prepare' (20260730000002).
+ * An under-privileged caller therefore gets per-row warnings, never a
+ * silent write.
+ *
+ * Sheets are all optional — a workbook holding only "القيم" imports just
+ * values. The export-only "الأهداف المسندة" sheet is ignored on import:
+ * re-creating an assignment needs position/employee resolution and its own
+ * RLS story, deliberately left to its own slice.
+ */
+export async function importStrategicPlanExcel(
+  _prevState: ImportStrategicPlanState,
+  formData: FormData
+): Promise<ImportStrategicPlanState> {
+  const planId = formData.get("planId");
+  const parsedId = idSchema.safeParse(planId);
+  if (!parsedId.success) return { status: "error", message: "invalid_input" };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const { data: plan } = await supabase
+    .from("strategic_plans")
+    .select("id")
+    .eq("id", parsedId.data)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!plan) return { status: "error", message: "not_found" };
+
+  const { data: myProfile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle();
+  const myProfileId = (myProfile?.id as string | undefined) ?? null;
+
+  let workbook: ExcelJS.Workbook;
+  try {
+    workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await file.arrayBuffer());
+  } catch {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  const warnings: string[] = [];
+  const summary = {
+    identityUpdated: false,
+    valuesCreated: 0,
+    valuesUpdated: 0,
+    goalsCreated: 0,
+    goalsUpdated: 0,
+    subGoalsCreated: 0,
+    subGoalsUpdated: 0,
+    kpisCreated: 0,
+    kpisUpdated: 0,
+    annualTargetsCreated: 0,
+    annualTargetsUpdated: 0,
+  };
+
+  /** Sheet -> [{columnLabel: value}] with the header row validated. */
+  function readSheet(sheetName: string, columns: readonly string[]): Array<Record<string, unknown>> | null {
+    const sheet = workbook.getWorksheet(sheetName);
+    if (!sheet) return null;
+    const headerRow = (sheet.getRow(1).values as unknown[]) ?? [];
+    const missing = missingColumns(headerRow.slice(1), columns);
+    if (missing.length > 0) {
+      warnings.push(`ورقة «${sheetName}»: أعمدة ناقصة (${missing.join("، ")}) — تم تخطّيها.`);
+      return null;
+    }
+    const index = headerIndex(headerRow.slice(1));
+    const rows: Array<Record<string, unknown>> = [];
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      const record: Record<string, unknown> = {};
+      let hasAnyValue = false;
+      for (const label of columns) {
+        const value = row.getCell(index.get(label)!).value;
+        record[label] = value;
+        if (cellText(value) !== "") hasAnyValue = true;
+      }
+      record.__row = rowNumber;
+      if (hasAnyValue) rows.push(record);
+    });
+    return rows;
+  }
+
+  let touchedAnySheet = false;
+
+  // ---------- 1) الرؤية والرسالة (global singleton) ----------
+  const identityRows = readSheet(STRATEGIC_PLAN_SHEETS.identity, STRATEGIC_PLAN_COLUMNS.identity);
+  if (identityRows) {
+    touchedAnySheet = true;
+    const row = identityRows[0];
+    if (row) {
+      const payload = {
+        vision_ar: cellText(row["الرؤية (عربي)"]) || null,
+        vision_en: cellText(row["الرؤية (إنجليزي)"]) || null,
+        mission_ar: cellText(row["الرسالة (عربي)"]) || null,
+        mission_en: cellText(row["الرسالة (إنجليزي)"]) || null,
+        updated_by: myProfileId,
+      };
+      const { data: existing } = await supabase.from("strategic_identity").select("id").maybeSingle();
+      // .select() on the UPDATE is load-bearing, not cosmetic: an UPDATE
+      // blocked by RLS affects zero rows and returns NO error, so without
+      // reading the affected rows back this would report a successful save
+      // that never happened (caught live, 2026-08-19).
+      const { data: saved, error } = existing
+        ? await supabase.from("strategic_identity").update(payload).eq("id", existing.id).select("id")
+        : await supabase.from("strategic_identity").insert(payload).select("id");
+      if (error) warnings.push(`الرؤية والرسالة: تعذّر الحفظ (${error.code ?? "خطأ"}) — تحقّق من صلاحيتك.`);
+      else if (!saved || saved.length === 0) warnings.push("الرؤية والرسالة: لا تملك صلاحية التعديل — لم يتم الحفظ.");
+      else summary.identityUpdated = true;
+    }
+  }
+
+  // ---------- 2) القيم (global) ----------
+  const valueRows = readSheet(STRATEGIC_PLAN_SHEETS.values, STRATEGIC_PLAN_COLUMNS.values);
+  if (valueRows) {
+    touchedAnySheet = true;
+    const { data: existingValues } = await supabase
+      .from("strategic_values")
+      .select("id, title_ar, display_order")
+      .is("deleted_at", null);
+    const valueByTitle = new Map(
+      ((existingValues ?? []) as Array<{ id: string; title_ar: string; display_order: number }>).map((v) => [v.title_ar, v])
+    );
+    let nextOrder =
+      Math.max(0, ...((existingValues ?? []) as Array<{ display_order: number }>).map((v) => v.display_order)) + 1;
+
+    for (const row of valueRows) {
+      const titleAr = cellText(row["القيمة (عربي)"]);
+      if (titleAr === "") {
+        warnings.push(`القيم (صف ${row.__row}): القيمة (عربي) مطلوبة — تم تخطّي الصف.`);
+        continue;
+      }
+      const order = cellNumber(row["الترتيب"]);
+      if (order === undefined) {
+        warnings.push(`القيم (صف ${row.__row}): «الترتيب» ليس رقمًا — تم تخطّي الصف.`);
+        continue;
+      }
+      const payload = {
+        title_ar: titleAr,
+        title_en: cellText(row["القيمة (إنجليزي)"]) || null,
+        description_ar: cellText(row["الوصف (عربي)"]) || null,
+        description_en: cellText(row["الوصف (إنجليزي)"]) || null,
+      };
+      const existing = valueByTitle.get(titleAr);
+      if (existing) {
+        const { data: saved, error } = await supabase
+          .from("strategic_values")
+          .update({ ...payload, display_order: order ?? existing.display_order })
+          .eq("id", existing.id)
+          .select("id");
+        if (error) warnings.push(`القيم (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0) warnings.push(`القيم (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.valuesUpdated += 1;
+      } else {
+        const { error } = await supabase
+          .from("strategic_values")
+          .insert({ ...payload, display_order: order ?? nextOrder++, created_by: myProfileId });
+        if (error) warnings.push(`القيم (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+        else summary.valuesCreated += 1;
+      }
+    }
+  }
+
+  // ---------- shared lookups for the plan-scoped sheets ----------
+  const { data: cyclesData } = await supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null);
+  const cycles = (cyclesData ?? []) as Array<{ id: string; name_ar: string }>;
+  const cycleIdsByName = new Map<string, string[]>();
+  for (const c of cycles) {
+    const list = cycleIdsByName.get(c.name_ar) ?? [];
+    list.push(c.id);
+    cycleIdsByName.set(c.name_ar, list);
+  }
+
+  const { data: positionsData } = await supabase.rpc("list_org_structure_positions");
+  const positionIdsByName = new Map<string, string[]>();
+  for (const p of (positionsData ?? []) as Array<{ id: string; name_ar: string }>) {
+    const list = positionIdsByName.get(p.name_ar) ?? [];
+    list.push(p.id);
+    positionIdsByName.set(p.name_ar, list);
+  }
+
+  /** Exactly-one-match lookup; anything else is a skip with a reason. */
+  function resolveUnique(map: Map<string, string[]>, name: string): { id: string } | { error: "missing" | "ambiguous" } {
+    const matches = map.get(name) ?? [];
+    if (matches.length === 1) return { id: matches[0] };
+    return { error: matches.length === 0 ? "missing" : "ambiguous" };
+  }
+
+  // Re-read after every write pass so a sheet can reference rows created by
+  // an earlier sheet in the SAME import (sub-goals under a goal added by the
+  // goals sheet, KPIs under that sub-goal, and so on).
+  async function loadGoals() {
+    const { data } = await supabase
+      .from("strategic_goals")
+      .select("id, title_ar")
+      .eq("plan_id", parsedId.data)
+      .is("deleted_at", null);
+    const byTitle = new Map<string, string[]>();
+    for (const g of (data ?? []) as Array<{ id: string; title_ar: string }>) {
+      const list = byTitle.get(g.title_ar) ?? [];
+      list.push(g.id);
+      byTitle.set(g.title_ar, list);
+    }
+    return byTitle;
+  }
+
+  // ---------- 3) الأهداف الاستراتيجية ----------
+  const goalRows = readSheet(STRATEGIC_PLAN_SHEETS.goals, STRATEGIC_PLAN_COLUMNS.goals);
+  if (goalRows) {
+    touchedAnySheet = true;
+    const goalIdsByTitle = await loadGoals();
+    for (const row of goalRows) {
+      const titleAr = cellText(row["الهدف الاستراتيجي (عربي)"]);
+      if (titleAr === "") {
+        warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): اسم الهدف مطلوب — تم تخطّي الصف.`);
+        continue;
+      }
+      const weight = cellNumber(row["الوزن %"]);
+      if (weight === undefined) {
+        warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): «الوزن %» ليس رقمًا — تم تخطّي الصف.`);
+        continue;
+      }
+      const payload = {
+        title_ar: titleAr,
+        title_en: cellText(row["الهدف الاستراتيجي (إنجليزي)"]) || null,
+        description_ar: cellText(row["الوصف (عربي)"]) || null,
+        description_en: cellText(row["الوصف (إنجليزي)"]) || null,
+        weight,
+      };
+      const existing = goalIdsByTitle.get(titleAr) ?? [];
+      if (existing.length > 1) {
+        warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): يوجد أكثر من هدف بنفس الاسم — تم تخطّي الصف.`);
+        continue;
+      }
+      if (existing.length === 1) {
+        const { data: saved, error } = await supabase.from("strategic_goals").update(payload).eq("id", existing[0]).select("id");
+        if (error) warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.goalsUpdated += 1;
+        continue;
+      }
+      const { error } = await supabase
+        .from("strategic_goals")
+        .insert({ ...payload, plan_id: parsedId.data, created_by: myProfileId });
+      if (error) warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+      else summary.goalsCreated += 1;
+    }
+  }
+
+  // ---------- 4) الأهداف الفرعية ----------
+  const subGoalRows = readSheet(STRATEGIC_PLAN_SHEETS.subGoals, STRATEGIC_PLAN_COLUMNS.subGoals);
+  const goalIdsByTitle = await loadGoals();
+  if (subGoalRows) {
+    touchedAnySheet = true;
+    for (const row of subGoalRows) {
+      const goalTitle = cellText(row["الهدف الاستراتيجي"]);
+      const titleAr = cellText(row["الهدف الفرعي (عربي)"]);
+      const ownerName = cellText(row["المالك (المنصب)"]);
+      if (titleAr === "") {
+        warnings.push(`الأهداف الفرعية (صف ${row.__row}): اسم الهدف الفرعي مطلوب — تم تخطّي الصف.`);
+        continue;
+      }
+      const goal = resolveUnique(goalIdsByTitle, goalTitle);
+      if ("error" in goal) {
+        warnings.push(
+          `الأهداف الفرعية (صف ${row.__row}): ${
+            goal.error === "missing" ? `الهدف الاستراتيجي «${goalTitle}» غير موجود في هذه الخطة` : `اسم الهدف «${goalTitle}» مكرّر`
+          } — تم تخطّي الصف.`
+        );
+        continue;
+      }
+      const weight = cellNumber(row["الوزن %"]);
+      if (weight === undefined) {
+        warnings.push(`الأهداف الفرعية (صف ${row.__row}): «الوزن %» ليس رقمًا — تم تخطّي الصف.`);
+        continue;
+      }
+      const payload = {
+        title_ar: titleAr,
+        title_en: cellText(row["الهدف الفرعي (إنجليزي)"]) || null,
+        description_ar: cellText(row["الوصف (عربي)"]) || null,
+        description_en: cellText(row["الوصف (إنجليزي)"]) || null,
+        weight,
+      };
+      const { data: existingSub } = await supabase
+        .from("sub_goals")
+        .select("id")
+        .eq("strategic_goal_id", goal.id)
+        .eq("title_ar", titleAr)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (existingSub) {
+        const { data: saved, error } = await supabase.from("sub_goals").update(payload).eq("id", existingSub.id).select("id");
+        if (error) warnings.push(`الأهداف الفرعية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`الأهداف الفرعية (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.subGoalsUpdated += 1;
+        continue;
+      }
+      const owner = resolveUnique(positionIdsByName, ownerName);
+      if ("error" in owner) {
+        warnings.push(
+          `الأهداف الفرعية (صف ${row.__row}): ${
+            owner.error === "missing" ? `المنصب «${ownerName}» غير موجود` : `اسم المنصب «${ownerName}» مكرّر`
+          } — تم تخطّي الصف.`
+        );
+        continue;
+      }
+      const { error } = await supabase
+        .from("sub_goals")
+        .insert({ ...payload, strategic_goal_id: goal.id, owner_position_id: owner.id, created_by: myProfileId });
+      if (error) warnings.push(`الأهداف الفرعية (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+      else summary.subGoalsCreated += 1;
+    }
+  }
+
+  // ---------- 5) المؤشرات ----------
+  /** Resolves a KPI row's parent: sub-goal when named, else the goal. */
+  async function resolveKpiParent(
+    goalTitle: string,
+    subGoalTitle: string
+  ): Promise<{ strategic_goal_id: string | null; sub_goal_id: string | null } | { error: string }> {
+    const goal = resolveUnique(goalIdsByTitle, goalTitle);
+    if ("error" in goal) {
+      return {
+        error: goal.error === "missing" ? `الهدف الاستراتيجي «${goalTitle}» غير موجود في هذه الخطة` : `اسم الهدف «${goalTitle}» مكرّر`,
+      };
+    }
+    if (subGoalTitle === "") return { strategic_goal_id: goal.id, sub_goal_id: null };
+    const { data: sub } = await supabase
+      .from("sub_goals")
+      .select("id")
+      .eq("strategic_goal_id", goal.id)
+      .eq("title_ar", subGoalTitle)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!sub) return { error: `الهدف الفرعي «${subGoalTitle}» غير موجود تحت «${goalTitle}»` };
+    return { strategic_goal_id: null, sub_goal_id: sub.id as string };
+  }
+
+  const kpiRows = readSheet(STRATEGIC_PLAN_SHEETS.kpis, STRATEGIC_PLAN_COLUMNS.kpis);
+  if (kpiRows) {
+    touchedAnySheet = true;
+    for (const row of kpiRows) {
+      const titleAr = cellText(row["المؤشر (عربي)"]);
+      const unitAr = cellText(row["وحدة القياس"]);
+      if (titleAr === "" || unitAr === "") {
+        warnings.push(`المؤشرات (صف ${row.__row}): اسم المؤشر ووحدة القياس مطلوبان — تم تخطّي الصف.`);
+        continue;
+      }
+      const parent = await resolveKpiParent(cellText(row["الهدف الاستراتيجي"]), cellText(row["الهدف الفرعي"]));
+      if ("error" in parent) {
+        warnings.push(`المؤشرات (صف ${row.__row}): ${parent.error} — تم تخطّي الصف.`);
+        continue;
+      }
+      const planTarget = cellNumber(row["مستهدف الخطة"]);
+      const weight = cellNumber(row["الوزن %"]);
+      if (planTarget === undefined || weight === undefined) {
+        warnings.push(`المؤشرات (صف ${row.__row}): قيمة رقمية غير صالحة — تم تخطّي الصف.`);
+        continue;
+      }
+      const payload = {
+        title_ar: titleAr,
+        title_en: cellText(row["المؤشر (إنجليزي)"]) || null,
+        unit_ar: unitAr,
+        plan_target_value: planTarget,
+        weight,
+      };
+      const parentFilter = parent.strategic_goal_id
+        ? { column: "strategic_goal_id", value: parent.strategic_goal_id }
+        : { column: "sub_goal_id", value: parent.sub_goal_id! };
+      const { data: existingKpi } = await supabase
+        .from("strategic_kpis")
+        .select("id")
+        .eq(parentFilter.column, parentFilter.value)
+        .eq("title_ar", titleAr)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (existingKpi) {
+        const { data: saved, error } = await supabase.from("strategic_kpis").update(payload).eq("id", existingKpi.id).select("id");
+        if (error) warnings.push(`المؤشرات (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`المؤشرات (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.kpisUpdated += 1;
+        continue;
+      }
+      const { error } = await supabase.from("strategic_kpis").insert({ ...payload, ...parent, created_by: myProfileId });
+      if (error) warnings.push(`المؤشرات (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+      else summary.kpisCreated += 1;
+    }
+  }
+
+  // ---------- 6) المستهدفات السنوية ----------
+  const annualRows = readSheet(STRATEGIC_PLAN_SHEETS.annualTargets, STRATEGIC_PLAN_COLUMNS.annualTargets);
+  if (annualRows) {
+    touchedAnySheet = true;
+    for (const row of annualRows) {
+      const kpiTitle = cellText(row["المؤشر"]);
+      const cycleName = cellText(row["دورة التقييم"]);
+      if (kpiTitle === "") {
+        warnings.push(`المستهدفات السنوية (صف ${row.__row}): اسم المؤشر مطلوب — تم تخطّي الصف.`);
+        continue;
+      }
+      const parent = await resolveKpiParent(cellText(row["الهدف الاستراتيجي"]), cellText(row["الهدف الفرعي"]));
+      if ("error" in parent) {
+        warnings.push(`المستهدفات السنوية (صف ${row.__row}): ${parent.error} — تم تخطّي الصف.`);
+        continue;
+      }
+      const parentFilter = parent.strategic_goal_id
+        ? { column: "strategic_goal_id", value: parent.strategic_goal_id }
+        : { column: "sub_goal_id", value: parent.sub_goal_id! };
+      const { data: kpi } = await supabase
+        .from("strategic_kpis")
+        .select("id")
+        .eq(parentFilter.column, parentFilter.value)
+        .eq("title_ar", kpiTitle)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!kpi) {
+        warnings.push(`المستهدفات السنوية (صف ${row.__row}): المؤشر «${kpiTitle}» غير موجود — تم تخطّي الصف.`);
+        continue;
+      }
+      const cycle = resolveUnique(cycleIdsByName, cycleName);
+      if ("error" in cycle) {
+        warnings.push(
+          `المستهدفات السنوية (صف ${row.__row}): ${
+            cycle.error === "missing" ? `دورة التقييم «${cycleName}» غير موجودة` : `اسم دورة التقييم «${cycleName}» مكرّر`
+          } — تم تخطّي الصف.`
+        );
+        continue;
+      }
+      const targetValue = cellNumber(row["القيمة المستهدفة"]);
+      const actualValue = cellNumber(row["القيمة الفعلية"]);
+      if (targetValue === undefined || actualValue === undefined || targetValue === null) {
+        warnings.push(`المستهدفات السنوية (صف ${row.__row}): «القيمة المستهدفة» مطلوبة ورقمية — تم تخطّي الصف.`);
+        continue;
+      }
+      // kpi_annual_targets' uniqueness is a PARTIAL index
+      // (kpi_id, cycle_id) WHERE deleted_at IS NULL, which PostgREST's
+      // on_conflict inference can't target — same select-then-insert-or-update
+      // workaround this project already uses for evaluation_scores /
+      // calibration_results / org_structure_positions.
+      const { data: existingTarget } = await supabase
+        .from("kpi_annual_targets")
+        .select("id")
+        .eq("kpi_id", kpi.id)
+        .eq("cycle_id", cycle.id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (existingTarget) {
+        const { data: saved, error } = await supabase
+          .from("kpi_annual_targets")
+          .update({ target_value: targetValue, actual_value: actualValue })
+          .eq("id", existingTarget.id)
+          .select("id");
+        if (error) warnings.push(`المستهدفات السنوية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`المستهدفات السنوية (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.annualTargetsUpdated += 1;
+      } else {
+        const { error } = await supabase.from("kpi_annual_targets").insert({
+          kpi_id: kpi.id,
+          cycle_id: cycle.id,
+          target_value: targetValue,
+          actual_value: actualValue,
+          created_by: myProfileId,
+        });
+        if (error) warnings.push(`المستهدفات السنوية (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+        else summary.annualTargetsCreated += 1;
+      }
+    }
+  }
+
+  if (!touchedAnySheet) {
+    return { status: "error", message: "no_sheets" };
+  }
+
+  // Audit trail for a bulk write, same as every other import in this app.
+  // Fire-and-forget: a failed audit write must not fail an import that
+  // already happened.
+  try {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "strategic_plan_excel_imported",
+      entity: "strategic_plans",
+      entity_id: parsedId.data,
+      after_data: { ...summary, warningCount: warnings.length },
+    });
+  } catch {
+    // ignored on purpose
+  }
+
+  revalidatePath("/[locale]/kpis/plans/[id]", "page");
+  return { status: "success", summary, warnings };
+}
