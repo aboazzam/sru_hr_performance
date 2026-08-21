@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState, startTransition, type FormEvent, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
-import { AlertCircle, CheckCircle2, Link2, Pencil, X } from "lucide-react";
+import { Link, useRouter } from "@/i18n/navigation";
+import { AlertCircle, CheckCircle2, Eye, Link2, Pencil, Trash2 } from "lucide-react";
 import {
   addInitiativeDependency,
   removeInitiativeDependency,
@@ -13,7 +13,8 @@ import {
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { missingInitiativeFields, type InitiativeFieldKey } from "@/lib/initiativeCompleteness";
 import { AddFormDialog } from "@/components/AddFormDialog";
-import { InitiativeAssignmentsEditor, type AssignmentView } from "@/components/InitiativeAssignmentsEditor";
+import { type AssignmentView } from "@/components/InitiativeAssignmentsEditor";
+import { InitiativeAssignmentsSection } from "@/components/InitiativeAssignmentsSection";
 
 export interface InitiativeCardFormValues {
   code: string;
@@ -88,7 +89,7 @@ export function InitiativeCardEditor({
   statusOptions: Array<{ code: string; label: string }>;
   perspectiveOptions: Array<{ code: string; label: string }>;
   /** Already-recorded dependencies, newest last. */
-  dependencies: Array<{ id: string; label: string }>;
+  dependencies: Array<{ id: string; label: string; initiativeId?: string }>;
   /** Other initiatives in the same plan, offered as new dependencies. */
   dependencyOptions: Array<{ id: string; label: string }>;
   /** Owning / participating / supporting departments, from the assignment slice. */
@@ -435,7 +436,7 @@ export function InitiativeCardEditor({
           openOnMount={openOnMount}
         >
           {cardForm}
-          <InitiativeAssignmentsEditor
+          <InitiativeAssignmentsSection
             initiativeId={initiativeId}
             assignments={assignments}
             orgUnits={orgUnitOptions}
@@ -463,15 +464,17 @@ function InitiativeDependenciesEditor({
   options,
 }: {
   initiativeId: string;
-  dependencies: Array<{ id: string; label: string }>;
+  dependencies: Array<{ id: string; label: string; initiativeId?: string }>;
   options: Array<{ id: string; label: string }>;
 }) {
   const t = useTranslations("InitiativePage");
   const router = useRouter();
+  const addDialogRef = useRef<HTMLDialogElement>(null);
   const [addState, addAction, adding] = useActionState<InitiativeCardState, FormData>(addInitiativeDependency, null);
   const [removeState, removeAction] = useActionState<InitiativeCardState, FormData>(removeInitiativeDependency, null);
 
   useEffect(() => {
+    if (addState?.status === "success") addDialogRef.current?.close();
     if (addState?.status === "success" || removeState?.status === "success") router.refresh();
   }, [addState, removeState, router]);
 
@@ -484,53 +487,79 @@ function InitiativeDependenciesEditor({
         <span className="sru-formsection-badge">
           <Link2 size={17} aria-hidden />
         </span>
-        <div>
+        <div style={{ flex: 1 }}>
           <h3>{t("dependenciesEditLabel")}</h3>
         </div>
+        {/* The add form is behind this button, on the heading's own row —
+            the same shape the activities list uses (2026-08-21). */}
+        {available.length > 0 && (
+          <AddFormDialog
+            dialogRef={addDialogRef}
+            triggerLabel={t("dependencyAdd")}
+            heading={t("dependencyAdd")}
+            closeLabel={t("closeButton")}
+          >
+            <form action={(formData) => startTransition(() => addAction(formData))}>
+              <div className="sru-field">
+                <label>{t("dependenciesEditLabel")}</label>
+                <select name="dependsOnInitiativeId" required defaultValue="">
+                  <option value="">{t("dependencyPlaceholder")}</option>
+                  {available.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <input type="hidden" name="initiativeId" value={initiativeId} />
+              <div className="sru-form-submitrow">
+                <button type="submit" className="sru-btn sru-btn-primary" disabled={adding}>
+                  {t("dependencyAdd")}
+                </button>
+              </div>
+            </form>
+          </AddFormDialog>
+        )}
       </div>
 
       {dependencies.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("dependencyNone")}</p>
       ) : (
-        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
           {dependencies.map((d) => (
-            <li key={d.id} className="pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              {d.label}
-              <form action={(formData) => startTransition(() => removeAction(formData))} style={{ display: "inline" }}>
-                <input type="hidden" name="dependencyId" value={d.id} />
-                <button
-                  type="submit"
-                  className="sru-icon-action"
-                  title={t("dependencyRemove")}
-                  aria-label={t("dependencyRemove")}
-                  style={{ padding: 2 }}
-                >
-                  <X size={12} aria-hidden />
-                </button>
-              </form>
+            <li
+              key={d.id}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: 13 }}
+            >
+              <span>{d.label}</span>
+              {/* View opens that initiative; there is nothing to "edit" on a
+                  link between two initiatives, so it is view + remove. */}
+              <span className="sru-initiative-card-actions">
+                {d.initiativeId && (
+                  <Link
+                    href={`/initiatives/${d.initiativeId}`}
+                    className="sru-icon-action"
+                    title={t("dependencyView")}
+                    aria-label={t("dependencyView")}
+                  >
+                    <Eye size={15} aria-hidden />
+                  </Link>
+                )}
+                <form action={(formData) => startTransition(() => removeAction(formData))}>
+                  <input type="hidden" name="dependencyId" value={d.id} />
+                  <button
+                    type="submit"
+                    className="sru-icon-action"
+                    title={t("dependencyRemove")}
+                    aria-label={t("dependencyRemove")}
+                  >
+                    <Trash2 size={15} aria-hidden />
+                  </button>
+                </form>
+              </span>
             </li>
           ))}
         </ul>
-      )}
-
-      {available.length > 0 && (
-        <form
-          action={(formData) => startTransition(() => addAction(formData))}
-          style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}
-        >
-          <input type="hidden" name="initiativeId" value={initiativeId} />
-          <select name="dependsOnInitiativeId" required defaultValue="" style={{ maxWidth: 420, flex: 1 }}>
-            <option value="">{t("dependencyPlaceholder")}</option>
-            {available.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="sru-btn" disabled={adding}>
-            {t("dependencyAdd")}
-          </button>
-        </form>
       )}
 
       {(addState?.status === "error" || removeState?.status === "error") && (

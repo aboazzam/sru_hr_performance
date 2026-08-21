@@ -2393,7 +2393,8 @@
     "errorNotHundred": "The responsible and participating shares must total exactly 100%.",
     "errorNoLead": "Exactly one primarily-responsible unit is required.",
     "errorDuplicateUnit": "The same unit cannot appear twice in one assignment.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "errorMissingPercentage": "Give every lead or participating department a share."
   },
   "ProgramInitiativesTab": {
     "intro": "The initiatives filed under this program. Create a new one with its full card, or attach existing initiatives — even from different goals, since a program groups whatever serves it together.",
@@ -2527,7 +2528,9 @@
     "viewActivity": "View activity",
     "editActivity": "Edit activity",
     "saveActivity": "Save activity",
-    "deleteActivityConfirm": "This activity will be deleted. Continue?"
+    "deleteActivityConfirm": "This activity will be deleted. Continue?",
+    "dependencyView": "Open the initiative",
+    "assignmentsNone": "No departments assigned yet."
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",
