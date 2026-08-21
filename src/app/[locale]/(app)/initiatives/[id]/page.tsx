@@ -297,7 +297,12 @@ export default async function InitiativePage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <div className="no-print" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+      {/* Same action bar as the plan screens, so the buttons here read the
+          same way rather than each page inventing its own. */}
+      <div
+        className="sru-actionbar no-print"
+        style={{ justifyContent: "space-between", gap: 12, marginBottom: 16 }}
+      >
         <Link
           href={`/kpis/plans/${initiative.plan_id}`}
           className="sru-btn"
@@ -508,6 +513,12 @@ export default async function InitiativePage({
           perspectiveOptions={perspectives}
           dependencies={dependencies.map((d) => ({ id: d.id, label: d.code ? d.code + " — " + d.title : d.title }))}
           dependencyOptions={siblingOptions}
+          assignments={assignments.map((a) => ({
+            orgUnitId: a.org_unit_id,
+            orgUnitName: orgUnitNameById.get(a.org_unit_id) ?? "—",
+            role: a.role as "lead" | "participant" | "supporter",
+            percentage: a.percentage,
+          }))}
           openOnMount={edit === "1"}
         />
       )}
