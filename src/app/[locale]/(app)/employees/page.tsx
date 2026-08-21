@@ -185,7 +185,10 @@ export default async function EmployeesPage({
     return (
       <tr key={employee.id}>
         <td>{employee.employee_number}</td>
-        <td>{employee.full_name_ar}</td>
+        <td>
+          {employee.full_name_ar}
+          {employee.full_name_en && <span className="sru-name-en">{employee.full_name_en}</span>}
+        </td>
         <td>{employee.org_units?.name_ar ?? "—"}</td>
         <td>{roleLabel(employee)}</td>
         <td>{t(statusMessageKeys[employee.status as keyof typeof statusMessageKeys])}</td>
@@ -270,7 +273,10 @@ export default async function EmployeesPage({
                 {myPendingOrRejected.map((employee) => (
                   <tr key={employee.id}>
                     <td>{employee.employee_number}</td>
-                    <td>{employee.full_name_ar}</td>
+                    <td>
+                      {employee.full_name_ar}
+                      {employee.full_name_en && <span className="sru-name-en">{employee.full_name_en}</span>}
+                    </td>
                     <td>{employee.org_units?.name_ar ?? "—"}</td>
                     <td>{t(employee.approval_status === "pending" ? "approvalStatusPending" : "approvalStatusRejected")}</td>
                   </tr>
@@ -298,7 +304,10 @@ export default async function EmployeesPage({
                 {pendingEmployees.map((employee) => (
                   <tr key={employee.id}>
                     <td>{employee.employee_number}</td>
-                    <td>{employee.full_name_ar}</td>
+                    <td>
+                      {employee.full_name_ar}
+                      {employee.full_name_en && <span className="sru-name-en">{employee.full_name_en}</span>}
+                    </td>
                     <td>{employee.org_units?.name_ar ?? "—"}</td>
                     <td className="no-print">
                       <EmployeeApprovalActions profileId={employee.id} />

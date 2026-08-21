@@ -114,6 +114,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
           <h1 className="sru-title" style={{ fontSize: 24 }}>
             {employee.full_name_ar}
           </h1>
+          {employee.full_name_en && <p className="sru-name-en is-lg">{employee.full_name_en}</p>}
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{employee.employee_number}</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

@@ -45,7 +45,7 @@ export default async function CareerPathJobTitlesPage() {
   const { data: jobTitlesData } = await supabase
     .from("job_titles")
     .select(
-      "id, name_ar, grade_level, description_ar, career_content_status, job_families(name_ar), job_title_competencies(id)"
+      "id, name_ar, name_en, grade_level, description_ar, career_content_status, job_families(name_ar), job_title_competencies(id)"
     )
     .is("deleted_at", null)
     .is("job_title_competencies.deleted_at", null)
@@ -55,6 +55,7 @@ export default async function CareerPathJobTitlesPage() {
   type Row = {
     id: string;
     name_ar: string;
+    name_en: string | null;
     grade_level: number;
     description_ar: string | null;
     career_content_status: "draft" | "approved";

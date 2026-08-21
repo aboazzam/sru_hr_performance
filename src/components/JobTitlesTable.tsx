@@ -9,6 +9,7 @@ import { includesIgnoringHamza } from "@/lib/arabicSearch";
 interface JobTitleRow {
   id: string;
   name_ar: string;
+  name_en: string | null;
   grade_level: number;
   description_ar: string | null;
   career_content_status: "draft" | "approved";
@@ -33,7 +34,12 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
     const q = query.trim();
     if (!q) return rows;
     return rows.filter(
-      (r) => includesIgnoringHamza(r.name_ar, q) || (r.job_families ? includesIgnoringHamza(r.job_families.name_ar, q) : false)
+      (r) =>
+        includesIgnoringHamza(r.name_ar, q) ||
+        // Searchable in English too, now that the Latin name is on screen:
+        // typing it and matching nothing would read as a broken search.
+        (r.name_en ? r.name_en.toLowerCase().includes(q.toLowerCase()) : false) ||
+        (r.job_families ? includesIgnoringHamza(r.job_families.name_ar, q) : false)
     );
   }, [rows, query]);
 
@@ -91,6 +97,7 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
                       <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
                         {t("gradeLabel", { grade: r.grade_level })}
                       </span>
+                      {r.name_en && <span className="sru-name-en">{r.name_en}</span>}
                     </td>
                     <td>{r.job_families?.name_ar ?? "—"}</td>
                     <td>{r.description_ar ? t("hasDescription") : t("noDescription")}</td>
