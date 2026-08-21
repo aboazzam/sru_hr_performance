@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { PrintButton } from "@/components/PrintButton";
-import { InitiativeActivitiesEditor, type ActivityView } from "@/components/InitiativeActivitiesEditor";
+import { type ActivityView } from "@/components/InitiativeActivitiesEditor";
+import { InitiativeActivityAdd, InitiativeActivityRowActions } from "@/components/InitiativeActivityActions";
 import { InitiativeCardEditor } from "@/components/InitiativeCardEditor";
 import { coversMonth, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
 import { formatDateDmy, todayInTimezone } from "@/lib/dateParts";
@@ -419,7 +420,14 @@ export default async function InitiativePage({
 
         {/* ---- month strip: أبرز الأنشطة × الأشهر ---- */}
         <div className="sru-initiative-timeline">
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{t("activitiesHeading")}</h2>
+          <div
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}
+          >
+            <h2 style={{ fontSize: 15, fontWeight: 700 }}>{t("activitiesHeading")}</h2>
+            {canEditActivities && (
+              <InitiativeActivityAdd initiativeId={initiative.id} employeeOptions={employeeOptions} />
+            )}
+          </div>
           {activities.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noActivities")}</p>
           ) : (
@@ -433,6 +441,7 @@ export default async function InitiativePage({
                     <th rowSpan={2} style={{ minWidth: 120 }}>
                       {t("responsibleColumn")}
                     </th>
+                    {canEditActivities && <th rowSpan={2} className="no-print" />}
                     {yearGroups.map((group) => (
                       <th key={group.year} colSpan={group.months.length} style={{ textAlign: "center" }}>
                         {group.year}
@@ -452,6 +461,15 @@ export default async function InitiativePage({
                     <tr key={activity.id}>
                       <td>{activity.titleAr}</td>
                       <td>{activity.responsibleLabel}</td>
+                      {canEditActivities && (
+                        <td className="no-print">
+                          <InitiativeActivityRowActions
+                            initiativeId={initiative.id}
+                            activity={activity}
+                            employeeOptions={employeeOptions}
+                          />
+                        </td>
+                      )}
                       {months.map((month) => (
                         <td
                           key={month.key}
@@ -523,9 +541,7 @@ export default async function InitiativePage({
         />
       )}
 
-      {canEditActivities && (
-        <InitiativeActivitiesEditor initiativeId={initiative.id} activities={activities} employeeOptions={employeeOptions} />
-      )}
+
     </div>
   );
 }
