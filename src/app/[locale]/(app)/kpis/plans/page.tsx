@@ -81,7 +81,7 @@ export default async function StrategicPlansPage() {
                         {plan.name_ar}
                       </Link>
                       {plan.name_en && (
-                        <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
+                        <span className="sru-name-en">
                           {plan.name_en}
                         </span>
                       )}

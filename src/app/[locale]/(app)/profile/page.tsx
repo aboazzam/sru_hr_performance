@@ -206,7 +206,7 @@ export default async function MyProfilePage() {
                 <div style={{ minWidth: 0 }}>
                   <h2 className="sru-profile-name">{p.full_name_ar}</h2>
                   {p.full_name_en && (
-                    <p dir="ltr" className="sru-profile-name-en">
+                    <p className="sru-name-en">
                       {p.full_name_en}
                     </p>
                   )}

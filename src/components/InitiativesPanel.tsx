@@ -420,7 +420,7 @@ function InitiativeCard({
             </Link>
           </h4>
           {initiative.titleEn && (
-            <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
+            <span className="sru-name-en">
               {initiative.titleEn}
             </span>
           )}

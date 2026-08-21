@@ -129,7 +129,7 @@ export function OrgStructurePositionMiniRow({
         <span style={{ color: "var(--sru-muted)", fontSize: 11.5, minWidth: 80 }}>{parentLabel}</span>
         <strong style={{ fontSize: 13 }}>{initialNameAr}</strong>
         {initialNameEn && (
-          <span dir="ltr" style={{ fontSize: 12, color: "var(--sru-muted)" }}>
+          <span className="sru-name-en">
             {initialNameEn}
           </span>
         )}
