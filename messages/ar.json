@@ -2530,7 +2530,9 @@
     "deleteActivityConfirm": "سيُحذف هذا النشاط. هل تريد المتابعة؟",
     "dependencyView": "فتح المبادرة",
     "assignmentsNone": "لا توجد جهات مسندة بعد.",
-    "backToInitiatives": "العودة إلى المبادرات"
+    "backToInitiatives": "العودة إلى المبادرات",
+    "deleteInitiative": "حذف المبادرة",
+    "deleteInitiativeConfirm": "سيُحذف هذه المبادرة. هل تريد المتابعة؟"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",

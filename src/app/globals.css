@@ -1877,3 +1877,9 @@ tr.sru-row-link:focus-within > td {
     border-inline-start: 2px solid #501e8c;
   }
 }
+
+/* The perspectives strip keeps its chips on the reading side and pushes the
+   edit/delete pair to the far end, on the same line. */
+.sru-initiative-perspectives {
+  align-items: center;
+}

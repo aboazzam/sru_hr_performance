@@ -425,7 +425,7 @@ export function InitiativeCardEditor({
           behind the pencil beside the card (2026-08-20 request); the page
           still shows what is missing on its own, so the signal does not
           disappear with the form. */}
-      <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+      <span className="no-print">
         <AddFormDialog
           dialogRef={dialogRef}
           triggerLabel={t("cardEditHeading")}
@@ -447,7 +447,7 @@ export function InitiativeCardEditor({
             options={dependencyOptions}
           />
         </AddFormDialog>
-      </div>
+      </span>
     </>
   );
 }
