@@ -1410,6 +1410,16 @@ tr.sru-row-link:focus-within > td {
   align-items: center;
   gap: 5px;
   line-height: 1.7;
+  /* Every button in the bar wears the primary shape, not just the first one
+     (2026-08-21: "اجعلها كلها بنفس نمط اضافة هدف استراتيجي") — the export and
+     import tools used to read as bare text beside a filled button. */
+  background: var(--sru-purple);
+  color: #fff;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.sru-actionbar .sru-btn:hover:not(:disabled) {
+  background: var(--sru-purple-dark);
 }
 .sru-actionbar .sru-btn svg {
   width: 13px;
@@ -1573,6 +1583,14 @@ tr.sru-row-link:focus-within > td {
   font-size: 14px;
   padding: 9px 18px;
   line-height: normal;
+  background: #fff;
+  color: var(--sru-purple);
+  border: 1px solid var(--sru-purple);
+}
+.sru-actionbar dialog .sru-btn-primary {
+  background: var(--sru-purple);
+  color: #fff;
+  border-color: transparent;
 }
 .sru-actionbar dialog .sru-btn svg {
   width: auto;
@@ -1786,4 +1804,13 @@ tr.sru-row-link:focus-within > td {
   margin-top: 16px;
   font-size: 13px;
   line-height: 1.8;
+}
+
+/* The print button comes from the kit (`sru-print.css`, its own 14px), so in
+   an action bar it would stand a size apart from its neighbours. Matched here
+   additively — the kit file itself is never edited (CLAUDE.md §7). */
+.sru-actionbar .sru-print-btn {
+  font-size: calc(14px * 0.6);
+  padding: 6px 12px;
+  line-height: 1.7;
 }

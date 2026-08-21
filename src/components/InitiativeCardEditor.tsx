@@ -13,6 +13,7 @@ import {
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { missingInitiativeFields, type InitiativeFieldKey } from "@/lib/initiativeCompleteness";
 import { AddFormDialog } from "@/components/AddFormDialog";
+import { InitiativeAssignmentsEditor, type AssignmentView } from "@/components/InitiativeAssignmentsEditor";
 
 export interface InitiativeCardFormValues {
   code: string;
@@ -77,6 +78,7 @@ export function InitiativeCardEditor({
   perspectiveOptions,
   dependencies,
   dependencyOptions,
+  assignments,
   openOnMount = false,
 }: {
   initiativeId: string;
@@ -89,6 +91,8 @@ export function InitiativeCardEditor({
   dependencies: Array<{ id: string; label: string }>;
   /** Other initiatives in the same plan, offered as new dependencies. */
   dependencyOptions: Array<{ id: string; label: string }>;
+  /** Owning / participating / supporting departments, from the assignment slice. */
+  assignments: AssignmentView[];
   /** Open the editor immediately — the row pencil links with ?edit=1. */
   openOnMount?: boolean;
 }) {
@@ -431,13 +435,18 @@ export function InitiativeCardEditor({
           openOnMount={openOnMount}
         >
           {cardForm}
+          <InitiativeAssignmentsEditor
+            initiativeId={initiativeId}
+            assignments={assignments}
+            orgUnits={orgUnitOptions}
+          />
+          <InitiativeDependenciesEditor
+            initiativeId={initiativeId}
+            dependencies={dependencies}
+            options={dependencyOptions}
+          />
         </AddFormDialog>
       </div>
-      <InitiativeDependenciesEditor
-        initiativeId={initiativeId}
-        dependencies={dependencies}
-        options={dependencyOptions}
-      />
     </>
   );
 }
