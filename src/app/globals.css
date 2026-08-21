@@ -563,6 +563,13 @@ dialog.sru-modal::backdrop {
   box-shadow: 0 4px 10px rgba(80, 30, 140, 0.14);
   white-space: normal;
 }
+.sru-orgchart-node-nameen {
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: 0.9;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
 .sru-orgchart-node-jobtitle {
   display: flex;
   align-items: center;
