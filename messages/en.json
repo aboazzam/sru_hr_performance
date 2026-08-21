@@ -986,7 +986,13 @@
     "kpisEmpty": "No KPIs for this goal yet.",
     "columnKpi": "KPI",
     "columnPlanTarget": "Plan Target",
-    "manageKpisButton": "Manage KPIs"
+    "manageKpisButton": "Manage KPIs",
+    "filterGoal": "Strategic goal",
+    "filterOwner": "Owning position",
+    "filterAll": "All",
+    "filterReset": "Clear filters",
+    "filterEmpty": "No goals match the filters.",
+    "filterCount": "{shown} of {total}"
   },
   "NewStrategicGoalPage": {
     "title": "Add Strategic Goal",

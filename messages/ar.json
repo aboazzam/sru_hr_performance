@@ -986,7 +986,13 @@
     "kpisEmpty": "لا توجد مؤشرات لهذا الهدف بعد.",
     "columnKpi": "المؤشر",
     "columnPlanTarget": "مستهدف الخطة",
-    "manageKpisButton": "إدارة المؤشرات"
+    "manageKpisButton": "إدارة المؤشرات",
+    "filterGoal": "الهدف الاستراتيجي",
+    "filterOwner": "الجهة المالكة",
+    "filterAll": "الكل",
+    "filterReset": "إزالة الفلاتر",
+    "filterEmpty": "لا توجد أهداف مطابقة للفلاتر.",
+    "filterCount": "{shown} من {total}"
   },
   "NewStrategicGoalPage": {
     "title": "إضافة هدف استراتيجي",
