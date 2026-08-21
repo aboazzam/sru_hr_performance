@@ -305,12 +305,15 @@ export default async function InitiativePage({
         style={{ justifyContent: "space-between", gap: 12, marginBottom: 16 }}
       >
         <Link
-          href={`/kpis/plans/${initiative.plan_id}`}
+          /* The initiatives tab is where this page is opened from, and
+             ProfileTabs reads its active tab from the hash — so the reader
+             lands back on the list, not on the plan's first tab. */
+          href={`/kpis/plans/${initiative.plan_id}#initiatives`}
           className="sru-btn"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}
         >
           <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
-          {t("backToPlan")}
+          {t("backToInitiatives")}
         </Link>
         <PrintButton />
       </div>

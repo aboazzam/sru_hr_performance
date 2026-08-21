@@ -2459,7 +2459,6 @@
   },
   "InitiativePage": {
     "errorNotFound": "This initiative was not found, or you do not have access to it.",
-    "backToPlan": "Back to the plan",
     "codeLabel": "Code",
     "statusLabel": "Status",
     "definitionLabel": "Definition",
@@ -2530,7 +2529,8 @@
     "saveActivity": "Save activity",
     "deleteActivityConfirm": "This activity will be deleted. Continue?",
     "dependencyView": "Open the initiative",
-    "assignmentsNone": "No departments assigned yet."
+    "assignmentsNone": "No departments assigned yet.",
+    "backToInitiatives": "Back to initiatives"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",
