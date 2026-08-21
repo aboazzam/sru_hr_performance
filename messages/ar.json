@@ -1160,7 +1160,7 @@
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",
-    "subtitle": "بياناتك، أهدافك، ومسارك الوظيفي — للاطلاع فقط حاليًا.",
+    "subtitle": "بياناتك، أهدافك، ومسارك الوظيفي — والشهادات تحدّثها بنفسك.",
     "noProfile": "تعذّر العثور على ملفك الشخصي.",
     "infoTitle": "معلوماتي",
     "employeeNumberLabel": "الرقم الوظيفي",
@@ -1218,7 +1218,15 @@
     "jobGroup": "الوظيفة",
     "qualificationsGroup": "المؤهلات",
     "mobileLabel": "الجوال",
-    "specialityLabel": "التخصص"
+    "specialityLabel": "التخصص",
+    "certificatesEdit": "تعديل الشهادات",
+    "certificatesHint": "شهادة في كل سطر",
+    "certificatesSave": "حفظ الشهادات",
+    "certificatesSaving": "جارٍ الحفظ...",
+    "certificatesErrorInvalid": "النص طويل جدًا أو غير صالح.",
+    "certificatesErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
+    "certificatesErrorUnknown": "تعذّر الحفظ الآن.",
+    "closeButton": "إغلاق"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",

@@ -1160,7 +1160,7 @@
   },
   "MyProfilePage": {
     "title": "My Profile",
-    "subtitle": "Your data, goals, and career path — view-only for now.",
+    "subtitle": "Your data, goals and career path — certificates are yours to update.",
     "noProfile": "Your profile could not be found.",
     "infoTitle": "My Info",
     "employeeNumberLabel": "Employee Number",
@@ -1218,7 +1218,15 @@
     "jobGroup": "Position",
     "qualificationsGroup": "Qualifications",
     "mobileLabel": "Mobile",
-    "specialityLabel": "Speciality"
+    "specialityLabel": "Speciality",
+    "certificatesEdit": "Edit certificates",
+    "certificatesHint": "One certificate per line",
+    "certificatesSave": "Save certificates",
+    "certificatesSaving": "Saving...",
+    "certificatesErrorInvalid": "The text is too long or invalid.",
+    "certificatesErrorUnauthenticated": "You must sign in first.",
+    "certificatesErrorUnknown": "Could not save right now.",
+    "closeButton": "Close"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
