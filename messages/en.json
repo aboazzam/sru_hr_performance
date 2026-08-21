@@ -683,7 +683,9 @@
     "sectionJobTitle": "Employment Details",
     "sectionJobSubtitle": "Org unit, job title, and academic details",
     "sectionRoleTitle": "Role & Permissions",
-    "sectionRoleSubtitle": "Determines what they can see and do"
+    "sectionRoleSubtitle": "Determines what they can see and do",
+    "certificatesLabel": "Certificates",
+    "certificatesPlaceholder": "One certificate per line"
   },
   "EmployeeDetailPage": {
     "notFound": "This employee could not be found.",
@@ -782,7 +784,9 @@
     "errorInvalidInput": "Check the required fields.",
     "errorUnauthenticated": "You must be logged in first.",
     "errorDuplicate": "That email is already in use by another employee.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "certificatesLabel": "Certificates",
+    "certificatesPlaceholder": "One certificate per line"
   },
   "AssignSupervisorPage": {
     "title": "Manage Direct Supervisors",

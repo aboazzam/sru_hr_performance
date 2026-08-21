@@ -38,6 +38,7 @@ interface ProfileData {
   job_title_id: string | null;
   hire_date: string | null;
   qualification: string | null;
+  certificates: string | null;
   education_speciality: string | null;
   date_of_birth: string | null;
   mobile: string | null;
@@ -239,6 +240,11 @@ export function EditEmployeeForm({
           <div className="sru-field">
             <label>{t("qualificationLabel")}</label>
             <input type="text" name="qualification" defaultValue={profile.qualification ?? ""} />
+          </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            {/* One per line — the column stores them exactly that way. */}
+            <label>{t("certificatesLabel")}</label>
+            <textarea name="certificates" rows={2} dir="rtl" defaultValue={profile.certificates ?? ""} />
           </div>
           <div className="sru-field">
             <label>{t("educationSpecialityLabel")}</label>

@@ -30,7 +30,7 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, employee_number, full_name_ar, full_name_en, email, username, auth_user_id, status, org_unit_id, job_title_id, hire_date, qualification, education_speciality, date_of_birth, mobile, marital_status, gender, nationality, employee_category, insurance_category"
+      "id, employee_number, full_name_ar, full_name_en, email, username, auth_user_id, status, org_unit_id, job_title_id, hire_date, qualification, certificates, education_speciality, date_of_birth, mobile, marital_status, gender, nationality, employee_category, insurance_category"
     )
     .eq("id", id)
     .is("deleted_at", null)

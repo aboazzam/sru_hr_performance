@@ -20,6 +20,7 @@ const editSchema = z.object({
     .optional(),
   status: z.enum(["active", "on_leave", "terminated"]),
   qualification: z.string().trim().optional(),
+  certificates: z.string().trim().optional(),
   educationSpeciality: z.string().trim().optional(),
   dateOfBirth: z
     .string()
@@ -62,6 +63,7 @@ export async function updateEmployee(_prevState: EditEmployeeState, formData: Fo
     hireDate: formData.get("hireDate") || undefined,
     status: formData.get("status"),
     qualification: formData.get("qualification") || undefined,
+    certificates: formData.get("certificates") || undefined,
     educationSpeciality: formData.get("educationSpeciality") || undefined,
     dateOfBirth: formData.get("dateOfBirth") || undefined,
     mobile: formData.get("mobile") || undefined,
@@ -101,6 +103,7 @@ export async function updateEmployee(_prevState: EditEmployeeState, formData: Fo
         hire_date: fields.hireDate ?? null,
         status: fields.status,
         qualification: fields.qualification ?? null,
+        certificates: fields.certificates ?? null,
         education_speciality: fields.educationSpeciality ?? null,
         date_of_birth: fields.dateOfBirth ?? null,
         mobile: fields.mobile ?? null,
