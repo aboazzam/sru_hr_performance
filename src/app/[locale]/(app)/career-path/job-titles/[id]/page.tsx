@@ -201,6 +201,7 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
               {jt.career_content_status === "approved" ? t("statusApproved") : t("statusDraft")}
             </span>
           </h1>
+          {jt.name_en && <p className="sru-name-en is-lg">{jt.name_en}</p>}
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
             {jt.job_families?.name_ar ?? "—"}
             {jt.qualification_required ? ` · ${jt.qualification_required.replace(/\n/g, "، ")}` : ""}
