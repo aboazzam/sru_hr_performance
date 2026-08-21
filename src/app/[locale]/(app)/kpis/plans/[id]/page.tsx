@@ -16,6 +16,7 @@ import {
 } from "@/components/InitiativesPanel";
 import { ProgramsPanel, type ProgramSummary } from "@/components/ProgramsPanel";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
+import { StrategicGoalsFilterBar } from "@/components/StrategicGoalsFilterBar";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 interface StrategicGoalRow {
@@ -281,6 +282,16 @@ export default async function StrategicPlanDetailPage({
     </div>
   );
 
+  // Owning positions offered by the goals filter — built from the sub-goals
+  // on screen, so a position with nothing here is never offered.
+  const goalOwnerFilterOptions = Array.from(
+    new Map(
+      subGoals
+        .filter((sg) => positionNameById.get(sg.owner_position_id))
+        .map((sg) => [sg.owner_position_id, { id: sg.owner_position_id, label: positionNameById.get(sg.owner_position_id) as string }])
+    ).values()
+  ).sort((a, b) => a.label.localeCompare(b.label, "ar"));
+
   const goalsContent = (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
@@ -297,7 +308,13 @@ export default async function StrategicPlanDetailPage({
       {goals.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{tGoals("empty")}</p>
       ) : (
-        goals.map((goal) => {
+        <StrategicGoalsFilterBar
+          ownerOptions={goalOwnerFilterOptions}
+          goals={goals.map((goal) => ({
+            id: goal.id,
+            title: goal.title_ar,
+            ownerPositionIds: (subGoalsByStrategicGoal.get(goal.id) ?? []).map((sg) => sg.owner_position_id),
+            content: (() => {
           const goalSubGoals = subGoalsByStrategicGoal.get(goal.id) ?? [];
           return (
             <div key={goal.id} className="sru-card" style={{ marginBottom: 24, padding: 16 }}>
@@ -390,8 +407,10 @@ export default async function StrategicPlanDetailPage({
                 </div>
               )}
             </div>
-          );
-        })
+              );
+            })(),
+          }))}
+        />
       )}
     </div>
   );
