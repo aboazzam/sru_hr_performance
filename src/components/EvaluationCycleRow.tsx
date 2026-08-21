@@ -111,7 +111,7 @@ export function EvaluationCycleRow({
           <>
             {cycle.nameAr}
             {cycle.nameEn && (
-              <div className="sru-en" style={{ color: "var(--sru-muted)", fontSize: 12 }}>
+              <div className="sru-name-en">
                 {cycle.nameEn}
               </div>
             )}

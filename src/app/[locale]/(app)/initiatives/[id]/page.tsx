@@ -372,7 +372,7 @@ export default async function InitiativePage({
               {initiative.title_ar}
             </h1>
             {initiative.title_en && (
-              <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
+              <p className="sru-name-en is-lg">
                 {initiative.title_en}
               </p>
             )}

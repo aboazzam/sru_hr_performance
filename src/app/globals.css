@@ -1920,11 +1920,6 @@ tr.sru-row-link:focus-within > td {
   font-weight: 700;
   margin: 0;
 }
-.sru-profile-name-en {
-  color: var(--sru-muted);
-  font-size: 13px;
-  margin: 2px 0 0;
-}
 .sru-profile-badges {
   display: flex;
   flex-wrap: wrap;
@@ -1968,4 +1963,32 @@ tr.sru-row-link:focus-within > td {
   font-weight: 400;
   color: var(--sru-muted);
   font-style: italic;
+}
+
+/* ---- the Latin name under an Arabic one ------------------------------- */
+/* Every screen that shows a name twice (Arabic then English) used its own
+   inline style: 12-13px, and `dir="ltr"`, which pushes the Latin line to the
+   opposite edge so the two no longer read as one stacked pair.
+   One class instead (2026-08-21 request):
+   - a size proportionate to the Arabic above it, not a footnote;
+   - `direction: ltr` + `unicode-bidi: isolate` so punctuation and digits in a
+     Latin name still render correctly inside an RTL page;
+   - `text-align: end` so in an RTL page the line shares the Arabic's own
+     starting edge — and the mirror in an LTR page, so it is right in both. */
+.sru-name-en {
+  display: block;
+  color: var(--sru-muted);
+  font-size: 15px;
+  line-height: 1.5;
+  margin-top: 2px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end;
+}
+[dir="ltr"] .sru-name-en {
+  text-align: start;
+}
+/* Beside a page title (22-24px), not a row title. */
+.sru-name-en.is-lg {
+  font-size: 17px;
 }

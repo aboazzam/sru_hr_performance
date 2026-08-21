@@ -87,7 +87,7 @@ export function StrategicValueRow({
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--sru-border)" }}>
         <strong style={{ fontSize: 14 }}>{initialTitleAr}</strong>
         {initialTitleEn && (
-          <span dir="ltr" style={{ fontSize: 12, color: "var(--sru-muted)" }}>
+          <span className="sru-name-en">
             {initialTitleEn}
           </span>
         )}

@@ -322,17 +322,16 @@ export default async function ProgramDetailPage({
         {t("backToPlan")}
       </Link>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <Boxes size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
-          {program.name_ar}
-        </h1>
+      {/* Icon beside the stack, so the two names share a starting edge. */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
+        <Boxes size={20} aria-hidden style={{ color: "var(--sru-purple)", marginTop: 6, flex: "0 0 auto" }} />
+        <div style={{ minWidth: 0 }}>
+          <h1 className="sru-title" style={{ fontSize: 24 }}>
+            {program.name_ar}
+          </h1>
+          {program.name_en && <p className="sru-name-en is-lg">{program.name_en}</p>}
+        </div>
       </div>
-      {program.name_en && (
-        <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
-          {program.name_en}
-        </p>
-      )}
       {program.description_ar && <p style={{ fontSize: 13, marginTop: 6, lineHeight: 1.8 }}>{program.description_ar}</p>}
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
         {t("statusValue", { status: program.status })}

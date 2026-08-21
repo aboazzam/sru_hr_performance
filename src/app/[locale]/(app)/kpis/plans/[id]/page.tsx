@@ -860,21 +860,19 @@ export default async function StrategicPlanDetailPage({
       <div
         style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}
       >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
+        {/* The icon sits beside the whole stack, so the Arabic name and the
+            lines under it share one starting edge. */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <Flag size={20} aria-hidden style={{ color: "var(--sru-purple)", marginTop: 6, flex: "0 0 auto" }} />
+          <div style={{ minWidth: 0 }}>
             <h1 className="sru-title" style={{ fontSize: 24 }}>
               {plan.name_ar}
             </h1>
-          </div>
-          {plan.name_en && (
-            <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
-              {plan.name_en}
+            {plan.name_en && <p className="sru-name-en is-lg">{plan.name_en}</p>}
+            <p className="sru-name-en">
+              {plan.start_year}–{plan.end_year}
             </p>
-          )}
-          <p dir="ltr" style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, textAlign: "start" }}>
-            {plan.start_year}–{plan.end_year}
-          </p>
+          </div>
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

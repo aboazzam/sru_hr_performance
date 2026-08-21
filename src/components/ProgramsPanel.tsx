@@ -169,7 +169,7 @@ export function ProgramsPanel({
                     <td>
                       <span style={{ fontWeight: 700 }}>{program.nameAr}</span>
                       {program.nameEn && (
-                        <span dir="ltr" style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
+                        <span className="sru-name-en">
                           {program.nameEn}
                         </span>
                       )}
