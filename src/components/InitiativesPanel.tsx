@@ -14,6 +14,7 @@ import {
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
 import { AddFormDialog } from "@/components/AddFormDialog";
+import type { ReactNode } from "react";
 import { initiativeProgress } from "@/lib/initiativeProgress";
 import { formatDateDmy } from "@/lib/dateParts";
 
@@ -35,8 +36,12 @@ export interface InitiativeView {
   descriptionAr: string | null;
   /** الإدارة المالكة — an org unit since 20260820000003, not a position. */
   ownerOrgUnitName: string | null;
+  ownerOrgUnitId: string | null;
   /** الهدف الفرعي the initiative serves, shown on the real initiative cards. */
   subGoalTitle: string | null;
+  /** الهدف الاستراتيجي الرئيسي — derived from the sub-goal, never stored twice. */
+  mainGoalId: string | null;
+  mainGoalTitle: string | null;
   startDate: string | null;
   endDate: string | null;
   statusLabel: string;
@@ -99,6 +104,7 @@ export function InitiativesPanel({
   subGoalOptions,
   statusOptions,
   canManage,
+  toolbar,
 }: {
   planId: string;
   initiatives: InitiativeView[];
@@ -107,11 +113,16 @@ export function InitiativesPanel({
   subGoalOptions: Array<{ id: string; title: string }>;
   statusOptions: InitiativeStatusOption[];
   canManage: boolean;
+  /** The plan's export/import buttons, so they sit on ONE row with "add". */
+  toolbar?: ReactNode;
 }) {
   const t = useTranslations("InitiativesPanel");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [ownerFilter, setOwnerFilter] = useState("");
+  const [goalFilter, setGoalFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [createState, createAction, creating] = useActionState<InitiativeActionState, FormData>(createInitiative, null);
@@ -143,6 +154,30 @@ export function InitiativesPanel({
       createAction(formData);
     });
   }
+
+  // The filter options come from the initiatives themselves, so a value that
+  // cannot match anything is never offered.
+  const ownerFilterOptions = Array.from(
+    new Map(
+      initiatives
+        .filter((i) => i.ownerOrgUnitId && i.ownerOrgUnitName)
+        .map((i) => [i.ownerOrgUnitId as string, { id: i.ownerOrgUnitId as string, label: i.ownerOrgUnitName as string }])
+    ).values()
+  ).sort((a, b) => a.label.localeCompare(b.label, "ar"));
+  const goalFilterOptions = Array.from(
+    new Map(
+      initiatives
+        .filter((i) => i.mainGoalId && i.mainGoalTitle)
+        .map((i) => [i.mainGoalId as string, { id: i.mainGoalId as string, label: i.mainGoalTitle as string }])
+    ).values()
+  ).sort((a, b) => a.label.localeCompare(b.label, "ar"));
+
+  const visibleInitiatives = initiatives.filter(
+    (i) =>
+      (statusFilter === "" || i.statusCode === statusFilter) &&
+      (ownerFilter === "" || i.ownerOrgUnitId === ownerFilter) &&
+      (goalFilter === "" || i.mainGoalId === goalFilter)
+  );
 
   const addForm = (
     <form ref={formRef} onSubmit={handleCreate}>
@@ -234,29 +269,90 @@ export function InitiativesPanel({
           alignItems: "flex-start",
           justifyContent: "space-between",
           gap: 16,
-          marginBottom: 16,
+          marginBottom: 12,
           flexWrap: "wrap",
         }}
       >
         <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
-        {canManage && (
-          <AddFormDialog
-            dialogRef={dialogRef}
-            triggerLabel={t("addSubmit")}
-            heading={t("addHeading")}
-            subtitle={t("addSubtitle")}
-            closeLabel={t("closeButton")}
-          >
-            {addForm}
-          </AddFormDialog>
-        )}
+        {/* One row, one style: "add" sits beside export/import rather than a
+            step below them in a different size (2026-08-21 request). */}
+        <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
+          {canManage && (
+            <AddFormDialog
+              dialogRef={dialogRef}
+              triggerLabel={t("addSubmit")}
+              heading={t("addHeading")}
+              subtitle={t("addSubtitle")}
+              closeLabel={t("closeButton")}
+            >
+              {addForm}
+            </AddFormDialog>
+          )}
+          {toolbar}
+        </div>
       </div>
+
+      {initiatives.length > 0 && (
+        <div className="sru-filterbar no-print">
+          <label>
+            <span>{t("filterStatus")}</span>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">{t("filterAll")}</option>
+              {statusOptions.map((o) => (
+                <option key={o.code} value={o.code}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>{t("filterOwner")}</span>
+            <select value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)}>
+              <option value="">{t("filterAll")}</option>
+              {ownerFilterOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>{t("filterGoal")}</span>
+            <select value={goalFilter} onChange={(e) => setGoalFilter(e.target.value)}>
+              <option value="">{t("filterAll")}</option>
+              {goalFilterOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(statusFilter || ownerFilter || goalFilter) && (
+            <>
+              <span className="sru-filterbar-count">{t("filterCount", { shown: visibleInitiatives.length, total: initiatives.length })}</span>
+              <button
+                type="button"
+                className="sru-filterbar-reset"
+                onClick={() => {
+                  setStatusFilter("");
+                  setOwnerFilter("");
+                  setGoalFilter("");
+                }}
+              >
+                {t("filterReset")}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {initiatives.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
+      ) : visibleInitiatives.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("filterEmpty")}</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-          {initiatives.map((initiative) => (
+          {visibleInitiatives.map((initiative) => (
             <InitiativeCard
               key={initiative.id}
               initiative={initiative}

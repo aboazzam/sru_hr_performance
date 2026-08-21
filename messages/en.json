@@ -2231,7 +2231,14 @@
     "progressUnknown": "Not assessed yet",
     "closeButton": "Close",
     "viewButton": "View details",
-    "editButton": "Edit the card"
+    "editButton": "Edit the card",
+    "filterStatus": "Status",
+    "filterOwner": "Owning department",
+    "filterGoal": "Strategic goal",
+    "filterAll": "All",
+    "filterReset": "Clear filters",
+    "filterEmpty": "No initiatives match the filters.",
+    "filterCount": "{shown} of {total}"
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",
