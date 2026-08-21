@@ -2459,7 +2459,6 @@
   },
   "InitiativePage": {
     "errorNotFound": "لم يتم العثور على هذه المبادرة، أو لا تملك صلاحية الاطلاع عليها.",
-    "backToPlan": "العودة إلى الخطة",
     "codeLabel": "الكود",
     "statusLabel": "الحالة",
     "definitionLabel": "التعريف",
@@ -2530,7 +2529,8 @@
     "saveActivity": "حفظ النشاط",
     "deleteActivityConfirm": "سيُحذف هذا النشاط. هل تريد المتابعة؟",
     "dependencyView": "فتح المبادرة",
-    "assignmentsNone": "لا توجد جهات مسندة بعد."
+    "assignmentsNone": "لا توجد جهات مسندة بعد.",
+    "backToInitiatives": "العودة إلى المبادرات"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",

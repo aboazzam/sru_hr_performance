@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export interface ProfileTab {
   id: string;
@@ -22,6 +22,23 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
     const hash = window.location.hash.replace("#", "");
     return hash && tabs.some((tab) => tab.id === hash) ? hash : tabs[0]?.id;
   });
+
+  // The lazy initializer alone is not enough on a server-rendered page: the
+  // server has no hash, so hydration adopts the FIRST tab and never revisits
+  // it — found live, arriving at `/kpis/plans/<id>#initiatives` from an
+  // initiative still landed on the identity tab. This syncs once after mount
+  // (and on back/forward), which is reading an external browser value, not
+  // deriving state from props.
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash && tabs.some((tab) => tab.id === hash)) setActiveId(hash);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
 
