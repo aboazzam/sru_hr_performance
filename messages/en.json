@@ -2523,7 +2523,11 @@
     "dependencyRemove": "Remove dependency",
     "dependencyPlaceholder": "— Select an initiative —",
     "dependencyNone": "No dependencies recorded.",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "viewActivity": "View activity",
+    "editActivity": "Edit activity",
+    "saveActivity": "Save activity",
+    "deleteActivityConfirm": "This activity will be deleted. Continue?"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",

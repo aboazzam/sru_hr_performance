@@ -2523,7 +2523,11 @@
     "dependencyRemove": "إزالة التبعية",
     "dependencyPlaceholder": "— اختر المبادرة —",
     "dependencyNone": "لا توجد تبعيات مسجّلة.",
-    "closeButton": "إغلاق"
+    "closeButton": "إغلاق",
+    "viewActivity": "عرض النشاط",
+    "editActivity": "تعديل النشاط",
+    "saveActivity": "حفظ النشاط",
+    "deleteActivityConfirm": "سيُحذف هذا النشاط. هل تريد المتابعة؟"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",
