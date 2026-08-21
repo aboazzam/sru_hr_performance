@@ -91,9 +91,16 @@ export function InitiativeAssignmentsEditor({
   const total = assignedRows.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0);
   const leadCount = rows.filter((r) => r.role === "lead").length;
   const duplicateUnit = new Set(rows.map((r) => r.orgUnitId)).size !== rows.length;
+  const missingPercentage = rows.some(
+    (r) => r.role !== "supporter" && !(Number(r.percentage) > 0)
+  );
   const canSave =
     rows.length === 0 ||
-    (Math.abs(total - 100) < 0.001 && leadCount === 1 && !duplicateUnit && rows.every((r) => r.orgUnitId !== ""));
+    (Math.abs(total - 100) < 0.001 &&
+      leadCount === 1 &&
+      !duplicateUnit &&
+      !missingPercentage &&
+      rows.every((r) => r.orgUnitId !== ""));
 
   function submit() {
     const formData = new FormData();
@@ -165,11 +172,16 @@ export function InitiativeAssignmentsEditor({
                   ) : (
                     <input
                       type="number"
+                      required
                       min="0.01"
                       max="100"
                       step="0.01"
                       dir="ltr"
-                      style={{ width: 90, textAlign: "start" }}
+                      style={{
+                        width: 90,
+                        textAlign: "start",
+                        borderColor: Number(row.percentage) > 0 ? undefined : "var(--sru-danger, #b91c1c)",
+                      }}
                       value={row.percentage}
                       onChange={(e) => setRows(rows.map((r, i) => (i === index ? { ...r, percentage: e.target.value } : r)))}
                     />
@@ -214,6 +226,9 @@ export function InitiativeAssignmentsEditor({
           <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorNoLead")}</span>
         )}
         {duplicateUnit && <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorDuplicateUnit")}</span>}
+        {missingPercentage && (
+          <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorMissingPercentage")}</span>
+        )}
       </div>
 
       {state?.status === "error" && (

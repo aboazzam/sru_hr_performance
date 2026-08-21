@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { coversMonth, groupByYear, monthOf, monthsBetween, timelineFor } from "./initiativeTimeline";
+import {
+  coversMonth,
+  groupByYear,
+  monthOf,
+  monthsBetween,
+  timelineFor,
+  coversWeek,
+  weekDayRange,
+} from "./initiativeTimeline";
 
 describe("monthOf", () => {
   it("reads the year and month from an ISO date", () => {
@@ -89,5 +97,38 @@ describe("timelineFor", () => {
 
   it("draws no strip when neither the initiative nor its activities are scheduled", () => {
     expect(timelineFor({ startDate: null, endDate: null }, [{ startDate: null, endDate: null }])).toEqual([]);
+  });
+});
+
+describe("coversWeek", () => {
+  const august = { year: 2026, month: 8, key: "2026-08" };
+  const september = { year: 2026, month: 9, key: "2026-09" };
+
+  it("splits a month into four blocks by day of month", () => {
+    expect(weekDayRange(0)).toEqual({ from: 1, to: 7 });
+    expect(weekDayRange(1)).toEqual({ from: 8, to: 14 });
+    expect(weekDayRange(2)).toEqual({ from: 15, to: 21 });
+    // The last block absorbs whatever the month has left, 28th through 31st.
+    expect(weekDayRange(3)).toEqual({ from: 22, to: 31 });
+  });
+
+  it("shades only the weeks an activity actually runs through", () => {
+    const activity = { startDate: "2026-08-05", endDate: "2026-08-19" };
+    expect([0, 1, 2, 3].map((w) => coversWeek(activity, august, w))).toEqual([true, true, true, false]);
+  });
+
+  it("shades every week of a month it merely passes through", () => {
+    const activity = { startDate: "2026-08-20", endDate: "2026-10-03" };
+    expect([0, 1, 2, 3].map((w) => coversWeek(activity, september, w))).toEqual([true, true, true, true]);
+  });
+
+  it("shades nothing in a month outside the range", () => {
+    const activity = { startDate: "2026-08-01", endDate: "2026-08-31" };
+    expect([0, 1, 2, 3].map((w) => coversWeek(activity, september, w))).toEqual([false, false, false, false]);
+  });
+
+  it("treats a one-sided range as that single point, not the rest of the month", () => {
+    const activity = { startDate: "2026-08-25", endDate: null };
+    expect([0, 1, 2, 3].map((w) => coversWeek(activity, august, w))).toEqual([false, false, false, true]);
   });
 });

@@ -115,3 +115,57 @@ export function timelineFor(
   const latest = ends.slice().sort()[ends.length - 1];
   return monthsBetween(earliest, latest);
 }
+
+/**
+ * Each month is drawn as FOUR weeks (2026-08-21 request) — the same split the
+ * real initiative cards use, and they say so on the card itself: "تم تقسيم
+ * الشهر إلى 4 أسابيع لتوفير تفاصيل أكثر دقة لأنشطة الجدول الزمني".
+ *
+ * The split is by day-of-month, not by ISO calendar week: days 1-7, 8-14,
+ * 15-21, and 22-end. A calendar week would straddle two months and could not
+ * be drawn under a single month header at all, and the fourth block absorbing
+ * the 29th-31st is exactly how the printed cards read.
+ */
+export const WEEKS_PER_MONTH = 4;
+
+/** Inclusive day range [from, to] of one week block within a month. */
+export function weekDayRange(week: number): { from: number; to: number } {
+  const from = week * 7 + 1;
+  // The last block runs to the end of the month, whatever its length.
+  return { from, to: week === WEEKS_PER_MONTH - 1 ? 31 : from + 6 };
+}
+
+function dayOf(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const m = /^\d{4}-\d{2}-(\d{2})$/.exec(iso.trim());
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * True when the activity runs through this week block of this month.
+ *
+ * Same one-sided rule as `coversMonth`: a range with only one end covers that
+ * single point, never "from here onwards" — an activity must not claim weeks
+ * nobody committed to.
+ */
+export function coversWeek(
+  activity: { startDate: string | null; endDate: string | null },
+  month: TimelineMonth,
+  week: number
+): boolean {
+  if (!coversMonth(activity, month)) return false;
+
+  const startMonth = monthOf(activity.startDate);
+  const endMonth = monthOf(activity.endDate);
+  const { from, to } = weekDayRange(week);
+
+  // Inside a month the activity merely passes through, every week is covered.
+  const startsHere = startMonth != null && startMonth.year === month.year && startMonth.month === month.month;
+  const endsHere = endMonth != null && endMonth.year === month.year && endMonth.month === month.month;
+  if (!startsHere && !endsHere) return true;
+
+  const startDay = startsHere ? dayOf(activity.startDate) ?? 1 : 1;
+  const endDay = endsHere ? dayOf(activity.endDate) ?? 31 : 31;
+  // Overlap between [startDay, endDay] and this week block.
+  return startDay <= to && endDay >= from;
+}

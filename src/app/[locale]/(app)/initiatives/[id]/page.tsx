@@ -6,7 +6,7 @@ import { PrintButton } from "@/components/PrintButton";
 import { type ActivityView } from "@/components/InitiativeActivitiesEditor";
 import { InitiativeActivityAdd, InitiativeActivityRowActions } from "@/components/InitiativeActivityActions";
 import { InitiativeCardEditor } from "@/components/InitiativeCardEditor";
-import { coversMonth, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
+import { WEEKS_PER_MONTH, coversWeek, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
 import { formatDateDmy, todayInTimezone } from "@/lib/dateParts";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { initiativeProgress } from "@/lib/initiativeProgress";
@@ -435,25 +435,39 @@ export default async function InitiativePage({
               <table className="admin-matrix" style={{ fontSize: 12 }}>
                 <thead>
                   <tr>
-                    <th rowSpan={2} style={{ minWidth: 240 }}>
+                    <th rowSpan={3} style={{ minWidth: 240 }}>
                       {t("activityColumn")}
                     </th>
-                    <th rowSpan={2} style={{ minWidth: 120 }}>
+                    <th rowSpan={3} style={{ minWidth: 120 }}>
                       {t("responsibleColumn")}
                     </th>
-                    {canEditActivities && <th rowSpan={2} className="no-print" />}
+                    {canEditActivities && <th rowSpan={3} className="no-print" />}
                     {yearGroups.map((group) => (
-                      <th key={group.year} colSpan={group.months.length} style={{ textAlign: "center" }}>
+                      <th key={group.year} colSpan={group.months.length * WEEKS_PER_MONTH} style={{ textAlign: "center" }}>
                         {group.year}
                       </th>
                     ))}
                   </tr>
                   <tr>
                     {months.map((month) => (
-                      <th key={month.key} style={{ textAlign: "center", padding: "2px 4px" }}>
+                      <th key={month.key} colSpan={WEEKS_PER_MONTH} style={{ textAlign: "center", padding: "2px 4px" }}>
                         M{month.month}
                       </th>
                     ))}
+                  </tr>
+                  {/* Each month is drawn as four weeks, the same split the
+                      real cards use and state on their own footnote. */}
+                  <tr>
+                    {months.map((month) =>
+                      Array.from({ length: WEEKS_PER_MONTH }, (_, week) => (
+                        <th
+                          key={`${month.key}-w${week}`}
+                          style={{ textAlign: "center", padding: "1px 2px", fontSize: 10, fontWeight: 600 }}
+                        >
+                          {week + 1}
+                        </th>
+                      ))
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -470,16 +484,19 @@ export default async function InitiativePage({
                           />
                         </td>
                       )}
-                      {months.map((month) => (
-                        <td
-                          key={month.key}
-                          style={{
-                            textAlign: "center",
-                            padding: 2,
-                            background: coversMonth(activity, month) ? "var(--sru-purple)" : undefined,
-                          }}
-                        />
-                      ))}
+                      {months.map((month) =>
+                        Array.from({ length: WEEKS_PER_MONTH }, (_, week) => (
+                          <td
+                            key={`${month.key}-w${week}`}
+                            style={{
+                              textAlign: "center",
+                              padding: 2,
+                              minWidth: 14,
+                              background: coversWeek(activity, month, week) ? "var(--sru-purple)" : undefined,
+                            }}
+                          />
+                        ))
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -529,7 +546,12 @@ export default async function InitiativePage({
           orgUnitOptions={cardOrgUnitOptions}
           statusOptions={cardStatusOptions}
           perspectiveOptions={perspectives}
-          dependencies={dependencies.map((d) => ({ id: d.id, label: d.code ? d.code + " — " + d.title : d.title }))}
+          dependencies={dependencies.map((d) => ({
+            id: d.id,
+            label: d.code ? d.code + " — " + d.title : d.title,
+            // Carried through so the row can offer "open the initiative".
+            initiativeId: d.initiativeId,
+          }))}
           dependencyOptions={siblingOptions}
           assignments={assignments.map((a) => ({
             orgUnitId: a.org_unit_id,
