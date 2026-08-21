@@ -1461,11 +1461,15 @@ tr.sru-row-link:focus-within > td {
   background: var(--sru-purple-light);
   color: var(--sru-purple);
 }
+/* Fixed, not absolute, and placed from measured coordinates: inside a
+   <dialog> (or any scrolling box) an absolutely-positioned popup is clipped
+   by that box, which is exactly what happened live — the calendar spilled
+   past the modal and was cut off. Fixed positioning ignores the ancestors'
+   overflow, and because the element still lives inside the dialog's subtree
+   it stays in the same top layer, above the page. */
 .sru-datefield-pop {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 6px);
-  inset-inline-start: 0;
+  position: fixed;
+  z-index: 60;
   background: #fff;
   border: 1px solid var(--sru-border, #e5e7eb);
   border-radius: 10px;
@@ -1749,4 +1753,37 @@ tr.sru-row-link:focus-within > td {
   .sru-initiative-block.is-wide {
     grid-column: span 1;
   }
+}
+
+/* The card's three row actions (view / edit / delete). They must sit ABOVE
+   the card's stretched title link, or the overlay would swallow their clicks
+   and every icon would just open the details page. */
+.sru-initiative-card-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.sru-initiative-card-actions a.sru-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* "N fields are still blank" — shown on the initiative page itself, since the
+   editor that used to carry it now lives behind the pencil. */
+.sru-missing-banner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--sru-warning-bg, #fff7ed);
+  border: 1px solid var(--sru-warning, #f59e0b);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.8;
 }

@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { AlertCircle, ArrowLeft, Link2, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Eye, Link2, Pencil, Trash2, X } from "lucide-react";
 import {
   createInitiative,
   deleteInitiative,
@@ -340,19 +340,43 @@ function InitiativeCard({
         </div>
         {/* Placed after the text, so in an RTL row it renders on the LEFT. */}
         <InitiativeProgressRing progress={progress} />
-        {canManage && (
-          <form
-            action={(formData) => {
-              if (!window.confirm(t("deleteConfirm"))) return;
-              startTransition(() => deleteAction(formData));
-            }}
+        {/* View / edit / delete. They sit above the card's stretched link
+            (see .sru-initiative-card-actions), so each is its own target. */}
+        <div className="sru-initiative-card-actions">
+          <Link
+            href={`/initiatives/${initiative.id}`}
+            className="sru-icon-action"
+            title={t("viewButton")}
+            aria-label={t("viewButton")}
           >
-            <input type="hidden" name="initiativeId" value={initiative.id} />
-            <button type="submit" className="sru-icon-action" title={t("deleteButton")} aria-label={t("deleteButton")}>
-              <Trash2 size={15} aria-hidden />
-            </button>
-          </form>
-        )}
+            <Eye size={15} aria-hidden />
+          </Link>
+          {canManage && (
+            <>
+              {/* Opens the same card editor the detail page hosts — one editor,
+                  reached from either place, rather than a second copy here. */}
+              <Link
+                href={`/initiatives/${initiative.id}?edit=1`}
+                className="sru-icon-action"
+                title={t("editButton")}
+                aria-label={t("editButton")}
+              >
+                <Pencil size={15} aria-hidden />
+              </Link>
+              <form
+                action={(formData) => {
+                  if (!window.confirm(t("deleteConfirm"))) return;
+                  startTransition(() => deleteAction(formData));
+                }}
+              >
+                <input type="hidden" name="initiativeId" value={initiative.id} />
+                <button type="submit" className="sru-icon-action" title={t("deleteButton")} aria-label={t("deleteButton")}>
+                  <Trash2 size={15} aria-hidden />
+                </button>
+              </form>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="sru-initiative-card-foot" style={{ marginTop: 12 }}>

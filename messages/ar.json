@@ -2229,7 +2229,9 @@
     "progressFromStatus": "مكتملة",
     "progressElapsed": "مضى من المدة",
     "progressUnknown": "لم تُقيَّم بعد",
-    "closeButton": "إغلاق"
+    "closeButton": "إغلاق",
+    "viewButton": "عرض التفاصيل",
+    "editButton": "تعديل البطاقة"
   },
   "ProgramsPanel": {
     "intro": "البرامج الاستراتيجية تجمع عدة مبادرات تحت مظلة واحدة، وتديرها لجنة مشرفة. اضغط «فتح البرنامج» للاطلاع على اللجنة والداشبورد وتفاصيل المبادرات.",
@@ -2507,7 +2509,8 @@
     "dependencyAdd": "إضافة تبعية",
     "dependencyRemove": "إزالة التبعية",
     "dependencyPlaceholder": "— اختر المبادرة —",
-    "dependencyNone": "لا توجد تبعيات مسجّلة."
+    "dependencyNone": "لا توجد تبعيات مسجّلة.",
+    "closeButton": "إغلاق"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط التنفيذية",

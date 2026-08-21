@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, startTransition, type FormEvent } from "react";
+import { useActionState, useEffect, useState, startTransition, type FormEvent, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AlertCircle, CheckCircle2, Link2, Pencil, X } from "lucide-react";
@@ -12,6 +12,7 @@ import {
 } from "@/app/[locale]/(app)/initiatives/[id]/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { missingInitiativeFields, type InitiativeFieldKey } from "@/lib/initiativeCompleteness";
+import { AddFormDialog } from "@/components/AddFormDialog";
 
 export interface InitiativeCardFormValues {
   code: string;
@@ -76,6 +77,7 @@ export function InitiativeCardEditor({
   perspectiveOptions,
   dependencies,
   dependencyOptions,
+  openOnMount = false,
 }: {
   initiativeId: string;
   initial: InitiativeCardFormValues;
@@ -87,9 +89,12 @@ export function InitiativeCardEditor({
   dependencies: Array<{ id: string; label: string }>;
   /** Other initiatives in the same plan, offered as new dependencies. */
   dependencyOptions: Array<{ id: string; label: string }>;
+  /** Open the editor immediately — the row pencil links with ?edit=1. */
+  openOnMount?: boolean;
 }) {
   const t = useTranslations("InitiativePage");
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [values, setValues] = useState<InitiativeCardFormValues>(initial);
   const [state, formAction, pending] = useActionState<InitiativeCardState, FormData>(updateInitiativeCard, null);
   const [handled, setHandled] = useState<InitiativeCardState>(null);
@@ -102,7 +107,12 @@ export function InitiativeCardEditor({
   }
 
   useEffect(() => {
-    if (state?.status === "success") router.refresh();
+    if (state?.status === "success") {
+      // Closed only on success: an error keeps the dialog open with its
+      // message inside, so an edit in progress is never lost.
+      dialogRef.current?.close();
+      router.refresh();
+    }
   }, [state, router]);
 
   const set = (key: keyof InitiativeCardFormValues) => (value: string) =>
@@ -405,7 +415,24 @@ export function InitiativeCardEditor({
 
   return (
     <>
-      {cardForm}
+      {/* The form used to sit open under the card, which is most of the page
+          for a reader who only came to LOOK at the initiative. It is now
+          behind the pencil beside the card (2026-08-20 request); the page
+          still shows what is missing on its own, so the signal does not
+          disappear with the form. */}
+      <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+        <AddFormDialog
+          dialogRef={dialogRef}
+          triggerLabel={t("cardEditHeading")}
+          triggerIcon={<Pencil size={15} aria-hidden />}
+          heading={t("cardEditHeading")}
+          subtitle={t("cardEditSubtitle")}
+          closeLabel={t("closeButton")}
+          openOnMount={openOnMount}
+        >
+          {cardForm}
+        </AddFormDialog>
+      </div>
       <InitiativeDependenciesEditor
         initiativeId={initiativeId}
         dependencies={dependencies}
