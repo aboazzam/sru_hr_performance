@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
 import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
+import { MyCertificatesEditor } from "@/components/MyCertificatesEditor";
 import { type CareerJobTitleInfo } from "@/lib/careerPathTree";
 import { getSelfScopedCareerTree } from "@/lib/careerPathData";
 import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
@@ -260,15 +261,8 @@ export default async function MyProfilePage() {
                         written rather than squeezed onto one line. */}
                     <dt>{t("certificatesLabel")}</dt>
                     <dd>
-                      {certificates.length === 0 ? (
-                        "—"
-                      ) : (
-                        <ul style={{ margin: 0, paddingInlineStart: 16 }}>
-                          {certificates.map((line, i) => (
-                            <li key={i}>{line}</li>
-                          ))}
-                        </ul>
-                      )}
+                      {/* The one field on this screen the employee owns. */}
+                      <MyCertificatesEditor certificates={p.certificates ?? ""} />
                     </dd>
                   </dl>
                 </section>
