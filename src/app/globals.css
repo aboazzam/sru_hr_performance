@@ -1883,3 +1883,89 @@ tr.sru-row-link:focus-within > td {
 .sru-initiative-perspectives {
   align-items: center;
 }
+
+/* ---- My Profile: the "معلوماتي" panel --------------------------------- */
+/* Was ten equal boxes in one grid, several of them empty. Now: an identity
+   band (who this is) followed by grouped facts, so the eye has somewhere to
+   land first (2026-08-21 request). */
+.sru-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sru-profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--sru-purple-light);
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 10px;
+}
+.sru-profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--sru-purple);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+}
+.sru-profile-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.sru-profile-name-en {
+  color: var(--sru-muted);
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+.sru-profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sru-profile-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.sru-profile-group {
+  background: #fff;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.sru-profile-group h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sru-purple);
+  margin: 0 0 10px;
+}
+.sru-profile-group dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+.sru-profile-group dt {
+  color: var(--sru-muted);
+  white-space: nowrap;
+}
+.sru-profile-group dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.sru-profile-group dd.is-pending {
+  font-weight: 400;
+  color: var(--sru-muted);
+  font-style: italic;
+}

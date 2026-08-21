@@ -1209,7 +1209,12 @@
     "calibrationColumnCycle": "الدورة",
     "calibrationColumnOriginal": "الدرجة الأصلية",
     "calibrationColumnCalibrated": "الدرجة بعد المعايرة",
-    "calibrationColumnJustification": "التبرير"
+    "calibrationColumnJustification": "التبرير",
+    "contactGroup": "التواصل",
+    "jobGroup": "الوظيفة",
+    "qualificationsGroup": "المؤهلات",
+    "mobileLabel": "الجوال",
+    "specialityLabel": "التخصص"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",

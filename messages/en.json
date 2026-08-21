@@ -1209,7 +1209,12 @@
     "calibrationColumnCycle": "Cycle",
     "calibrationColumnOriginal": "Original Score",
     "calibrationColumnCalibrated": "Calibrated Score",
-    "calibrationColumnJustification": "Justification"
+    "calibrationColumnJustification": "Justification",
+    "contactGroup": "Contact",
+    "jobGroup": "Position",
+    "qualificationsGroup": "Qualifications",
+    "mobileLabel": "Mobile",
+    "specialityLabel": "Speciality"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",

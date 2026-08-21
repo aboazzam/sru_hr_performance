@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatDateDmy } from "@/lib/dateParts";
 import { createClient } from "@/lib/supabase/server";
 import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
 import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
@@ -13,6 +14,7 @@ import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
 // other field was named as something an employee should self-edit today.
 export default async function MyProfilePage() {
   const t = await getTranslations("MyProfilePage");
+  const locale = await getLocale();
   const supabase = await createClient();
 
   const {
@@ -33,7 +35,7 @@ export default async function MyProfilePage() {
     ? await supabase
         .from("profiles")
         .select(
-          "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, org_units(name_ar), job_titles(name_ar, grade_level)"
+          "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, qualification, education_speciality, mobile, org_units(name_ar), job_titles(name_ar, grade_level)"
         )
         .eq("auth_user_id", user.id)
         .maybeSingle()
@@ -50,6 +52,9 @@ export default async function MyProfilePage() {
         status: string;
         job_title_id: string | null;
         supervisor_id: string | null;
+        qualification: string | null;
+        education_speciality: string | null;
+        mobile: string | null;
         org_units: { name_ar: string } | null;
         job_titles: { name_ar: string; grade_level: number } | null;
       }
@@ -182,58 +187,75 @@ export default async function MyProfilePage() {
           id: "my-data",
           label: t("infoTitle"),
           content: (
-            <div className="sru-card" style={{ padding: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("employeeNumberLabel")}</div>
-                <div style={{ fontSize: 14 }}>{p.employee_number}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("fullNameArLabel")}</div>
-                <div style={{ fontSize: 14 }}>{p.full_name_ar}</div>
-              </div>
-              {p.full_name_en && (
-                <div>
-                  <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("fullNameEnLabel")}</div>
-                  <div style={{ fontSize: 14 }} dir="ltr">{p.full_name_en}</div>
-                </div>
-              )}
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("emailLabel")}</div>
-                <div style={{ fontSize: 14 }} dir="ltr">{p.email}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("orgUnitLabel")}</div>
-                <div style={{ fontSize: 14 }}>{p.org_units?.name_ar ?? "—"}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("jobTitleLabel")}</div>
-                <div style={{ fontSize: 14 }}>
-                  {p.job_titles?.name_ar ?? "—"}
-                  {p.job_titles && (
-                    <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
-                      {t("gradeLabel", { grade: p.job_titles.grade_level })}
-                    </span>
+            <div className="sru-profile-info">
+              {/* A person, then their facts: the identity band carries the
+                  name and the three things that place them, and the rest is
+                  grouped so the eye is not asked to scan ten equal boxes. */}
+              <div className="sru-profile-identity">
+                <span className="sru-profile-avatar" aria-hidden>
+                  {p.full_name_ar.trim().charAt(0)}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <h2 className="sru-profile-name">{p.full_name_ar}</h2>
+                  {p.full_name_en && (
+                    <p dir="ltr" className="sru-profile-name-en">
+                      {p.full_name_en}
+                    </p>
                   )}
+                  <div className="sru-profile-badges">
+                    <span className="sru-chip sru-en">{p.employee_number}</span>
+                    {p.job_titles?.name_ar && (
+                      <span className="sru-chip">
+                        {p.job_titles.name_ar}
+                        <span className="sru-en" style={{ marginInlineStart: 6, opacity: 0.75 }}>
+                          {t("gradeLabel", { grade: p.job_titles.grade_level })}
+                        </span>
+                      </span>
+                    )}
+                    {p.org_units?.name_ar && <span className="sru-chip">{p.org_units.name_ar}</span>}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("hireDateLabel")}</div>
-                <div style={{ fontSize: 14 }} dir="ltr">{p.hire_date ?? "—"}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("supervisorLabel")}</div>
-                <div style={{ fontSize: 14 }}>{supervisor?.full_name_ar ?? t("supervisorNone")}</div>
-              </div>
-              {/* [استنتاج] No `qualification`/`certificates` columns exist in `profiles`
-                  yet — flagged to the project owner as an open schema decision rather
-                  than inventing free-text/multi-value fields without confirming shape. */}
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("qualificationLabel")}</div>
-                <div style={{ fontSize: 14, color: "var(--sru-muted)" }}>{t("comingSoon")}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("certificatesLabel")}</div>
-                <div style={{ fontSize: 14, color: "var(--sru-muted)" }}>{t("comingSoon")}</div>
+
+              <div className="sru-profile-groups">
+                <section className="sru-profile-group">
+                  <h3>{t("contactGroup")}</h3>
+                  <dl>
+                    <dt>{t("emailLabel")}</dt>
+                    <dd dir="ltr">{p.email}</dd>
+                    <dt>{t("mobileLabel")}</dt>
+                    <dd dir="ltr">{p.mobile ?? "—"}</dd>
+                  </dl>
+                </section>
+
+                <section className="sru-profile-group">
+                  <h3>{t("jobGroup")}</h3>
+                  <dl>
+                    <dt>{t("orgUnitLabel")}</dt>
+                    <dd>{p.org_units?.name_ar ?? "—"}</dd>
+                    <dt>{t("jobTitleLabel")}</dt>
+                    <dd>{p.job_titles?.name_ar ?? "—"}</dd>
+                    <dt>{t("hireDateLabel")}</dt>
+                    <dd>{p.hire_date ? formatDateDmy(p.hire_date, locale) : "—"}</dd>
+                    <dt>{t("supervisorLabel")}</dt>
+                    <dd>{supervisor?.full_name_ar ?? t("supervisorNone")}</dd>
+                  </dl>
+                </section>
+
+                <section className="sru-profile-group">
+                  <h3>{t("qualificationsGroup")}</h3>
+                  <dl>
+                    <dt>{t("qualificationLabel")}</dt>
+                    <dd>{p.qualification ?? "—"}</dd>
+                    <dt>{t("specialityLabel")}</dt>
+                    <dd>{p.education_speciality ?? "—"}</dd>
+                    {/* No `certificates` column exists in `profiles` — still an
+                        open schema decision, so it says so instead of showing a
+                        dash that would read as "none recorded". */}
+                    <dt>{t("certificatesLabel")}</dt>
+                    <dd className="is-pending">{t("comingSoon")}</dd>
+                  </dl>
+                </section>
               </div>
             </div>
           ),
