@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -338,5 +340,54 @@ export async function removeInitiativeDependency(
   if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
 
   revalidatePath("/[locale]/initiatives/[id]", "page");
+  return { status: "success" };
+}
+
+/**
+ * Delete from the initiative's OWN page, then leave it.
+ *
+ * The shared `deleteInitiative` returns a state and lets the caller decide
+ * what happens next — right for the list card, wrong here: `revalidatePath`
+ * re-renders this page as "initiative not found" and unmounts the button
+ * before any success effect can navigate (seen live: the reader was left
+ * sitting on a dead URL). Redirecting from the server action itself happens
+ * before that re-render, so it cannot be raced.
+ */
+export async function deleteInitiativeAndReturn(_prev: InitiativeCardState, formData: FormData): Promise<InitiativeCardState> {
+  const parsed = z
+    .object({ initiativeId: z.string().uuid(), planId: z.string().uuid(), locale: z.string().min(2) })
+    .safeParse({
+      initiativeId: formData.get("initiativeId"),
+      planId: formData.get("planId"),
+      locale: formData.get("locale"),
+    });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  // Soft-delete only — the table has no DELETE policy (CLAUDE.md §5-A rule 7).
+  // An UPDATE blocked by RLS affects zero rows WITHOUT erroring, so the rows
+  // are read back rather than assumed.
+  const { data: updated, error } = await supabase
+    .from("strategic_initiatives")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data.initiativeId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return { status: "error", message: "unknown" };
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  await supabase
+    .from("strategic_initiative_targets")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("initiative_id", parsed.data.initiativeId)
+    .is("deleted_at", null);
+
+  redirect({ href: `/kpis/plans/${parsed.data.planId}`, locale: parsed.data.locale as Locale });
+  // Unreachable: redirect() throws. Present so the signature is satisfied.
   return { status: "success" };
 }

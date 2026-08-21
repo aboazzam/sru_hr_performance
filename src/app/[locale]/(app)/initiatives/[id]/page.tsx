@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { PrintButton } from "@/components/PrintButton";
 import { type ActivityView } from "@/components/InitiativeActivitiesEditor";
 import { InitiativeActivityAdd, InitiativeActivityRowActions } from "@/components/InitiativeActivityActions";
+import { InitiativeDeleteButton } from "@/components/InitiativeDeleteButton";
 import { InitiativeCardEditor } from "@/components/InitiativeCardEditor";
 import { WEEKS_PER_MONTH, coversWeek, groupByYear, timelineFor } from "@/lib/initiativeTimeline";
 import { formatDateDmy, todayInTimezone } from "@/lib/dateParts";
@@ -296,6 +297,49 @@ export default async function InitiativePage({
     </div>
   );
 
+  // Rendered here, mounted on the perspectives strip: the trigger is an
+  // icon beside the delete one, not a separate row under the card.
+  const cardEditor = canEditCard ? (
+  <InitiativeCardEditor
+    initiativeId={initiative.id}
+    initial={{
+      code: initiative.code ?? "",
+      horizon: initiative.horizon ?? "",
+      titleAr: initiative.title_ar ?? "",
+      titleEn: initiative.title_en ?? "",
+      deliverableAr: initiative.deliverable_ar ?? "",
+      descriptionAr: initiative.description_ar ?? "",
+      subGoalId: initiative.sub_goal_id ?? "",
+      ownerOrgUnitId: initiative.owner_org_unit_id ?? "",
+      budgetNote: initiative.budget_note ?? "",
+      statusCode: initiative.status_code ?? "",
+      startDate: initiative.start_date ?? "",
+      endDate: initiative.end_date ?? "",
+      progressPercent: initiative.progress_percent == null ? "" : String(initiative.progress_percent),
+      perspectiveCode: initiative.perspective_code ?? "",
+      outcomesAr: outcomesRaw,
+    }}
+    subGoalOptions={cardSubGoalOptions}
+    orgUnitOptions={cardOrgUnitOptions}
+    statusOptions={cardStatusOptions}
+    perspectiveOptions={perspectives}
+    dependencies={dependencies.map((d) => ({
+      id: d.id,
+      label: d.code ? d.code + " — " + d.title : d.title,
+      // Carried through so the row can offer "open the initiative".
+      initiativeId: d.initiativeId,
+    }))}
+    dependencyOptions={siblingOptions}
+    assignments={assignments.map((a) => ({
+      orgUnitId: a.org_unit_id,
+      orgUnitName: orgUnitNameById.get(a.org_unit_id) ?? "—",
+      role: a.role as "lead" | "participant" | "supporter",
+      percentage: a.percentage,
+    }))}
+    openOnMount={edit === "1"}
+  />
+  ) : null;
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       {/* Same action bar as the plan screens, so the buttons here read the
@@ -350,6 +394,15 @@ export default async function InitiativePage({
               {p.label}
             </span>
           ))}
+          {/* Edit and delete ride on this strip's own line, at its far end,
+              and carry no-print so the printed card keeps only the
+              perspectives. */}
+          {canEditCard && (
+            <div className="sru-initiative-card-actions no-print" style={{ marginInlineStart: "auto" }}>
+              {cardEditor}
+              <InitiativeDeleteButton initiativeId={initiative.id} planId={initiative.plan_id} />
+            </div>
+          )}
         </div>
 
         <div className="sru-initiative-sheet-grid">
@@ -530,47 +583,6 @@ export default async function InitiativePage({
             {missingFields.map((key) => t(missingFieldLabelKeys[key])).join("، ")}
           </span>
         </div>
-      )}
-
-      {canEditCard && (
-        <InitiativeCardEditor
-          initiativeId={initiative.id}
-          initial={{
-            code: initiative.code ?? "",
-            horizon: initiative.horizon ?? "",
-            titleAr: initiative.title_ar ?? "",
-            titleEn: initiative.title_en ?? "",
-            deliverableAr: initiative.deliverable_ar ?? "",
-            descriptionAr: initiative.description_ar ?? "",
-            subGoalId: initiative.sub_goal_id ?? "",
-            ownerOrgUnitId: initiative.owner_org_unit_id ?? "",
-            budgetNote: initiative.budget_note ?? "",
-            statusCode: initiative.status_code ?? "",
-            startDate: initiative.start_date ?? "",
-            endDate: initiative.end_date ?? "",
-            progressPercent: initiative.progress_percent == null ? "" : String(initiative.progress_percent),
-            perspectiveCode: initiative.perspective_code ?? "",
-            outcomesAr: outcomesRaw,
-          }}
-          subGoalOptions={cardSubGoalOptions}
-          orgUnitOptions={cardOrgUnitOptions}
-          statusOptions={cardStatusOptions}
-          perspectiveOptions={perspectives}
-          dependencies={dependencies.map((d) => ({
-            id: d.id,
-            label: d.code ? d.code + " — " + d.title : d.title,
-            // Carried through so the row can offer "open the initiative".
-            initiativeId: d.initiativeId,
-          }))}
-          dependencyOptions={siblingOptions}
-          assignments={assignments.map((a) => ({
-            orgUnitId: a.org_unit_id,
-            orgUnitName: orgUnitNameById.get(a.org_unit_id) ?? "—",
-            role: a.role as "lead" | "participant" | "supporter",
-            percentage: a.percentage,
-          }))}
-          openOnMount={edit === "1"}
-        />
       )}
 
 

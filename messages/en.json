@@ -2530,7 +2530,9 @@
     "deleteActivityConfirm": "This activity will be deleted. Continue?",
     "dependencyView": "Open the initiative",
     "assignmentsNone": "No departments assigned yet.",
-    "backToInitiatives": "Back to initiatives"
+    "backToInitiatives": "Back to initiatives",
+    "deleteInitiative": "Delete the initiative",
+    "deleteInitiativeConfirm": "This initiative will be deleted. Continue?"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",
