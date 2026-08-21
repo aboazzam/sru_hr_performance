@@ -1814,3 +1814,47 @@ tr.sru-row-link:focus-within > td {
   padding: 6px 12px;
   line-height: 1.7;
 }
+
+/* Filters under the tab strip: status / owning department / strategic goal.
+   Compact and quiet — they sit above a list, not inside a form. */
+.sru-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  background: var(--sru-purple-light);
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 8px;
+}
+.sru-filterbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sru-filterbar select {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--sru-border, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+  max-width: 220px;
+}
+.sru-filterbar-count {
+  font-size: 12px;
+  color: var(--sru-muted);
+}
+.sru-filterbar-reset {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-purple);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}

@@ -285,7 +285,7 @@ export default async function StrategicPlanDetailPage({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tGoals("subtitle")}</p>
-        <div className="sru-actionbar no-print">
+        <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
           {canManageGoals && (
             <Link href="/kpis/strategic-goals/new" className="sru-btn sru-btn-primary" style={{ whiteSpace: "nowrap" }}>
               {tGoals("addGoalButton")}
@@ -701,6 +701,10 @@ export default async function StrategicPlanDetailPage({
   // limited to this plan's sub-goals.
   const subGoalOptions = subGoals.map((sg) => ({ id: sg.id, title: sg.title_ar }));
   const subGoalTitleById = new Map(subGoalOptions.map((sg) => [sg.id, sg.title]));
+  // The main goal is DERIVED from the sub-goal (the cards present it that way
+  // too), so it is never a second stored field to keep in step.
+  const mainGoalIdBySubGoal = new Map(subGoals.map((sg) => [sg.id, sg.strategic_goal_id]));
+  const goalTitleById = new Map(goals.map((g) => [g.id, g.title_ar]));
 
 
   const { data: statusRows } = await supabase
@@ -725,7 +729,10 @@ export default async function StrategicPlanDetailPage({
     titleEn: row.title_en,
     descriptionAr: row.description_ar,
     ownerOrgUnitName: row.owner_org_unit_id ? orgUnitNameById.get(row.owner_org_unit_id) ?? null : null,
+    ownerOrgUnitId: row.owner_org_unit_id,
     subGoalTitle: row.sub_goal_id ? subGoalTitleById.get(row.sub_goal_id) ?? null : null,
+    mainGoalId: row.sub_goal_id ? mainGoalIdBySubGoal.get(row.sub_goal_id) ?? null : null,
+    mainGoalTitle: row.sub_goal_id ? goalTitleById.get(mainGoalIdBySubGoal.get(row.sub_goal_id) ?? "") ?? null : null,
     startDate: row.start_date,
     endDate: row.end_date,
     statusLabel: statusLabelByCode.get(row.status_code) ?? row.status_code,
@@ -743,10 +750,8 @@ export default async function StrategicPlanDetailPage({
 
   const initiativesContent = (
     <div>
-      <div className="sru-actionbar no-print" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
-        <StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />
-      </div>
       <InitiativesPanel
+        toolbar={<StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />}
         planId={plan.id}
         initiatives={initiatives}
         targetOptions={targetOptions}
