@@ -127,12 +127,13 @@ export function OrgStructurePositionMiniRow({
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 0", borderBottom: "1px solid var(--sru-border)" }}>
         <span style={{ color: "var(--sru-muted)", fontSize: 11.5, minWidth: 80 }}>{parentLabel}</span>
-        <strong style={{ fontSize: 13 }}>{initialNameAr}</strong>
-        {initialNameEn && (
-          <span className="sru-name-en">
-            {initialNameEn}
-          </span>
-        )}
+        {/* One column, not two flex siblings: `.sru-name-en` is
+            `display: block`, which a flex parent ignores — so the Latin
+            name used to sit BESIDE the Arabic one instead of under it. */}
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <strong style={{ fontSize: 13 }}>{initialNameAr}</strong>
+          {initialNameEn && <span className="sru-name-en">{initialNameEn}</span>}
+        </div>
         <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>({orgUnitName})</span>
         <div className="sru-icon-action-group">
           <button type="button" onClick={handleEdit} className="sru-icon-action" title={t("editButton")} aria-label={t("editButton")}>

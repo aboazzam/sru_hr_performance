@@ -9,6 +9,7 @@ interface OrgChartPosition {
   parent_id: string | null;
   level_id: string;
   name_ar: string;
+  name_en: string | null;
 }
 
 interface OrgChartLevel {
@@ -36,7 +37,11 @@ interface ConnectorLine {
 // so canvas WIDTH only grows with tree DEPTH (level count), not breadth --
 // a wide level just makes the chart taller, which scrolls far more
 // naturally on a normal page than horizontal overflow does.
-const SLOT_HEIGHT = 132;
+// 2026-08-21: raised from 132 to 156 when the Latin name became a fourth
+// line inside a node. Measured: a node carrying one grows to ~167px, which
+// overflowed a 132px slot — today no two such nodes are adjacent so nothing
+// overlapped, but that was luck of the data, not spacing.
+const SLOT_HEIGHT = 156;
 const LEVEL_WIDTH = 260;
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
@@ -254,6 +259,11 @@ export function OrgChartTree({
               }}
             >
               <strong>{p.name_ar}</strong>
+              {/* Not the shared `.sru-name-en`: that one is muted grey and
+                  end-aligned, both wrong on a filled, centred node — this
+                  inherits the node's own text colour like the two lines
+                  below it already do. */}
+              {p.name_en && <span className="sru-orgchart-node-nameen">{p.name_en}</span>}
               {jobTitle && (
                 <span className="sru-orgchart-node-jobtitle">
                   <Briefcase size={11} />
