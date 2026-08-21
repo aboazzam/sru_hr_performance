@@ -239,6 +239,11 @@ export function EmployeeInviteForm({
             <label>{t("qualificationLabel")}</label>
             <input type="text" name="qualification" placeholder={t("qualificationPlaceholder")} />
           </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            {/* One per line — the column stores them exactly that way. */}
+            <label>{t("certificatesLabel")}</label>
+            <textarea name="certificates" rows={2} dir="rtl" placeholder={t("certificatesPlaceholder")} />
+          </div>
           <div className="sru-field">
             <label>{t("educationSpecialityLabel")}</label>
             <input type="text" name="educationSpeciality" placeholder={t("educationSpecialityPlaceholder")} />

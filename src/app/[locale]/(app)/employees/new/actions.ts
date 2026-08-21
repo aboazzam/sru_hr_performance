@@ -36,6 +36,7 @@ const inviteSchema = z
     // the same TEXT-column-no-CHECK precedent as the DB migration that
     // added them (20260724000002).
     qualification: z.string().trim().optional(),
+    certificates: z.string().trim().optional(),
     educationSpeciality: z.string().trim().optional(),
     dateOfBirth: z
       .string()
@@ -174,6 +175,7 @@ export async function inviteEmployee(
     jobTitleId: formData.get("jobTitleId") || undefined,
     hireDate: formData.get("hireDate") || undefined,
     qualification: formData.get("qualification") || undefined,
+    certificates: formData.get("certificates") || undefined,
     educationSpeciality: formData.get("educationSpeciality") || undefined,
     dateOfBirth: formData.get("dateOfBirth") || undefined,
     mobile: formData.get("mobile") || undefined,
@@ -220,6 +222,7 @@ export async function inviteEmployee(
     jobTitleId,
     hireDate,
     qualification,
+    certificates,
     educationSpeciality,
     dateOfBirth,
     mobile,
@@ -278,6 +281,7 @@ export async function inviteEmployee(
       job_title_id: jobTitleId ?? null,
       hire_date: hireDate ?? null,
       qualification: qualification ?? null,
+      certificates: certificates ?? null,
       education_speciality: educationSpeciality ?? null,
       date_of_birth: dateOfBirth ?? null,
       mobile: mobile ?? null,

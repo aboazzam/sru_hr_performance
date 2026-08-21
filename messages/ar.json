@@ -683,7 +683,9 @@
     "sectionJobTitle": "البيانات الوظيفية",
     "sectionJobSubtitle": "الوحدة والمسمى والتفاصيل الأكاديمية",
     "sectionRoleTitle": "الدور والصلاحيات",
-    "sectionRoleSubtitle": "يحدّد ما يمكنه رؤيته والتصرف فيه"
+    "sectionRoleSubtitle": "يحدّد ما يمكنه رؤيته والتصرف فيه",
+    "certificatesLabel": "الشهادات",
+    "certificatesPlaceholder": "شهادة في كل سطر"
   },
   "EmployeeDetailPage": {
     "notFound": "لم يتم العثور على هذا الموظف.",
@@ -782,7 +784,9 @@
     "errorInvalidInput": "تحقق من الحقول المطلوبة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorDuplicate": "البريد الإلكتروني مستخدم مسبقًا لموظف آخر.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "certificatesLabel": "الشهادات",
+    "certificatesPlaceholder": "شهادة في كل سطر"
   },
   "AssignSupervisorPage": {
     "title": "إدارة المشرفين المباشرين",

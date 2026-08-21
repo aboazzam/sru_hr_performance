@@ -35,7 +35,7 @@ export default async function MyProfilePage() {
     ? await supabase
         .from("profiles")
         .select(
-          "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, qualification, education_speciality, mobile, org_units(name_ar), job_titles(name_ar, grade_level)"
+          "id, employee_number, full_name_ar, full_name_en, email, hire_date, status, job_title_id, supervisor_id, qualification, education_speciality, mobile, certificates, org_units(name_ar), job_titles(name_ar, grade_level)"
         )
         .eq("auth_user_id", user.id)
         .maybeSingle()
@@ -55,6 +55,7 @@ export default async function MyProfilePage() {
         qualification: string | null;
         education_speciality: string | null;
         mobile: string | null;
+        certificates: string | null;
         org_units: { name_ar: string } | null;
         job_titles: { name_ar: string; grade_level: number } | null;
       }
@@ -180,6 +181,12 @@ export default async function MyProfilePage() {
     calibration_sessions: { evaluation_cycles: { name_ar: string } | null } | null;
   }> | null;
 
+  // One certificate per line (20260821000001).
+  const certificates = (p?.certificates ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   const tabs: ProfileTab[] = !p
     ? []
     : [
@@ -249,11 +256,20 @@ export default async function MyProfilePage() {
                     <dd>{p.qualification ?? "—"}</dd>
                     <dt>{t("specialityLabel")}</dt>
                     <dd>{p.education_speciality ?? "—"}</dd>
-                    {/* No `certificates` column exists in `profiles` — still an
-                        open schema decision, so it says so instead of showing a
-                        dash that would read as "none recorded". */}
+                    {/* One certificate per line (20260821000001), listed as
+                        written rather than squeezed onto one line. */}
                     <dt>{t("certificatesLabel")}</dt>
-                    <dd className="is-pending">{t("comingSoon")}</dd>
+                    <dd>
+                      {certificates.length === 0 ? (
+                        "—"
+                      ) : (
+                        <ul style={{ margin: 0, paddingInlineStart: 16 }}>
+                          {certificates.map((line, i) => (
+                            <li key={i}>{line}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </dd>
                   </dl>
                 </section>
               </div>
