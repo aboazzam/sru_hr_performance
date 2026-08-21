@@ -84,6 +84,37 @@ export function DateFieldDmy({
   }
 
   const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [popStyle, setPopStyle] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // The popup is position:fixed, so it needs real coordinates. Measured from
+  // the trigger each time it opens (and on scroll/resize while open), and
+  // flipped above the field when there is no room below.
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const POP_W = 274;
+      const POP_H = 320;
+      const below = window.innerHeight - r.bottom;
+      const preferred = below < POP_H && r.top > POP_H ? r.top - POP_H - 6 : r.bottom + 6;
+      // Clamped to the viewport: inside a scrolling dialog the field itself can
+      // sit past the fold, and anchoring blindly to it would push the calendar
+      // off-screen.
+      const top = Math.min(Math.max(8, preferred), Math.max(8, window.innerHeight - POP_H - 8));
+      // Keep it on screen horizontally whichever direction the page reads.
+      const left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - POP_W - 8));
+      setPopStyle({ top, left });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -131,6 +162,7 @@ export function DateFieldDmy({
       {name && <input type="hidden" name={name} value={current} />}
 
       <button
+        ref={triggerRef}
         type="button"
         className="sru-datefield-trigger"
         disabled={disabled}
@@ -167,7 +199,7 @@ export function DateFieldDmy({
       </button>
 
       {open && !disabled && (
-        <div className="sru-datefield-pop" role="dialog" aria-label={ariaLabel}>
+        <div className="sru-datefield-pop" role="dialog" aria-label={ariaLabel} style={popStyle}>
           <div className="sru-datefield-head">
             <button
               type="button"

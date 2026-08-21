@@ -2229,7 +2229,9 @@
     "progressFromStatus": "Completed",
     "progressElapsed": "Of the period elapsed",
     "progressUnknown": "Not assessed yet",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "viewButton": "View details",
+    "editButton": "Edit the card"
   },
   "ProgramsPanel": {
     "intro": "Strategic programs group several initiatives under one umbrella, run by a supervising committee. Open a program to see its committee, dashboard and initiative detail.",
@@ -2507,7 +2509,8 @@
     "dependencyAdd": "Add dependency",
     "dependencyRemove": "Remove dependency",
     "dependencyPlaceholder": "— Select an initiative —",
-    "dependencyNone": "No dependencies recorded."
+    "dependencyNone": "No dependencies recorded.",
+    "closeButton": "Close"
   },
   "ExecutivePlanDetailPage": {
     "backToList": "Back to executive plans",

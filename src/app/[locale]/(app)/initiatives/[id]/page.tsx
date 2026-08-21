@@ -11,6 +11,8 @@ import { getDisplayTimezone } from "@/lib/systemSettings";
 import { initiativeProgress } from "@/lib/initiativeProgress";
 import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { missingInitiativeFields, type InitiativeFieldKey } from "@/lib/initiativeCompleteness";
+import { AlertCircle } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 
 /**
@@ -27,8 +29,32 @@ import type { Locale } from "@/i18n/config";
  * (initiative_assignments), so «الإدارات الداعمة» is real data, not a second
  * place to type the same thing.
  */
-export default async function InitiativePage({ params }: { params: Promise<{ id: string; locale: Locale }> }) {
+/** Same mapping the editor uses for its own inline marks. */
+const missingFieldLabelKeys: Record<InitiativeFieldKey, string> = {
+  code: "codeLabel",
+  horizon: "horizonLabel",
+  titleAr: "titleArLabel",
+  titleEn: "titleEnLabel",
+  deliverableAr: "deliverableLabel",
+  subGoalId: "subGoalLabel",
+  ownerOrgUnitId: "ownerLabel",
+  budgetNote: "budgetLabel",
+  statusCode: "statusLabel",
+  startDate: "startDateLabel",
+  endDate: "endDateLabel",
+};
+
+export default async function InitiativePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string; locale: Locale }>;
+  // `?edit=1` arrives from the pencil beside the initiative in the list, so
+  // the editor opens on landing instead of asking for a second click.
+  searchParams: Promise<{ edit?: string }>;
+}) {
   const { id, locale } = await params;
+  const { edit } = await searchParams;
   const t = await getTranslations("InitiativePage");
   const supabase = await createClient();
 
@@ -150,6 +176,19 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
   // strategic_initiatives_update requires strategicPlanning='approve', so
   // anyone below that would be shown a form the database would refuse.
   const canEditCard = hasVpraAccess(level, "approve");
+  const missingFields = missingInitiativeFields({
+    code: initiative.code,
+    horizon: initiative.horizon,
+    titleAr: initiative.title_ar,
+    titleEn: initiative.title_en,
+    deliverableAr: initiative.deliverable_ar,
+    subGoalId: initiative.sub_goal_id,
+    ownerOrgUnitId: initiative.owner_org_unit_id,
+    budgetNote: initiative.budget_note,
+    statusCode: initiative.status_code,
+    startDate: initiative.start_date,
+    endDate: initiative.end_date,
+  });
   const { data: planSubGoalRows } = canEditCard
     ? await supabase
         .from("sub_goals")
@@ -430,6 +469,19 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
+      {/* The editor itself is now behind the pencil, so what is still blank
+          is stated here on the page — otherwise collapsing the form would
+          also hide the one signal that says the card is incomplete. */}
+      {canEditCard && missingFields.length > 0 && (
+        <div className="no-print sru-missing-banner">
+          <AlertCircle size={16} aria-hidden style={{ flex: "0 0 auto", marginTop: 3 }} />
+          <span>
+            <strong>{t("missingHeading", { count: missingFields.length })}</strong>{" "}
+            {missingFields.map((key) => t(missingFieldLabelKeys[key])).join("، ")}
+          </span>
+        </div>
+      )}
+
       {canEditCard && (
         <InitiativeCardEditor
           initiativeId={initiative.id}
@@ -456,6 +508,7 @@ export default async function InitiativePage({ params }: { params: Promise<{ id:
           perspectiveOptions={perspectives}
           dependencies={dependencies.map((d) => ({ id: d.id, label: d.code ? d.code + " — " + d.title : d.title }))}
           dependencyOptions={siblingOptions}
+          openOnMount={edit === "1"}
         />
       )}
 

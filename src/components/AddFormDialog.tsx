@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Plus } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 
@@ -29,6 +30,8 @@ export function AddFormDialog({
   closeLabel,
   children,
   triggerClassName = "sru-btn sru-btn-primary",
+  triggerIcon,
+  openOnMount = false,
 }: {
   dialogRef: RefObject<HTMLDialogElement | null>;
   triggerLabel: string;
@@ -39,18 +42,45 @@ export function AddFormDialog({
   /** The form itself, ending with its own submit row. */
   children: ReactNode;
   triggerClassName?: string;
+  /**
+   * Render an icon-only trigger instead of the "+ label" button — used where
+   * the action belongs beside a row rather than above a list. The label is
+   * still carried by `title`/`aria-label`, so it is never icon-only to a
+   * screen reader.
+   */
+  triggerIcon?: ReactNode;
+  /** Open immediately — e.g. arriving from a row's edit icon (?edit=1). */
+  openOnMount?: boolean;
 }) {
+  useEffect(() => {
+    if (openOnMount) dialogRef.current?.showModal();
+    // Runs once: re-opening on every render would fight the close button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => dialogRef.current?.showModal()}
-        className={triggerClassName}
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
-      >
-        <Plus size={15} aria-hidden />
-        {triggerLabel}
-      </button>
+      {triggerIcon ? (
+        <button
+          type="button"
+          onClick={() => dialogRef.current?.showModal()}
+          className="sru-icon-action"
+          title={triggerLabel}
+          aria-label={triggerLabel}
+        >
+          {triggerIcon}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => dialogRef.current?.showModal()}
+          className={triggerClassName}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <Plus size={15} aria-hidden />
+          {triggerLabel}
+        </button>
+      )}
 
       <dialog
         ref={dialogRef}
