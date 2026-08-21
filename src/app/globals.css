@@ -1858,3 +1858,22 @@ tr.sru-row-link:focus-within > td {
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* Timeline gridlines: a hairline between weeks and a heavier one at each
+   month boundary, so a month reads as one block of four (2026-08-21 request).
+   Drawn on the start edge, which flips with the page direction on its own. */
+.sru-initiative-timeline .sru-week-cell {
+  border-inline-start: 1px solid var(--sru-border, #e5e7eb);
+}
+.sru-initiative-timeline .sru-week-cell.is-month-start {
+  border-inline-start: 2px solid var(--sru-purple);
+}
+/* Printed the same way — the card is the deliverable, not just the screen. */
+@media print {
+  .sru-initiative-timeline .sru-week-cell {
+    border-inline-start: 1px solid #d1d5db;
+  }
+  .sru-initiative-timeline .sru-week-cell.is-month-start {
+    border-inline-start: 2px solid #501e8c;
+  }
+}

@@ -450,7 +450,12 @@ export default async function InitiativePage({
                   </tr>
                   <tr>
                     {months.map((month) => (
-                      <th key={month.key} colSpan={WEEKS_PER_MONTH} style={{ textAlign: "center", padding: "2px 4px" }}>
+                      <th
+                        key={month.key}
+                        className="sru-week-cell is-month-start"
+                        colSpan={WEEKS_PER_MONTH}
+                        style={{ textAlign: "center", padding: "2px 4px" }}
+                      >
                         M{month.month}
                       </th>
                     ))}
@@ -462,6 +467,7 @@ export default async function InitiativePage({
                       Array.from({ length: WEEKS_PER_MONTH }, (_, week) => (
                         <th
                           key={`${month.key}-w${week}`}
+                          className={week === 0 ? "sru-week-cell is-month-start" : "sru-week-cell"}
                           style={{ textAlign: "center", padding: "1px 2px", fontSize: 10, fontWeight: 600 }}
                         >
                           {week + 1}
@@ -488,6 +494,7 @@ export default async function InitiativePage({
                         Array.from({ length: WEEKS_PER_MONTH }, (_, week) => (
                           <td
                             key={`${month.key}-w${week}`}
+                            className={week === 0 ? "sru-week-cell is-month-start" : "sru-week-cell"}
                             style={{
                               textAlign: "center",
                               padding: 2,
