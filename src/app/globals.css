@@ -2044,3 +2044,34 @@ tr.sru-row-link:focus-within > td {
 .sru-btn.sru-btn-danger:hover:not(:disabled) {
   filter: brightness(0.92);
 }
+
+/* ---- plan card: time as a bar, achievement as the ring -----------------
+   Two different numbers had been collapsed into one ring, which read as
+   "38% done" when it meant "38% of the years have passed" (2026-08-22).
+   Time now runs across the top of the card, in the same teal as the
+   .sru-diag rule it visually replaces there. */
+.sru-plan-timeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.sru-plan-timeline-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--sru-border);
+  overflow: hidden;
+}
+.sru-plan-timeline-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sru-blue, #1f7ae0);
+}
+.sru-plan-timeline-label {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--sru-muted);
+}

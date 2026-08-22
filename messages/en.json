@@ -1815,7 +1815,12 @@
       "initiatives": "Initiatives, their activities, participating units and dependencies",
       "programs": "Programs, their committees and enrolled initiatives",
       "executivePlans": "Executive plans built on this plan"
-    }
+    },
+    "timelineLabel": "{percent}% of the plan period has passed",
+    "timelineTitle": "Timeline: how much of the plan’s years have passed",
+    "achievementFromKpis": "Achievement (from KPIs)",
+    "achievementFromInitiatives": "Achievement ({reported} of {total} initiatives)",
+    "achievementUnknown": "No achievement recorded yet"
   },
   "StrategicPlanDetailPage": {
     "backToList": "Back to Plans List",
@@ -1838,7 +1843,14 @@
     "initiativesTab": "Initiatives",
     "planTargetLabel": "Plan target",
     "unknownTarget": "Unknown target",
-    "programsTab": "Strategic Programs"
+    "programsTab": "Strategic Programs",
+    "exportPdf": "Export PDF",
+    "exportExcel": "Export Excel",
+    "exportCsv": "Export CSV",
+    "exportSheetsHeading": "Choose the sheets to export",
+    "exportSheetsNoteExcel": "Pick the sheets to include in the Excel file. The whole workbook is selected by default.",
+    "exportSheetsNoteCsv": "A CSV holds a single table, so pick one sheet.",
+    "exportConfirmButton": "Export"
   },
   "ManageKpisPage": {
     "title": "Manage KPIs & Targets",

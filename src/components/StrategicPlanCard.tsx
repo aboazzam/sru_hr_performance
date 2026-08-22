@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { AlertCircle, ArrowLeft, Eye, Pencil } from "lucide-react";
 import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
 import { initiativeProgress } from "@/lib/initiativeProgress";
+import { planAchievement, type PlanAchievementKpi, type PlanAchievementInitiative } from "@/lib/planAchievement";
 import { DeleteStrategicPlanButton } from "@/components/DeleteStrategicPlanButton";
 import { updateStrategicPlan, type CreatePlanState } from "@/app/[locale]/(app)/kpis/plans/actions";
 
@@ -25,16 +26,27 @@ export interface StrategicPlanCardData {
   goalCount: number;
   initiativeCount: number;
   programCount: number;
+  /** For the ring: what the plan has achieved, not how much time has passed. */
+  kpis: PlanAchievementKpi[];
+  initiatives: PlanAchievementInitiative[];
 }
 
 /**
- * One plan, shaped like the initiative and program cards (2026-08-22).
+ * One plan, shaped like the initiative and program cards.
  *
- * The ring reuses the same helper those two use. A plan stores only its year
- * range, so the honest number is how much of that range has passed — the case
- * that helper labels as elapsed time rather than as completion. The range is
- * widened to whole years (1 Jan of the first, 31 Dec of the last), which is
- * what "خطة 2024–2030" actually means.
+ * Two different numbers, deliberately shown as two different things
+ * (2026-08-22: "اجعل الخط الزمني ... أما المؤشر الدائري فاجعله نسبة الإنجاز"):
+ *
+ *  - the bar across the top of the card is TIME — how much of the plan's year
+ *    range has passed (1 Jan of the first year to 31 Dec of the last, which is
+ *    what "خطة 2024–2030" actually means);
+ *  - the ring is ACHIEVEMENT — KPI actuals where they exist, otherwise the
+ *    average progress reported on the plan's initiatives, and a dash when
+ *    nothing has been reported at all.
+ *
+ * Showing elapsed time inside the ring, as this card did when it was first
+ * built, invited exactly the reading the two now separate: a plan can be 38%
+ * through its years and 5% done.
  */
 export function StrategicPlanCard({
   plan,
@@ -67,13 +79,30 @@ export function StrategicPlanCard({
   }
 
   const href = `/kpis/plans/${plan.id}`;
-  const progress = initiativeProgress(
+  const elapsed = initiativeProgress(
     { startDate: `${plan.startYear}-01-01`, endDate: `${plan.endYear}-12-31` },
     todayIso
   );
+  const achievement = planAchievement({ kpis: plan.kpis, initiatives: plan.initiatives });
+  const achievementCaption =
+    achievement.kind === "kpi"
+      ? t("achievementFromKpis")
+      : achievement.kind === "initiatives"
+        ? t("achievementFromInitiatives", { reported: achievement.reported, total: achievement.total })
+        : t("achievementUnknown");
 
   return (
     <div className="sru-card sru-initiative-card">
+      {/* Time, as a bar — not inside the ring, which now answers a different
+          question. `aria-hidden` on the bar itself: the caption beside it
+          already says the same thing in words. */}
+      <div className="sru-plan-timeline" title={t("timelineTitle")}>
+        <div className="sru-plan-timeline-track" aria-hidden>
+          <span className="sru-plan-timeline-fill" style={{ width: `${elapsed.percent}%` }} />
+        </div>
+        <span className="sru-plan-timeline-label">{t("timelineLabel", { percent: elapsed.percent })}</span>
+      </div>
+
       <div className="sru-initiative-card-body">
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4 style={{ fontSize: 15, fontWeight: 700 }}>
@@ -93,7 +122,10 @@ export function StrategicPlanCard({
           </div>
         </div>
         {/* After the text, so in an RTL row it renders on the LEFT. */}
-        <InitiativeProgressRing progress={progress} />
+        <InitiativeProgressRing
+          progress={{ percent: achievement.percent, kind: achievement.kind === "none" ? "none" : "reported" }}
+          caption={achievementCaption}
+        />
         <div className="sru-initiative-card-actions">
           <Link href={href} className="sru-icon-action" title={t("viewButton")} aria-label={t("viewButton")}>
             <Eye size={15} aria-hidden />

@@ -1815,7 +1815,12 @@
       "initiatives": "المبادرات وأنشطتها وجهاتها المشاركة وتبعياتها",
       "programs": "البرامج ولجانها ومبادراتها المدرجة",
       "executivePlans": "الخطط التنفيذية المبنية على هذه الخطة"
-    }
+    },
+    "timelineLabel": "مضى {percent}% من مدة الخطة",
+    "timelineTitle": "الخط الزمني: ما مضى من سنوات الخطة",
+    "achievementFromKpis": "نسبة الإنجاز (من المؤشرات)",
+    "achievementFromInitiatives": "نسبة الإنجاز ({reported} من {total} مبادرة)",
+    "achievementUnknown": "لم تُسجَّل نسبة إنجاز بعد"
   },
   "StrategicPlanDetailPage": {
     "backToList": "العودة إلى قائمة الخطط",
@@ -1838,7 +1843,14 @@
     "initiativesTab": "المبادرات",
     "planTargetLabel": "مستهدف الخطة",
     "unknownTarget": "مستهدف غير معروف",
-    "programsTab": "برامج الاستراتيجية"
+    "programsTab": "برامج الاستراتيجية",
+    "exportPdf": "تصدير PDF",
+    "exportExcel": "تصدير Excel",
+    "exportCsv": "تصدير CSV",
+    "exportSheetsHeading": "اختر الأوراق المطلوب تصديرها",
+    "exportSheetsNoteExcel": "حدّد الأوراق التي تريدها في ملف الإكسل. المحدَّد افتراضيًا هو المصنّف كاملًا.",
+    "exportSheetsNoteCsv": "ملف CSV يحمل جدولًا واحدًا فقط، فاختر ورقة واحدة.",
+    "exportConfirmButton": "تصدير"
   },
   "ManageKpisPage": {
     "title": "إدارة المؤشرات والمستهدفات",
