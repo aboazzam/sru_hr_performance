@@ -44,13 +44,74 @@ export default async function StrategicPlansPage() {
   const plans = (data ?? []) as PlanRow[];
 
   const [{ data: goalRows }, { data: initiativeRows }, { data: programRows }] = await Promise.all([
-    supabase.from("strategic_goals").select("plan_id").is("deleted_at", null),
-    supabase.from("strategic_initiatives").select("plan_id").is("deleted_at", null),
+    supabase.from("strategic_goals").select("id, plan_id").is("deleted_at", null),
+    supabase
+      .from("strategic_initiatives")
+      .select("plan_id, progress_percent, status_code")
+      .is("deleted_at", null),
     supabase.from("strategic_programs").select("plan_id").is("deleted_at", null),
   ]);
+
+  // KPIs hang off a goal or a sub-goal, never off the plan directly, so the
+  // plan's own KPIs are reached through its goals. Read via the caller's own
+  // client like everything else here: a KPI they cannot see simply does not
+  // count toward the number they are shown.
+  const goalsById = ((goalRows ?? []) as Array<{ id: string; plan_id: string }>).reduce((map, g) => {
+    map.set(g.id, g.plan_id);
+    return map;
+  }, new Map<string, string>());
+  const { data: subGoalRows } =
+    goalsById.size > 0
+      ? await supabase
+          .from("sub_goals")
+          .select("id, strategic_goal_id")
+          .in("strategic_goal_id", [...goalsById.keys()])
+          .is("deleted_at", null)
+      : { data: [] };
+  const planBySubGoal = ((subGoalRows ?? []) as Array<{ id: string; strategic_goal_id: string }>).reduce((map, sg) => {
+    const planId = goalsById.get(sg.strategic_goal_id);
+    if (planId) map.set(sg.id, planId);
+    return map;
+  }, new Map<string, string>());
+
+  const { data: kpiRows } = await supabase
+    .from("strategic_kpis")
+    .select("id, weight, plan_target_value, strategic_goal_id, sub_goal_id")
+    .is("deleted_at", null);
+  const kpis = (kpiRows ?? []) as Array<{
+    id: string;
+    weight: number | string | null;
+    plan_target_value: number | string | null;
+    strategic_goal_id: string | null;
+    sub_goal_id: string | null;
+  }>;
+
+  // The latest recorded actual per KPI. Annual targets carry the actuals; a
+  // KPI with none is simply unmeasured, which planAchievement() reports
+  // rather than scoring as zero.
+  const { data: annualRows } = await supabase
+    .from("kpi_annual_targets")
+    .select("kpi_id, actual_value, created_at")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const latestActualByKpi = new Map<string, number | string | null>();
+  for (const row of (annualRows ?? []) as Array<{ kpi_id: string; actual_value: number | string | null }>) {
+    if (row.actual_value != null) latestActualByKpi.set(row.kpi_id, row.actual_value);
+  }
+
+  function planIdOfKpi(kpi: (typeof kpis)[number]): string | undefined {
+    if (kpi.strategic_goal_id) return goalsById.get(kpi.strategic_goal_id);
+    if (kpi.sub_goal_id) return planBySubGoal.get(kpi.sub_goal_id);
+    return undefined;
+  }
   function countFor(rows: Array<{ plan_id: string }> | null, planId: string): number {
     return (rows ?? []).filter((r) => r.plan_id === planId).length;
   }
+  const initiativeRowsTyped = (initiativeRows ?? []) as Array<{
+    plan_id: string;
+    progress_percent: number | string | null;
+    status_code: string | null;
+  }>;
 
   // One "today" for every card, taken on the server: a per-card new Date()
   // could straddle midnight mid-render.
@@ -62,8 +123,18 @@ export default async function StrategicPlansPage() {
     startYear: plan.start_year,
     endYear: plan.end_year,
     goalCount: countFor(goalRows as Array<{ plan_id: string }> | null, plan.id),
-    initiativeCount: countFor(initiativeRows as Array<{ plan_id: string }> | null, plan.id),
+    initiativeCount: initiativeRowsTyped.filter((r) => r.plan_id === plan.id).length,
     programCount: countFor(programRows as Array<{ plan_id: string }> | null, plan.id),
+    kpis: kpis
+      .filter((k) => planIdOfKpi(k) === plan.id)
+      .map((k) => ({
+        weight: k.weight,
+        targetValue: k.plan_target_value,
+        actualValue: latestActualByKpi.get(k.id) ?? null,
+      })),
+    initiatives: initiativeRowsTyped
+      .filter((r) => r.plan_id === plan.id)
+      .map((r) => ({ progressPercent: r.progress_percent, statusCode: r.status_code })),
   }));
 
   return (

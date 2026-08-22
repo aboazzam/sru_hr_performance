@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { STRATEGIC_PLAN_COLUMNS, STRATEGIC_PLAN_SHEETS } from "@/lib/strategicPlanExcel";
+import { buildExportResponse, parseExportFormat } from "@/lib/exportResponse";
 
 // Excluded from src/proxy.ts's matcher (which skips /api entirely), so no
 // locale/session-refresh happens here — createClient() still works because
@@ -14,7 +15,7 @@ import { STRATEGIC_PLAN_COLUMNS, STRATEGIC_PLAN_SHEETS } from "@/lib/strategicPl
 // the browser: the workbook reflects exactly what this caller is authorized
 // to see right now. A caller who can read nothing gets a valid workbook
 // with headers and no rows, not an error.
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
 
@@ -209,7 +210,26 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   );
 
   const workbook = new ExcelJS.Workbook();
+  // Which sheets the caller asked for. Absent means all of them, so a link
+  // written before the picker existed still returns the whole workbook.
+  const requestedSheets = request.nextUrl.searchParams.get("sheets");
+  const wantedSheets = requestedSheets
+    ? new Set(requestedSheets.split(",").map((v: string) => v.trim()).filter(Boolean))
+    : null;
+  const format = parseExportFormat(request.nextUrl.searchParams.get("format"));
+
+  // A CSV holds ONE table. Rather than inventing a way to staple nine sheets
+  // into one file, CSV exports exactly the sheet asked for (the UI asks for
+  // one), and the sheets are collected here so either format can use them.
+  const collected: Array<{ key: string; name: string; columns: readonly string[]; rows: Array<Array<string | number | null>> }> = [];
+
   function addSheet(name: string, columns: readonly string[], rows: Array<Array<string | number | null>>) {
+    const key = (Object.keys(STRATEGIC_PLAN_SHEETS) as Array<keyof typeof STRATEGIC_PLAN_SHEETS>).find(
+      (k) => STRATEGIC_PLAN_SHEETS[k] === name
+    );
+    if (wantedSheets && (!key || !wantedSheets.has(key))) return;
+    collected.push({ key: key ?? name, name, columns, rows });
+    if (format === "csv") return;
     const sheet = workbook.addWorksheet(name, { views: [{ rightToLeft: true }] });
     sheet.addRow([...columns]);
     sheet.getRow(1).font = { bold: true };
@@ -324,6 +344,23 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       i.end_date ?? "",
     ])
   );
+
+  if (format === "csv") {
+    // Exactly one sheet, so the file is a real table. With none selected
+    // there is nothing to write, which is an error rather than an empty file
+    // that looks like "no data".
+    const sheet = collected[0];
+    if (!sheet) {
+      return NextResponse.json({ error: "no_sheet_selected" }, { status: 400 });
+    }
+    return buildExportResponse({
+      format: "csv",
+      sheetName: sheet.name,
+      filenameBase: `strategic-plan-${sheet.key}`,
+      headers: [...sheet.columns],
+      rows: sheet.rows,
+    });
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
   // RFC 5987 filename*: the plan name is Arabic, which a bare filename=

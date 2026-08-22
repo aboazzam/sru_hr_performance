@@ -17,9 +17,14 @@ import type { InitiativeProgress } from "@/lib/initiativeProgress";
 export function InitiativeProgressRing({
   progress,
   size = 76,
+  caption,
 }: {
   progress: InitiativeProgress;
   size?: number;
+  /** Overrides the caption when the number is not an initiative’s own
+   *  progress (a plan’s achievement, say) — the ring is the same shape, but
+   *  a caption naming the wrong source would be a lie. */
+  caption?: string;
 }) {
   const t = useTranslations("InitiativesPanel");
   const stroke = 8;
@@ -79,7 +84,7 @@ export function InitiativeProgressRing({
         </text>
       </svg>
       <span style={{ fontSize: 10, color: "var(--sru-muted)", textAlign: "center", lineHeight: 1.4 }}>
-        {t(captionKey)}
+        {caption ?? t(captionKey)}
       </span>
     </div>
   );
