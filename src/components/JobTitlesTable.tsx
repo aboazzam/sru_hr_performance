@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { RowLink } from "@/components/RowLink";
 
 interface JobTitleRow {
   id: string;
@@ -91,9 +92,11 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id}>
+                  <RowLink key={r.id} href={`/career-path/job-titles/${r.id}`}>
                     <td>
-                      {r.name_ar}
+                      <Link href={`/career-path/job-titles/${r.id}`} className="sru-row-link-title">
+                        {r.name_ar}
+                      </Link>
                       <span className="sru-chip sru-en" style={{ marginInlineStart: 8 }}>
                         {t("gradeLabel", { grade: r.grade_level })}
                       </span>
@@ -108,7 +111,7 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
                         {t("manage")}
                       </Link>
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

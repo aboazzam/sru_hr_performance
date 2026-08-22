@@ -140,6 +140,23 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }>
   ).filter((tg) => subGoalIds.has(tg.sub_goal_id));
 
+  // Read through the caller's own client like everything else here, so a
+  // committee member exports exactly the programs they can already see.
+  const { data: programsData } = await supabase
+    .from("strategic_programs")
+    .select("name_ar, name_en, description_ar, status, start_date, end_date")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const programs = (programsData ?? []) as Array<{
+    name_ar: string;
+    name_en: string | null;
+    description_ar: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+
   // ---- Name lookups: cycles, positions, employees ----
   const { data: cyclesData } = await supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null);
   const cycleNameById = new Map(((cyclesData ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
@@ -252,6 +269,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         tg.status,
       ];
     })
+  );
+
+  addSheet(
+    STRATEGIC_PLAN_SHEETS.programs,
+    STRATEGIC_PLAN_COLUMNS.programs,
+    programs.map((p) => [p.name_ar, p.name_en ?? "", p.description_ar ?? "", p.status, p.start_date ?? "", p.end_date ?? ""])
   );
 
   const buffer = await workbook.xlsx.writeBuffer();

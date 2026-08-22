@@ -8,6 +8,7 @@ import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
 import { EmployeeApprovalActions } from "@/components/EmployeeApprovalActions";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { RowLink } from "@/components/RowLink";
 
 const statusMessageKeys = {
   active: "statusActive",
@@ -183,10 +184,12 @@ export default async function EmployeesPage({
 
   function renderRow(employee: EmployeeRow) {
     return (
-      <tr key={employee.id}>
+      <RowLink key={employee.id} href={`/employees/${employee.id}`}>
         <td>{employee.employee_number}</td>
         <td>
-          {employee.full_name_ar}
+          <Link href={`/employees/${employee.id}`} className="sru-row-link-title">
+            {employee.full_name_ar}
+          </Link>
           {employee.full_name_en && <span className="sru-name-en">{employee.full_name_en}</span>}
         </td>
         <td>{employee.org_units?.name_ar ?? "—"}</td>
@@ -213,7 +216,7 @@ export default async function EmployeesPage({
             )}
           </div>
         </td>
-      </tr>
+      </RowLink>
     );
   }
 

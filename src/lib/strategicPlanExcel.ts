@@ -22,6 +22,14 @@ export const STRATEGIC_PLAN_SHEETS = {
   /** Export-only: re-importing an assignment needs position/employee
    *  resolution and its own RLS story, deliberately left to its own slice. */
   assignedTargets: "الأهداف المسندة",
+  /**
+   * Programs group this plan's initiatives (2026-08-21 request). The sheet
+   * carries the program's OWN fields only: its committee and which
+   * initiatives it contains are edited on the program's own page, and both
+   * resolve people/initiatives by name — a resolution step with its own
+   * failure modes, deliberately left out rather than half-done here.
+   */
+  programs: "البرامج",
 } as const;
 
 export const STRATEGIC_PLAN_COLUMNS = {
@@ -65,6 +73,14 @@ export const STRATEGIC_PLAN_COLUMNS = {
     "الوزن %",
     "الحالة",
   ],
+  programs: [
+    "اسم البرنامج (عربي)",
+    "اسم البرنامج (إنجليزي)",
+    "الوصف (عربي)",
+    "الحالة",
+    "تاريخ البداية",
+    "تاريخ النهاية",
+  ],
 } as const;
 
 /** Trimmed, whitespace-collapsed text; "" for anything empty/absent. */
@@ -101,6 +117,49 @@ export function cellNumber(value: unknown): number | null | undefined {
   if (normalized === "") return null;
   const n = Number(normalized);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Date cell -> "YYYY-MM-DD" | null (empty) | undefined (invalid).
+ *
+ * Three real shapes reach this: a true Date (ExcelJS parses a date-formatted
+ * cell into one), the ISO text this app exports, and D/M/YYYY typed by hand
+ * in an Arabic Excel — including Arabic-Indic digits.
+ *
+ * A Date is read through its **UTC** components, never `toISOString().slice`
+ * on a local-time value: ExcelJS builds date cells at UTC midnight, and
+ * reading them locally in a negative-offset zone moves the calendar day back
+ * by one — a bug this project already shipped once, in the org-structure
+ * import.
+ */
+export function cellDateIso(value: unknown): string | null | undefined {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return undefined;
+    const y = String(value.getUTCFullYear()).padStart(4, "0");
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const text = cellText(value).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+  if (text === "") return null;
+
+  const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const dmy = text.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/);
+  const parts = iso
+    ? { y: iso[1], m: iso[2], d: iso[3] }
+    : dmy
+      ? { y: dmy[3], m: dmy[2], d: dmy[1] }
+      : null;
+  if (!parts) return undefined;
+
+  const y = Number(parts.y);
+  const m = Number(parts.m);
+  const d = Number(parts.d);
+  // Round-tripped through UTC so "2026-02-31" is rejected rather than
+  // silently rolling over into March.
+  const at = new Date(Date.UTC(y, m - 1, d));
+  if (at.getUTCFullYear() !== y || at.getUTCMonth() !== m - 1 || at.getUTCDate() !== d) return undefined;
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
 /** Header row -> {columnLabel: 1-based index}, tolerant of column reordering. */

@@ -9,6 +9,7 @@ import { todayInTimezone } from "@/lib/evaluationCycle";
 import { vacancyPortalState, portalStateLabels } from "@/lib/vacancyPortal";
 import { formatDateDmy } from "@/lib/dateParts";
 import type { Locale } from "@/i18n/config";
+import { RowLink } from "@/components/RowLink";
 
 // Auth is enforced centrally by (app)/layout.tsx.
 //
@@ -108,11 +109,11 @@ export default async function AnnouncedJobsPage({
               </thead>
               <tbody>
                 {jobs.map((job) => (
-                  <tr key={job.id}>
+                  <RowLink key={job.id} href={`/recruitment/announced/${job.id}`}>
                     <td>
                       {/* The whole job opens its announcement form (openings,
                           publish date, application deadline). */}
-                      <Link href={`/recruitment/announced/${job.id}`} style={{ fontWeight: 600 }}>
+                      <Link href={`/recruitment/announced/${job.id}`} className="sru-row-link-title">
                         {job.job_titles?.name_ar ?? t("untitledJob")}
                       </Link>
                       {job.job_titles && (
@@ -190,7 +191,7 @@ export default async function AnnouncedJobsPage({
                         );
                       })()}
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

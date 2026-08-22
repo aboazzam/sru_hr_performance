@@ -824,7 +824,14 @@ export default async function StrategicPlanDetailPage({
     committeeCount: countFor(programCommitteeCounts as Array<{ program_id: string }> | null, p.id),
   }));
 
-  const programsContent = <ProgramsPanel planId={plan.id} programs={programs} canManage={canManageGoals} />;
+  const programsContent = (
+    <ProgramsPanel
+      planId={plan.id}
+      programs={programs}
+      canManage={canManageGoals}
+      toolbar={<StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />}
+    />
+  );
 
   // Order requested directly (2026-08-01): vision/mission first (the
   // foundation), then strategic goals (main + sub-goals + KPIs), then --
