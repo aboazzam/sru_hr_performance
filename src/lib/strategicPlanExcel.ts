@@ -30,6 +30,12 @@ export const STRATEGIC_PLAN_SHEETS = {
    * failure modes, deliberately left out rather than half-done here.
    */
   programs: "البرامج",
+  /**
+   * Initiatives. The targets an initiative serves live in their own link
+   * table and are not in this sheet: one initiative can serve several, so a
+   * flat column cannot express them without inventing a delimiter.
+   */
+  initiatives: "المبادرات",
 } as const;
 
 export const STRATEGIC_PLAN_COLUMNS = {
@@ -78,6 +84,17 @@ export const STRATEGIC_PLAN_COLUMNS = {
     "اسم البرنامج (إنجليزي)",
     "الوصف (عربي)",
     "الحالة",
+    "تاريخ البداية",
+    "تاريخ النهاية",
+  ],
+  initiatives: [
+    "المبادرة (عربي)",
+    "المبادرة (إنجليزي)",
+    "الوصف (عربي)",
+    "الهدف الفرعي",
+    "الإدارة المالكة",
+    "الحالة",
+    "نسبة الإنجاز %",
     "تاريخ البداية",
     "تاريخ النهاية",
   ],

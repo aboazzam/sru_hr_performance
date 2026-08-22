@@ -4,8 +4,11 @@ import { useActionState, useEffect, useRef, useState, startTransition, type Form
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { AlertCircle } from "lucide-react";
-import { RowLink } from "@/components/RowLink";
+import { AlertCircle, ArrowLeft, Eye, Pencil, Trash2 } from "lucide-react";
+import { InitiativeProgressRing } from "@/components/InitiativeProgressRing";
+import { initiativeProgress } from "@/lib/initiativeProgress";
+import { formatDateDmy } from "@/lib/dateParts";
+import { deleteProgram } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/actions";
 import { createProgram, type ProgramActionState } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { AddFormDialog } from "@/components/AddFormDialog";
@@ -17,6 +20,7 @@ export interface ProgramSummary {
   status: string;
   startDate: string | null;
   endDate: string | null;
+  descriptionAr: string | null;
   initiativeCount: number;
   committeeCount: number;
 }
@@ -42,11 +46,13 @@ export function ProgramsPanel({
   planId,
   programs,
   canManage,
+  locale,
   toolbar,
 }: {
   planId: string;
   programs: ProgramSummary[];
   canManage: boolean;
+  locale: string;
   /** Export / import, shown beside "add" on one line — same as the
    *  initiatives tab, rather than a second row in a different size. */
   toolbar?: ReactNode;
@@ -160,45 +166,111 @@ export function ProgramsPanel({
       {programs.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card" style={{ marginBottom: 24 }}>
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnName")}</th>
-                  <th>{t("columnStatus")}</th>
-                  <th>{t("columnPeriod")}</th>
-                  <th>{t("columnInitiatives")}</th>
-                  <th>{t("columnCommittee")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {programs.map((program) => (
-                  <RowLink key={program.id} href={`/kpis/plans/${planId}/programs/${program.id}`}>
-                    <td>
-                      <Link href={`/kpis/plans/${planId}/programs/${program.id}`} className="sru-row-link-title">
-                        {program.nameAr}
-                      </Link>
-                      {program.nameEn && (
-                        <span className="sru-name-en">
-                          {program.nameEn}
-                        </span>
-                      )}
-                    </td>
-                    <td>{program.status}</td>
-                    <td dir="ltr" style={{ textAlign: "start" }}>
-                      {program.startDate || program.endDate ? `${program.startDate ?? "—"} → ${program.endDate ?? "—"}` : "—"}
-                    </td>
-                    <td>{program.initiativeCount}</td>
-                    <td>{program.committeeCount}</td>
-                  </RowLink>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div style={{ display: "grid", gap: 12, marginBottom: 24 }}>
+          {programs.map((program) => (
+            <ProgramCard key={program.id} planId={planId} program={program} canManage={canManage} locale={locale} />
+          ))}
         </div>
       )}
+    </div>
+  );
+}
 
+/**
+ * One program, shaped like an initiative card (2026-08-22: "افعل في بطاقة
+ * البرنامج مثل ما فعلنا في بطاقة المبادرة").
+ *
+ * The ring reuses the initiatives' own progress helper and component. A
+ * program has no reported percentage column, so what it can honestly show is
+ * elapsed time against its period — which is exactly the case that helper
+ * already labels as time rather than passing it off as completion.
+ */
+function ProgramCard({
+  planId,
+  program,
+  canManage,
+  locale,
+}: {
+  planId: string;
+  program: ProgramSummary;
+  canManage: boolean;
+  locale: string;
+}) {
+  const t = useTranslations("ProgramsPanel");
+  const router = useRouter();
+  const [, deleteAction] = useActionState<ProgramActionState, FormData>(deleteProgram, null);
+  const href = `/kpis/plans/${planId}/programs/${program.id}`;
+
+  const progress = initiativeProgress(
+    { startDate: program.startDate, endDate: program.endDate },
+    new Date().toISOString().slice(0, 10)
+  );
+  const startText = program.startDate ? formatDateDmy(program.startDate, locale) : "—";
+  const endText = program.endDate ? formatDateDmy(program.endDate, locale) : "—";
+  const period = program.startDate || program.endDate ? `${startText} → ${endText}` : null;
+
+  return (
+    <div className="sru-card sru-initiative-card">
+      <div className="sru-initiative-card-body">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h4 style={{ fontSize: 15, fontWeight: 700 }}>
+            <Link href={href} className="sru-stretched sru-initiative-card-title">
+              {program.nameAr}
+              <ArrowLeft size={14} aria-hidden className="sru-initiative-card-go" />
+            </Link>
+          </h4>
+          {program.nameEn && <span className="sru-name-en">{program.nameEn}</span>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <span className="sru-initiative-chip">{program.status}</span>
+            {period && <span className="sru-initiative-chip is-plain">{period}</span>}
+            <span className="sru-initiative-chip is-plain">
+              {t("chipInitiatives", { count: program.initiativeCount })}
+            </span>
+            <span className="sru-initiative-chip is-plain">
+              {t("chipCommittee", { count: program.committeeCount })}
+            </span>
+          </div>
+        </div>
+        {/* After the text, so in an RTL row it renders on the LEFT. */}
+        <InitiativeProgressRing progress={progress} />
+        <div className="sru-initiative-card-actions">
+          <Link href={href} className="sru-icon-action" title={t("viewButton")} aria-label={t("viewButton")}>
+            <Eye size={15} aria-hidden />
+          </Link>
+          {canManage && (
+            <>
+              {/* The program's own record is edited in its info tab — one
+                  editor, reached from here, not a second copy on the card. */}
+              <Link
+                href={`${href}#info`}
+                className="sru-icon-action"
+                title={t("editButton")}
+                aria-label={t("editButton")}
+              >
+                <Pencil size={15} aria-hidden />
+              </Link>
+              <form
+                action={(formData) => {
+                  if (!window.confirm(t("deleteConfirm"))) return;
+                  startTransition(() => {
+                    deleteAction(formData);
+                    router.refresh();
+                  });
+                }}
+              >
+                <input type="hidden" name="programId" value={program.id} />
+                <button type="submit" className="sru-icon-action" title={t("deleteButton")} aria-label={t("deleteButton")}>
+                  <Trash2 size={15} aria-hidden />
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
+
+      {program.descriptionAr && (
+        <p style={{ fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>{program.descriptionAr}</p>
+      )}
     </div>
   );
 }

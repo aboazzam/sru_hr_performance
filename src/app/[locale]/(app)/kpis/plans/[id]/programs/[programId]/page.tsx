@@ -5,7 +5,9 @@ import { ArrowRight, Boxes } from "lucide-react";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { ProgramCommitteeManager, type CommitteeMemberView } from "@/components/ProgramCommitteeManager";
 import { ProgramInitiativesTab, type ProgramInitiativeRow } from "@/components/ProgramInitiativesTab";
+import { ProgramInfoPanel } from "@/components/ProgramInfoPanel";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { formatDateDmy } from "@/lib/dateParts";
 
 /**
  * One program, with the three sub-tabs requested 2026-08-19: "سبتاب للجنة
@@ -29,9 +31,9 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 export default async function ProgramDetailPage({
   params,
 }: {
-  params: Promise<{ id: string; programId: string }>;
+  params: Promise<{ locale: string; id: string; programId: string }>;
 }) {
-  const { id, programId } = await params;
+  const { locale, id, programId } = await params;
   const t = await getTranslations("ProgramDetailPage");
   const tCommittee = await getTranslations("ProgramCommittee");
   const tInitiatives = await getTranslations("ProgramInitiativesTab");
@@ -284,7 +286,33 @@ export default async function ProgramDetailPage({
     </div>
   );
 
+  const period =
+    program.start_date || program.end_date
+      ? `${program.start_date ? formatDateDmy(program.start_date, locale) : t("notSet")} → ${
+          program.end_date ? formatDateDmy(program.end_date, locale) : t("notSet")
+        }`
+      : t("notSet");
+
+  const infoContent = (
+    <ProgramInfoPanel
+      canManage={canManage}
+      info={{
+        id: program.id,
+        nameAr: program.name_ar,
+        nameEn: program.name_en,
+        descriptionAr: program.description_ar,
+        status: program.status,
+        startDate: program.start_date,
+        endDate: program.end_date,
+        initiativeCount: programInitiatives.length,
+        committeeCount: members.length,
+        period,
+      }}
+    />
+  );
+
   const tabs: ProfileTab[] = [
+    { id: "info", label: t("infoTab"), content: infoContent },
     {
       id: "committee",
       label: tCommittee("title"),
@@ -314,7 +342,7 @@ export default async function ProgramDetailPage({
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <Link
-        href={`/kpis/plans/${id}`}
+        href={`/kpis/plans/${id}#programs`}
         className="sru-btn no-print"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
       >
@@ -332,7 +360,6 @@ export default async function ProgramDetailPage({
           {program.name_en && <p className="sru-name-en is-lg">{program.name_en}</p>}
         </div>
       </div>
-      {program.description_ar && <p style={{ fontSize: 13, marginTop: 6, lineHeight: 1.8 }}>{program.description_ar}</p>}
       <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
         {t("statusValue", { status: program.status })}
       </p>

@@ -92,9 +92,9 @@ function describeKpis(list: KpiRow[]): string {
 export default async function StrategicPlanDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { locale, id } = await params;
   const t = await getTranslations("StrategicPlanDetailPage");
   const tIdentity = await getTranslations("StrategicIdentityPage");
   const tGoals = await getTranslations("StrategicGoalsPage");
@@ -788,7 +788,7 @@ export default async function StrategicPlanDetailPage({
   // read (20260819000002), which is the "لكل عضو في اللجنة أكسس" ask.
   const { data: programRows } = await supabase
     .from("strategic_programs")
-    .select("id, name_ar, name_en, status, start_date, end_date")
+    .select("id, name_ar, name_en, description_ar, status, start_date, end_date")
     .eq("plan_id", id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
@@ -796,6 +796,7 @@ export default async function StrategicPlanDetailPage({
     id: string;
     name_ar: string;
     name_en: string | null;
+    description_ar: string | null;
     status: string;
     start_date: string | null;
     end_date: string | null;
@@ -817,6 +818,7 @@ export default async function StrategicPlanDetailPage({
     id: p.id,
     nameAr: p.name_ar,
     nameEn: p.name_en,
+    descriptionAr: p.description_ar,
     status: p.status,
     startDate: p.start_date,
     endDate: p.end_date,
@@ -828,6 +830,7 @@ export default async function StrategicPlanDetailPage({
     <ProgramsPanel
       planId={plan.id}
       programs={programs}
+      locale={locale}
       canManage={canManageGoals}
       toolbar={<StrategicPlanExcelButtons planId={plan.id} canImport={canManageGoals} />}
     />

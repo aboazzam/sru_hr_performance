@@ -1,5 +1,9 @@
-import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
+import { buildExportResponse, parseExportFormat, selectColumns } from "@/lib/exportResponse";
+import {
+  RECRUITMENT_REQUEST_EXPORT_COLUMNS,
+  type RecruitmentRequestExportColumn,
+} from "@/lib/recruitmentRequestExportColumns";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -118,54 +122,56 @@ export async function GET(request: NextRequest) {
     isRequestSortOption(sortParam) ? sortParam : DEFAULT_REQUEST_SORT
   );
 
-  const headers = [
-    t("columnJobTitle"),
-    t("columnOrgUnit"),
-    t("columnHeadcount"),
-    t("columnReason"),
-    t("columnContract"),
-    t("columnGender"),
-    t("columnQuarter"),
-    t("columnCost"),
-    t("columnStatus"),
+  const columnLabels: Record<RecruitmentRequestExportColumn, string> = {
+    jobTitle: t("columnJobTitle"),
+    orgUnit: t("columnOrgUnit"),
+    headcount: t("columnHeadcount"),
+    reason: t("columnReason"),
+    contract: t("columnContract"),
+    gender: t("columnGender"),
+    quarter: t("columnQuarter"),
+    cost: t("columnCost"),
+    status: t("columnStatus"),
     // Two columns the table has no room for but an export is exactly the
     // place to carry.
-    t("fieldQualifications"),
-    t("columnCreatedAt"),
-  ];
+    qualifications: t("fieldQualifications"),
+    createdAt: t("columnCreatedAt"),
+  };
 
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("طلبات الاحتياج");
-  sheet.views = [{ rightToLeft: true }];
-  sheet.addRow(headers);
-  sheet.getRow(1).font = { bold: true };
+  const columns = selectColumns(RECRUITMENT_REQUEST_EXPORT_COLUMNS, params.get("columns"));
+  const cell = (row: (typeof visible)[number], column: RecruitmentRequestExportColumn): string | number | null => {
+    switch (column) {
+      case "jobTitle":
+        return row.jobTitle;
+      case "orgUnit":
+        return row.orgUnit;
+      case "headcount":
+        return row.headcount;
+      case "reason":
+        return t(reasonKeys[row.reason] ?? "reasonVacant");
+      case "contract":
+        return t(contractKeys[row.contract] ?? "contractPermanent");
+      case "gender":
+        return t(genderKeys[row.gender ?? ""] ?? "genderUnspecified");
+      case "quarter":
+        return row.quarter ? `Q${row.quarter}` : "";
+      case "cost":
+        return row.cost ?? "";
+      case "status":
+        return requestStatusLabel(row.status);
+      case "qualifications":
+        return row.qualifications ?? "";
+      case "createdAt":
+        return row.createdAt.slice(0, 10);
+    }
+  };
 
-  for (const row of visible) {
-    sheet.addRow([
-      row.jobTitle,
-      row.orgUnit,
-      row.headcount,
-      t(reasonKeys[row.reason] ?? "reasonVacant"),
-      t(contractKeys[row.contract] ?? "contractPermanent"),
-      t(genderKeys[row.gender ?? ""] ?? "genderUnspecified"),
-      row.quarter ? `Q${row.quarter}` : "",
-      row.cost ?? "",
-      requestStatusLabel(row.status),
-      row.qualifications ?? "",
-      row.createdAt.slice(0, 10),
-    ]);
-  }
-
-  sheet.columns.forEach((col, index) => {
-    // The qualifications column carries prose; the rest are short values.
-    col.width = index === 9 ? 40 : 20;
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="recruitment-requests.xlsx"`,
-    },
+  return buildExportResponse({
+    format: parseExportFormat(params.get("format")),
+    sheetName: "طلبات الاحتياج",
+    filenameBase: "recruitment-requests",
+    headers: columns.map((c) => columnLabels[c]),
+    rows: visible.map((row) => columns.map((c) => cell(row, c))),
+    wideColumnIndexes: [columns.indexOf("qualifications")],
   });
 }

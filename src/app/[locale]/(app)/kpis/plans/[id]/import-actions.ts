@@ -32,6 +32,8 @@ export type ImportStrategicPlanState =
         annualTargetsUpdated: number;
         programsCreated: number;
         programsUpdated: number;
+        initiativesCreated: number;
+        initiativesUpdated: number;
       };
       warnings: string[];
     }
@@ -117,6 +119,8 @@ export async function importStrategicPlanExcel(
     annualTargetsUpdated: 0,
     programsCreated: 0,
     programsUpdated: 0,
+    initiativesCreated: 0,
+    initiativesUpdated: 0,
   };
 
   /** Sheet -> [{columnLabel: value}] with the header row validated. */
@@ -611,6 +615,133 @@ export async function importStrategicPlanExcel(
         // So a workbook repeating the same new name twice updates the row it
         // just created instead of inserting a second one.
         if (created?.[0]?.id) programIdsByName.set(nameAr, [created[0].id as string]);
+      }
+    }
+  }
+
+  // ---------- 8) المبادرات ----------
+  // Same identity rule as the programs sheet: `strategic_initiatives` has
+  // no unique constraint on (plan_id, title_ar), so the title is the row's
+  // identity in code and a title used twice in this plan is skipped rather
+  // than guessed at. The targets an initiative serves are NOT in the sheet
+  // (one initiative can serve several), so importing never touches them.
+  const initiativeRows = readSheet(STRATEGIC_PLAN_SHEETS.initiatives, STRATEGIC_PLAN_COLUMNS.initiatives);
+  if (initiativeRows) {
+    touchedAnySheet = true;
+    const { data: existingInitiatives } = await supabase
+      .from("strategic_initiatives")
+      .select("id, title_ar")
+      .eq("plan_id", parsedId.data)
+      .is("deleted_at", null);
+    const initiativeIdsByTitle = new Map<string, string[]>();
+    for (const i of (existingInitiatives ?? []) as Array<{ id: string; title_ar: string }>) {
+      initiativeIdsByTitle.set(i.title_ar, [...(initiativeIdsByTitle.get(i.title_ar) ?? []), i.id]);
+    }
+
+    const { data: orgUnitRows } = await supabase.from("org_units").select("id, name_ar").is("deleted_at", null);
+    const orgUnitIdsByName = new Map<string, string[]>();
+    for (const u of (orgUnitRows ?? []) as Array<{ id: string; name_ar: string }>) {
+      orgUnitIdsByName.set(u.name_ar, [...(orgUnitIdsByName.get(u.name_ar) ?? []), u.id]);
+    }
+    // Sub-goals of THIS plan only, keyed by title: the sheet names a
+    // sub-goal without its parent goal, so the map is scoped by the plan’s
+    // own goal ids rather than matching a title from another plan.
+    const planGoalIds = Array.from((await loadGoals()).values()).flat();
+    const { data: subGoalRowsForInitiatives } =
+      planGoalIds.length > 0
+        ? await supabase.from("sub_goals").select("id, title_ar").in("strategic_goal_id", planGoalIds).is("deleted_at", null)
+        : { data: [] };
+    const subGoalsNow = new Map<string, string[]>();
+    for (const sg of (subGoalRowsForInitiatives ?? []) as Array<{ id: string; title_ar: string }>) {
+      subGoalsNow.set(sg.title_ar, [...(subGoalsNow.get(sg.title_ar) ?? []), sg.id]);
+    }
+
+    for (const row of initiativeRows) {
+      const titleAr = cellText(row["المبادرة (عربي)"]);
+      if (titleAr === "") {
+        warnings.push(`المبادرات (صف ${row.__row}): اسم المبادرة مطلوب — تم تخطّي الصف.`);
+        continue;
+      }
+      const startDate = cellDateIso(row["تاريخ البداية"]);
+      const endDate = cellDateIso(row["تاريخ النهاية"]);
+      if (startDate === undefined || endDate === undefined) {
+        warnings.push(`المبادرات (صف ${row.__row}): التاريخ غير صالح (المتوقّع YYYY-MM-DD) — تم تخطّي الصف.`);
+        continue;
+      }
+      if (startDate && endDate && endDate < startDate) {
+        warnings.push(`المبادرات (صف ${row.__row}): تاريخ النهاية قبل تاريخ البداية — تم تخطّي الصف.`);
+        continue;
+      }
+      const progress = cellNumber(row["نسبة الإنجاز %"]);
+      if (progress === undefined || (progress != null && (progress < 0 || progress > 100))) {
+        warnings.push(`المبادرات (صف ${row.__row}): «نسبة الإنجاز %» يجب أن تكون رقمًا بين 0 و100 — تم تخطّي الصف.`);
+        continue;
+      }
+
+      // An unknown sub-goal or org unit empties that ONE field with a
+      // warning; the initiative itself still imports, because losing the
+      // whole row over a misspelt lookup helps nobody.
+      let subGoalId: string | null = null;
+      const subGoalName = cellText(row["الهدف الفرعي"]);
+      if (subGoalName !== "") {
+        const found = resolveUnique(subGoalsNow, subGoalName);
+        if ("error" in found) {
+          warnings.push(
+            `المبادرات (صف ${row.__row}): الهدف الفرعي «${subGoalName}» ${found.error === "missing" ? "غير موجود" : "مكرّر"} — تُرك الحقل فارغًا.`
+          );
+        } else subGoalId = found.id;
+      }
+      let orgUnitId: string | null = null;
+      const orgUnitName = cellText(row["الإدارة المالكة"]);
+      if (orgUnitName !== "") {
+        const found = resolveUnique(orgUnitIdsByName, orgUnitName);
+        if ("error" in found) {
+          warnings.push(
+            `المبادرات (صف ${row.__row}): الوحدة التنظيمية «${orgUnitName}» ${found.error === "missing" ? "غير موجودة" : "مكرّرة"} — تُرك الحقل فارغًا.`
+          );
+        } else orgUnitId = found.id;
+      }
+
+      const statusCode = cellText(row["الحالة"]);
+      const payload = {
+        title_ar: titleAr,
+        title_en: cellText(row["المبادرة (إنجليزي)"]) || null,
+        description_ar: cellText(row["الوصف (عربي)"]) || null,
+        sub_goal_id: subGoalId,
+        owner_org_unit_id: orgUnitId,
+        start_date: startDate,
+        end_date: endDate,
+        progress_percent: progress,
+        // NOT NULL with a default: a blank cell must not blank out a real
+        // status on an existing initiative.
+        ...(statusCode === "" ? {} : { status_code: statusCode }),
+      };
+
+      const existing = initiativeIdsByTitle.get(titleAr) ?? [];
+      if (existing.length > 1) {
+        warnings.push(`المبادرات (صف ${row.__row}): يوجد أكثر من مبادرة بنفس الاسم — تم تخطّي الصف.`);
+        continue;
+      }
+      if (existing.length === 1) {
+        const { data: saved, error } = await supabase
+          .from("strategic_initiatives")
+          .update(payload)
+          .eq("id", existing[0])
+          .select("id");
+        if (error) warnings.push(`المبادرات (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`المبادرات (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.initiativesUpdated += 1;
+        continue;
+      }
+      const { data: created, error } = await supabase
+        .from("strategic_initiatives")
+        .insert({ ...payload, plan_id: parsedId.data, created_by: myProfileId })
+        .select("id");
+      if (error) warnings.push(`المبادرات (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+      else {
+        summary.initiativesCreated += 1;
+        if (created?.[0]?.id) initiativeIdsByTitle.set(titleAr, [created[0].id as string]);
       }
     }
   }

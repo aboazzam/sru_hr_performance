@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { FileSpreadsheet } from "lucide-react";
-import { PrintButton } from "@/components/PrintButton";
+
 import { filterPromotions } from "@/lib/promotionTable";
 import { PromotionReviewActions } from "@/components/PromotionReviewActions";
+import { ExportMenu } from "@/components/ExportMenu";
+import { PROMOTION_EXPORT_COLUMNS } from "@/lib/promotionExportColumns";
 import {
   countPromotionStatuses,
   promotionStatuses,
@@ -63,7 +64,18 @@ export function PromotionsTable({
   const exportParams = new URLSearchParams();
   if (query.trim() !== "") exportParams.set("q", query.trim());
   if (statusFilter !== "") exportParams.set("status", statusFilter);
-  const exportHref = `/api/promotions/export${exportParams.size ? `?${exportParams}` : ""}`;
+  const exportColumnLabels: Record<string, string> = {
+    employeeNumber: t("employeeNumberHeader"),
+    employeeName: t("employeeNameHeader"),
+    cycle: t("columnCycle"),
+    fromTitle: t("columnFrom"),
+    fromGrade: t("fromGradeHeader"),
+    toTitle: t("columnTo"),
+    toGrade: t("toGradeHeader"),
+    status: t("columnStatus"),
+    careerPath: t("careerPathHeader"),
+    createdAt: t("createdAtHeader"),
+  };
 
   const summary = [
     { key: "total", label: t("summaryTotal"), value: counts.total },
@@ -126,16 +138,28 @@ export function PromotionsTable({
             {t("resetFilters")}
           </button>
         )}
-        <a
-          href={exportHref}
-          className="sru-btn"
-          download
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          <FileSpreadsheet size={15} aria-hidden />
-          {t("exportExcel")}
-        </a>
-        <PrintButton />
+        {/* One "تصدير" control (PDF / Excel / CSV + a column picker),
+            the same one the employees screen uses. */}
+        <ExportMenu
+          columns={PROMOTION_EXPORT_COLUMNS.map((key) => ({ key, label: exportColumnLabels[key] }))}
+          filenameBase="promotions"
+          buildHref={(format, columns) => {
+            const params = new URLSearchParams(exportParams);
+            params.set("format", format);
+            params.set("columns", columns.join(","));
+            return `/api/promotions/export?${params}`;
+          }}
+          labels={{
+            export: t("exportButton"),
+            pdf: t("exportPdf"),
+            excel: t("exportExcel"),
+            csv: t("exportCsv"),
+            columnsHeading: t("exportColumnsHeading"),
+            columnsNote: t("exportColumnsNote"),
+            confirm: t("exportConfirmButton"),
+            close: t("closeButton"),
+          }}
+        />
       </div>
 
       {/* On paper the controls above are gone, so the sheet has to say what it

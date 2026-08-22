@@ -307,3 +307,130 @@ export async function reorderCommitteeMembers(_prev: ProgramActionState, formDat
   revalidatePath("/[locale]/kpis/plans/[id]/programs/[programId]", "page");
   return { status: "success" };
 }
+
+const updateProgramSchema = z
+  .object({
+    programId: z.string().uuid(),
+    nameAr: z.string().trim().min(1),
+    nameEn: z.string().trim().optional(),
+    descriptionAr: z.string().trim().optional(),
+    startDate: optionalDate,
+    endDate: optionalDate,
+    status: z.string().trim().optional(),
+  })
+  .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, { path: ["endDate"] });
+
+/** Edit one program's own record (its committee and initiatives are separate). */
+export async function updateProgram(_prev: ProgramActionState, formData: FormData): Promise<ProgramActionState> {
+  const parsed = updateProgramSchema.safeParse({
+    programId: formData.get("programId"),
+    nameAr: formData.get("nameAr"),
+    nameEn: formData.get("nameEn") || undefined,
+    descriptionAr: formData.get("descriptionAr") || undefined,
+    startDate: formData.get("startDate") ?? undefined,
+    endDate: formData.get("endDate") ?? undefined,
+    status: formData.get("status") || undefined,
+  });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, user } = await callerContext();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const d = parsed.data;
+  const { data: before } = await supabase
+    .from("strategic_programs")
+    .select("name_ar, name_en, description_ar, status, start_date, end_date")
+    .eq("id", d.programId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  // .select() is load-bearing: an UPDATE blocked by RLS affects zero rows and
+  // returns NO error, so without reading the rows back this would report a
+  // save that never happened.
+  const { data: saved, error } = await supabase
+    .from("strategic_programs")
+    .update({
+      name_ar: d.nameAr,
+      name_en: d.nameEn ?? null,
+      description_ar: d.descriptionAr ?? null,
+      start_date: d.startDate ?? null,
+      end_date: d.endDate ?? null,
+      ...(d.status ? { status: d.status } : {}),
+    })
+    .eq("id", d.programId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return mapError(error);
+  if (!saved || saved.length === 0) return { status: "error", message: "forbidden" };
+
+  try {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "strategic_program_updated",
+      entity: "strategic_programs",
+      entity_id: d.programId,
+      before_data: before ?? null,
+      after_data: {
+        name_ar: d.nameAr,
+        name_en: d.nameEn ?? null,
+        description_ar: d.descriptionAr ?? null,
+        status: d.status ?? null,
+        start_date: d.startDate ?? null,
+        end_date: d.endDate ?? null,
+      },
+    });
+  } catch {
+    // A failed audit write must not fail a write that already happened.
+  }
+
+  revalidatePath("/[locale]/kpis/plans/[id]", "page");
+  revalidatePath("/[locale]/kpis/plans/[id]/programs/[programId]", "page");
+  return { status: "success" };
+}
+
+/**
+ * Soft-delete: `strategic_programs` has no DELETE policy, and the rule of
+ * this schema is `deleted_at`, never a real DELETE. The program's committee
+ * rows and initiative memberships are left as they are — they hang off a row
+ * that no longer appears anywhere, and hard-removing them would destroy the
+ * record of who ran the program.
+ */
+export async function deleteProgram(_prev: ProgramActionState, formData: FormData): Promise<ProgramActionState> {
+  const parsed = z.object({ programId: z.string().uuid() }).safeParse({ programId: formData.get("programId") });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, user } = await callerContext();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const { data: before } = await supabase
+    .from("strategic_programs")
+    .select("name_ar")
+    .eq("id", parsed.data.programId)
+    .maybeSingle();
+
+  const { data: saved, error } = await supabase
+    .from("strategic_programs")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data.programId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return mapError(error);
+  if (!saved || saved.length === 0) return { status: "error", message: "forbidden" };
+
+  try {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "strategic_program_deleted",
+      entity: "strategic_programs",
+      entity_id: parsed.data.programId,
+      before_data: before ?? null,
+    });
+  } catch {
+    // A failed audit write must not fail a write that already happened.
+  }
+
+  revalidatePath("/[locale]/kpis/plans/[id]", "page");
+  return { status: "success" };
+}

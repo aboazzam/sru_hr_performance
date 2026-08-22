@@ -3,8 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Trash2, Megaphone, MegaphoneOff, FileSpreadsheet } from "lucide-react";
-import { PrintButton } from "@/components/PrintButton";
+import { Trash2, Megaphone, MegaphoneOff } from "lucide-react";
+import { ExportMenu } from "@/components/ExportMenu";
+import { VACANCY_EXPORT_COLUMNS } from "@/lib/vacancyExportColumns";
 import {
   DEFAULT_VACANCY_SORT,
   filterVacancies,
@@ -113,7 +114,17 @@ export function VacanciesTable({
   if (query.trim() !== "") exportParams.set("q", query.trim());
   if (statusFilter !== "") exportParams.set("status", statusFilter);
   if (sort !== DEFAULT_VACANCY_SORT) exportParams.set("sort", sort);
-  const exportHref = `/api/vacancies/export${exportParams.size ? `?${exportParams}` : ""}`;
+  const exportColumnLabels: Record<string, string> = {
+    jobTitle: t("columnJobTitle"),
+    grade: t("gradeHeader"),
+    orgUnit: t("columnOrgUnit"),
+    status: t("columnStatus"),
+    announced: t("announcedHeader"),
+    scope: t("scopeSelectLabel"),
+    plan: t("planHeader"),
+    requirements: t("columnRequirements"),
+    createdAt: t("createdAtHeader"),
+  };
 
   const summary: Array<{ key: string; label: string; value: number }> = [
     { key: "total", label: t("summaryTotal"), value: counts.total },
@@ -190,16 +201,28 @@ export function VacanciesTable({
             {t("resetFilters")}
           </button>
         )}
-        <a
-          href={exportHref}
-          className="sru-btn"
-          download
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          <FileSpreadsheet size={15} aria-hidden />
-          {t("exportExcel")}
-        </a>
-        <PrintButton />
+        {/* One "تصدير" control (PDF / Excel / CSV + a column picker),
+            the same one the employees screen uses. */}
+        <ExportMenu
+          columns={VACANCY_EXPORT_COLUMNS.map((key) => ({ key, label: exportColumnLabels[key] }))}
+          filenameBase="vacancies"
+          buildHref={(format, columns) => {
+            const params = new URLSearchParams(exportParams);
+            params.set("format", format);
+            params.set("columns", columns.join(","));
+            return `/api/vacancies/export?${params}`;
+          }}
+          labels={{
+            export: t("exportButton"),
+            pdf: t("exportPdf"),
+            excel: t("exportExcel"),
+            csv: t("exportCsv"),
+            columnsHeading: t("exportColumnsHeading"),
+            columnsNote: t("exportColumnsNote"),
+            confirm: t("exportConfirmButton"),
+            close: t("closeButton"),
+          }}
+        />
         {actionState?.status === "error" && (
           <span role="alert" className="text-sm text-red-600">
             {t(errorKeys[actionState.message] ?? "actionErrorUnknown")}

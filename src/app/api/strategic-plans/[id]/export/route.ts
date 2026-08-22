@@ -157,6 +157,38 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     end_date: string | null;
   }>;
 
+  const { data: initiativesData } = await supabase
+    .from("strategic_initiatives")
+    .select("title_ar, title_en, description_ar, sub_goal_id, owner_org_unit_id, status_code, progress_percent, start_date, end_date")
+    .eq("plan_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  const initiatives = (initiativesData ?? []) as Array<{
+    title_ar: string;
+    title_en: string | null;
+    description_ar: string | null;
+    sub_goal_id: string | null;
+    owner_org_unit_id: string | null;
+    status_code: string;
+    progress_percent: number | string | null;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+
+  // Names for the initiative sheet's two foreign keys. Both are read
+  // through the caller's own client, so a cell is empty when the reader
+  // cannot see the referenced row rather than leaking its name.
+  const initiativeOrgUnitIds = Array.from(
+    new Set(initiatives.map((i) => i.owner_org_unit_id).filter((v): v is string => v != null))
+  );
+  const { data: initiativeOrgUnits } =
+    initiativeOrgUnitIds.length > 0
+      ? await supabase.from("org_units").select("id, name_ar").in("id", initiativeOrgUnitIds)
+      : { data: [] };
+  const orgUnitNameById = new Map(
+    ((initiativeOrgUnits ?? []) as Array<{ id: string; name_ar: string }>).map((u) => [u.id, u.name_ar])
+  );
+
   // ---- Name lookups: cycles, positions, employees ----
   const { data: cyclesData } = await supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null);
   const cycleNameById = new Map(((cyclesData ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar]));
@@ -275,6 +307,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     STRATEGIC_PLAN_SHEETS.programs,
     STRATEGIC_PLAN_COLUMNS.programs,
     programs.map((p) => [p.name_ar, p.name_en ?? "", p.description_ar ?? "", p.status, p.start_date ?? "", p.end_date ?? ""])
+  );
+
+  addSheet(
+    STRATEGIC_PLAN_SHEETS.initiatives,
+    STRATEGIC_PLAN_COLUMNS.initiatives,
+    initiatives.map((i) => [
+      i.title_ar,
+      i.title_en ?? "",
+      i.description_ar ?? "",
+      i.sub_goal_id ? subGoalById.get(i.sub_goal_id)?.title_ar ?? "" : "",
+      i.owner_org_unit_id ? orgUnitNameById.get(i.owner_org_unit_id) ?? "" : "",
+      i.status_code,
+      i.progress_percent == null ? "" : Number(i.progress_percent),
+      i.start_date ?? "",
+      i.end_date ?? "",
+    ])
   );
 
   const buffer = await workbook.xlsx.writeBuffer();

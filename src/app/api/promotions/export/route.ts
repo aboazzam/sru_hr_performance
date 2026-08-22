@@ -1,5 +1,6 @@
-import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
+import { buildExportResponse, parseExportFormat, selectColumns } from "@/lib/exportResponse";
+import { PROMOTION_EXPORT_COLUMNS, type PromotionExportColumn } from "@/lib/promotionExportColumns";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDisplayTimezone } from "@/lib/systemSettings";
@@ -91,64 +92,66 @@ export async function GET(request: NextRequest) {
   // sheet cannot drift from the screen.
   const t = await getTranslations({ locale: "ar", namespace: "PromotionsPage" });
 
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("الترقيات");
-  sheet.views = [{ rightToLeft: true }];
-
   // created_at is a timestamptz; slicing the raw ISO string prints the UTC
   // day, which is the previous day for anything created before 03:00 in
-  // Riyadh. Format it in the configured display timezone instead — the same
-  // one the printed header stamp uses. en-CA yields YYYY-MM-DD.
+  // Riyadh. en-CA yields YYYY-MM-DD in the configured display timezone.
   const dayInDisplayTz = new Intl.DateTimeFormat("en-CA", {
     timeZone: await getDisplayTimezone(supabase),
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  sheet.addRow([
-    t("employeeNumberHeader"),
-    t("employeeNameHeader"),
-    t("columnCycle"),
-    t("columnFrom"),
-    t("fromGradeHeader"),
-    t("columnTo"),
-    t("toGradeHeader"),
-    t("columnStatus"),
-    t("careerPathHeader"),
-    t("createdAtHeader"),
-  ]);
-  sheet.getRow(1).font = { bold: true };
 
-  for (const row of visible) {
-    sheet.addRow([
-      row.employeeNumber ?? "",
-      row.employeeName ?? "",
-      row.cycleName ?? "",
-      row.fromTitleName ?? "",
-      row.fromGrade ?? "",
-      row.toTitleName ?? "",
-      row.toGrade ?? "",
-      promotionStatusLabel(row.status),
-      // "unknown" means the ladder itself is not visible to this caller, so
-      // the cell stays empty rather than implying an off-ladder move.
-      row.careerPathMatch === "unknown"
-        ? ""
-        : row.careerPathMatch === "on_path"
-          ? t("onCareerPath")
-          : t("offCareerPath"),
-      dayInDisplayTz.format(new Date(row.createdAt)),
-    ]);
-  }
+  const columnLabels: Record<PromotionExportColumn, string> = {
+    employeeNumber: t("employeeNumberHeader"),
+    employeeName: t("employeeNameHeader"),
+    cycle: t("columnCycle"),
+    fromTitle: t("columnFrom"),
+    fromGrade: t("fromGradeHeader"),
+    toTitle: t("columnTo"),
+    toGrade: t("toGradeHeader"),
+    status: t("columnStatus"),
+    careerPath: t("careerPathHeader"),
+    createdAt: t("createdAtHeader"),
+  };
 
-  sheet.columns.forEach((col) => {
-    col.width = 20;
-  });
+  const columns = selectColumns(PROMOTION_EXPORT_COLUMNS, request.nextUrl.searchParams.get("columns"));
+  const cell = (row: (typeof visible)[number], column: PromotionExportColumn): string | number | null => {
+    switch (column) {
+      case "employeeNumber":
+        return row.employeeNumber ?? "";
+      case "employeeName":
+        return row.employeeName ?? "";
+      case "cycle":
+        return row.cycleName ?? "";
+      case "fromTitle":
+        return row.fromTitleName ?? "";
+      case "fromGrade":
+        return row.fromGrade ?? "";
+      case "toTitle":
+        return row.toTitleName ?? "";
+      case "toGrade":
+        return row.toGrade ?? "";
+      case "status":
+        return promotionStatusLabel(row.status);
+      case "careerPath":
+        // "unknown" means the ladder itself is not visible to this caller, so
+        // the cell stays empty rather than implying an off-ladder move.
+        return row.careerPathMatch === "unknown"
+          ? ""
+          : row.careerPathMatch === "on_path"
+            ? t("onCareerPath")
+            : t("offCareerPath");
+      case "createdAt":
+        return dayInDisplayTz.format(new Date(row.createdAt));
+    }
+  };
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="promotions.xlsx"`,
-    },
+  return buildExportResponse({
+    format: parseExportFormat(request.nextUrl.searchParams.get("format")),
+    sheetName: "الترقيات",
+    filenameBase: "promotions",
+    headers: columns.map((c) => columnLabels[c]),
+    rows: visible.map((row) => columns.map((c) => cell(row, c))),
   });
 }
