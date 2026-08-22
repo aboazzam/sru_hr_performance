@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { RowLink } from "@/components/RowLink";
 import {
   canAdvanceEvaluationState,
   evaluationStateLabels,
@@ -92,7 +93,7 @@ export default async function EvaluationsReviewPage() {
               </thead>
               <tbody>
                 {evaluations.map((evaluation) => (
-                  <tr key={evaluation.id}>
+                  <RowLink key={evaluation.id} href={`/evaluations/${evaluation.id}`}>
                     <td>
                       {evaluation.profiles?.employee_number} — {evaluation.profiles?.full_name_ar}
                     </td>
@@ -108,7 +109,7 @@ export default async function EvaluationsReviewPage() {
                         {t("review")}
                       </Link>
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

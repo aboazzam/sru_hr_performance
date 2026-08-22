@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
+import { RowLink } from "@/components/RowLink";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function MyTeamEvaluationsPage() {
@@ -83,7 +84,7 @@ export default async function MyTeamEvaluationsPage() {
               </thead>
               <tbody>
                 {evaluations.map((evaluation) => (
-                  <tr key={evaluation.id}>
+                  <RowLink key={evaluation.id} href={`/evaluations/${evaluation.id}`}>
                     <td>
                       {evaluation.profiles?.employee_number} — {evaluation.profiles?.full_name_ar}
                     </td>
@@ -99,7 +100,7 @@ export default async function MyTeamEvaluationsPage() {
                         {t("view")}
                       </Link>
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

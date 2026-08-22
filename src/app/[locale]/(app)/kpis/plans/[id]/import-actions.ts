@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import {
+  cellDateIso,
   cellNumber,
   cellText,
   headerIndex,
@@ -29,6 +30,8 @@ export type ImportStrategicPlanState =
         kpisUpdated: number;
         annualTargetsCreated: number;
         annualTargetsUpdated: number;
+        programsCreated: number;
+        programsUpdated: number;
       };
       warnings: string[];
     }
@@ -112,6 +115,8 @@ export async function importStrategicPlanExcel(
     kpisUpdated: 0,
     annualTargetsCreated: 0,
     annualTargetsUpdated: 0,
+    programsCreated: 0,
+    programsUpdated: 0,
   };
 
   /** Sheet -> [{columnLabel: value}] with the header row validated. */
@@ -527,6 +532,85 @@ export async function importStrategicPlanExcel(
         });
         if (error) warnings.push(`المستهدفات السنوية (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
         else summary.annualTargetsCreated += 1;
+      }
+    }
+  }
+
+  // ---------- 7) البرامج ----------
+  // `strategic_programs` has NO unique constraint on (plan_id, name_ar), so
+  // the name is treated as the row's identity in code — [استنتاج], the same
+  // choice the vacancies import made for a table with no natural key. A name
+  // used twice in this plan is skipped rather than guessed at, so a re-import
+  // can never quietly overwrite the wrong program.
+  const programRows = readSheet(STRATEGIC_PLAN_SHEETS.programs, STRATEGIC_PLAN_COLUMNS.programs);
+  if (programRows) {
+    touchedAnySheet = true;
+    const { data: existingPrograms } = await supabase
+      .from("strategic_programs")
+      .select("id, name_ar")
+      .eq("plan_id", parsedId.data)
+      .is("deleted_at", null);
+    const programIdsByName = new Map<string, string[]>();
+    for (const p of (existingPrograms ?? []) as Array<{ id: string; name_ar: string }>) {
+      programIdsByName.set(p.name_ar, [...(programIdsByName.get(p.name_ar) ?? []), p.id]);
+    }
+
+    for (const row of programRows) {
+      const nameAr = cellText(row["اسم البرنامج (عربي)"]);
+      if (nameAr === "") {
+        warnings.push(`البرامج (صف ${row.__row}): اسم البرنامج مطلوب — تم تخطّي الصف.`);
+        continue;
+      }
+      const startDate = cellDateIso(row["تاريخ البداية"]);
+      const endDate = cellDateIso(row["تاريخ النهاية"]);
+      if (startDate === undefined || endDate === undefined) {
+        warnings.push(`البرامج (صف ${row.__row}): التاريخ غير صالح (المتوقّع YYYY-MM-DD) — تم تخطّي الصف.`);
+        continue;
+      }
+      // Mirrors strategic_programs_dates_valid, so the reader gets the real
+      // reason instead of a raw 23514 from Postgres.
+      if (startDate && endDate && endDate < startDate) {
+        warnings.push(`البرامج (صف ${row.__row}): تاريخ النهاية قبل تاريخ البداية — تم تخطّي الصف.`);
+        continue;
+      }
+      const status = cellText(row["الحالة"]);
+      const payload = {
+        name_ar: nameAr,
+        name_en: cellText(row["اسم البرنامج (إنجليزي)"]) || null,
+        description_ar: cellText(row["الوصف (عربي)"]) || null,
+        start_date: startDate,
+        end_date: endDate,
+        // The column is NOT NULL DEFAULT 'planned'; a blank cell on an
+        // existing program must not blank out its real status.
+        ...(status === "" ? {} : { status }),
+      };
+      const existing = programIdsByName.get(nameAr) ?? [];
+      if (existing.length > 1) {
+        warnings.push(`البرامج (صف ${row.__row}): يوجد أكثر من برنامج بنفس الاسم — تم تخطّي الصف.`);
+        continue;
+      }
+      if (existing.length === 1) {
+        const { data: saved, error } = await supabase
+          .from("strategic_programs")
+          .update(payload)
+          .eq("id", existing[0])
+          .select("id");
+        if (error) warnings.push(`البرامج (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
+        else if (!saved || saved.length === 0)
+          warnings.push(`البرامج (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
+        else summary.programsUpdated += 1;
+        continue;
+      }
+      const { data: created, error } = await supabase
+        .from("strategic_programs")
+        .insert({ ...payload, plan_id: parsedId.data, created_by: myProfileId })
+        .select("id");
+      if (error) warnings.push(`البرامج (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
+      else {
+        summary.programsCreated += 1;
+        // So a workbook repeating the same new name twice updates the row it
+        // just created instead of inserting a second one.
+        if (created?.[0]?.id) programIdsByName.set(nameAr, [created[0].id as string]);
       }
     }
   }

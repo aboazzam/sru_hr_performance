@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { RowLink } from "@/components/RowLink";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // This route existed in NavBar already (pointing at /calibration) but had
@@ -90,7 +91,7 @@ export default async function CalibrationSessionsPage() {
               </thead>
               <tbody>
                 {sessions.map((session) => (
-                  <tr key={session.id}>
+                  <RowLink key={session.id} href={`/calibration/${session.id}`}>
                     <td>{session.evaluation_cycles?.name_ar ?? "—"}</td>
                     <td>{session.org_units?.name_ar ?? "—"}</td>
                     <td>{session.status}</td>
@@ -104,7 +105,7 @@ export default async function CalibrationSessionsPage() {
                         {t("enterRatings")}
                       </Link>
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

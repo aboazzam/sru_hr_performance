@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { NewStrategicPlanForm } from "@/components/NewStrategicPlanForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { RowLink } from "@/components/RowLink";
 
 interface PlanRow {
   id: string;
@@ -75,9 +76,13 @@ export default async function StrategicPlansPage() {
               </thead>
               <tbody>
                 {plans.map((plan) => (
-                  <tr key={plan.id}>
+                  <RowLink key={plan.id} href={`/kpis/plans/${plan.id}`}>
                     <td>
-                      <Link href={`/kpis/plans/${plan.id}`} style={{ color: "var(--color-primary)", fontWeight: 700, textDecoration: "none" }}>
+                      <Link
+                        href={`/kpis/plans/${plan.id}`}
+                        className="sru-row-link-title"
+                        style={{ color: "var(--color-primary)" }}
+                      >
                         {plan.name_ar}
                       </Link>
                       {plan.name_en && (
@@ -89,7 +94,7 @@ export default async function StrategicPlansPage() {
                     <td dir="ltr" style={{ textAlign: "start" }}>
                       {plan.start_year}–{plan.end_year}
                     </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

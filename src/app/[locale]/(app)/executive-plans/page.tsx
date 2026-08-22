@@ -6,6 +6,7 @@ import { NewExecutivePlanForm } from "@/components/NewExecutivePlanForm";
 import { formatDateDmy } from "@/lib/dateParts";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { Locale } from "@/i18n/config";
+import { RowLink } from "@/components/RowLink";
 
 interface ExecutivePlanRow {
   id: string;
@@ -111,11 +112,12 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
               </thead>
               <tbody>
                 {plans.map((plan) => (
-                  <tr key={plan.id}>
+                  <RowLink key={plan.id} href={`/executive-plans/${plan.id}`}>
                     <td>
                       <Link
                         href={`/executive-plans/${plan.id}`}
-                        style={{ color: "var(--color-primary)", fontWeight: 700, textDecoration: "none" }}
+                        className="sru-row-link-title"
+                        style={{ color: "var(--color-primary)" }}
                       >
                         {plan.name_ar}
                       </Link>
@@ -131,7 +133,7 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
                     </td>
                     <td>{plan.cycle_id ? cycleNameById.get(plan.cycle_id) ?? "—" : t("cycleNone")}</td>
                     <td>{plan.status}</td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>

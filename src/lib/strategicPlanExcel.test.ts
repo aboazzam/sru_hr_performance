@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellNumber, cellText, headerIndex, missingColumns, STRATEGIC_PLAN_COLUMNS } from "./strategicPlanExcel";
+import { cellDateIso, cellNumber, cellText, headerIndex, missingColumns, STRATEGIC_PLAN_COLUMNS } from "./strategicPlanExcel";
 
 describe("cellText", () => {
   it("trims and collapses whitespace", () => {
@@ -59,5 +59,39 @@ describe("headerIndex / missingColumns", () => {
 
   it("reports nothing missing for a sheet exported by this app", () => {
     expect(missingColumns([...STRATEGIC_PLAN_COLUMNS.goals], STRATEGIC_PLAN_COLUMNS.goals)).toEqual([]);
+  });
+});
+
+describe("cellDateIso", () => {
+  it("reads a Date cell through its UTC parts, not the local day", () => {
+    // ExcelJS builds date cells at UTC midnight. Read locally in a
+    // negative-offset zone this is still the 3rd, not the 2nd.
+    expect(cellDateIso(new Date(Date.UTC(2026, 9, 3)))).toBe("2026-10-03");
+  });
+
+  it("accepts the ISO text this app itself exports", () => {
+    expect(cellDateIso("2026-01-05")).toBe("2026-01-05");
+    expect(cellDateIso("2026-1-5")).toBe("2026-01-05");
+  });
+
+  it("accepts D/M/YYYY typed by hand, including Arabic-Indic digits", () => {
+    expect(cellDateIso("5/1/2026")).toBe("2026-01-05");
+    expect(cellDateIso("٣١/١٢/٢٠٢٩")).toBe("2029-12-31");
+  });
+
+  it("treats an empty cell as no date, not as invalid", () => {
+    expect(cellDateIso("")).toBeNull();
+    expect(cellDateIso(null)).toBeNull();
+  });
+
+  it("rejects a day that does not exist instead of rolling it over", () => {
+    expect(cellDateIso("2026-02-31")).toBeUndefined();
+    expect(cellDateIso("2026-02-29")).toBeUndefined(); // 2026 is not a leap year
+    expect(cellDateIso("2028-02-29")).toBe("2028-02-29");
+  });
+
+  it("rejects text that is not a date at all", () => {
+    expect(cellDateIso("قريبًا")).toBeUndefined();
+    expect(cellDateIso("2026/13/01")).toBeUndefined();
   });
 });

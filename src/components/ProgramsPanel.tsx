@@ -2,8 +2,10 @@
 
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { RowLink } from "@/components/RowLink";
 import { createProgram, type ProgramActionState } from "@/app/[locale]/(app)/kpis/plans/[id]/programs/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { AddFormDialog } from "@/components/AddFormDialog";
@@ -40,10 +42,14 @@ export function ProgramsPanel({
   planId,
   programs,
   canManage,
+  toolbar,
 }: {
   planId: string;
   programs: ProgramSummary[];
   canManage: boolean;
+  /** Export / import, shown beside "add" on one line — same as the
+   *  initiatives tab, rather than a second row in a different size. */
+  toolbar?: ReactNode;
 }) {
   const t = useTranslations("ProgramsPanel");
   const router = useRouter();
@@ -91,6 +97,8 @@ export function ProgramsPanel({
         }}
       >
         <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
+        {/* One row, one style: "add" sits beside export/import (2026-08-21). */}
+        <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
         {canManage && (
           <AddFormDialog
             dialogRef={dialogRef}
@@ -145,6 +153,8 @@ export function ProgramsPanel({
             </form>
           </AddFormDialog>
         )}
+        {toolbar}
+        </div>
       </div>
 
       {programs.length === 0 ? (
@@ -160,14 +170,15 @@ export function ProgramsPanel({
                   <th>{t("columnPeriod")}</th>
                   <th>{t("columnInitiatives")}</th>
                   <th>{t("columnCommittee")}</th>
-                  <th />
                 </tr>
               </thead>
               <tbody>
                 {programs.map((program) => (
-                  <tr key={program.id}>
+                  <RowLink key={program.id} href={`/kpis/plans/${planId}/programs/${program.id}`}>
                     <td>
-                      <span style={{ fontWeight: 700 }}>{program.nameAr}</span>
+                      <Link href={`/kpis/plans/${planId}/programs/${program.id}`} className="sru-row-link-title">
+                        {program.nameAr}
+                      </Link>
                       {program.nameEn && (
                         <span className="sru-name-en">
                           {program.nameEn}
@@ -180,17 +191,7 @@ export function ProgramsPanel({
                     </td>
                     <td>{program.initiativeCount}</td>
                     <td>{program.committeeCount}</td>
-                    <td>
-                      <Link
-                        href={`/kpis/plans/${planId}/programs/${program.id}`}
-                        className="sru-btn"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}
-                      >
-                        {t("openButton")}
-                        <ArrowLeft size={14} aria-hidden />
-                      </Link>
-                    </td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>
