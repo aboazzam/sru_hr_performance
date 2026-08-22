@@ -1,10 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
 import { NewStrategicPlanForm } from "@/components/NewStrategicPlanForm";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
-import { RowLink } from "@/components/RowLink";
+import { StrategicPlanCard, type StrategicPlanCardData } from "@/components/StrategicPlanCard";
 
 interface PlanRow {
   id: string;
@@ -44,6 +43,29 @@ export default async function StrategicPlansPage() {
     .order("start_year", { ascending: false });
   const plans = (data ?? []) as PlanRow[];
 
+  const [{ data: goalRows }, { data: initiativeRows }, { data: programRows }] = await Promise.all([
+    supabase.from("strategic_goals").select("plan_id").is("deleted_at", null),
+    supabase.from("strategic_initiatives").select("plan_id").is("deleted_at", null),
+    supabase.from("strategic_programs").select("plan_id").is("deleted_at", null),
+  ]);
+  function countFor(rows: Array<{ plan_id: string }> | null, planId: string): number {
+    return (rows ?? []).filter((r) => r.plan_id === planId).length;
+  }
+
+  // One "today" for every card, taken on the server: a per-card new Date()
+  // could straddle midnight mid-render.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const cards: StrategicPlanCardData[] = plans.map((plan) => ({
+    id: plan.id,
+    nameAr: plan.name_ar,
+    nameEn: plan.name_en,
+    startYear: plan.start_year,
+    endYear: plan.end_year,
+    goalCount: countFor(goalRows as Array<{ plan_id: string }> | null, plan.id),
+    initiativeCount: countFor(initiativeRows as Array<{ plan_id: string }> | null, plan.id),
+    programCount: countFor(programRows as Array<{ plan_id: string }> | null, plan.id),
+  }));
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="strategicPlan" current="kpis/plans" />
@@ -58,50 +80,23 @@ export default async function StrategicPlansPage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        {canCreate && <NewStrategicPlanForm />}
+        {canCreate && (
+          <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
+            <NewStrategicPlanForm />
+          </div>
+        )}
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {plans.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnName")}</th>
-                  <th>{t("columnYears")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plans.map((plan) => (
-                  <RowLink key={plan.id} href={`/kpis/plans/${plan.id}`}>
-                    <td>
-                      <Link
-                        href={`/kpis/plans/${plan.id}`}
-                        className="sru-row-link-title"
-                        style={{ color: "var(--color-primary)" }}
-                      >
-                        {plan.name_ar}
-                      </Link>
-                      {plan.name_en && (
-                        <span className="sru-name-en">
-                          {plan.name_en}
-                        </span>
-                      )}
-                    </td>
-                    <td dir="ltr" style={{ textAlign: "start" }}>
-                      {plan.start_year}–{plan.end_year}
-                    </td>
-                  </RowLink>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div style={{ display: "grid", gap: 12 }}>
+          {cards.map((plan) => (
+            <StrategicPlanCard key={plan.id} plan={plan} canManage={canCreate} todayIso={todayIso} />
+          ))}
         </div>
       )}
-
     </div>
   );
 }

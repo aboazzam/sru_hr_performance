@@ -1999,3 +1999,48 @@ tr.sru-row-link:focus-within > td {
 .sru-name-en.is-lg {
   font-size: 17px;
 }
+
+/* ---- destructive confirmation ----------------------------------------
+   Deleting a strategic plan takes its goals, KPIs, targets, initiatives,
+   programs and executive plans with it, so the dialog has to LOOK unlike
+   an ordinary one before it is read (2026-08-22: "رسالة تحذير بعلامة
+   تحذير قوية"). Danger red comes from --sru-danger, already used by
+   .sru-icon-action.danger — no new colour is introduced. */
+.sru-danger-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--sru-border);
+}
+.sru-danger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--sru-danger, #b91c1c);
+  background: color-mix(in srgb, var(--sru-danger, #b91c1c) 12%, #fff);
+}
+.sru-danger-note {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.sru-danger-list {
+  margin: 8px 0 0;
+  padding-inline-start: 20px;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--sru-danger, #b91c1c);
+}
+.sru-btn.sru-btn-danger {
+  background: var(--sru-danger, #b91c1c);
+  border-color: var(--sru-danger, #b91c1c);
+  color: #fff;
+}
+.sru-btn.sru-btn-danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
