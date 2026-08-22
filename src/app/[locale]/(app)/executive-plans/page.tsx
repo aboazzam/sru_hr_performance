@@ -1,12 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { NewExecutivePlanForm } from "@/components/NewExecutivePlanForm";
 import { formatDateDmy } from "@/lib/dateParts";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { Locale } from "@/i18n/config";
-import { RowLink } from "@/components/RowLink";
+import { ExecutivePlanCard, type ExecutivePlanCardData } from "@/components/ExecutivePlanCard";
+import { executivePlanStatusLabel } from "@/lib/executivePlanStatus";
+import { isInWindow } from "@/lib/executivePlanScope";
 
 interface ExecutivePlanRow {
   id: string;
@@ -74,6 +75,49 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
   }));
   const cycleNameById = new Map(cycles.map((c) => [c.id, c.nameAr]));
 
+  // The ring shows what the plan's WINDOW contains: an executive plan owns no
+  // progress of its own, so its achievement is that of the strategic plan's
+  // initiatives falling inside its dates. Read through the caller's own
+  // client, so an initiative they cannot see does not count toward a number
+  // they are shown.
+  const { data: initiativeRows } = await supabase
+    .from("strategic_initiatives")
+    .select("plan_id, start_date, end_date, progress_percent, status_code")
+    .is("deleted_at", null);
+  const initiatives = (initiativeRows ?? []) as Array<{
+    plan_id: string;
+    start_date: string | null;
+    end_date: string | null;
+    progress_percent: number | string | null;
+    status_code: string | null;
+  }>;
+
+  // One "today" for every card, taken on the server: a per-card new Date()
+  // could straddle midnight mid-render.
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  const cards: ExecutivePlanCardData[] = plans.map((plan) => ({
+    id: plan.id,
+    nameAr: plan.name_ar,
+    nameEn: plan.name_en,
+    strategicPlanId: plan.strategic_plan_id,
+    strategicPlanName: strategicPlanNameById.get(plan.strategic_plan_id) ?? "—",
+    cycleId: plan.cycle_id,
+    cycleName: plan.cycle_id ? cycleNameById.get(plan.cycle_id) ?? null : null,
+    startDate: plan.start_date,
+    endDate: plan.end_date,
+    status: plan.status,
+    statusLabel: executivePlanStatusLabel(plan.status),
+    periodLabel: `${formatDateDmy(plan.start_date, locale)} — ${formatDateDmy(plan.end_date, locale)}`,
+    initiatives: initiatives
+      .filter(
+        (i) =>
+          i.plan_id === plan.strategic_plan_id &&
+          isInWindow({ startDate: i.start_date, endDate: i.end_date }, { startDate: plan.start_date, endDate: plan.end_date })
+      )
+      .map((i) => ({ progressPercent: i.progress_percent, statusCode: i.status_code })),
+  }));
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="executivePlan" current="executive-plans" />
@@ -87,7 +131,11 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        {canCreate && strategicPlans.length > 0 && <NewExecutivePlanForm strategicPlans={strategicPlans} cycles={cycles} />}
+        {canCreate && strategicPlans.length > 0 && (
+          <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
+            <NewExecutivePlanForm strategicPlans={strategicPlans} cycles={cycles} />
+          </div>
+        )}
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
@@ -98,46 +146,17 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
       {plans.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
       ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnName")}</th>
-                  <th>{t("columnStrategicPlan")}</th>
-                  <th>{t("columnPeriod")}</th>
-                  <th>{t("columnCycle")}</th>
-                  <th>{t("columnStatus")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plans.map((plan) => (
-                  <RowLink key={plan.id} href={`/executive-plans/${plan.id}`}>
-                    <td>
-                      <Link
-                        href={`/executive-plans/${plan.id}`}
-                        className="sru-row-link-title"
-                        style={{ color: "var(--color-primary)" }}
-                      >
-                        {plan.name_ar}
-                      </Link>
-                      {plan.name_en && (
-                        <span className="sru-name-en">
-                          {plan.name_en}
-                        </span>
-                      )}
-                    </td>
-                    <td>{strategicPlanNameById.get(plan.strategic_plan_id) ?? "—"}</td>
-                    <td>
-                      {formatDateDmy(plan.start_date, locale)} — {formatDateDmy(plan.end_date, locale)}
-                    </td>
-                    <td>{plan.cycle_id ? cycleNameById.get(plan.cycle_id) ?? "—" : t("cycleNone")}</td>
-                    <td>{plan.status}</td>
-                  </RowLink>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div style={{ display: "grid", gap: 12 }}>
+          {cards.map((plan) => (
+            <ExecutivePlanCard
+              key={plan.id}
+              plan={plan}
+              canManage={canCreate}
+              todayIso={todayIso}
+              strategicPlans={strategicPlans}
+              cycles={cycles.map((c) => ({ id: c.id, nameAr: c.nameAr }))}
+            />
+          ))}
         </div>
       )}
     </div>
