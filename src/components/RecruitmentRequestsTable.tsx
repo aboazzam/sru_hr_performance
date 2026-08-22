@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileSpreadsheet } from "lucide-react";
-import { PrintButton } from "@/components/PrintButton";
+
 import { useTranslations } from "next-intl";
 import {
   RecruitmentRequestRow,
@@ -23,6 +22,8 @@ import {
   type RecruitmentPermissions,
 } from "@/lib/recruitmentWorkflow";
 import { type CompetencyDraft, type CompetencyOption } from "@/components/CompetencyLevelPicker";
+import { ExportMenu } from "@/components/ExportMenu";
+import { RECRUITMENT_REQUEST_EXPORT_COLUMNS } from "@/lib/recruitmentRequestExportColumns";
 
 export interface RecruitmentRequestView {
   request: RecruitmentRequestRowData;
@@ -126,7 +127,19 @@ export function RecruitmentRequestsTable({
   if (query.trim() !== "") exportParams.set("q", query.trim());
   if (statusFilter !== "") exportParams.set("status", statusFilter);
   if (sort !== DEFAULT_REQUEST_SORT) exportParams.set("sort", sort);
-  const exportHref = `/api/recruitment/requests/export${exportParams.size ? `?${exportParams}` : ""}`;
+  const exportColumnLabels: Record<string, string> = {
+    jobTitle: t("columnJobTitle"),
+    orgUnit: t("columnOrgUnit"),
+    headcount: t("columnHeadcount"),
+    reason: t("columnReason"),
+    contract: t("columnContract"),
+    gender: t("columnGender"),
+    quarter: t("columnQuarter"),
+    cost: t("columnCost"),
+    status: t("columnStatus"),
+    qualifications: t("fieldQualifications"),
+    createdAt: t("columnCreatedAt"),
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -182,18 +195,28 @@ export function RecruitmentRequestsTable({
             {t("resetFilters")}
           </button>
         )}
-        <a
-          href={exportHref}
-          className="sru-btn"
-          // A plain download link, not a fetch: the browser handles the file
-          // and the request carries the session cookie like any other.
-          download
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          <FileSpreadsheet size={15} aria-hidden />
-          {t("exportExcel")}
-        </a>
-        <PrintButton />
+        {/* One "تصدير" control (PDF / Excel / CSV + a column picker),
+            the same one the employees screen uses. */}
+        <ExportMenu
+          columns={RECRUITMENT_REQUEST_EXPORT_COLUMNS.map((key) => ({ key, label: exportColumnLabels[key] }))}
+          filenameBase="recruitment-requests"
+          buildHref={(format, columns) => {
+            const params = new URLSearchParams(exportParams);
+            params.set("format", format);
+            params.set("columns", columns.join(","));
+            return `/api/recruitment/requests/export?${params}`;
+          }}
+          labels={{
+            export: t("exportButton"),
+            pdf: t("exportPdf"),
+            excel: t("exportExcel"),
+            csv: t("exportCsv"),
+            columnsHeading: t("exportColumnsHeading"),
+            columnsNote: t("exportColumnsNote"),
+            confirm: t("exportConfirmButton"),
+            close: t("closeButton"),
+          }}
+        />
         <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
           {t("resultCount", { shown: visible.length, total: rows.length })}
         </span>

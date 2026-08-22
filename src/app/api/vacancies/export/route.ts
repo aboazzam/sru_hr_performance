@@ -1,5 +1,6 @@
-import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
+import { buildExportResponse, parseExportFormat, selectColumns } from "@/lib/exportResponse";
+import { VACANCY_EXPORT_COLUMNS, type VacancyExportColumn } from "@/lib/vacancyExportColumns";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDisplayTimezone } from "@/lib/systemSettings";
@@ -105,58 +106,61 @@ export async function GET(request: NextRequest) {
     both: "scopeBoth",
   };
 
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("الشواغر");
-  sheet.views = [{ rightToLeft: true }];
-
   // created_at is a timestamptz; slicing the raw ISO string prints the UTC
   // day, which is the previous day for anything created before 03:00 in
-  // Riyadh. Format it in the configured display timezone instead — the same
-  // one the printed header stamp uses. en-CA yields YYYY-MM-DD.
+  // Riyadh. Format it in the configured display timezone instead. en-CA
+  // yields YYYY-MM-DD.
   const dayInDisplayTz = new Intl.DateTimeFormat("en-CA", {
     timeZone: await getDisplayTimezone(supabase),
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  sheet.addRow([
-    t("columnJobTitle"),
-    t("gradeHeader"),
-    t("columnOrgUnit"),
-    t("columnStatus"),
-    t("announcedHeader"),
-    t("scopeSelectLabel"),
-    t("planHeader"),
-    t("columnRequirements"),
-    t("createdAtHeader"),
-  ]);
-  sheet.getRow(1).font = { bold: true };
 
-  for (const row of visible) {
-    sheet.addRow([
-      row.jobTitleName ?? "",
-      row.gradeLevel ?? "",
-      row.orgUnitName ?? "",
-      vacancyStatusLabel(row.status),
-      row.announced ? t("announcedBadge") : "",
-      // The posting scope only means something once a posting is advertised.
-      row.announced ? t(scopeKeys[row.postingScope] ?? "scopeInternal") : "",
-      row.planYear ?? "",
-      row.requirementsAr ?? "",
-      dayInDisplayTz.format(new Date(row.createdAt)),
-    ]);
-  }
+  const columnLabels: Record<VacancyExportColumn, string> = {
+    jobTitle: t("columnJobTitle"),
+    grade: t("gradeHeader"),
+    orgUnit: t("columnOrgUnit"),
+    status: t("columnStatus"),
+    announced: t("announcedHeader"),
+    scope: t("scopeSelectLabel"),
+    plan: t("planHeader"),
+    requirements: t("columnRequirements"),
+    createdAt: t("createdAtHeader"),
+  };
 
-  sheet.columns.forEach((col, index) => {
-    // The requirements column carries prose; the rest are short values.
-    col.width = index === 7 ? 40 : 18;
-  });
+  const columns = selectColumns(VACANCY_EXPORT_COLUMNS, request.nextUrl.searchParams.get("columns"));
+  const cell = (row: (typeof visible)[number], column: VacancyExportColumn): string | number | null => {
+    switch (column) {
+      case "jobTitle":
+        return row.jobTitleName ?? "";
+      case "grade":
+        return row.gradeLevel ?? "";
+      case "orgUnit":
+        return row.orgUnitName ?? "";
+      case "status":
+        return vacancyStatusLabel(row.status);
+      case "announced":
+        return row.announced ? t("announcedBadge") : "";
+      case "scope":
+        // The posting scope only means something once a posting is advertised.
+        return row.announced ? t(scopeKeys[row.postingScope] ?? "scopeInternal") : "";
+      case "plan":
+        return row.planYear ?? "";
+      case "requirements":
+        return row.requirementsAr ?? "";
+      case "createdAt":
+        return dayInDisplayTz.format(new Date(row.createdAt));
+    }
+  };
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="vacancies.xlsx"`,
-    },
+  return buildExportResponse({
+    format: parseExportFormat(request.nextUrl.searchParams.get("format")),
+    sheetName: "الشواغر",
+    filenameBase: "vacancies",
+    headers: columns.map((c) => columnLabels[c]),
+    rows: visible.map((row) => columns.map((c) => cell(row, c))),
+    columnWidth: 18,
+    wideColumnIndexes: [columns.indexOf("requirements")],
   });
 }

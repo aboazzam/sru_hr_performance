@@ -137,6 +137,7 @@ export function StrategicPlanExcelButtons({ planId, canImport }: { planId: strin
                       targets: state.summary.annualTargetsCreated + state.summary.annualTargetsUpdated,
                       values: state.summary.valuesCreated + state.summary.valuesUpdated,
                       programs: state.summary.programsCreated + state.summary.programsUpdated,
+                      initiatives: state.summary.initiativesCreated + state.summary.initiativesUpdated,
                     })}
                   </p>
                   {state.warnings.length > 0 && (
