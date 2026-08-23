@@ -208,3 +208,61 @@ export async function saveTargetOrgUnits(
   revalidatePath("/[locale]/executive-plans/[id]", "page");
   return { status: "success" };
 }
+
+const employeeShareSchema = z.object({
+  shareId: z.string().uuid(),
+  rows: z.array(z.object({ employeeId: z.string().uuid(), percentage: z.number().positive().max(100) })),
+});
+
+/**
+ * Replaces one unit's whole split of its share across its own staff.
+ *
+ * The percentages are of the UNIT's share, not of the whole target: a
+ * department holding 40% that gives an employee 50% has given them 20% of the
+ * target. `save_executive_plan_target_employees()` enforces the 100%-of-the-
+ * share rule in one transaction, validated before anything is touched.
+ *
+ * Authorization is the RPC's own RLS (20260823000001): the global
+ * `strategicPlanning='approve'`, OR the scoped `check_vpra(...,'prepare', the
+ * share's own unit)` — which is how a dean or department manager writes
+ * inside their unit and nowhere else. This action adds no gate of its own.
+ */
+export async function saveTargetEmployees(
+  _prev: ExecutivePlanTargetState,
+  formData: FormData
+): Promise<ExecutivePlanTargetState> {
+  let rows: Array<{ employeeId: string; percentage: number }>;
+  try {
+    rows = JSON.parse(String(formData.get("rows") ?? "[]"));
+  } catch {
+    return { status: "error", message: "invalid_input" };
+  }
+  const parsed = employeeShareSchema.safeParse({ shareId: formData.get("shareId"), rows });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, user } = await caller();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const { error } = await supabase.rpc("save_executive_plan_target_employees", {
+    p_share_id: parsed.data.shareId,
+    p_rows: parsed.data.rows.map((r) => ({ employee_id: r.employeeId, percentage: r.percentage, notes: null })),
+  });
+  if (error) return mapError(error);
+
+  try {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "executive_plan_target_employees_saved",
+      entity: "executive_plan_target_employees",
+      entity_id: parsed.data.shareId,
+      after_data: { rows: parsed.data.rows },
+    });
+  } catch {
+    // A failed audit write must not fail a write that already happened.
+  }
+
+  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/profile", "page");
+  return { status: "success" };
+}

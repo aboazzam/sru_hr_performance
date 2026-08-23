@@ -1226,7 +1226,16 @@
     "certificatesErrorInvalid": "النص طويل جدًا أو غير صالح.",
     "certificatesErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "certificatesErrorUnknown": "تعذّر الحفظ الآن.",
-    "closeButton": "إغلاق"
+    "closeButton": "إغلاق",
+    "planTargetsHeading": "مستهدفاتي من الخطة التنفيذية",
+    "planTargetsNote": "ما أُسند إليك من مستهدفات الخطة عبر إدارتك، وعليه يُقاس أداؤك.",
+    "planTargetsEmpty": "لم يُسند إليك أي مستهدف من الخطة التنفيذية بعد.",
+    "planTargetsColumnTitle": "المستهدف",
+    "planTargetsColumnPlan": "الخطة التنفيذية",
+    "planTargetsColumnUnit": "الجهة",
+    "planTargetsColumnMyShare": "حصتي",
+    "planTargetsColumnValue": "قيمتي المستهدفة",
+    "planTargetsShareValue": "{ofUnit}% من حصة الجهة ({ofTarget}% من المستهدف)"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",
@@ -2701,6 +2710,24 @@
     "errorForbidden": "لا تملك صلاحية تنفيذ هذا الإجراء.",
     "errorPercentageTotal": "مجموع النسب يجب أن يساوي 100% بالضبط.",
     "errorDuplicate": "لا يمكن تكرار الجهة نفسها مرّتين.",
-    "errorUnknown": "تعذّر إتمام العملية."
+    "errorUnknown": "تعذّر إتمام العملية.",
+    "employeesTab": "إسناد الموظفين",
+    "employeesIntro": "حصة كل جهة من المستهدف، موزّعةً على موظفيها بنسب مجموعها 100% من حصة الجهة. تُحرَّر حصص الجهات التي تملك صلاحية عليها فقط، وما عداها معروض للاطّلاع.",
+    "employeesNoShares": "لم يُوزَّع أي مستهدف على الجهات بعد — ابدأ من تاب المستهدفات.",
+    "employeesOtherUnitsHeading": "حصص جهات أخرى",
+    "employeesOtherUnitsNote": "معروضة للاطّلاع فقط: توزيعها على الموظفين من مسؤولية إدارتها.",
+    "employeesNoneYet": "لم تُوزَّع هذه الحصة على أي موظف بعد.",
+    "employeesNoneVisible": "لا يظهر لك موظفون في هذه الجهة — قد لا تملك صلاحية الاطّلاع على بياناتهم.",
+    "employeesTotal": "مجموع النسب: {total}%",
+    "employeePlaceholder": "— اختر الموظف —",
+    "employeePercentageLabel": "النسبة من حصة الجهة",
+    "employeeAdd": "إضافة موظف",
+    "employeeRemove": "إزالة",
+    "employeesSave": "حفظ التوزيع",
+    "employeeValue": "≈ {value} {unit}",
+    "shareOfTarget": "حصة الجهة: {percent}% من المستهدف",
+    "shareValue": "≈ {value} {unit}",
+    "errorPercentageTotalEmployees": "مجموع النسب يجب أن يساوي 100% من حصة الجهة بالضبط.",
+    "errorDuplicateEmployee": "لا يمكن تكرار الموظف نفسه مرّتين."
   }
 }

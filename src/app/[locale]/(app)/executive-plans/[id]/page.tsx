@@ -4,6 +4,11 @@ import { Link } from "@/i18n/navigation";
 import { ArrowRight, CalendarRange } from "lucide-react";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { ExecutivePlanTargetsPanel, type PlanKpiRow } from "@/components/ExecutivePlanTargetsPanel";
+import {
+  TargetEmployeeAssignmentPanel,
+  type UnitShareRow,
+  type EmployeeOption,
+} from "@/components/TargetEmployeeAssignmentPanel";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { splitByWindow } from "@/lib/executivePlanScope";
 import { formatDateDmy } from "@/lib/dateParts";
@@ -127,7 +132,7 @@ export default async function ExecutivePlanDetailPage({
     selectedTargets.length > 0
       ? await supabase
           .from("executive_plan_target_org_units")
-          .select("executive_plan_target_id, org_unit_id, percentage")
+          .select("id, executive_plan_target_id, org_unit_id, percentage")
           .in(
             "executive_plan_target_id",
             selectedTargets.map((r) => r.id)
@@ -135,6 +140,7 @@ export default async function ExecutivePlanDetailPage({
           .is("deleted_at", null)
       : { data: [] };
   const shares = (shareRows ?? []) as Array<{
+    id: string;
     executive_plan_target_id: string;
     org_unit_id: string;
     percentage: number | string;
@@ -177,6 +183,73 @@ export default async function ExecutivePlanDetailPage({
               })),
           }
         : null,
+    };
+  });
+
+  // ---- إسناد الموظفين: each unit's split of its own share (2026-08-23) ----
+  const { data: employeeShareRows } =
+    shares.length > 0
+      ? await supabase
+          .from("executive_plan_target_employees")
+          .select("target_org_unit_id, employee_id, percentage")
+          .in(
+            "target_org_unit_id",
+            shares.map((sh) => sh.id)
+          )
+          .is("deleted_at", null)
+      : { data: [] };
+  const employeeShares = (employeeShareRows ?? []) as Array<{
+    target_org_unit_id: string;
+    employee_id: string;
+    percentage: number | string;
+  }>;
+
+  // Employees the caller can actually see — profiles_select's own RLS decides,
+  // so a manager scoped to one unit gets that unit's staff and no one else's.
+  const { data: employeeRows } = await supabase
+    .from("profiles")
+    .select("id, employee_number, full_name_ar, org_unit_id")
+    .is("deleted_at", null)
+    .order("employee_number");
+  const employeeOptions: EmployeeOption[] = ((employeeRows ?? []) as Array<{
+    id: string;
+    employee_number: string;
+    full_name_ar: string;
+    org_unit_id: string | null;
+  }>).map((e) => ({ id: e.id, label: e.employee_number + " — " + e.full_name_ar, orgUnitId: e.org_unit_id }));
+  const employeeNameById = new Map(employeeOptions.map((e) => [e.id, e.label]));
+
+  // Which units this caller may write inside. 'approve' writes anywhere;
+  // otherwise it is the scoped grant, so the units their own role covers.
+  // Postgres decides for real — this only chooses what to render as editable.
+  const { data: myScopedUnits } = hasVpraAccess(strategicLevel, "prepare")
+    ? await supabase.rpc("my_scoped_org_unit_ids", { p_process_area: "strategicPlanning", p_level: "prepare" })
+    : { data: [] };
+  const scopedUnitIds = new Set(((myScopedUnits ?? []) as Array<{ org_unit_id: string }>).map((r) => r.org_unit_id));
+
+  const kpiInfoById = new Map(planKpis.map((k) => [k.id, { title: k.title_ar, unit: k.unit_ar }]));
+  const yearValueByTargetId = new Map(selectedTargets.map((sel) => [sel.id, sel.target_value]));
+
+  const unitShares: UnitShareRow[] = shares.map((sh) => {
+    const chosen = selectedTargets.find((sel) => sel.id === sh.executive_plan_target_id);
+    const kpi = chosen ? kpiInfoById.get(chosen.strategic_kpi_id) : undefined;
+    const yearValue = yearValueByTargetId.get(sh.executive_plan_target_id);
+    return {
+      shareId: sh.id,
+      targetTitle: kpi?.title ?? "—",
+      targetUnit: kpi?.unit ?? "",
+      yearTargetValue: yearValue == null ? null : Number(yearValue),
+      orgUnitId: sh.org_unit_id,
+      orgUnitName: unitNameById.get(sh.org_unit_id) ?? "—",
+      percentage: Number(sh.percentage),
+      employees: employeeShares
+        .filter((es) => es.target_org_unit_id === sh.id)
+        .map((es) => ({
+          employeeId: es.employee_id,
+          employeeName: employeeNameById.get(es.employee_id) ?? "—",
+          percentage: Number(es.percentage),
+        })),
+      canManage: canManageTargets || scopedUnitIds.has(sh.org_unit_id),
     };
   });
 
@@ -286,6 +359,11 @@ export default async function ExecutivePlanDetailPage({
 
   const tabs: ProfileTab[] = [
     { id: "targets", label: t("targetsTab"), content: targetsContent },
+    {
+      id: "employees",
+      label: t("employeesTab"),
+      content: <TargetEmployeeAssignmentPanel shares={unitShares} employees={employeeOptions} />,
+    },
     { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
   ];
 
