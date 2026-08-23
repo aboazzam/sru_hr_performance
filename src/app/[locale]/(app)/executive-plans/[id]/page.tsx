@@ -9,6 +9,7 @@ import {
   type UnitShareRow,
   type EmployeeOption,
 } from "@/components/TargetEmployeeAssignmentPanel";
+import { PlanActivitiesPanel, type PlanActivityRow } from "@/components/PlanActivitiesPanel";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { splitByWindow } from "@/lib/executivePlanScope";
 import { formatDateDmy } from "@/lib/dateParts";
@@ -357,6 +358,93 @@ export default async function ExecutivePlanDetailPage({
     </div>
   );
 
+  // ---- جميع الأنشطة (2026-08-23) ----
+  const initiativeIds = initiatives.map((i) => i.id);
+  const { data: activityRows } =
+    initiativeIds.length > 0
+      ? await supabase
+          .from("initiative_activities")
+          .select("id, initiative_id, title_ar, responsible_profile_id, responsible_name, start_date, end_date, display_order")
+          .in("initiative_id", initiativeIds)
+          .is("deleted_at", null)
+          .order("display_order", { ascending: true })
+      : { data: [] };
+  const activityList = (activityRows ?? []) as Array<{
+    id: string;
+    initiative_id: string;
+    title_ar: string;
+    responsible_profile_id: string | null;
+    responsible_name: string | null;
+    start_date: string | null;
+    end_date: string | null;
+  }>;
+
+  // A unit carries an activity if it owns the initiative or is assigned to
+  // it — an initiative can be shared, so this is a list, not one unit.
+  const { data: assignmentRows } =
+    initiativeIds.length > 0
+      ? await supabase
+          .from("initiative_assignments")
+          .select("initiative_id, org_unit_id")
+          .in("initiative_id", initiativeIds)
+          .is("deleted_at", null)
+      : { data: [] };
+  const assignments = (assignmentRows ?? []) as Array<{ initiative_id: string; org_unit_id: string }>;
+
+  const activityUnitIds = new Set<string>();
+  for (const a of assignments) activityUnitIds.add(a.org_unit_id);
+  for (const i of initiatives) if (i.owner_org_unit_id) activityUnitIds.add(i.owner_org_unit_id);
+  const { data: activityUnitRows } =
+    activityUnitIds.size > 0
+      ? await supabase.from("org_units").select("id, name_ar").in("id", [...activityUnitIds])
+      : { data: [] };
+  const activityUnitNameById = new Map(
+    ((activityUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => [u.id, u.name_ar])
+  );
+
+  const responsibleIds = Array.from(
+    new Set(activityList.map((a) => a.responsible_profile_id).filter((v): v is string => Boolean(v)))
+  );
+  const { data: responsibleRows } =
+    responsibleIds.length > 0
+      ? await supabase.from("profiles").select("id, full_name_ar").in("id", responsibleIds)
+      : { data: [] };
+  const responsibleNameById = new Map(
+    ((responsibleRows ?? []) as Array<{ id: string; full_name_ar: string }>).map((p) => [p.id, p.full_name_ar])
+  );
+
+  const initiativeById = new Map(initiatives.map((i) => [i.id, i]));
+  const planActivities: PlanActivityRow[] = activityList.map((a) => {
+    const initiative = initiativeById.get(a.initiative_id);
+    const unitIds = Array.from(
+      new Set([
+        ...(initiative?.owner_org_unit_id ? [initiative.owner_org_unit_id] : []),
+        ...assignments.filter((as) => as.initiative_id === a.initiative_id).map((as) => as.org_unit_id),
+      ])
+    );
+    return {
+      id: a.id,
+      titleAr: a.title_ar,
+      responsible: a.responsible_profile_id
+        ? responsibleNameById.get(a.responsible_profile_id) ?? null
+        : a.responsible_name,
+      startDate: a.start_date,
+      endDate: a.end_date,
+      initiativeId: a.initiative_id,
+      initiativeTitle: initiative?.title_ar ?? "—",
+      orgUnitIds: unitIds,
+      orgUnitNames: unitIds.map((id) => activityUnitNameById.get(id)).filter((v): v is string => Boolean(v)),
+    };
+  });
+
+  const activityUnitOptions = [...activityUnitIds]
+    .map((id) => ({ id, label: activityUnitNameById.get(id) ?? "—" }))
+    .filter((u) => u.label !== "—")
+    .sort((a, b) => a.label.localeCompare(b.label, "ar"));
+  const activityInitiativeOptions = initiatives
+    .filter((i) => activityList.some((a) => a.initiative_id === i.id))
+    .map((i) => ({ id: i.id, label: i.title_ar }));
+
   const tabs: ProfileTab[] = [
     { id: "targets", label: t("targetsTab"), content: targetsContent },
     {
@@ -365,6 +453,18 @@ export default async function ExecutivePlanDetailPage({
       content: <TargetEmployeeAssignmentPanel shares={unitShares} employees={employeeOptions} />,
     },
     { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
+    {
+      id: "activities",
+      label: t("activitiesTab"),
+      content: (
+        <PlanActivitiesPanel
+          activities={planActivities}
+          orgUnits={activityUnitOptions}
+          initiatives={activityInitiativeOptions}
+          locale={locale}
+        />
+      ),
+    },
   ];
 
   return (
