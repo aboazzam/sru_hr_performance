@@ -2728,6 +2728,27 @@
     "shareOfTarget": "حصة الجهة: {percent}% من المستهدف",
     "shareValue": "≈ {value} {unit}",
     "errorPercentageTotalEmployees": "مجموع النسب يجب أن يساوي 100% من حصة الجهة بالضبط.",
-    "errorDuplicateEmployee": "لا يمكن تكرار الموظف نفسه مرّتين."
+    "errorDuplicateEmployee": "لا يمكن تكرار الموظف نفسه مرّتين.",
+    "activitiesTab": "الأنشطة",
+    "activitiesIntro": "كل أنشطة مبادرات هذه الخطة في مكان واحد. رشّحها حسب الإدارة أو المبادرة، أو اعرضها على الجدول الزمني.",
+    "activitiesFilterUnit": "الإدارة",
+    "activitiesFilterInitiative": "المبادرة",
+    "activitiesFilterAll": "الكل",
+    "activitiesSearch": "بحث",
+    "activitiesSearchPlaceholder": "اسم النشاط أو المبادرة...",
+    "activitiesViewList": "قائمة",
+    "activitiesViewTimeline": "جدول زمني",
+    "activitiesReset": "إعادة تعيين",
+    "activitiesCount": "المعروض: {shown} من {total}",
+    "activitiesNone": "لا توجد أنشطة في مبادرات هذه الخطة بعد.",
+    "activitiesNoMatches": "لا توجد أنشطة مطابقة للترشيح.",
+    "activitiesNoDates": "لا يوجد نشاط بتواريخ محدَّدة لعرضه على الجدول الزمني.",
+    "activitiesColumnTitle": "النشاط",
+    "activitiesColumnInitiative": "المبادرة",
+    "activitiesColumnUnit": "الإدارة",
+    "activitiesColumnResponsible": "المسؤول",
+    "activitiesColumnPeriod": "الفترة",
+    "activitiesUndatedHeading": "أنشطة بلا تواريخ ({count})",
+    "activitiesUndatedNote": "لا يمكن رسمها على الجدول الزمني، ومع ذلك تُعرض هنا حتى لا تختفي من الخطة."
   }
 }

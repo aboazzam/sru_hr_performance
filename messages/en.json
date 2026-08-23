@@ -2728,6 +2728,27 @@
     "shareOfTarget": "Unit share: {percent}% of the target",
     "shareValue": "≈ {value} {unit}",
     "errorPercentageTotalEmployees": "The shares must total exactly 100% of the unit's share.",
-    "errorDuplicateEmployee": "The same employee cannot appear twice."
+    "errorDuplicateEmployee": "The same employee cannot appear twice.",
+    "activitiesTab": "Activities",
+    "activitiesIntro": "Every activity under this plan's initiatives in one place. Filter by unit or initiative, or lay them out on the timeline.",
+    "activitiesFilterUnit": "Unit",
+    "activitiesFilterInitiative": "Initiative",
+    "activitiesFilterAll": "All",
+    "activitiesSearch": "Search",
+    "activitiesSearchPlaceholder": "Activity or initiative name...",
+    "activitiesViewList": "List",
+    "activitiesViewTimeline": "Timeline",
+    "activitiesReset": "Reset",
+    "activitiesCount": "Showing {shown} of {total}",
+    "activitiesNone": "No activities under this plan's initiatives yet.",
+    "activitiesNoMatches": "No activities match the filter.",
+    "activitiesNoDates": "No activity has dates to place on the timeline.",
+    "activitiesColumnTitle": "Activity",
+    "activitiesColumnInitiative": "Initiative",
+    "activitiesColumnUnit": "Unit",
+    "activitiesColumnResponsible": "Responsible",
+    "activitiesColumnPeriod": "Period",
+    "activitiesUndatedHeading": "Activities with no dates ({count})",
+    "activitiesUndatedNote": "They cannot be drawn on the timeline, but they are listed here so they do not vanish from the plan."
   }
 }
