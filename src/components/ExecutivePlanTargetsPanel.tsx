@@ -9,8 +9,10 @@ import {
   selectExecutivePlanTarget,
   unselectExecutivePlanTarget,
   saveTargetOrgUnits,
+  recordPlanTargetActual,
   type ExecutivePlanTargetState,
 } from "@/app/[locale]/(app)/executive-plans/[id]/actions";
+import { ActualValueField } from "@/components/ActualValueField";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -184,6 +186,15 @@ function TargetRow({
                     {selectPending ? t("savingButton") : t("saveButton")}
                   </button>
                 )}
+                {/* What was actually achieved — the number the ring reads. */}
+                <ActualValueField
+                  id={kpi.selected.id}
+                  initialValue={kpi.selected.actualValue}
+                  unit={kpi.unitAr}
+                  label={t("actualLabel")}
+                  canEdit={canManage}
+                  action={recordPlanTargetActual}
+                />
               </div>
 
               <OrgUnitSplit

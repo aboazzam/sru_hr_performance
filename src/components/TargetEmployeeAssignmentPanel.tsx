@@ -4,7 +4,13 @@ import { useMemo, useState, startTransition, useActionState, useEffect } from "r
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AlertCircle, Check, Plus, Trash2 } from "lucide-react";
-import { saveTargetEmployees, type ExecutivePlanTargetState } from "@/app/[locale]/(app)/executive-plans/[id]/actions";
+import {
+  saveTargetEmployees,
+  recordOrgUnitActual,
+  recordEmployeeActual,
+  type ExecutivePlanTargetState,
+} from "@/app/[locale]/(app)/executive-plans/[id]/actions";
+import { ActualValueField } from "@/components/ActualValueField";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -24,7 +30,14 @@ export interface UnitShareRow {
   orgUnitId: string;
   orgUnitName: string;
   percentage: number;
-  employees: Array<{ employeeId: string; employeeName: string; percentage: number }>;
+  actualValue: number | string | null;
+  employees: Array<{
+    assignmentId: string;
+    employeeId: string;
+    employeeName: string;
+    percentage: number;
+    actualValue: number | string | null;
+  }>;
   /** Whether THIS caller may write this unit's split. */
   canManage: boolean;
 }
@@ -96,6 +109,8 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
   const [rows, setRows] = useState(
     share.employees.map((e) => ({ employeeId: e.employeeId, percentage: String(e.percentage) }))
   );
+  // Saved assignments only: an unsaved row has no id to record against yet.
+  const savedByEmployee = new Map(share.employees.map((e) => [e.employeeId, e]));
   const [state, formAction, pending] = useActionState<ExecutivePlanTargetState, FormData>(saveTargetEmployees, null);
 
   useEffect(() => {
@@ -139,6 +154,18 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
         >
           {t("employeesTotal", { total: String(total) })}
         </span>
+      </div>
+
+      {/* The unit's own achievement against its share. */}
+      <div style={{ marginTop: 10 }}>
+        <ActualValueField
+          id={share.shareId}
+          initialValue={share.actualValue}
+          unit={share.targetUnit}
+          label={t("actualUnitLabel")}
+          canEdit={share.canManage}
+          action={recordOrgUnitActual}
+        />
       </div>
 
       {rows.length === 0 && !share.canManage && (
@@ -191,6 +218,16 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
               >
                 <Trash2 size={14} aria-hidden />
               </button>
+            )}
+            {savedByEmployee.has(row.employeeId) && (
+              <ActualValueField
+                id={savedByEmployee.get(row.employeeId)!.assignmentId}
+                initialValue={savedByEmployee.get(row.employeeId)!.actualValue}
+                unit={share.targetUnit}
+                label={t("actualEmployeeLabel")}
+                canEdit={share.canManage}
+                action={recordEmployeeActual}
+              />
             )}
           </div>
         ))}
