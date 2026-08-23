@@ -2749,6 +2749,12 @@
     "activitiesColumnResponsible": "المسؤول",
     "activitiesColumnPeriod": "الفترة",
     "activitiesUndatedHeading": "أنشطة بلا تواريخ ({count})",
-    "activitiesUndatedNote": "لا يمكن رسمها على الجدول الزمني، ومع ذلك تُعرض هنا حتى لا تختفي من الخطة."
+    "activitiesUndatedNote": "لا يمكن رسمها على الجدول الزمني، ومع ذلك تُعرض هنا حتى لا تختفي من الخطة.",
+    "actualLabel": "القيمة الفعلية",
+    "actualUnitLabel": "فعلي الجهة",
+    "actualEmployeeLabel": "فعلي الموظف",
+    "actualPlaceholder": "لم تُسجَّل",
+    "actualNotRecorded": "لم تُسجَّل",
+    "actualSave": "تسجيل"
   }
 }

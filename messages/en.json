@@ -2749,6 +2749,12 @@
     "activitiesColumnResponsible": "Responsible",
     "activitiesColumnPeriod": "Period",
     "activitiesUndatedHeading": "Activities with no dates ({count})",
-    "activitiesUndatedNote": "They cannot be drawn on the timeline, but they are listed here so they do not vanish from the plan."
+    "activitiesUndatedNote": "They cannot be drawn on the timeline, but they are listed here so they do not vanish from the plan.",
+    "actualLabel": "Actual value",
+    "actualUnitLabel": "Unit actual",
+    "actualEmployeeLabel": "Employee actual",
+    "actualPlaceholder": "Not recorded",
+    "actualNotRecorded": "Not recorded",
+    "actualSave": "Record"
   }
 }

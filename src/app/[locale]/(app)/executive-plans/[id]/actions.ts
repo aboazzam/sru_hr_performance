@@ -266,3 +266,97 @@ export async function saveTargetEmployees(
   revalidatePath("/[locale]/profile", "page");
   return { status: "success" };
 }
+
+const actualSchema = z.object({
+  id: z.string().uuid(),
+  // Empty clears the figure: "not recorded" is a real state, distinct from
+  // zero, and the ring already tells the two apart.
+  actual: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v == null || v === "" ? null : Number(v)))
+    .refine((v) => v == null || Number.isFinite(v), { message: "not a number" }),
+});
+
+/**
+ * Records an actual value at one of the three levels.
+ *
+ * Each RPC is SECURITY DEFINER and updates `actual_value` ALONE after checking
+ * the caller itself (20260823000004) — deliberately not a widened UPDATE
+ * policy, because RLS filters rows and not columns, and the same widening
+ * would have let a manager rewrite their own `percentage` and then report
+ * against it.
+ */
+async function recordActual(
+  rpc: "record_executive_plan_target_actual" | "record_target_org_unit_actual" | "record_target_employee_actual",
+  idParam: "p_target_id" | "p_share_id" | "p_assignment_id",
+  action: string,
+  entity: string,
+  formData: FormData
+): Promise<ExecutivePlanTargetState> {
+  const parsed = actualSchema.safeParse({ id: formData.get("id"), actual: formData.get("actual") ?? undefined });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, user } = await caller();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  const { error } = await supabase.rpc(rpc, { [idParam]: parsed.data.id, p_actual: parsed.data.actual });
+  if (error) return mapError(error);
+
+  try {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action,
+      entity,
+      entity_id: parsed.data.id,
+      after_data: { actual_value: parsed.data.actual },
+    });
+  } catch {
+    // A failed audit write must not fail a write that already happened.
+  }
+
+  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/profile", "page");
+  return { status: "success" };
+}
+
+export async function recordPlanTargetActual(
+  _prev: ExecutivePlanTargetState,
+  formData: FormData
+): Promise<ExecutivePlanTargetState> {
+  return recordActual(
+    "record_executive_plan_target_actual",
+    "p_target_id",
+    "executive_plan_target_actual_recorded",
+    "executive_plan_targets",
+    formData
+  );
+}
+
+export async function recordOrgUnitActual(
+  _prev: ExecutivePlanTargetState,
+  formData: FormData
+): Promise<ExecutivePlanTargetState> {
+  return recordActual(
+    "record_target_org_unit_actual",
+    "p_share_id",
+    "executive_plan_target_unit_actual_recorded",
+    "executive_plan_target_org_units",
+    formData
+  );
+}
+
+export async function recordEmployeeActual(
+  _prev: ExecutivePlanTargetState,
+  formData: FormData
+): Promise<ExecutivePlanTargetState> {
+  return recordActual(
+    "record_target_employee_actual",
+    "p_assignment_id",
+    "executive_plan_target_employee_actual_recorded",
+    "executive_plan_target_employees",
+    formData
+  );
+}

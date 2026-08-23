@@ -133,7 +133,7 @@ export default async function ExecutivePlanDetailPage({
     selectedTargets.length > 0
       ? await supabase
           .from("executive_plan_target_org_units")
-          .select("id, executive_plan_target_id, org_unit_id, percentage")
+          .select("id, executive_plan_target_id, org_unit_id, percentage, actual_value")
           .in(
             "executive_plan_target_id",
             selectedTargets.map((r) => r.id)
@@ -145,6 +145,7 @@ export default async function ExecutivePlanDetailPage({
     executive_plan_target_id: string;
     org_unit_id: string;
     percentage: number | string;
+    actual_value: number | string | null;
   }>;
 
   // Every org unit, for the split's picker — read through the caller's own
@@ -192,7 +193,7 @@ export default async function ExecutivePlanDetailPage({
     shares.length > 0
       ? await supabase
           .from("executive_plan_target_employees")
-          .select("target_org_unit_id, employee_id, percentage")
+          .select("id, target_org_unit_id, employee_id, percentage, actual_value")
           .in(
             "target_org_unit_id",
             shares.map((sh) => sh.id)
@@ -200,9 +201,11 @@ export default async function ExecutivePlanDetailPage({
           .is("deleted_at", null)
       : { data: [] };
   const employeeShares = (employeeShareRows ?? []) as Array<{
+    id: string;
     target_org_unit_id: string;
     employee_id: string;
     percentage: number | string;
+    actual_value: number | string | null;
   }>;
 
   // Employees the caller can actually see — profiles_select's own RLS decides,
@@ -243,12 +246,15 @@ export default async function ExecutivePlanDetailPage({
       orgUnitId: sh.org_unit_id,
       orgUnitName: unitNameById.get(sh.org_unit_id) ?? "—",
       percentage: Number(sh.percentage),
+      actualValue: sh.actual_value,
       employees: employeeShares
         .filter((es) => es.target_org_unit_id === sh.id)
         .map((es) => ({
+          assignmentId: es.id,
           employeeId: es.employee_id,
           employeeName: employeeNameById.get(es.employee_id) ?? "—",
           percentage: Number(es.percentage),
+          actualValue: es.actual_value,
         })),
       canManage: canManageTargets || scopedUnitIds.has(sh.org_unit_id),
     };
