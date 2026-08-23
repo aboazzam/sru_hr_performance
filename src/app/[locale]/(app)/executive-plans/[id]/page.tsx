@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowRight, CalendarRange } from "lucide-react";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
-import { splitByWindow, targetCycleInScope } from "@/lib/executivePlanScope";
+import { ExecutivePlanTargetsPanel, type PlanKpiRow } from "@/components/ExecutivePlanTargetsPanel";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { splitByWindow } from "@/lib/executivePlanScope";
 import { formatDateDmy } from "@/lib/dateParts";
 import type { Locale } from "@/i18n/config";
 
@@ -68,6 +70,7 @@ export default async function ExecutivePlanDetailPage({
     .eq("plan_id", plan.strategic_plan_id)
     .is("deleted_at", null);
   const goalIds = new Set(((goalRows ?? []) as Array<{ id: string }>).map((g) => g.id));
+  const goalTitleById = new Map(((goalRows ?? []) as Array<{ id: string; title_ar: string }>).map((g) => [g.id, g.title_ar]));
 
   const { data: subGoalRows } = await supabase
     .from("sub_goals")
@@ -77,45 +80,105 @@ export default async function ExecutivePlanDetailPage({
     goalIds.has(sg.strategic_goal_id)
   );
   const subGoalIds = new Set(planSubGoals.map((sg) => sg.id));
+  const subGoalTitleById = new Map(planSubGoals.map((sg) => [sg.id, sg.title_ar]));
 
   const { data: kpiRows } = await supabase
     .from("strategic_kpis")
-    .select("id, strategic_goal_id, sub_goal_id, title_ar, unit_ar, plan_target_value")
+    .select("id, strategic_goal_id, sub_goal_id, title_ar, title_en, unit_ar, plan_target_value")
     .is("deleted_at", null);
   const planKpis = ((kpiRows ?? []) as Array<{
     id: string;
     strategic_goal_id: string | null;
     sub_goal_id: string | null;
     title_ar: string;
+    title_en: string | null;
     unit_ar: string;
     plan_target_value: number | null;
   }>).filter((k) => (k.strategic_goal_id && goalIds.has(k.strategic_goal_id)) || (k.sub_goal_id && subGoalIds.has(k.sub_goal_id)));
-  const kpiById = new Map(planKpis.map((k) => [k.id, k]));
 
   const { data: cycleRows } = await supabase
     .from("evaluation_cycles")
     .select("id, name_ar, start_date, end_date")
     .is("deleted_at", null);
   const cycles = (cycleRows ?? []) as Array<{ id: string; name_ar: string; start_date: string | null; end_date: string | null }>;
-  const cyclesInScope = cycles.filter((c) =>
-    targetCycleInScope({ id: c.id, startDate: c.start_date, endDate: c.end_date }, window, (plan.cycle_id as string | null) ?? null)
-  );
-  const cycleInScopeIds = new Set(cyclesInScope.map((c) => c.id));
   const cycleNameById = new Map(cycles.map((c) => [c.id, c.name_ar]));
 
-  const { data: annualRows } = await supabase
-    .from("kpi_annual_targets")
-    .select("id, kpi_id, cycle_id, target_value, actual_value")
+  // ---- اختيار مستهدفات العام وإسقاطها على الجهات (2026-08-23) ----
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const strategicLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "strategicPlanning"
+    )?.vpra_level ?? "none";
+  const canManageTargets = hasVpraAccess(strategicLevel, "approve");
+
+  const { data: selectedRows } = await supabase
+    .from("executive_plan_targets")
+    .select("id, strategic_kpi_id, target_value, actual_value")
+    .eq("executive_plan_id", id)
     .is("deleted_at", null);
-  const annualTargets = ((annualRows ?? []) as Array<{
+  const selectedTargets = (selectedRows ?? []) as Array<{
     id: string;
-    kpi_id: string;
-    cycle_id: string;
-    target_value: number;
-    actual_value: number | null;
-  }>).filter((a) => kpiById.has(a.kpi_id));
-  const targetsInScope = annualTargets.filter((a) => cycleInScopeIds.has(a.cycle_id));
-  const targetsOutside = annualTargets.length - targetsInScope.length;
+    strategic_kpi_id: string;
+    target_value: number | string | null;
+    actual_value: number | string | null;
+  }>;
+
+  const { data: shareRows } =
+    selectedTargets.length > 0
+      ? await supabase
+          .from("executive_plan_target_org_units")
+          .select("executive_plan_target_id, org_unit_id, percentage")
+          .in(
+            "executive_plan_target_id",
+            selectedTargets.map((r) => r.id)
+          )
+          .is("deleted_at", null)
+      : { data: [] };
+  const shares = (shareRows ?? []) as Array<{
+    executive_plan_target_id: string;
+    org_unit_id: string;
+    percentage: number | string;
+  }>;
+
+  // Every org unit, for the split's picker — read through the caller's own
+  // client, so the options are exactly what they may actually assign to.
+  const { data: allUnitRows } = await supabase
+    .from("org_units")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("name_ar");
+  const assignableUnits = ((allUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => ({
+    id: u.id,
+    nameAr: u.name_ar,
+  }));
+  const unitNameById = new Map(assignableUnits.map((u) => [u.id, u.nameAr]));
+
+  const targetRows: PlanKpiRow[] = planKpis.map((k) => {
+    const chosen = selectedTargets.find((sel) => sel.strategic_kpi_id === k.id) ?? null;
+    return {
+      id: k.id,
+      titleAr: k.title_ar,
+      titleEn: k.title_en,
+      unitAr: k.unit_ar,
+      planTargetValue: k.plan_target_value,
+      goalTitle: k.strategic_goal_id ? goalTitleById.get(k.strategic_goal_id) ?? null : null,
+      subGoalTitle: k.sub_goal_id ? subGoalTitleById.get(k.sub_goal_id) ?? null : null,
+      selected: chosen
+        ? {
+            id: chosen.id,
+            targetValue: chosen.target_value,
+            actualValue: chosen.actual_value,
+            orgUnits: shares
+              .filter((sh) => sh.executive_plan_target_id === chosen.id)
+              .map((sh) => ({
+                orgUnitId: sh.org_unit_id,
+                orgUnitName: unitNameById.get(sh.org_unit_id) ?? "—",
+                percentage: Number(sh.percentage),
+              })),
+          }
+        : null,
+    };
+  });
 
   // ---- المبادرات: the strategic plan's initiatives, by their own period ----
   const { data: initiativeRows } = await supabase
@@ -145,51 +208,12 @@ export default async function ExecutivePlanDetailPage({
   const statusLabelByCode = new Map(((statusRows ?? []) as Array<{ code: string; label_ar: string }>).map((s) => [s.code, s.label_ar]));
 
   const targetsContent = (
-    <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>
-        {plan.cycle_id ? t("targetsIntroCycle", { cycle: cycleNameById.get(plan.cycle_id as string) ?? "—" }) : t("targetsIntroWindow")}
-      </p>
-      {targetsInScope.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
-          {annualTargets.length === 0 ? t("targetsNone") : t("targetsNoneInWindow", { total: annualTargets.length })}
-        </p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnKpi")}</th>
-                  <th>{t("columnCycle")}</th>
-                  <th>{t("columnTarget")}</th>
-                  <th>{t("columnActual")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {targetsInScope.map((target) => {
-                  const kpi = kpiById.get(target.kpi_id)!;
-                  return (
-                    <tr key={target.id}>
-                      <td style={{ fontWeight: 700 }}>{kpi.title_ar}</td>
-                      <td>{cycleNameById.get(target.cycle_id) ?? "—"}</td>
-                      <td dir="ltr" style={{ textAlign: "start" }}>
-                        {target.target_value} {kpi.unit_ar}
-                      </td>
-                      <td dir="ltr" style={{ textAlign: "start" }}>
-                        {target.actual_value != null ? `${target.actual_value} ${kpi.unit_ar}` : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-      {targetsOutside > 0 && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 10 }}>{t("targetsOutsideNote", { count: targetsOutside })}</p>
-      )}
-    </div>
+    <ExecutivePlanTargetsPanel
+      executivePlanId={id}
+      kpis={targetRows}
+      orgUnits={assignableUnits}
+      canManage={canManageTargets}
+    />
   );
 
   const initiativeTable = (rows: typeof scoped.inWindow) => (
