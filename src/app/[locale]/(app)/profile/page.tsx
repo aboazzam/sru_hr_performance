@@ -188,6 +188,118 @@ export default async function MyProfilePage() {
     .map((line) => line.trim())
     .filter(Boolean);
 
+  // ---- مستهدفاتي من الخطة التنفيذية (2026-08-23) ----
+  const { data: myTargetShareRows } = p?.id
+    ? await supabase
+        .from("executive_plan_target_employees")
+        .select("id, percentage, target_org_unit_id")
+        .eq("employee_id", p.id)
+        .is("deleted_at", null)
+    : { data: [] };
+  const myTargetShares = (myTargetShareRows ?? []) as Array<{
+    id: string;
+    percentage: number | string;
+    target_org_unit_id: string;
+  }>;
+
+  const { data: myUnitShareRows } =
+    myTargetShares.length > 0
+      ? await supabase
+          .from("executive_plan_target_org_units")
+          .select("id, executive_plan_target_id, org_unit_id, percentage")
+          .in(
+            "id",
+            myTargetShares.map((r) => r.target_org_unit_id)
+          )
+          .is("deleted_at", null)
+      : { data: [] };
+  const myUnitShares = (myUnitShareRows ?? []) as Array<{
+    id: string;
+    executive_plan_target_id: string;
+    org_unit_id: string;
+    percentage: number | string;
+  }>;
+
+  const { data: myPlanTargetRows } =
+    myUnitShares.length > 0
+      ? await supabase
+          .from("executive_plan_targets")
+          .select("id, executive_plan_id, strategic_kpi_id, target_value")
+          .in(
+            "id",
+            myUnitShares.map((r) => r.executive_plan_target_id)
+          )
+          .is("deleted_at", null)
+      : { data: [] };
+  const myPlanTargets = (myPlanTargetRows ?? []) as Array<{
+    id: string;
+    executive_plan_id: string;
+    strategic_kpi_id: string;
+    target_value: number | string | null;
+  }>;
+
+  const { data: myKpiRows } =
+    myPlanTargets.length > 0
+      ? await supabase
+          .from("strategic_kpis")
+          .select("id, title_ar, unit_ar")
+          .in(
+            "id",
+            myPlanTargets.map((r) => r.strategic_kpi_id)
+          )
+      : { data: [] };
+  const myKpiById = new Map(
+    ((myKpiRows ?? []) as Array<{ id: string; title_ar: string; unit_ar: string }>).map((k) => [k.id, k])
+  );
+
+  const { data: myPlanRows } =
+    myPlanTargets.length > 0
+      ? await supabase
+          .from("executive_plans")
+          .select("id, name_ar")
+          .in(
+            "id",
+            myPlanTargets.map((r) => r.executive_plan_id)
+          )
+      : { data: [] };
+  const myPlanNameById = new Map(((myPlanRows ?? []) as Array<{ id: string; name_ar: string }>).map((pl) => [pl.id, pl.name_ar]));
+
+  const { data: myShareUnitRows } =
+    myUnitShares.length > 0
+      ? await supabase
+          .from("org_units")
+          .select("id, name_ar")
+          .in(
+            "id",
+            myUnitShares.map((r) => r.org_unit_id)
+          )
+      : { data: [] };
+  const myUnitNameById = new Map(((myShareUnitRows ?? []) as Array<{ id: string; name_ar: string }>).map((u) => [u.id, u.name_ar]));
+
+  const myTargets = myTargetShares.map((mine) => {
+    const unitShare = myUnitShares.find((u) => u.id === mine.target_org_unit_id);
+    const planTarget = unitShare ? myPlanTargets.find((pt) => pt.id === unitShare.executive_plan_target_id) : undefined;
+    const kpi = planTarget ? myKpiById.get(planTarget.strategic_kpi_id) : undefined;
+    const yearValue = planTarget?.target_value == null ? null : Number(planTarget.target_value);
+    const unitPercent = unitShare == null ? 0 : Number(unitShare.percentage);
+    const myPercent = Number(mine.percentage);
+    // My share of the target's own value: the unit's cut of it, then mine of
+    // the unit's. Rounded for display only — nothing is stored.
+    const myValue = yearValue == null ? null : Math.round(((yearValue * unitPercent * myPercent) / 10000) * 100) / 100;
+    return {
+      id: mine.id,
+      title: kpi?.title_ar ?? "—",
+      unit: kpi?.unit_ar ?? "",
+      planName: planTarget ? myPlanNameById.get(planTarget.executive_plan_id) ?? "—" : "—",
+      orgUnitName: unitShare ? myUnitNameById.get(unitShare.org_unit_id) ?? "—" : "—",
+      myPercent,
+      // Of the whole target, not of the unit's share — the number that
+      // actually says how much of it is mine.
+      overallPercent: Math.round(((unitPercent * myPercent) / 100) * 100) / 100,
+      myValue,
+    };
+  });
+
   const tabs: ProfileTab[] = !p
     ? []
     : [
@@ -276,6 +388,46 @@ export default async function MyProfilePage() {
           content: (
             <>
               <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("kpisNote")}</p>
+
+              <section style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("planTargetsHeading")}</h3>
+                <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("planTargetsNote")}</p>
+                {myTargets.length === 0 ? (
+                  <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planTargetsEmpty")}</p>
+                ) : (
+                  <div className="sru-card">
+                    <div className="table-scroll">
+                      <table className="admin-matrix">
+                        <thead>
+                          <tr>
+                            <th>{t("planTargetsColumnTitle")}</th>
+                            <th>{t("planTargetsColumnPlan")}</th>
+                            <th>{t("planTargetsColumnUnit")}</th>
+                            <th>{t("planTargetsColumnMyShare")}</th>
+                            <th>{t("planTargetsColumnValue")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {myTargets.map((row) => (
+                            <tr key={row.id}>
+                              <td>{row.title}</td>
+                              <td>{row.planName}</td>
+                              <td>{row.orgUnitName}</td>
+                              <td>
+                                {t("planTargetsShareValue", {
+                                  ofUnit: String(row.myPercent),
+                                  ofTarget: String(row.overallPercent),
+                                })}
+                              </td>
+                              <td>{row.myValue == null ? "—" : row.myValue + " " + row.unit}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </section>
               {!goals || goals.length === 0 ? (
                 <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
               ) : (

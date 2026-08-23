@@ -1226,7 +1226,16 @@
     "certificatesErrorInvalid": "The text is too long or invalid.",
     "certificatesErrorUnauthenticated": "You must sign in first.",
     "certificatesErrorUnknown": "Could not save right now.",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "planTargetsHeading": "My targets from the executive plan",
+    "planTargetsNote": "The plan targets assigned to you through your unit — what your performance is measured on.",
+    "planTargetsEmpty": "No executive-plan target has been assigned to you yet.",
+    "planTargetsColumnTitle": "Target",
+    "planTargetsColumnPlan": "Executive plan",
+    "planTargetsColumnUnit": "Unit",
+    "planTargetsColumnMyShare": "My share",
+    "planTargetsColumnValue": "My target value",
+    "planTargetsShareValue": "{ofUnit}% of the unit's share ({ofTarget}% of the target)"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
@@ -2701,6 +2710,24 @@
     "errorForbidden": "You do not have permission to do this.",
     "errorPercentageTotal": "The shares must total exactly 100%.",
     "errorDuplicate": "The same unit cannot appear twice.",
-    "errorUnknown": "The operation could not be completed."
+    "errorUnknown": "The operation could not be completed.",
+    "employeesTab": "Employee assignment",
+    "employeesIntro": "Each unit's share of a target, split across its own staff so the shares total 100% of the unit's share. Only the units you may write are editable; the rest are shown for context.",
+    "employeesNoShares": "No target has been split across units yet — start from the targets tab.",
+    "employeesOtherUnitsHeading": "Other units' shares",
+    "employeesOtherUnitsNote": "Shown for context only: splitting them is their own unit's job.",
+    "employeesNoneYet": "This share has not been split across any employee yet.",
+    "employeesNoneVisible": "No employees of this unit are visible to you — you may not have access to their records.",
+    "employeesTotal": "Total: {total}%",
+    "employeePlaceholder": "— choose an employee —",
+    "employeePercentageLabel": "Percentage of the unit's share",
+    "employeeAdd": "Add an employee",
+    "employeeRemove": "Remove",
+    "employeesSave": "Save the split",
+    "employeeValue": "≈ {value} {unit}",
+    "shareOfTarget": "Unit share: {percent}% of the target",
+    "shareValue": "≈ {value} {unit}",
+    "errorPercentageTotalEmployees": "The shares must total exactly 100% of the unit's share.",
+    "errorDuplicateEmployee": "The same employee cannot appear twice."
   }
 }
