@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ExcelImportDialog, type ImportFieldSpec } from "@/components/ExcelImportDialog";
 import { importCareerPathExcel, type CareerPathImportResult } from "@/app/[locale]/(app)/career-path/import-actions";
+import { CAREER_PATH_IMPORT_COLUMNS } from "@/lib/importColumns";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "importErrorInvalid",
@@ -18,9 +19,9 @@ export function ImportCareerPathExcelForm() {
 
   const fields: ImportFieldSpec[] = [
     // The pair IS the edge: without both ends there is no path to record.
-    { key: "fromJobTitle", label: t("importFieldFrom"), isKey: true },
-    { key: "toJobTitle", label: t("importFieldTo"), isKey: true },
-    { key: "requirements", label: t("importFieldRequirements") },
+    { key: "fromJobTitle", label: t("importFieldFrom"), columnLabel: CAREER_PATH_IMPORT_COLUMNS.fromJobTitle, isKey: true },
+    { key: "toJobTitle", label: t("importFieldTo"), columnLabel: CAREER_PATH_IMPORT_COLUMNS.toJobTitle, isKey: true },
+    { key: "requirements", label: t("importFieldRequirements"), columnLabel: CAREER_PATH_IMPORT_COLUMNS.requirements },
   ];
 
   return (
@@ -33,7 +34,6 @@ export function ImportCareerPathExcelForm() {
       fields={fields}
       action={importCareerPathExcel}
       pendingLabel={t("importing")}
-      submitLabel={t("importButton")}
     >
       {(state: CareerPathImportResult | null) => <CareerPathImportOutcome state={state} />}
     </ExcelImportDialog>

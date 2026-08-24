@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ExcelImportDialog, type ImportFieldSpec } from "@/components/ExcelImportDialog";
 import { importJobTitlesExcel, type JobTitlesImportResult } from "@/app/[locale]/(app)/career-path/job-titles/import-actions";
+import { JOB_TITLE_IMPORT_COLUMNS } from "@/lib/importColumns";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "importErrorInvalid",
@@ -26,13 +27,13 @@ export function ImportJobTitlesExcelForm() {
 
   const fields: ImportFieldSpec[] = [
     // Name + family together identify a title (job_titles is unique on the pair).
-    { key: "nameAr", label: t("importFieldNameAr"), isKey: true },
-    { key: "jobFamily", label: t("importFieldJobFamily"), isKey: true },
-    { key: "gradeLevel", label: t("importFieldGrade") },
-    { key: "category", label: t("importFieldCategory") },
-    { key: "nameEn", label: t("importFieldNameEn") },
-    { key: "qualification", label: t("importFieldQualification") },
-    { key: "description", label: t("importFieldDescription") },
+    { key: "nameAr", label: t("importFieldNameAr"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.nameAr, isKey: true },
+    { key: "jobFamily", label: t("importFieldJobFamily"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.jobFamily, isKey: true },
+    { key: "gradeLevel", label: t("importFieldGrade"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.gradeLevel },
+    { key: "category", label: t("importFieldCategory"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.category },
+    { key: "nameEn", label: t("importFieldNameEn"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.nameEn },
+    { key: "qualification", label: t("importFieldQualification"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.qualification },
+    { key: "description", label: t("importFieldDescription"), columnLabel: JOB_TITLE_IMPORT_COLUMNS.description },
   ];
 
   return (
@@ -45,7 +46,6 @@ export function ImportJobTitlesExcelForm() {
       fields={fields}
       action={importJobTitlesExcel}
       pendingLabel={t("importing")}
-      submitLabel={t("importButton")}
     >
       {(state: JobTitlesImportResult | null) => <JobTitlesImportOutcome state={state} />}
     </ExcelImportDialog>

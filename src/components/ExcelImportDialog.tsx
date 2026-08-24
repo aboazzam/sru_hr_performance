@@ -11,6 +11,13 @@ export interface ImportFieldSpec {
   key: string;
   label: string;
   /**
+   * The header this importer actually reads the field from, when it differs
+   * from the display label. Our own templates use these raw headers
+   * ("EMPLOYEE NUMBER", "الادارة"), so without them a file exported from this
+   * very app would arrive with almost nothing auto-mapped.
+   */
+  columnLabel?: string;
+  /**
    * A key column identifies the row (employee number, job title name…). It is
    * always written and cannot be unticked — without it the importer cannot
    * tell which row a line refers to.
@@ -43,7 +50,6 @@ export function ExcelImportDialog({
   fields,
   action,
   pendingLabel,
-  submitLabel,
   extraFields,
   children,
 }: {
@@ -57,7 +63,6 @@ export function ExcelImportDialog({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each importer has its own result shape; the dialog only forwards it to `children`.
   action: (prev: any, formData: FormData) => Promise<any>;
   pendingLabel: string;
-  submitLabel: string;
   /** Hidden values the importer needs (a plan id, say). */
   extraFields?: Record<string, string>;
   /** Renders the importer's own result. */
@@ -68,6 +73,7 @@ export function ExcelImportDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const hasMappableFields = fields.length > 0;
   const [step, setStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<ImportMode>("insert_only");
   const [file, setFile] = useState<File | null>(null);
@@ -85,11 +91,11 @@ export function ExcelImportDialog({
   const [handledInspect, setHandledInspect] = useState<InspectExcelResult | null>(null);
   if (inspect !== handledInspect) {
     setHandledInspect(inspect);
-    if (inspect?.status === "success") {
+    if (inspect?.status === "success" && hasMappableFields) {
       const headers = inspect.sheets.flatMap((s) => s.headers);
       const guess: Record<string, string> = {};
       for (const header of headers) {
-        const exact = fields.find((f) => f.label === header);
+        const exact = fields.find((f) => f.label === header || f.columnLabel === header);
         guess[header] = exact ? exact.key : "";
       }
       setMapping(guess);
@@ -152,7 +158,14 @@ export function ExcelImportDialog({
               event.preventDefault();
               const formData = new FormData();
               if (file) formData.set("file", file);
-              startTransition(() => inspectAction(formData));
+              if (hasMappableFields) {
+                startTransition(() => inspectAction(formData));
+                return;
+              }
+              // Nothing to map: the mode is the whole question here.
+              formData.set("importMode", mode);
+              for (const [k, v] of Object.entries(extraFields ?? {})) formData.set(k, v);
+              startTransition(() => importAction(formData));
             }}
             style={{ marginTop: 14 }}
           >
@@ -212,9 +225,26 @@ export function ExcelImportDialog({
               </p>
             )}
 
+            {!hasMappableFields && children?.(importState)}
+
             <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-              <button type="submit" className="sru-btn sru-btn-primary" disabled={!file || inspecting}>
-                {inspecting ? t("reading") : t("next")}
+              <button
+                type="submit"
+                className="sru-btn sru-btn-primary"
+                disabled={!file || inspecting || importing}
+              >
+                {hasMappableFields ? (
+                  inspecting ? (
+                    t("reading")
+                  ) : (
+                    t("next")
+                  )
+                ) : (
+                  <>
+                    <ArrowDownToLine size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+                    {importing ? pendingLabel : t("runImport")}
+                  </>
+                )}
               </button>
               {templateHref && (
                 <a href={templateHref} download className="sru-btn">
@@ -321,7 +351,7 @@ export function ExcelImportDialog({
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               <button type="submit" className="sru-btn sru-btn-primary" disabled={importing}>
                 <ArrowDownToLine size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
-                {importing ? pendingLabel : submitLabel}
+                {importing ? pendingLabel : t("runImport")}
               </button>
               <button type="button" className="sru-btn" onClick={() => setStep(1)}>
                 {t("back")}
