@@ -40,6 +40,17 @@ export interface ImportOptions {
   fields: ReadonlySet<string> | null;
   /** File column label -> canonical field key. Empty when nothing was remapped. */
   mapping: ReadonlyMap<string, string>;
+  /**
+   * Columns the caller explicitly set to "ignore".
+   *
+   * Kept apart from `mapping` because the two mean different things: a column
+   * nobody mentioned keeps its own header (so a file that already uses our
+   * names needs no mapping at all), while a column deliberately ignored has to
+   * be dropped. Folding both into one map made "ignored" indistinguishable
+   * from "never mentioned" — and the ignored column was then read anyway,
+   * which is what the test caught.
+   */
+  ignored: ReadonlySet<string>;
 }
 
 function parseList(raw: FormDataEntryValue | null): string[] | null {
@@ -60,15 +71,19 @@ export function parseImportOptions(formData: FormData): ImportOptions {
   const fieldList = parseList(formData.get("importFields"));
 
   const mapping = new Map<string, string>();
+  const ignored = new Set<string>();
   const rawMapping = formData.get("importMapping");
   if (typeof rawMapping === "string" && rawMapping.trim() !== "") {
     try {
       const parsed = JSON.parse(rawMapping) as unknown;
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         for (const [column, field] of Object.entries(parsed as Record<string, unknown>)) {
-          // "" is how the dialog says "ignore this column" — carrying it into
-          // the map would create a field named "".
-          if (typeof field === "string" && field !== "") mapping.set(column, field);
+          if (typeof field !== "string") continue;
+          // "" is how the dialog says "ignore this column". It is recorded,
+          // not discarded: dropping it here would leave the column looking
+          // like one nobody mentioned, which is kept rather than ignored.
+          if (field === "") ignored.add(column);
+          else mapping.set(column, field);
         }
       }
     } catch {
@@ -77,7 +92,7 @@ export function parseImportOptions(formData: FormData): ImportOptions {
     }
   }
 
-  return { mode, fields: fieldList == null ? null : new Set(fieldList), mapping };
+  return { mode, fields: fieldList == null ? null : new Set(fieldList), mapping, ignored };
 }
 
 /** Whether a canonical field may be written at all. */
@@ -107,10 +122,12 @@ export function applyMapping(
   options: ImportOptions,
   columnLabels: Readonly<Record<string, string>>
 ): Map<string, number> {
-  if (options.mapping.size === 0) return new Map(fileHeaders);
+  if (options.mapping.size === 0 && options.ignored.size === 0) return new Map(fileHeaders);
 
   const resolved = new Map<string, number>();
   for (const [fileColumn, columnNumber] of fileHeaders) {
+    // Explicitly ignored: dropped, so the importer never sees it.
+    if (options.ignored.has(fileColumn)) continue;
     const mappedField = options.mapping.get(fileColumn);
     if (mappedField == null) {
       // Not mentioned by the dialog at all: keep it as-is.

@@ -271,7 +271,24 @@
     "wizardFinishing": "جارٍ الإنهاء...",
     "orgChartHeading": "المخطط الهرمي للهيكل التنظيمي",
     "orgChartSubtitle": "عرض شجري للمناصب وتبعيّتها والموظفين المسكَّنين عليها.",
-    "orgChartVacant": "شاغر"
+    "orgChartVacant": "شاغر",
+    "importFieldEmployeeNumber": "الرقم الوظيفي",
+    "importFieldNameAr": "الاسم (عربي)",
+    "importFieldNameEn": "الاسم (إنجليزي)",
+    "importFieldEmail": "البريد الإلكتروني",
+    "importFieldDepartment": "الوحدة التنظيمية",
+    "importFieldPosition": "المسمى الوظيفي",
+    "importFieldRole": "الدور في النظام",
+    "importFieldHireDate": "تاريخ التعيين",
+    "importFieldQualification": "المؤهل العلمي",
+    "importFieldSpeciality": "التخصص",
+    "importFieldDateOfBirth": "تاريخ الميلاد",
+    "importFieldMobile": "الجوال",
+    "importFieldMaritalStatus": "الحالة الاجتماعية",
+    "importFieldGender": "الجنس",
+    "importFieldNationality": "الجنسية",
+    "importFieldEmployeeCategory": "فئة الموظف",
+    "importFieldInsuranceCategory": "فئة التأمين"
   },
   "OrgStructureStaffingPage": {
     "title": "تسكين الموظفين على المناصب",
@@ -425,7 +442,10 @@
     "selfCompetenciesLabel": "الجدارات المطلوبة",
     "selfNoCompetencies": "لم تُحدَّد جدارات بعد",
     "selfPendingApproval": "قيد الاعتماد — لم يُعتمد بعد.",
-    "selfEmpty": "لا يوجد مسار وظيفي مُعرَّف لمسماك الوظيفي بعد."
+    "selfEmpty": "لا يوجد مسار وظيفي مُعرَّف لمسماك الوظيفي بعد.",
+    "importFieldFrom": "من (المسمى الوظيفي)",
+    "importFieldTo": "إلى (المسمى الوظيفي)",
+    "importFieldRequirements": "متطلبات الانتقال"
   },
   "CareerPathJobTitlesPage": {
     "title": "إدارة الوظائف والجدارات",

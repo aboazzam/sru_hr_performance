@@ -271,7 +271,24 @@
     "wizardFinishing": "Finishing...",
     "orgChartHeading": "Organizational Structure Chart",
     "orgChartSubtitle": "A tree view of positions, their reporting lines, and the employees staffed on them.",
-    "orgChartVacant": "Vacant"
+    "orgChartVacant": "Vacant",
+    "importFieldEmployeeNumber": "Employee number",
+    "importFieldNameAr": "Name (Arabic)",
+    "importFieldNameEn": "Name (English)",
+    "importFieldEmail": "Email",
+    "importFieldDepartment": "Org unit",
+    "importFieldPosition": "Job title",
+    "importFieldRole": "System role",
+    "importFieldHireDate": "Hire date",
+    "importFieldQualification": "Qualification",
+    "importFieldSpeciality": "Speciality",
+    "importFieldDateOfBirth": "Date of birth",
+    "importFieldMobile": "Mobile",
+    "importFieldMaritalStatus": "Marital status",
+    "importFieldGender": "Gender",
+    "importFieldNationality": "Nationality",
+    "importFieldEmployeeCategory": "Employee category",
+    "importFieldInsuranceCategory": "Insurance category"
   },
   "OrgStructureStaffingPage": {
     "title": "Staff Employees onto Positions",
@@ -425,7 +442,10 @@
     "selfCompetenciesLabel": "Required Competencies",
     "selfNoCompetencies": "No competencies defined yet",
     "selfPendingApproval": "Pending approval — not yet approved.",
-    "selfEmpty": "No career path is defined for your job title yet."
+    "selfEmpty": "No career path is defined for your job title yet.",
+    "importFieldFrom": "From (job title)",
+    "importFieldTo": "To (job title)",
+    "importFieldRequirements": "Transition requirements"
   },
   "CareerPathJobTitlesPage": {
     "title": "Manage Job Titles & Competencies",
