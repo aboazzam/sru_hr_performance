@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyMapping, parseImportOptions, updatesExisting, writesField } from "./excelImportOptions";
+import { applyMapping, parseImportOptions, updatesExisting, writesField, qualifyColumn, type ImportOptions } from "./excelImportOptions";
 
 function form(entries: Record<string, string>): FormData {
   const fd = new FormData();
@@ -93,5 +93,48 @@ describe("applyMapping", () => {
     const headers = new Map([["A", 1]]);
     const options = parseImportOptions(form({ importMapping: '{"A":"not_a_field"}' }));
     expect(applyMapping(headers, options, labels).size).toBe(0);
+  });
+});
+
+describe("applyMapping across sheets", () => {
+  // The strategic-plan workbook repeats header names: "الوصف (عربي)" is on
+  // five of its sheets. Mapping keys are therefore qualified by sheet, and
+  // these cover what that has to guarantee.
+  const labels = { goalDesc: "وصف الهدف", programDesc: "وصف البرنامج" };
+
+  function optionsWith(mapping: Record<string, string>): ImportOptions {
+    const formData = new FormData();
+    formData.set("importMapping", JSON.stringify(mapping));
+    return parseImportOptions(formData);
+  }
+
+  it("keeps one sheet's choice from governing another sheet's same-named column", () => {
+    const options = optionsWith({
+      [qualifyColumn("الأهداف الاستراتيجية", "الوصف")]: "goalDesc",
+      [qualifyColumn("البرامج", "الوصف")]: "programDesc",
+    });
+    const headers = new Map([["الوصف", 3]]);
+
+    expect(applyMapping(headers, options, labels, "الأهداف الاستراتيجية").get("وصف الهدف")).toBe(3);
+    expect(applyMapping(headers, options, labels, "البرامج").get("وصف البرنامج")).toBe(3);
+  });
+
+  it("drops a column ignored on one sheet without dropping it on another", () => {
+    const options = optionsWith({
+      [qualifyColumn("البرامج", "الوصف")]: "",
+      [qualifyColumn("الأهداف الاستراتيجية", "الوصف")]: "goalDesc",
+    });
+    const headers = new Map([["الوصف", 3]]);
+
+    expect([...applyMapping(headers, options, labels, "البرامج").keys()]).toEqual([]);
+    expect(applyMapping(headers, options, labels, "الأهداف الاستراتيجية").get("وصف الهدف")).toBe(3);
+  });
+
+  it("still honours an unqualified mapping, so single-sheet imports are unchanged", () => {
+    const options = optionsWith({ الوصف: "goalDesc" });
+    const headers = new Map([["الوصف", 2]]);
+
+    expect(applyMapping(headers, options, labels).get("وصف الهدف")).toBe(2);
+    expect(applyMapping(headers, options, labels, "أي ورقة").get("وصف الهدف")).toBe(2);
   });
 });

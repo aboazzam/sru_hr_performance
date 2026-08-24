@@ -194,3 +194,143 @@ export function missingColumns(headerRow: unknown[], required: readonly string[]
   const index = headerIndex(headerRow);
   return required.filter((label) => !index.has(label));
 }
+
+/**
+ * The plan workbook's columns as MAPPABLE FIELDS, so its import gets the same
+ * column-mapping and field-picking step every other import has (2026-08-24).
+ *
+ * It was left out at first on the reasoning that this workbook is this app's
+ * own export format, so nothing needs mapping. That was wrong in practice: a
+ * caller edits the file in Excel, renames or reorders a column, and the sheet
+ * was then rejected wholesale for a "missing column" with no way to say which
+ * of their columns meant what.
+ *
+ * Two things make this file different from the single-sheet imports, and both
+ * are why fields are declared PER SHEET rather than as one flat list:
+ *
+ *  1. Headers repeat across sheets — "الوصف (عربي)" appears in five of them,
+ *     "الهدف الاستراتيجي" in three. A flat mapping keyed by header text alone
+ *     would make one choice silently govern every sheet that shares the name.
+ *  2. Each sheet writes a different table, so "which fields may be written"
+ *     is only meaningful within a sheet.
+ *
+ * `column` is the database column a field writes, where it writes one
+ * directly; fields that resolve to something else first (a parent goal, an
+ * owning position, an evaluation cycle) have none, and are identity/lookup
+ * columns rather than payload.
+ */
+export interface StrategicPlanFieldSpec {
+  /** Globally unique: "<sheetKey>.<name>". */
+  key: string;
+  /** The column label as this workbook writes it. */
+  label: string;
+  /** The database column written, when the field maps to one directly. */
+  column?: string;
+  /** Identifies the row (or resolves its parent): always written. */
+  isKey?: boolean;
+}
+
+const planFields = {
+  identity: [
+    { key: "identity.visionAr", label: "الرؤية (عربي)", column: "vision_ar" },
+    { key: "identity.visionEn", label: "الرؤية (إنجليزي)", column: "vision_en" },
+    { key: "identity.missionAr", label: "الرسالة (عربي)", column: "mission_ar" },
+    { key: "identity.missionEn", label: "الرسالة (إنجليزي)", column: "mission_en" },
+  ],
+  values: [
+    { key: "values.titleAr", label: "القيمة (عربي)", column: "title_ar", isKey: true },
+    { key: "values.titleEn", label: "القيمة (إنجليزي)", column: "title_en" },
+    { key: "values.descriptionAr", label: "الوصف (عربي)", column: "description_ar" },
+    { key: "values.descriptionEn", label: "الوصف (إنجليزي)", column: "description_en" },
+    { key: "values.order", label: "الترتيب", column: "display_order" },
+  ],
+  goals: [
+    { key: "goals.titleAr", label: "الهدف الاستراتيجي (عربي)", column: "title_ar", isKey: true },
+    { key: "goals.titleEn", label: "الهدف الاستراتيجي (إنجليزي)", column: "title_en" },
+    { key: "goals.descriptionAr", label: "الوصف (عربي)", column: "description_ar" },
+    { key: "goals.descriptionEn", label: "الوصف (إنجليزي)", column: "description_en" },
+    { key: "goals.weight", label: "الوزن %", column: "weight" },
+  ],
+  subGoals: [
+    { key: "subGoals.goal", label: "الهدف الاستراتيجي", isKey: true },
+    { key: "subGoals.titleAr", label: "الهدف الفرعي (عربي)", column: "title_ar", isKey: true },
+    { key: "subGoals.titleEn", label: "الهدف الفرعي (إنجليزي)", column: "title_en" },
+    { key: "subGoals.descriptionAr", label: "الوصف (عربي)", column: "description_ar" },
+    { key: "subGoals.descriptionEn", label: "الوصف (إنجليزي)", column: "description_en" },
+    { key: "subGoals.owner", label: "المالك (المنصب)", column: "owner_position_id" },
+    { key: "subGoals.weight", label: "الوزن %", column: "weight" },
+  ],
+  kpis: [
+    { key: "kpis.goal", label: "الهدف الاستراتيجي", isKey: true },
+    { key: "kpis.subGoal", label: "الهدف الفرعي", isKey: true },
+    { key: "kpis.titleAr", label: "المؤشر (عربي)", column: "title_ar", isKey: true },
+    { key: "kpis.titleEn", label: "المؤشر (إنجليزي)", column: "title_en" },
+    { key: "kpis.unit", label: "وحدة القياس", column: "unit_ar" },
+    { key: "kpis.planTarget", label: "مستهدف الخطة", column: "plan_target_value" },
+    { key: "kpis.weight", label: "الوزن %", column: "weight" },
+  ],
+  annualTargets: [
+    { key: "annualTargets.goal", label: "الهدف الاستراتيجي", isKey: true },
+    { key: "annualTargets.subGoal", label: "الهدف الفرعي", isKey: true },
+    { key: "annualTargets.kpi", label: "المؤشر", isKey: true },
+    { key: "annualTargets.cycle", label: "دورة التقييم", isKey: true },
+    { key: "annualTargets.target", label: "القيمة المستهدفة", column: "target_value" },
+    { key: "annualTargets.actual", label: "القيمة الفعلية", column: "actual_value" },
+  ],
+  programs: [
+    { key: "programs.nameAr", label: "اسم البرنامج (عربي)", column: "name_ar", isKey: true },
+    { key: "programs.nameEn", label: "اسم البرنامج (إنجليزي)", column: "name_en" },
+    { key: "programs.descriptionAr", label: "الوصف (عربي)", column: "description_ar" },
+    { key: "programs.status", label: "الحالة", column: "status" },
+    { key: "programs.startDate", label: "تاريخ البداية", column: "start_date" },
+    { key: "programs.endDate", label: "تاريخ النهاية", column: "end_date" },
+  ],
+  initiatives: [
+    { key: "initiatives.titleAr", label: "المبادرة (عربي)", column: "title_ar", isKey: true },
+    { key: "initiatives.titleEn", label: "المبادرة (إنجليزي)", column: "title_en" },
+    { key: "initiatives.descriptionAr", label: "الوصف (عربي)", column: "description_ar" },
+    { key: "initiatives.subGoal", label: "الهدف الفرعي", column: "sub_goal_id" },
+    { key: "initiatives.owner", label: "الإدارة المالكة", column: "owner_org_unit_id" },
+    { key: "initiatives.status", label: "الحالة", column: "status_code" },
+    { key: "initiatives.progress", label: "نسبة الإنجاز %", column: "progress_percent" },
+    { key: "initiatives.startDate", label: "تاريخ البداية", column: "start_date" },
+    { key: "initiatives.endDate", label: "تاريخ النهاية", column: "end_date" },
+  ],
+} as const;
+
+export type StrategicPlanSheetKey = keyof typeof planFields;
+
+/** Widened to the spec type: the literal inference above drops `column`/`isKey`
+ *  from the members that lack them, which makes the union unusable. */
+export const STRATEGIC_PLAN_FIELDS: Record<StrategicPlanSheetKey, readonly StrategicPlanFieldSpec[]> = planFields;
+
+/** Canonical field key -> the column label that sheet expects. */
+export function planSheetColumnLabels(sheet: StrategicPlanSheetKey): Record<string, string> {
+  return Object.fromEntries(STRATEGIC_PLAN_FIELDS[sheet].map((f) => [f.key, f.label]));
+}
+
+/**
+ * Drops the payload columns whose field the caller did not tick.
+ *
+ * Dropping rather than blanking is the whole point: an unticked field must be
+ * left exactly as the platform has it, and writing `null` for it would erase a
+ * real value instead of leaving it alone. Key fields are never dropped — the
+ * importer cannot find the row without them.
+ */
+export function pickWritableColumns<T extends Record<string, unknown>>(
+  payload: T,
+  sheet: StrategicPlanSheetKey,
+  isWritable: (fieldKey: string) => boolean
+): Partial<T> {
+  const byColumn = new Map(
+    STRATEGIC_PLAN_FIELDS[sheet].filter((f) => "column" in f && f.column).map((f) => [f.column as string, f])
+  );
+  const out: Record<string, unknown> = {};
+  for (const [column, value] of Object.entries(payload)) {
+    const field = byColumn.get(column);
+    // A column no field declares (created_by, plan_id, a resolved parent id)
+    // is bookkeeping, not something the caller chose — always kept.
+    if (!field || field.isKey || isWritable(field.key)) out[column] = value;
+  }
+  return out as Partial<T>;
+}

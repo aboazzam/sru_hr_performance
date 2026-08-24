@@ -4,16 +4,18 @@ import ExcelJS from "exceljs";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseImportOptions, updatesExisting } from "@/lib/excelImportOptions";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 import { revalidatePath } from "next/cache";
 import {
   cellDateIso,
   cellNumber,
   cellText,
   headerIndex,
-  missingColumns,
+  pickWritableColumns,
+  planSheetColumnLabels,
   STRATEGIC_PLAN_COLUMNS,
   STRATEGIC_PLAN_SHEETS,
+  type StrategicPlanSheetKey,
 } from "@/lib/strategicPlanExcel";
 
 export type ImportStrategicPlanState =
@@ -131,17 +133,35 @@ export async function importStrategicPlanExcel(
     initiativesUpdated: 0,
   };
 
-  /** Sheet -> [{columnLabel: value}] with the header row validated. */
-  function readSheet(sheetName: string, columns: readonly string[]): Array<Record<string, unknown>> | null {
+  /**
+   * Sheet -> [{columnLabel: value}] with the header row validated.
+   *
+   * The caller's column mapping is applied HERE, per sheet: a header they
+   * pointed at a field is renamed to the label the rest of this function reads
+   * by, one they ignored is dropped, and anything they left alone keeps its own
+   * name. Per sheet specifically, because this workbook repeats header names
+   * across sheets — a single flat mapping would make one choice govern all of
+   * them (see STRATEGIC_PLAN_FIELDS).
+   */
+  function readSheet(
+    sheetName: string,
+    columns: readonly string[],
+    sheetKey: StrategicPlanSheetKey
+  ): Array<Record<string, unknown>> | null {
     const sheet = workbook.getWorksheet(sheetName);
     if (!sheet) return null;
     const headerRow = (sheet.getRow(1).values as unknown[]) ?? [];
-    const missing = missingColumns(headerRow.slice(1), columns);
+    const index = applyMapping(
+      headerIndex(headerRow.slice(1)),
+      options,
+      planSheetColumnLabels(sheetKey),
+      sheetName
+    );
+    const missing = columns.filter((label) => !index.has(label));
     if (missing.length > 0) {
       warnings.push(`ورقة «${sheetName}»: أعمدة ناقصة (${missing.join("، ")}) — تم تخطّيها.`);
       return null;
     }
-    const index = headerIndex(headerRow.slice(1));
     const rows: Array<Record<string, unknown>> = [];
     sheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
@@ -158,10 +178,20 @@ export async function importStrategicPlanExcel(
     return rows;
   }
 
+  /**
+   * Drops the columns whose field the caller did not tick, per sheet.
+   *
+   * Dropping, not blanking: an unticked field must be left exactly as the
+   * platform has it, and writing null for it would erase a real value.
+   */
+  function writable<T extends Record<string, unknown>>(payload: T, sheetKey: StrategicPlanSheetKey): Partial<T> {
+    return pickWritableColumns(payload, sheetKey, (field) => writesField(options, field));
+  }
+
   let touchedAnySheet = false;
 
   // ---------- 1) الرؤية والرسالة (global singleton) ----------
-  const identityRows = readSheet(STRATEGIC_PLAN_SHEETS.identity, STRATEGIC_PLAN_COLUMNS.identity);
+  const identityRows = readSheet(STRATEGIC_PLAN_SHEETS.identity, STRATEGIC_PLAN_COLUMNS.identity, "identity");
   if (identityRows) {
     touchedAnySheet = true;
     const row = identityRows[0];
@@ -180,9 +210,9 @@ export async function importStrategicPlanExcel(
       // that never happened (caught live, 2026-08-19).
       const { data: saved, error } = existing
         ? mayUpdate
-          ? await supabase.from("strategic_identity").update(payload).eq("id", existing.id).select("id")
+          ? await supabase.from("strategic_identity").update(writable(payload, "identity")).eq("id", existing.id).select("id")
           : { data: null, error: null }
-        : await supabase.from("strategic_identity").insert(payload).select("id");
+        : await supabase.from("strategic_identity").insert(writable(payload, "identity")).select("id");
       if (error) warnings.push(`الرؤية والرسالة: تعذّر الحفظ (${error.code ?? "خطأ"}) — تحقّق من صلاحيتك.`);
       else if (!saved || saved.length === 0) warnings.push("الرؤية والرسالة: لا تملك صلاحية التعديل — لم يتم الحفظ.");
       else summary.identityUpdated = true;
@@ -190,7 +220,7 @@ export async function importStrategicPlanExcel(
   }
 
   // ---------- 2) القيم (global) ----------
-  const valueRows = readSheet(STRATEGIC_PLAN_SHEETS.values, STRATEGIC_PLAN_COLUMNS.values);
+  const valueRows = readSheet(STRATEGIC_PLAN_SHEETS.values, STRATEGIC_PLAN_COLUMNS.values, "values");
   if (valueRows) {
     touchedAnySheet = true;
     const { data: existingValues } = await supabase
@@ -225,7 +255,7 @@ export async function importStrategicPlanExcel(
         if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_values")
-          .update({ ...payload, display_order: order ?? existing.display_order })
+          .update(writable({ ...payload, display_order: order ?? existing.display_order }, "values"))
           .eq("id", existing.id)
           .select("id");
         if (error) warnings.push(`القيم (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
@@ -234,7 +264,7 @@ export async function importStrategicPlanExcel(
       } else {
         const { error } = await supabase
           .from("strategic_values")
-          .insert({ ...payload, display_order: order ?? nextOrder++, created_by: myProfileId });
+          .insert(writable({ ...payload, display_order: order ?? nextOrder++, created_by: myProfileId }, "values"));
         if (error) warnings.push(`القيم (صف ${row.__row}): تعذّر الإضافة (${error.code ?? "خطأ"}).`);
         else summary.valuesCreated += 1;
       }
@@ -285,7 +315,7 @@ export async function importStrategicPlanExcel(
   }
 
   // ---------- 3) الأهداف الاستراتيجية ----------
-  const goalRows = readSheet(STRATEGIC_PLAN_SHEETS.goals, STRATEGIC_PLAN_COLUMNS.goals);
+  const goalRows = readSheet(STRATEGIC_PLAN_SHEETS.goals, STRATEGIC_PLAN_COLUMNS.goals, "goals");
   if (goalRows) {
     touchedAnySheet = true;
     const goalIdsByTitle = await loadGoals();
@@ -314,7 +344,7 @@ export async function importStrategicPlanExcel(
       }
       if (existing.length === 1) {
         if (!mayUpdate) continue;
-        const { data: saved, error } = await supabase.from("strategic_goals").update(payload).eq("id", existing[0]).select("id");
+        const { data: saved, error } = await supabase.from("strategic_goals").update(writable(payload, "goals")).eq("id", existing[0]).select("id");
         if (error) warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
           warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
@@ -330,7 +360,7 @@ export async function importStrategicPlanExcel(
   }
 
   // ---------- 4) الأهداف الفرعية ----------
-  const subGoalRows = readSheet(STRATEGIC_PLAN_SHEETS.subGoals, STRATEGIC_PLAN_COLUMNS.subGoals);
+  const subGoalRows = readSheet(STRATEGIC_PLAN_SHEETS.subGoals, STRATEGIC_PLAN_COLUMNS.subGoals, "subGoals");
   const goalIdsByTitle = await loadGoals();
   if (subGoalRows) {
     touchedAnySheet = true;
@@ -372,7 +402,7 @@ export async function importStrategicPlanExcel(
         .maybeSingle();
       if (existingSub) {
         if (!mayUpdate) continue;
-        const { data: saved, error } = await supabase.from("sub_goals").update(payload).eq("id", existingSub.id).select("id");
+        const { data: saved, error } = await supabase.from("sub_goals").update(writable(payload, "subGoals")).eq("id", existingSub.id).select("id");
         if (error) warnings.push(`الأهداف الفرعية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
           warnings.push(`الأهداف الفرعية (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
@@ -420,7 +450,7 @@ export async function importStrategicPlanExcel(
     return { strategic_goal_id: null, sub_goal_id: sub.id as string };
   }
 
-  const kpiRows = readSheet(STRATEGIC_PLAN_SHEETS.kpis, STRATEGIC_PLAN_COLUMNS.kpis);
+  const kpiRows = readSheet(STRATEGIC_PLAN_SHEETS.kpis, STRATEGIC_PLAN_COLUMNS.kpis, "kpis");
   if (kpiRows) {
     touchedAnySheet = true;
     for (const row of kpiRows) {
@@ -460,7 +490,7 @@ export async function importStrategicPlanExcel(
         .maybeSingle();
       if (existingKpi) {
         if (!mayUpdate) continue;
-        const { data: saved, error } = await supabase.from("strategic_kpis").update(payload).eq("id", existingKpi.id).select("id");
+        const { data: saved, error } = await supabase.from("strategic_kpis").update(writable(payload, "kpis")).eq("id", existingKpi.id).select("id");
         if (error) warnings.push(`المؤشرات (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
           warnings.push(`المؤشرات (صف ${row.__row}): لا تملك صلاحية التعديل — لم يتم التحديث.`);
@@ -474,7 +504,7 @@ export async function importStrategicPlanExcel(
   }
 
   // ---------- 6) المستهدفات السنوية ----------
-  const annualRows = readSheet(STRATEGIC_PLAN_SHEETS.annualTargets, STRATEGIC_PLAN_COLUMNS.annualTargets);
+  const annualRows = readSheet(STRATEGIC_PLAN_SHEETS.annualTargets, STRATEGIC_PLAN_COLUMNS.annualTargets, "annualTargets");
   if (annualRows) {
     touchedAnySheet = true;
     for (const row of annualRows) {
@@ -534,7 +564,7 @@ export async function importStrategicPlanExcel(
         if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("kpi_annual_targets")
-          .update({ target_value: targetValue, actual_value: actualValue })
+          .update(writable({ target_value: targetValue, actual_value: actualValue }, "annualTargets"))
           .eq("id", existingTarget.id)
           .select("id");
         if (error) warnings.push(`المستهدفات السنوية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
@@ -561,7 +591,7 @@ export async function importStrategicPlanExcel(
   // choice the vacancies import made for a table with no natural key. A name
   // used twice in this plan is skipped rather than guessed at, so a re-import
   // can never quietly overwrite the wrong program.
-  const programRows = readSheet(STRATEGIC_PLAN_SHEETS.programs, STRATEGIC_PLAN_COLUMNS.programs);
+  const programRows = readSheet(STRATEGIC_PLAN_SHEETS.programs, STRATEGIC_PLAN_COLUMNS.programs, "programs");
   if (programRows) {
     touchedAnySheet = true;
     const { data: existingPrograms } = await supabase
@@ -612,7 +642,7 @@ export async function importStrategicPlanExcel(
         if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_programs")
-          .update(payload)
+          .update(writable(payload, "programs"))
           .eq("id", existing[0])
           .select("id");
         if (error) warnings.push(`البرامج (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
@@ -641,7 +671,7 @@ export async function importStrategicPlanExcel(
   // identity in code and a title used twice in this plan is skipped rather
   // than guessed at. The targets an initiative serves are NOT in the sheet
   // (one initiative can serve several), so importing never touches them.
-  const initiativeRows = readSheet(STRATEGIC_PLAN_SHEETS.initiatives, STRATEGIC_PLAN_COLUMNS.initiatives);
+  const initiativeRows = readSheet(STRATEGIC_PLAN_SHEETS.initiatives, STRATEGIC_PLAN_COLUMNS.initiatives, "initiatives");
   if (initiativeRows) {
     touchedAnySheet = true;
     const { data: existingInitiatives } = await supabase
@@ -742,7 +772,7 @@ export async function importStrategicPlanExcel(
         if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_initiatives")
-          .update(payload)
+          .update(writable(payload, "initiatives"))
           .eq("id", existing[0])
           .select("id");
         if (error) warnings.push(`المبادرات (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
