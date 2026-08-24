@@ -163,7 +163,7 @@ export function EvaluationCycleRow({
           <Link
             href={`/evaluations/new?cycleId=${cycle.id}`}
             className="sru-btn"
-            style={{ fontSize: 13, padding: "6px 12px" }}
+            style={{ fontSize: 12, padding: "6px 12px" }}
           >
             {t("createEvaluation")}
           </Link>

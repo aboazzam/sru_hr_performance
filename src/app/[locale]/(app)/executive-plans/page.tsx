@@ -126,10 +126,10 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
         style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         {canCreate && strategicPlans.length > 0 && (
           <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
@@ -140,11 +140,11 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {canCreate && strategicPlans.length === 0 && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noStrategicPlans")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("noStrategicPlans")}</p>
       )}
 
       {plans.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {cards.map((plan) => (

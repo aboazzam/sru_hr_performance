@@ -68,11 +68,11 @@ export default async function ConsolidatePlanPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
       {plan && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
           {plan.name_ar} — {plan.plan_year}
         </p>
       )}
@@ -84,13 +84,13 @@ export default async function ConsolidatePlanPage({
 
       <div style={{ marginTop: 20 }}>
         {!canConsolidate ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
         ) : !plan ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("planNotFound")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planNotFound")}</p>
         ) : plan.status !== "draft" ? (
           // Merging into a plan that already left HR's hands would change
           // what finance reviewed or what the authority approved.
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("planNotEditable")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planNotEditable")}</p>
         ) : (
           <ConsolidateRequestsPanel
             planId={id}

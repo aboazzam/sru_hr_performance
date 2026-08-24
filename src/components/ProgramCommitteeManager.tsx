@@ -96,10 +96,10 @@ export function ProgramCommitteeManager({
 
   return (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>{t("intro")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginBottom: 16 }}>{t("intro")}</p>
 
       {members.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -120,7 +120,7 @@ export function ProgramCommitteeManager({
                     <td>{index + 1}</td>
                     <td>
                       <span style={{ fontWeight: 700 }}>{member.name}</span>
-                      <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>{member.subtitle}</span>
+                      <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5 }}>{member.subtitle}</span>
                     </td>
                     <td>{member.committeeRole ?? "—"}</td>
                     <td>
@@ -183,11 +183,11 @@ export function ProgramCommitteeManager({
         <form action={(fd) => startTransition(() => addAction(fd))} style={{ marginTop: 18 }}>
           <input type="hidden" name="programId" value={programId} />
           <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
               <input type="radio" name="memberKind" checked={kind === "internal"} onChange={() => setKind("internal")} />
               {t("kindInternal")}
             </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
               <input type="radio" name="memberKind" checked={kind === "external"} onChange={() => setKind("external")} />
               {t("kindExternal")}
             </label>
@@ -239,7 +239,7 @@ export function ProgramCommitteeManager({
             </button>
           </div>
 
-          {kind === "external" && <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8 }}>{t("externalNote")}</p>}
+          {kind === "external" && <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>{t("externalNote")}</p>}
         </form>
       )}
 

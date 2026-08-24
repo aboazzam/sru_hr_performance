@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { updateLevel, deleteLevel } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
-  "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 export function OrgStructureLevelCard({
   levelId,
@@ -78,7 +78,7 @@ export function OrgStructureLevelCard({
   return (
     <div className="sru-card" style={{ padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 15, fontWeight: 700 }}>{levelOrder}.</span>
+        <span style={{ fontSize: 13.5, fontWeight: 700 }}>{levelOrder}.</span>
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 220 }} />
         <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 220 }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>

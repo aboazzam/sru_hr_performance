@@ -49,14 +49,14 @@ export default async function CareerPathPage() {
 
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("selfSubtitle")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("selfSubtitle")}</p>
         <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
         {!profile?.job_title_id || !tree || !jobTitleInfo ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("selfNoJobTitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("selfNoJobTitle")}</p>
         ) : (
           <div>
             <CareerPathForwardTree
@@ -75,7 +75,7 @@ export default async function CareerPathPage() {
               }}
             />
             {tree.children.length === 0 && (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 16 }}>{t("selfEmpty")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 16 }}>{t("selfEmpty")}</p>
             )}
           </div>
         )}
@@ -145,10 +145,10 @@ export default async function CareerPathPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -163,7 +163,7 @@ export default async function CareerPathPage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {roots.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <CareerPathTracksExplorer roots={roots} edges={edges} jobTitleInfo={jobTitleInfo} />
       )}

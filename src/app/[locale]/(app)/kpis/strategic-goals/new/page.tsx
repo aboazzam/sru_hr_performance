@@ -35,7 +35,7 @@ export default async function NewStrategicGoalPage({
   if (!canCreate) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -53,12 +53,12 @@ export default async function NewStrategicGoalPage({
   if (!identityComplete) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
         <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
         <div className="sru-card" style={{ padding: 16 }}>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: 13 }}>
             {t("identityGateMessage")}{" "}
             <Link href="/kpis/strategic-identity" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
               {t("identityLinkButton")}
@@ -90,12 +90,12 @@ export default async function NewStrategicGoalPage({
           <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
           {t("backButton")}
         </Link>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
         <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
         <div className="sru-card" style={{ padding: 16 }}>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: 13 }}>
             {t("noPlanMessage")}{" "}
             <Link href="/kpis/plans" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
               {t("plansLinkButton")}
@@ -116,10 +116,10 @@ export default async function NewStrategicGoalPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backButton")}
       </Link>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <NewStrategicGoalForm locale={locale} plans={plans} />

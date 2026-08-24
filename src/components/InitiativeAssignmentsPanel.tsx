@@ -56,10 +56,10 @@ export function InitiativeAssignmentsPanel({
   return (
     <div>
       <section style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{t("assignedHeading", { count: assigned.length })}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 12 }}>{t("assignedIntro")}</p>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{t("assignedHeading", { count: assigned.length })}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 12 }}>{t("assignedIntro")}</p>
         {assigned.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("assignedEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("assignedEmpty")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {assigned.map((initiative) => (
@@ -70,10 +70,10 @@ export function InitiativeAssignmentsPanel({
       </section>
 
       <section>
-        <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{t("unassignedHeading", { count: unassigned.length })}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 12 }}>{t("unassignedIntro")}</p>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{t("unassignedHeading", { count: unassigned.length })}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 12 }}>{t("unassignedIntro")}</p>
         {unassigned.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("unassignedEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("unassignedEmpty")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {unassigned.map((initiative) => (
@@ -115,14 +115,14 @@ function InitiativeCard({
     <div className="sru-card" style={{ padding: 16 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ minWidth: 240 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700 }}>{initiative.titleAr}</h3>
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>{initiative.planName}</p>
+          <h3 style={{ fontSize: 13.5, fontWeight: 700 }}>{initiative.titleAr}</h3>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>{initiative.planName}</p>
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 12 }}>
+            <span style={{ fontSize: 11.5 }}>
               <Target size={12} aria-hidden style={{ verticalAlign: "-2px", marginInlineEnd: 4 }} />
               {t("planTargetLabel")}: {initiative.planTargets.length > 0 ? initiative.planTargets.join("، ") : t("noTarget")}
             </span>
-            <span style={{ fontSize: 12 }}>
+            <span style={{ fontSize: 11.5 }}>
               <Target size={12} aria-hidden style={{ verticalAlign: "-2px", marginInlineEnd: 4 }} />
               {t("annualTargetLabel")}: {initiative.annualTargets.length > 0 ? initiative.annualTargets.join("، ") : t("noAnnualTarget")}
             </span>

@@ -112,7 +112,7 @@ export function JobTitleDescriptionForm({
           </button>
         </div>
       ) : (
-        <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("viewOnlyNote")}</p>
+        <p style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("viewOnlyNote")}</p>
       )}
     </section>
   );

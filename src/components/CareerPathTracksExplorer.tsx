@@ -81,8 +81,8 @@ export function CareerPathTracksExplorer({
           {t("backToTracks")}
         </button>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{selectedRoot.nameAr}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("timelineSubtitle")}</p>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{selectedRoot.nameAr}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{t("timelineSubtitle")}</p>
 
         <TimelineAccordionNode node={selectedTree} jobTitleInfo={jobTitleInfo} t={t} isRoot />
       </div>
@@ -114,13 +114,13 @@ export function CareerPathTracksExplorer({
             borderRadius: "var(--sru-radius)",
             border: "1px solid var(--sru-border)",
             background: "var(--background)",
-            fontSize: 13,
+            fontSize: 12,
           }}
         />
       </div>
 
       {filteredRoots.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noTracksFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noTracksFound")}</p>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {filteredRoots.map((root) => (
@@ -219,11 +219,11 @@ function TimelineAccordionNode({
       {expanded && (
         <div style={{ marginInlineStart: 24, marginTop: 8 }}>
           {isRoot ? (
-            <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
+            <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
               {t("trackStartLabel")}
             </p>
           ) : (
-            <p style={{ fontSize: 13, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
+            <p style={{ fontSize: 12, color: "var(--sru-muted)", marginBottom: node.children.length > 0 ? 10 : 0 }}>
               <b style={{ color: "var(--foreground)" }}>{t("columnRequirements")}: </b>
               {node.requirementsAr ?? t("noRequirements")}
             </p>

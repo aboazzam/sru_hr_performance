@@ -30,7 +30,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
         <GroupTabs groupKey="administration" current="admin" />
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("roleNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("roleNotFound")}</p>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
         <GroupTabs groupKey="administration" current="admin" />
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -67,17 +67,17 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
       <GroupTabs groupKey="administration" current="admin" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
-            {role.name_ar} <span className="sru-en" style={{ fontSize: 14, color: "var(--sru-muted)" }}>{role.role_code}</span>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
+            {role.name_ar} <span className="sru-en" style={{ fontSize: 13, color: "var(--sru-muted)" }}>{role.role_code}</span>
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("assignedUsersCount", { count: assignedCount })}
           </p>
         </div>
         <DeleteRoleButton roleId={role.id} disabled={role.is_system_role || assignedCount > 0} />
       </div>
       {role.is_system_role && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 8 }}>{t("systemRoleNotice")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>{t("systemRoleNotice")}</p>
       )}
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

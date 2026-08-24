@@ -64,7 +64,7 @@ export function ProposePromotionForm({
   );
 
   const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-full px-4 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   // Job-title lists here run into the hundreds of rows (real seeded data), making
   // a bare <select> impractical to scan — same problem already fixed for
@@ -200,7 +200,7 @@ export function ProposePromotionForm({
       <div>
         <label className="block text-sm font-medium mb-1">{t("toJobTitleLabel")}</label>
         {nextStepIds.size > 0 ? (
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 6 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6 }}>
             <input
               type="checkbox"
               checked={onlyCareerPath}
@@ -210,7 +210,7 @@ export function ProposePromotionForm({
           </label>
         ) : (
           effectiveFromJobTitleId !== "" && (
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 6 }}>{t("noCareerPathSteps")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 6 }}>{t("noCareerPathSteps")}</p>
           )
         )}
         <input
@@ -250,7 +250,7 @@ export function ProposePromotionForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
+        className="w-full py-2 bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
       >
         {pending ? t("submitting") : t("submit")}
       </button>

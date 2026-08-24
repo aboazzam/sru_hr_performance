@@ -56,7 +56,7 @@ export default async function ExecutivePlanDetailPage({
           <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
           {t("backToList")}
         </Link>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNotFound")}</p>
       </div>
     );
   }
@@ -343,24 +343,24 @@ export default async function ExecutivePlanDetailPage({
 
   const initiativesContent = (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>{t("initiativesIntro")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginBottom: 12 }}>{t("initiativesIntro")}</p>
 
       {scoped.inWindow.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 12 }}>{t("initiativesNoneInWindow")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 12 }}>{t("initiativesNoneInWindow")}</p>
       ) : (
         initiativeTable(scoped.inWindow)
       )}
 
       {scoped.undated.length > 0 && (
         <section style={{ marginTop: 18 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("undatedHeading", { count: scoped.undated.length })}</h3>
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("undatedNote")}</p>
+          <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t("undatedHeading", { count: scoped.undated.length })}</h3>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>{t("undatedNote")}</p>
           {initiativeTable(scoped.undated)}
         </section>
       )}
 
       {scoped.outside.length > 0 && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 10 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>
           {t("outsideNote", { count: scoped.outside.length })}
         </p>
       )}
@@ -489,11 +489,11 @@ export default async function ExecutivePlanDetailPage({
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <CalendarRange size={20} aria-hidden style={{ color: "var(--sru-purple)" }} />
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {plan.name_ar}
         </h1>
       </div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
         {t("windowLabel", {
           from: formatDateDmy(plan.start_date as string, locale),
           to: formatDateDmy(plan.end_date as string, locale),

@@ -33,10 +33,10 @@ export default async function CompetenciesPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -52,7 +52,7 @@ export default async function CompetenciesPage() {
           <section key={pillar} style={{ marginBottom: 44 }}>
             <h2
               className="sru-title"
-              style={{ fontSize: 19, marginBottom: 18 }}
+              style={{ fontSize: 16.5, marginBottom: 18 }}
             >
               {pillar}
             </h2>
@@ -61,7 +61,7 @@ export default async function CompetenciesPage() {
               <div key={domain} style={{ marginBottom: 22 }}>
                 <h3
                   style={{
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: 700,
                     color: "var(--sru-blue)",
                     marginBottom: 10,
@@ -93,10 +93,10 @@ export default async function CompetenciesPage() {
                         </summary>
 
                         <div className="competency-body">
-                          <p style={{ fontSize: 13.5 }}>{c.definition}</p>
+                          <p style={{ fontSize: 12.5 }}>{c.definition}</p>
                           <p
                             style={{
-                              fontSize: 12.5,
+                              fontSize: 11.5,
                               color: "var(--sru-muted)",
                             }}
                           >

@@ -87,7 +87,7 @@ function AnnualTargetRow({
           disabled={!canEdit}
           onChange={(e) => setTarget(e.target.value)}
           aria-label={t("annualTargetLabel")}
-          style={{ width: 100, padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)" }}
+          style={{ width: 100, padding: "4px 6px", borderRadius: 0, border: "1px solid var(--border)" }}
         />
       </td>
       <td>
@@ -98,7 +98,7 @@ function AnnualTargetRow({
           disabled={!canEdit}
           onChange={(e) => setActual(e.target.value)}
           aria-label={t("annualActualLabel")}
-          style={{ width: 100, padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)" }}
+          style={{ width: 100, padding: "4px 6px", borderRadius: 0, border: "1px solid var(--border)" }}
         />
       </td>
       <td>
@@ -108,13 +108,13 @@ function AnnualTargetRow({
             className="sru-btn"
             disabled={isSaving || !isDirty || target === ""}
             onClick={handleSave}
-            style={{ fontSize: 12, padding: "4px 10px" }}
+            style={{ fontSize: 11.5, padding: "4px 10px" }}
           >
             {isSaving ? t("saving") : t("saveButton")}
           </button>
         )}
         {error && (
-          <span role="alert" style={{ fontSize: 11, color: "#b91c1c", marginInlineStart: 6 }}>
+          <span role="alert" style={{ fontSize: 10.5, color: "#b91c1c", marginInlineStart: 6 }}>
             {t(errorMessageKeys[error] ?? "errorUnknown")}
           </span>
         )}
@@ -257,7 +257,7 @@ export function ManageKpisPanel({
       )}
 
       {kpis.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 24 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 24 }}>{t("empty")}</p>
       ) : (
         kpis.map((kpi) => (
           <section key={kpi.id} className="sru-formsection">
@@ -287,9 +287,9 @@ export function ManageKpisPanel({
               )}
             </div>
 
-            <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t("annualTargetsHeading")}</h4>
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{t("annualTargetsHeading")}</h4>
             {cycles.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("noCycles")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>{t("noCycles")}</p>
             ) : (
               <div className="table-scroll" style={{ marginBottom: 12 }}>
                 <table className="admin-matrix">

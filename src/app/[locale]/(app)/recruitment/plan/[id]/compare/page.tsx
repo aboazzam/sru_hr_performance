@@ -108,11 +108,11 @@ export default async function PlanComparePage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
       {plan && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
           {plan.name_ar} — {plan.plan_year}
         </p>
       )}
@@ -149,42 +149,42 @@ export default async function PlanComparePage({
 
       <div style={{ marginTop: 20 }}>
         {!canView ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
         ) : !plan ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("planNotFound")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planNotFound")}</p>
         ) : candidates.length === 0 ? (
           // Nothing to compare against at all — a real answer, not an error,
           // and not a table of zeroes pretending to be one.
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noOtherPlans")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noOtherPlans")}</p>
         ) : !previous ? (
           // Other plans exist but none is picked yet, so say which move is
           // missing rather than repeating "nothing to compare".
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("pickNone")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("pickNone")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="sru-card">
               <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
                     {t("headcountThisYear", { year: plan.plan_year })}
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>
                     {formatNumber(currentTotals.totalHeadcount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
                     {t("headcountLastYear", { year: previous.plan_year })}
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>
                     {formatNumber(previousTotals.totalHeadcount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("headcountDelta")}</div>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("headcountDelta")}</div>
                   <div
                     style={{
-                      fontSize: 22,
+                      fontSize: 19,
                       fontWeight: 700,
                       color: deltaColor(currentTotals.totalHeadcount - previousTotals.totalHeadcount),
                     }}
@@ -193,10 +193,10 @@ export default async function PlanComparePage({
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("costDelta")}</div>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("costDelta")}</div>
                   <div
                     style={{
-                      fontSize: 22,
+                      fontSize: 19,
                       fontWeight: 700,
                       color: deltaColor(currentTotals.totalAnnualCost - previousTotals.totalAnnualCost),
                     }}

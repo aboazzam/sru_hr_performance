@@ -169,7 +169,7 @@ export function AssignGoalForm({
           </div>
         </div>
 
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: -6, marginBottom: 16 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: -6, marginBottom: 16 }}>
           {t("goalSourceHint")}
         </p>
 

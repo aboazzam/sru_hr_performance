@@ -48,7 +48,7 @@ export function EmployeeApprovalActions({ profileId }: { profileId: string }) {
         <X size={15} />
       </button>
       {state?.status === "error" && (
-        <span role="alert" style={{ color: "#b91c1c", fontSize: 11 }}>
+        <span role="alert" style={{ color: "#b91c1c", fontSize: 10.5 }}>
           {t("reviewError")}
         </span>
       )}

@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { addPosition, createLevelsBatch } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 interface WizardLevel {
   id: string;
@@ -121,8 +121,8 @@ export function OrgStructureSetupWizard() {
   if (step === "intro") {
     return (
       <div className="sru-card" style={{ padding: 28, textAlign: "center", maxWidth: 520, margin: "0 auto" }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{t("wizardEmptyTitle")}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13.5, marginBottom: 18 }}>{t("wizardEmptyDesc")}</p>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{t("wizardEmptyTitle")}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 18 }}>{t("wizardEmptyDesc")}</p>
         <button type="button" onClick={() => setStep("count")} className="sru-btn sru-btn-primary">
           {t("wizardStartButton")}
         </button>
@@ -137,8 +137,8 @@ export function OrgStructureSetupWizard() {
         className="sru-card"
         style={{ padding: 24, maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 700 }}>{t("wizardCountTitle")}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("wizardCountDesc")}</p>
+        <h2 style={{ fontSize: 14, fontWeight: 700 }}>{t("wizardCountTitle")}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("wizardCountDesc")}</p>
         <div>
           <label htmlFor="wizard-level-count" className="block text-sm font-medium mb-1">
             {t("wizardCountLabel")}
@@ -175,19 +175,19 @@ export function OrgStructureSetupWizard() {
 
   return (
     <div className="sru-card" style={{ padding: 24, maxWidth: 520, margin: "0 auto" }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+      <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
         {t("wizardLevelProgress", { current: levelIndex + 1, total: levels.length, name: currentLevel.name_ar })}
       </h2>
 
       <form onSubmit={handleAddPosition} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("wizardAddPositionHeading")}</h3>
+        <h3 style={{ fontSize: 13, fontWeight: 700 }}>{t("wizardAddPositionHeading")}</h3>
         {!isRootLevel && (
           <div>
             <label htmlFor="wizard-position-parent" className="block text-sm font-medium mb-1">
               {t("positionParentLabel")}
             </label>
             {parentOptions.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noParentOptions")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noParentOptions")}</p>
             ) : (
               <select
                 id="wizard-position-parent"
@@ -245,9 +245,9 @@ export function OrgStructureSetupWizard() {
       </form>
 
       <div style={{ marginTop: 18 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t("wizardPositionsAddedHeading")}</h4>
+        <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{t("wizardPositionsAddedHeading")}</h4>
         {currentLevelPositions.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("wizardNoPositionsAddedYet")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("wizardNoPositionsAddedYet")}</p>
         ) : (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {currentLevelPositions.map((p) => (

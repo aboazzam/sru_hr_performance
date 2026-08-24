@@ -78,18 +78,18 @@ export default async function AnnouncedJobsPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
       <GroupTabs groupKey="recruitment" current="recruitment/announced" />
       <div style={{ height: 20 }} />
 
       {!canView ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
       ) : jobs.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, lineHeight: 1.9 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.9 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -151,7 +151,7 @@ export default async function AnnouncedJobsPage({
                           closing a posting doesn't withdraw its ad, so say so
                           rather than quietly showing a closed job as if open. */}
                       {job.status !== "open" && (
-                        <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 3 }}>
+                        <div style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 3 }}>
                           {t("notOpenNote")}
                         </div>
                       )}
@@ -181,7 +181,7 @@ export default async function AnnouncedJobsPage({
                           <>
                             <span className="pill">{portalStateLabels[state]}</span>
                             {governingDate && (
-                              <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 3 }}>
+                              <div style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 3 }}>
                                 {state === "scheduled"
                                   ? t("scheduledFrom", { date: formatDateDmy(governingDate, locale) })
                                   : t("expiredOn", { date: formatDateDmy(governingDate, locale) })}

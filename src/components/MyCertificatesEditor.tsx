@@ -81,8 +81,8 @@ export function MyCertificatesEditor({ certificates }: { certificates: string })
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("certificatesEdit")}</h3>
-            <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("certificatesHint")}</span>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("certificatesEdit")}</h3>
+            <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("certificatesHint")}</span>
           </div>
           <button
             type="button"

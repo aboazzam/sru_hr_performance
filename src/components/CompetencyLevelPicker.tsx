@@ -113,7 +113,7 @@ export function CompetencyLevelPicker({
         return (
           <div
             key={competency.id}
-            style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}
+            style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}
           >
             <label style={{ display: "flex", gap: 6 }}>
               <input
@@ -133,7 +133,7 @@ export function CompetencyLevelPicker({
                 value={entry.requiredLevel}
                 disabled={disabled}
                 onChange={(event) => setLevel(competency.id, event.target.value as BehavioralLevel)}
-                style={{ fontSize: 12, marginInlineStart: 22 }}
+                style={{ fontSize: 11.5, marginInlineStart: 22 }}
               >
                 <option value="" disabled>
                   {labels.levelPlaceholder}

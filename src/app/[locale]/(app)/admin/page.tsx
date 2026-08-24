@@ -150,22 +150,22 @@ export default async function AdminPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <PrintButton />
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <section style={{ marginBottom: 40 }}>
-        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 4 }}>
+        <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 4 }}>
           {t("usersHeading")}
         </h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 14 }}>{t("usersSubtitle")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 14 }}>{t("usersSubtitle")}</p>
         {employees.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noUsers")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noUsers")}</p>
         ) : (
           <AdminUsersTable
             users={employees.map((employee) => ({
@@ -184,7 +184,7 @@ export default async function AdminPage() {
 
       <section style={{ marginBottom: 40 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
-          <h2 className="sru-title" style={{ fontSize: 18 }}>
+          <h2 className="sru-title" style={{ fontSize: 16 }}>
             {t("positionsHeading")}
           </h2>
           {canManage && (
@@ -193,9 +193,9 @@ export default async function AdminPage() {
             </Link>
           )}
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 14 }}>{t("positionsSubtitle")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 14 }}>{t("positionsSubtitle")}</p>
         {roles.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPositionsRoles")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositionsRoles")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">
@@ -214,12 +214,12 @@ export default async function AdminPage() {
                     const roleUserCount = countByRoleId.get(role.id) ?? 0;
                     return (
                       <tr key={role.id}>
-                        <td style={{ fontSize: 13, fontWeight: 700 }}>{role.name_ar}</td>
-                        <td className="sru-en" style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
+                        <td style={{ fontSize: 12, fontWeight: 700 }}>{role.name_ar}</td>
+                        <td className="sru-en" style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
                           {role.role_code}
                         </td>
-                        <td style={{ fontSize: 13 }}>{roleUserCount}</td>
-                        <td style={{ fontSize: 12.5 }}>{role.is_system_role ? t("systemRoleYes") : t("systemRoleNo")}</td>
+                        <td style={{ fontSize: 12 }}>{roleUserCount}</td>
+                        <td style={{ fontSize: 11.5 }}>{role.is_system_role ? t("systemRoleYes") : t("systemRoleNo")}</td>
                         {canManage && (
                           <td>
                             <div className="sru-icon-action-group">
@@ -246,8 +246,8 @@ export default async function AdminPage() {
       </section>
 
       <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{t("matrixHeading")}</h2>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 14 }}>{t("matrixCaption")}</p>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("matrixHeading")}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 14 }}>{t("matrixCaption")}</p>
         <div className="sru-card">
           <div className="table-scroll">
             <table className="admin-matrix">

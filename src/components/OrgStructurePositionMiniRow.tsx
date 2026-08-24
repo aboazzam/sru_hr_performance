@@ -126,15 +126,15 @@ export function OrgStructurePositionMiniRow({
   if (!isEditing) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 0", borderBottom: "1px solid var(--sru-border)" }}>
-        <span style={{ color: "var(--sru-muted)", fontSize: 11.5, minWidth: 80 }}>{parentLabel}</span>
+        <span style={{ color: "var(--sru-muted)", fontSize: 11, minWidth: 80 }}>{parentLabel}</span>
         {/* One column, not two flex siblings: `.sru-name-en` is
             `display: block`, which a flex parent ignores — so the Latin
             name used to sit BESIDE the Arabic one instead of under it. */}
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <strong style={{ fontSize: 13 }}>{initialNameAr}</strong>
+          <strong style={{ fontSize: 12 }}>{initialNameAr}</strong>
           {initialNameEn && <span className="sru-name-en">{initialNameEn}</span>}
         </div>
-        <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>({orgUnitName})</span>
+        <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>({orgUnitName})</span>
         <div className="sru-icon-action-group">
           <button type="button" onClick={handleEdit} className="sru-icon-action" title={t("editButton")} aria-label={t("editButton")}>
             <Pencil size={14} />
@@ -144,7 +144,7 @@ export function OrgStructurePositionMiniRow({
           </button>
         </div>
         {error && (
-          <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
+          <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11 }}>
             {t(errorMessageKeys[error] ?? "errorUnknown")}
           </span>
         )}
@@ -208,7 +208,7 @@ export function OrgStructurePositionMiniRow({
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10, fontSize: 12 }}>
+        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10, fontSize: 11.5 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}

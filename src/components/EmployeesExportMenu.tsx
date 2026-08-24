@@ -123,7 +123,7 @@ export function EmployeesExportMenu() {
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{t("exportColumnsHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{t("exportColumnsHeading")}</h3>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
@@ -133,7 +133,7 @@ export function EmployeesExportMenu() {
             ×
           </button>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("exportColumnsNote")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>{t("exportColumnsNote")}</p>
 
         <div
           style={{
@@ -146,7 +146,7 @@ export function EmployeesExportMenu() {
           }}
         >
           {EMPLOYEE_EXPORT_COLUMNS.map((column) => (
-            <label key={column} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+            <label key={column} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
               <input type="checkbox" checked={selected.has(column)} onChange={() => toggleColumn(column)} />
               {t(`exportColumn.${column}`)}
             </label>

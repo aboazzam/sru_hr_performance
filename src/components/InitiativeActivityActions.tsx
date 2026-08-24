@@ -74,7 +74,7 @@ function ActivityForm({
       <input type="hidden" name="endDate" value={endDate} />
 
       <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
           <input
             type="radio"
             name="responsibleKind"
@@ -83,7 +83,7 @@ function ActivityForm({
           />
           {t("responsibleEmployee")}
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
           <input
             type="radio"
             name="responsibleKind"
@@ -248,12 +248,12 @@ export function InitiativeActivityRowActions({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700 }}>{activity.titleAr}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700 }}>{activity.titleAr}</h3>
           <button type="button" className="sru-modal-close" onClick={() => viewRef.current?.close()} aria-label={t("closeButton")}>
             ×
           </button>
         </div>
-        <dl style={{ marginTop: 14, display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 12px", fontSize: 13 }}>
+        <dl style={{ marginTop: 14, display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 12px", fontSize: 12 }}>
           <dt style={{ color: "var(--sru-muted)" }}>{t("responsibleColumn")}</dt>
           <dd style={{ fontWeight: 600 }}>{activity.responsibleLabel}</dd>
           <dt style={{ color: "var(--sru-muted)" }}>{t("periodColumn")}</dt>
@@ -269,7 +269,7 @@ export function InitiativeActivityRowActions({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("editActivity")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("editActivity")}</h3>
           <button type="button" className="sru-modal-close" onClick={() => editRef.current?.close()} aria-label={t("closeButton")}>
             ×
           </button>

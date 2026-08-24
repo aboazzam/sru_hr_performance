@@ -90,7 +90,7 @@ export function StrategicGoalsFilterBar({
       )}
 
       {goals.length > 0 && visible.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("filterEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("filterEmpty")}</p>
       ) : (
         visible.map((g) => <div key={g.id}>{g.content}</div>)
       )}

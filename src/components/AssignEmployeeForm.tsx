@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { assignEmployee } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 interface PositionOption {
   id: string;
@@ -59,7 +59,7 @@ export function AssignEmployeeForm({ positions, employees }: { positions: Positi
 
   return (
     <form onSubmit={handleSubmit} className="sru-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("assignHeading")}</h3>
+      <h3 style={{ fontSize: 13, fontWeight: 700 }}>{t("assignHeading")}</h3>
       <div>
         <label className="block text-sm font-medium mb-1">{t("positionLabel")}</label>
         <select value={positionId} onChange={(e) => setSelectedPositionId(e.target.value)} required className={inputClass}>

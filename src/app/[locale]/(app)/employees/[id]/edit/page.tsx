@@ -22,7 +22,7 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
   if (!canEdit) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
   if (!profile) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("notFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("notFound")}</p>
       </div>
     );
   }
@@ -86,10 +86,10 @@ export default async function EmployeeEditPage({ params }: { params: Promise<{ i
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>
         {profile.full_name_ar} — {profile.employee_number}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

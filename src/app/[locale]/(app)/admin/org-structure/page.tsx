@@ -175,10 +175,10 @@ export default async function OrgStructurePage() {
       <GroupTabs groupKey="administration" current="admin/org-structure" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         {canBuild && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -195,14 +195,14 @@ export default async function OrgStructurePage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {levels.length === 0 ? (
-        canBuild ? <OrgStructureSetupWizard /> : <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPositions")}</p>
+        canBuild ? <OrgStructureSetupWizard /> : <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
       ) : (
         <>
           <section style={{ marginBottom: 36 }}>
-            <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 4 }}>
+            <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 4 }}>
               {t("orgChartHeading")}
             </h2>
-            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 14 }}>{t("orgChartSubtitle")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 14 }}>{t("orgChartSubtitle")}</p>
             <div className="sru-card">
               <OrgChartTree
                 positions={positions}
@@ -217,7 +217,7 @@ export default async function OrgStructurePage() {
 
           {canBuild && (
             <section>
-              <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 14 }}>
+              <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 14 }}>
                 {t("levelsHeading")}
               </h2>
               <OrgStructureLevelsList
@@ -236,7 +236,7 @@ export default async function OrgStructurePage() {
                         identitySwatches={identitySwatches}
                       >
                         {levelPositions.length === 0 ? (
-                          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
+                          <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("noPositions")}</p>
                         ) : (
                           <div>
                             {levelPositions.map((position) => (

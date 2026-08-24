@@ -224,7 +224,7 @@ export function RecruitmentRequestRow({
               </div>
             )}
             {errorText && !editing && (
-              <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
+              <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11 }}>
                 {errorText}
               </span>
             )}
@@ -297,7 +297,7 @@ export function RecruitmentRequestRow({
 
             {competencies.length > 0 && (
               <div style={{ padding: "10px 2px 2px" }}>
-                <label style={{ fontSize: 12, fontWeight: 600 }}>{t("sectionCompetencies")}</label>
+                <label style={{ fontSize: 11.5, fontWeight: 600 }}>{t("sectionCompetencies")}</label>
                 <div style={{ marginTop: 6 }}>
                   <CompetencyLevelPicker
                     competencies={competencies}
@@ -311,7 +311,7 @@ export function RecruitmentRequestRow({
                   />
                 </div>
                 {missingLevels > 0 && (
-                  <p role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5, marginTop: 6 }}>
+                  <p role="alert" className="text-sm text-red-600" style={{ fontSize: 11, marginTop: 6 }}>
                     {t("competencyLevelsMissing", { count: missingLevels })}
                   </p>
                 )}
@@ -344,7 +344,7 @@ export function RecruitmentRequestRow({
                 <X size={14} />
               </button>
               {errorText && (
-                <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
+                <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11 }}>
                   {errorText}
                 </span>
               )}

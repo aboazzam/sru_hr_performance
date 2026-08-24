@@ -39,7 +39,7 @@ export function PromotionReviewActions({ promotionId }: { promotionId: string })
           disabled={isPending}
           onClick={() => decide("approved")}
           className="sru-btn sru-btn-primary"
-          style={{ fontSize: 13, padding: "6px 12px" }}
+          style={{ fontSize: 12, padding: "6px 12px" }}
         >
           {t("approve")}
         </button>
@@ -48,13 +48,13 @@ export function PromotionReviewActions({ promotionId }: { promotionId: string })
           disabled={isPending}
           onClick={() => decide("rejected")}
           className="sru-btn"
-          style={{ fontSize: 13, padding: "6px 12px" }}
+          style={{ fontSize: 12, padding: "6px 12px" }}
         >
           {t("reject")}
         </button>
       </div>
       {error && (
-        <p role="alert" style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>
+        <p role="alert" style={{ color: "#dc2626", fontSize: 11.5, marginTop: 4 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}

@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { addPosition } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 interface LevelOption {
   id: string;
@@ -117,7 +117,7 @@ export function AddOrgStructurePositionForm({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("addPositionHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{t("addPositionHeading")}</h3>
           <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
             ×
           </button>
@@ -137,7 +137,7 @@ export function AddOrgStructurePositionForm({
             <div>
               <label className="block text-sm font-medium mb-1">{t("positionParentLabel")}</label>
               {parentOptions.length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noParentOptions")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noParentOptions")}</p>
               ) : (
                 <select value={parentId} onChange={(e) => setSelectedParentId(e.target.value)} required className={inputClass}>
                   {parentOptions.map((position) => (

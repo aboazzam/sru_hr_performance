@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { addLevel } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 // Compact trigger button opening a <dialog> modal (2026-07-25 request: the
 // always-visible full-width card took up too much page height for such an
@@ -58,7 +58,7 @@ export function AddOrgStructureLevelForm() {
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("addLevelHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{t("addLevelHeading")}</h3>
           <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
             ×
           </button>

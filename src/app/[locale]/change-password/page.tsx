@@ -63,7 +63,7 @@ export default async function ChangePasswordPage({
         <ChangePasswordForm />
 
         {!forced && (
-          <p style={{ textAlign: "center", marginTop: 14, fontSize: 13 }}>
+          <p style={{ textAlign: "center", marginTop: 14, fontSize: 12 }}>
             <Link href="/">{t("backToApp")}</Link>
           </p>
         )}

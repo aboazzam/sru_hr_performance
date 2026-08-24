@@ -35,12 +35,12 @@ export default async function AnnouncedJobDetailPage({
   if (!canView) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
         <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
         <GroupTabs groupKey="recruitment" current="recruitment/announced" />
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 24 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 24 }}>{t("forbidden")}</p>
       </div>
     );
   }
@@ -85,10 +85,10 @@ export default async function AnnouncedJobDetailPage({
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {job.job_titles?.name_ar ?? t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {job.org_units?.name_ar ?? "—"}
             {job.job_titles && ` — ${t("gradeLabel", { grade: job.job_titles.grade_level })}`}
           </p>
@@ -103,16 +103,16 @@ export default async function AnnouncedJobDetailPage({
       <div className="sru-card" style={{ marginTop: 20 }}>
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("columnStatus")}</div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{vacancyStatusLabel(job.status)}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("columnStatus")}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{vacancyStatusLabel(job.status)}</div>
           </div>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("portalStateLabel")}</div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{portalStateLabels[state]}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("portalStateLabel")}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{portalStateLabels[state]}</div>
           </div>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("columnRequirements")}</div>
-            <div style={{ fontSize: 15 }}>{job.requirements_ar ?? "—"}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("columnRequirements")}</div>
+            <div style={{ fontSize: 13.5 }}>{job.requirements_ar ?? "—"}</div>
           </div>
         </div>
       </div>

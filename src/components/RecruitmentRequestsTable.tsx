@@ -217,7 +217,7 @@ export function RecruitmentRequestsTable({
             close: t("closeButton"),
           }}
         />
-        <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
+        <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
           {t("resultCount", { shown: visible.length, total: rows.length })}
         </span>
       </div>
@@ -226,8 +226,8 @@ export function RecruitmentRequestsTable({
           say what it is: the screen's title, when it was printed, and which
           filter produced these rows. */}
       <div className="print-only" style={{ marginBottom: 8 }}>
-        <strong style={{ fontSize: 15 }}>{t("title")}</strong>
-        <div style={{ fontSize: 12 }}>
+        <strong style={{ fontSize: 13.5 }}>{t("title")}</strong>
+        <div style={{ fontSize: 11.5 }}>
           {t("printedOn", { date: printedOn })}
           {" — "}
           {t("resultCount", { shown: visible.length, total: rows.length })}
@@ -237,14 +237,14 @@ export function RecruitmentRequestsTable({
       </div>
 
       {sections.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noMatches")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noMatches")}</p>
       ) : (
         sections.map(([orgUnitName, list]) => (
           <div key={orgUnitName} className="sru-card" style={{ marginBottom: 20 }}>
             <div style={{ padding: "12px 16px 0" }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700 }}>
+              <h2 style={{ fontSize: 13.5, fontWeight: 700 }}>
                 {orgUnitName}{" "}
-                <span style={{ color: "var(--sru-muted)", fontWeight: 400, fontSize: 13 }}>
+                <span style={{ color: "var(--sru-muted)", fontWeight: 400, fontSize: 12 }}>
                   ({list.length})
                 </span>
               </h2>

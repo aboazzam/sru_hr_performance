@@ -98,7 +98,7 @@ export function PlanWorkflowActions({
             value={note}
             placeholder={noteIsOptional ? t("optionalNotePlaceholder") : t("reasonPlaceholder")}
             onChange={(event) => setNote(event.target.value)}
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 12 }}
           />
           <div style={{ display: "flex", gap: 6 }}>
             <button
@@ -125,7 +125,7 @@ export function PlanWorkflowActions({
       )}
 
       {state?.status === "error" && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12.5 }}>
+        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
           {transitionRefusalMessages[state.message as keyof typeof transitionRefusalMessages] ??
             t("errorUnknown")}
         </span>

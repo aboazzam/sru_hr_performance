@@ -114,15 +114,15 @@ export default async function RecruitmentRequestsPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
       <GroupTabs groupKey="recruitment" current="recruitment/requests" />
 
       {!canView ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 24 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 24 }}>{t("forbidden")}</p>
       ) : (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
           {canRaise && (
@@ -134,7 +134,7 @@ export default async function RecruitmentRequestsPage() {
           )}
 
           {!requests || requests.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
           ) : (
             <RecruitmentRequestsTable
               rows={requests.map((request) => ({

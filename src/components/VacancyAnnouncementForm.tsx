@@ -75,7 +75,7 @@ export function VacancyAnnouncementForm({
         </span>
         <h2>{t("formHeading")}</h2>
       </div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 10 }}>{t("formNote")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 10 }}>{t("formNote")}</p>
 
       <div className="sru-formgrid">
         <label className="sru-field">
@@ -134,13 +134,13 @@ export function VacancyAnnouncementForm({
             </span>
           )}
           {state?.status === "success" && (
-            <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+            <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
               {t("saved")}
             </span>
           )}
         </div>
       ) : (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 8 }}>{t("readOnlyNote")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>{t("readOnlyNote")}</p>
       )}
     </div>
   );

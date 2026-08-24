@@ -73,10 +73,10 @@ export default async function NewRecruitmentRequestPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("newRequestHeading")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("newRequestSubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("newRequestSubtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
       <Link href="/recruitment/requests" className="sru-btn">
@@ -85,9 +85,9 @@ export default async function NewRecruitmentRequestPage() {
 
       <div style={{ marginTop: 20 }}>
         {!canRaise ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbiddenRaise")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbiddenRaise")}</p>
         ) : (orgUnits ?? []).length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noOrgUnits")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noOrgUnits")}</p>
         ) : (
           <CreateRecruitmentRequestForm
             orgUnits={orgUnits ?? []}

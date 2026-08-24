@@ -79,15 +79,15 @@ export function DeleteExecutivePlanButton({ planId, planName }: { planId: string
             <AlertTriangle size={22} />
           </span>
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("deleteHeading")}</h3>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2 }}>{planName}</p>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("deleteHeading")}</h3>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>{planName}</p>
           </div>
         </div>
 
         {step === 1 ? (
           <>
             <p className="sru-danger-note">{t("deleteWarning")}</p>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>{t("deleteKeepsNote")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>{t("deleteKeepsNote")}</p>
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               <button type="button" className="sru-btn sru-btn-danger" onClick={() => setStep(2)}>
                 {t("deleteContinue")}

@@ -134,14 +134,14 @@ export default async function InitiativeAssignmentsPage() {
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="executivePlan" current="initiative-assignments" />
 
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {view.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noInitiatives")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noInitiatives")}</p>
       ) : (
         <InitiativeAssignmentsPanel initiatives={view} orgUnits={orgUnits} canAssign={canAssign} />
       )}

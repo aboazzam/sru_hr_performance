@@ -85,7 +85,7 @@ export function PlanActivitiesPanel({
 
   return (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>{t("activitiesIntro")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginBottom: 12 }}>{t("activitiesIntro")}</p>
 
       <div className="sru-filterbar no-print">
         <label>
@@ -145,15 +145,15 @@ export function PlanActivitiesPanel({
             {t("activitiesReset")}
           </button>
         )}
-        <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
+        <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
           {t("activitiesCount", { shown: filtered.length, total: activities.length })}
         </span>
       </div>
 
       {activities.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 14 }}>{t("activitiesNone")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 14 }}>{t("activitiesNone")}</p>
       ) : filtered.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 14 }}>{t("activitiesNoMatches")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 14 }}>{t("activitiesNoMatches")}</p>
       ) : view === "list" ? (
         <div className="sru-card" style={{ marginTop: 14 }}>
           <div className="table-scroll">
@@ -194,7 +194,7 @@ export function PlanActivitiesPanel({
       ) : (
         <div style={{ marginTop: 14 }}>
           {months.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("activitiesNoDates")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("activitiesNoDates")}</p>
           ) : (
             <div className="sru-card">
               <div className="table-scroll">
@@ -223,7 +223,7 @@ export function PlanActivitiesPanel({
                       <tr key={a.id}>
                         <td>
                           <span style={{ fontWeight: 600 }}>{a.titleAr}</span>
-                          <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5 }}>{a.initiativeTitle}</span>
+                          <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11 }}>{a.initiativeTitle}</span>
                         </td>
                         {months.map((m) =>
                           Array.from({ length: WEEKS_PER_MONTH }, (_, i) => i + 1).map((week) => {
@@ -248,11 +248,11 @@ export function PlanActivitiesPanel({
 
           {undated.length > 0 && (
             <section style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
                 {t("activitiesUndatedHeading", { count: undated.length })}
               </h3>
-              <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("activitiesUndatedNote")}</p>
-              <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 13, lineHeight: 1.9 }}>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>{t("activitiesUndatedNote")}</p>
+              <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 12, lineHeight: 1.9 }}>
                 {undated.map((a) => (
                   <li key={a.id}>
                     {a.titleAr} — <span style={{ color: "var(--sru-muted)" }}>{a.initiativeTitle}</span>

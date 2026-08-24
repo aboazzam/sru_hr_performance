@@ -134,7 +134,7 @@ export function FinanceReviewPanel({
         </label>
         <div className="sru-field">
           <span>{t("livePreview")}</span>
-          <div style={{ fontSize: 13, lineHeight: 1.9 }}>
+          <div style={{ fontSize: 12, lineHeight: 1.9 }}>
             {preview.status === "no_budget" ? (
               <span style={{ color: "var(--sru-muted)" }}>{t("noBudgetYet")}</span>
             ) : (
@@ -165,7 +165,7 @@ export function FinanceReviewPanel({
         </label>
       </div>
 
-      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 6 }}>{t("noteMandatoryHint")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 6 }}>{t("noteMandatoryHint")}</p>
 
       <div className="sru-form-submitrow">
         {/* Inert until something actually differs from what is stored — the
@@ -185,12 +185,12 @@ export function FinanceReviewPanel({
             a fault, which is how the active one read before. The closed
             reason wins: it is the one the reader cannot undo. */}
         {locked ? (
-          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("reviewLocked")}</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("reviewLocked")}</span>
         ) : (
           alreadyReviewed &&
           !dirty &&
           !pending && (
-            <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noChangesToSave")}</span>
+            <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noChangesToSave")}</span>
           )
         )}
         {state?.status === "error" && (
@@ -199,14 +199,14 @@ export function FinanceReviewPanel({
           </span>
         )}
         {state?.status === "success" && (
-          <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+          <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
             {t("reviewSaved")}
           </span>
         )}
       </div>
 
       <div style={{ borderTop: "1px solid var(--sru-border)", marginTop: 14, paddingTop: 14 }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>
           {t("financeActionsHint")}
         </p>
         <PlanWorkflowActions planId={planId} status={status} permissions={permissions} />

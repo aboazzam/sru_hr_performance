@@ -362,7 +362,7 @@ export function CreateRecruitmentRequestForm({
             />
           </label>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8 }}>{t("costHint")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>{t("costHint")}</p>
       </div>
 
       <div className="sru-formsection">
@@ -384,12 +384,12 @@ export function CreateRecruitmentRequestForm({
             {/* Always say where the text came from — a prefilled box that
                 doesn't explain itself reads as data the requester entered. */}
             {selectedJobTitle && titleQualifications !== "" && (
-              <span style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
+              <span style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 4 }}>
                 {t("qualificationsFromJobTitle", { title: selectedJobTitle.name_ar })}
               </span>
             )}
             {selectedJobTitle && titleQualifications === "" && (
-              <span style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
+              <span style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 4 }}>
                 {t("noQualificationsOnJobTitle")}
               </span>
             )}
@@ -422,7 +422,7 @@ export function CreateRecruitmentRequestForm({
               marginBottom: 8,
             }}
           >
-            <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>
+            <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
               {selectedJobTitle && titleCompetencies.length > 0
                 ? t("competenciesFromJobTitle", {
                     title: selectedJobTitle.name_ar,
@@ -434,7 +434,7 @@ export function CreateRecruitmentRequestForm({
               <button
                 type="button"
                 className="sru-btn"
-                style={{ fontSize: 12, padding: "2px 10px" }}
+                style={{ fontSize: 11.5, padding: "2px 10px" }}
                 onClick={restoreFromJobTitle}
               >
                 {t("restoreFromJobTitle")}

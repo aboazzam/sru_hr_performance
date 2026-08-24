@@ -46,16 +46,16 @@ export default async function MyEvaluationsPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>
         {t("subtitle")}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {!evaluations || evaluations.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -78,7 +78,7 @@ export default async function MyEvaluationsPage() {
                       <Link
                         href={`/evaluations/${evaluation.id}`}
                         className="sru-btn sru-btn-primary"
-                        style={{ fontSize: 13, padding: "6px 12px" }}
+                        style={{ fontSize: 12, padding: "6px 12px" }}
                       >
                         {t("view")}
                       </Link>

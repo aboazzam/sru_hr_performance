@@ -100,7 +100,7 @@ export function ExecutivePlanCard({
 
       <div className="sru-initiative-card-body">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: 15, fontWeight: 700 }}>
+          <h4 style={{ fontSize: 13.5, fontWeight: 700 }}>
             <Link href={href} className="sru-stretched sru-initiative-card-title">
               {plan.nameAr}
               <ArrowLeft size={14} aria-hidden className="sru-initiative-card-go" />
@@ -148,7 +148,7 @@ export function ExecutivePlanCard({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("editHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("editHeading")}</h3>
           <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
             ×
           </button>

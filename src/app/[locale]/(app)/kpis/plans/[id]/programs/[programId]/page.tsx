@@ -59,7 +59,7 @@ export default async function ProgramDetailPage({
           <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
           {t("backToPlan")}
         </Link>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNotFound")}</p>
       </div>
     );
   }
@@ -269,9 +269,9 @@ export default async function ProgramDetailPage({
         />
       </div>
 
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{tDashboard("byStatus")}</h3>
+      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 8 }}>{tDashboard("byStatus")}</h3>
       {statusCounts.size === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tDashboard("noInitiatives")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{tDashboard("noInitiatives")}</p>
       ) : (
         <ul style={{ margin: 0, paddingInlineStart: 0, listStyle: "none", display: "flex", gap: 8, flexWrap: "wrap" }}>
           {Array.from(statusCounts.entries()).map(([status, count]) => (
@@ -282,7 +282,7 @@ export default async function ProgramDetailPage({
         </ul>
       )}
 
-      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginTop: 20 }}>{tDashboard("progressNote")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 11.5, lineHeight: 1.8, marginTop: 20 }}>{tDashboard("progressNote")}</p>
     </div>
   );
 
@@ -354,13 +354,13 @@ export default async function ProgramDetailPage({
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
         <Boxes size={20} aria-hidden style={{ color: "var(--sru-purple)", marginTop: 6, flex: "0 0 auto" }} />
         <div style={{ minWidth: 0 }}>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {program.name_ar}
           </h1>
           {program.name_en && <p className="sru-name-en is-lg">{program.name_en}</p>}
         </div>
       </div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>
         {t("statusValue", { status: program.status })}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
@@ -373,8 +373,8 @@ export default async function ProgramDetailPage({
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="sru-card" style={{ padding: 14 }}>
-      <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>{label}</span>
-      <strong style={{ fontSize: 20 }}>{value}</strong>
+      <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5 }}>{label}</span>
+      <strong style={{ fontSize: 17 }}>{value}</strong>
     </div>
   );
 }

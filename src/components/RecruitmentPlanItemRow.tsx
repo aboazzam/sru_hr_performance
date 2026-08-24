@@ -133,7 +133,7 @@ export function RecruitmentPlanItemRow({
           </span>
         )}
         {item.positionName && (
-          <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>
+          <div style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>
             {t("fromPosition", { position: item.positionName })}
           </div>
         )}

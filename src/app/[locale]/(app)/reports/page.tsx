@@ -422,8 +422,8 @@ export default async function ReportsPage() {
   }
 
   const cardStyle: React.CSSProperties = { padding: 16, minWidth: 180 };
-  const numberStyle: React.CSSProperties = { fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" };
-  const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--sru-muted)" };
+  const numberStyle: React.CSSProperties = { fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "var(--sru-muted)" };
 
   // Always visible regardless of any report-tab permission — a plain
   // employee has always seen their own evaluation/goals/tasks summary
@@ -433,12 +433,12 @@ export default async function ReportsPage() {
   // performance tab.
   const personalContent = (
     <>
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
         {t("myDashboardHeading")}
       </h2>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 32 }}>
         <div className="sru-card" style={cardStyle}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--sru-purple)" }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--sru-purple)" }}>
             {myEvaluation ? evaluationStateLabels[myEvaluation.state] : t("myEvaluationNone")}
           </div>
           <div style={labelStyle}>{myEvaluation?.evaluation_cycles?.name_ar ?? t("myEvaluationLabel")}</div>
@@ -459,7 +459,7 @@ export default async function ReportsPage() {
     <>
       {(showEvaluation || showCalibration || showPromotions || showVacancies || showEmployeeData || showStaffing) && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("orgWideHeading")}
           </h2>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
@@ -507,7 +507,7 @@ export default async function ReportsPage() {
 
       {showPromotions && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("recommendationsBreakdownHeading")}
           </h2>
           <div className="sru-card" style={{ marginBottom: 32 }}>
@@ -537,12 +537,12 @@ export default async function ReportsPage() {
 
       {showUserManagement && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("usersByRoleHeading")}
           </h2>
           <div className="sru-card" style={{ marginBottom: 32 }}>
             {roleCounts.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14, padding: 16 }}>{t("usersByRoleEmpty")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 13, padding: 16 }}>{t("usersByRoleEmpty")}</p>
             ) : (
               <div className="table-scroll">
                 <table className="admin-matrix">
@@ -569,15 +569,15 @@ export default async function ReportsPage() {
 
       {showEvaluation && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("incompleteDepartmentsHeading")}
           </h2>
           {incompleteOrgUnitNames.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("incompleteDepartmentsEmpty")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{t("incompleteDepartmentsEmpty")}</p>
           ) : (
             <ul style={{ marginBottom: 32, paddingInlineStart: 20 }}>
               {incompleteOrgUnitNames.map((name) => (
-                <li key={name} style={{ fontSize: 14, marginBottom: 4 }}>
+                <li key={name} style={{ fontSize: 13, marginBottom: 4 }}>
                   {name}
                 </li>
               ))}
@@ -596,7 +596,7 @@ export default async function ReportsPage() {
 
   const competencyContent = (
     <>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("competencySubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{t("competencySubtitle")}</p>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
         <div className="sru-card" style={cardStyle}>
           <div style={numberStyle}>{competencyPillarsCount}</div>
@@ -618,7 +618,7 @@ export default async function ReportsPage() {
 
       {competencyCountsByType.length > 0 && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("competencyByTypeHeading")}
           </h2>
           <div className="sru-card" style={{ marginBottom: 32 }}>
@@ -644,7 +644,7 @@ export default async function ReportsPage() {
         </>
       )}
 
-      <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>
         {competencyScoresRecorded > 0
           ? t("competencyScoresRecorded", { count: competencyScoresRecorded })
           : t("competencyNoEmployeeData")}
@@ -654,7 +654,7 @@ export default async function ReportsPage() {
 
   const strategyContent = (
     <>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("strategySubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{t("strategySubtitle")}</p>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
         <div className="sru-card" style={cardStyle}>
           <div style={numberStyle}>{strategicGoalsSummary.length}</div>
@@ -671,7 +671,7 @@ export default async function ReportsPage() {
       </div>
 
       {strategicGoalsSummary.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("strategyEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("strategyEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -713,7 +713,7 @@ export default async function ReportsPage() {
 
   const bauTasksContent = (
     <>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("bauTasksSubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{t("bauTasksSubtitle")}</p>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
         <div className="sru-card" style={cardStyle}>
           <div style={numberStyle}>{bauTasksTotal}</div>
@@ -726,10 +726,10 @@ export default async function ReportsPage() {
       </div>
 
       {bauTasksByStatus.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("bauTasksEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("bauTasksEmpty")}</p>
       ) : (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {t("bauTasksByStatusHeading")}
           </h2>
           <div className="sru-card" style={{ marginBottom: 32 }}>
@@ -759,11 +759,11 @@ export default async function ReportsPage() {
 
   const feedback360Content = (
     <>
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
         {t("feedback360MyResultsHeading")}
       </h2>
       {myFeedback360.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("feedback360MyResultsEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{t("feedback360MyResultsEmpty")}</p>
       ) : (
         <>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
@@ -803,7 +803,7 @@ export default async function ReportsPage() {
 
       {feedback360Breakdown.length > 0 && (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {feedback360ScopeLabel === "department" ? t("feedback360DepartmentHeading") : t("feedback360OrganizationHeading")}
           </h2>
           <div className="sru-card" style={{ marginBottom: 32 }}>
@@ -851,10 +851,10 @@ export default async function ReportsPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {personalContent}
@@ -863,7 +863,7 @@ export default async function ReportsPage() {
         <ProfileTabs tabs={reportTabs} />
       ) : reportTabs.length === 1 ? (
         <>
-          <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+          <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
             {reportTabs[0].label}
           </h2>
           {reportTabs[0].content}

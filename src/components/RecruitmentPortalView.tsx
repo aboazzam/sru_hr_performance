@@ -88,10 +88,10 @@ export async function RecruitmentPortalView({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {scope === "internal" ? t("titleInternal") : t("titleExternal")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
         {scope === "internal" ? t("subtitleInternal") : t("subtitleExternal")}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
@@ -99,9 +99,9 @@ export async function RecruitmentPortalView({
       <div style={{ height: 20 }} />
 
       {!canView ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
       ) : live.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, lineHeight: 1.9 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.9 }}>
           {announced.length === 0 ? t("emptyNoAds") : t("emptyNoneLive")}
         </p>
       ) : (
@@ -110,15 +110,15 @@ export async function RecruitmentPortalView({
         >
           {live.map((job) => (
             <div key={job.id} className="sru-card">
-              <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
                 {job.job_titles?.name_ar ?? t("untitledJob")}
               </h2>
-              <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 10 }}>
+              <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 10 }}>
                 {job.org_units?.name_ar ?? "—"}
                 {job.job_titles && ` — ${t("gradeLabel", { grade: job.job_titles.grade_level })}`}
               </p>
 
-              <dl style={{ display: "grid", gap: 6, fontSize: 13, margin: 0 }}>
+              <dl style={{ display: "grid", gap: 6, fontSize: 12, margin: 0 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <dt style={{ color: "var(--sru-muted)", minWidth: 96 }}>{t("openingsLabel")}</dt>
                   <dd style={{ margin: 0, fontWeight: 600 }}>{job.openings_count}</dd>

@@ -233,10 +233,10 @@ export default async function EmployeesPage({
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -261,7 +261,7 @@ export default async function EmployeesPage({
 
       {myPendingOrRejected.length > 0 && (
         <div className="sru-card" style={{ padding: 16, marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("myRequestsHeading")}</h2>
+          <h2 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 10 }}>{t("myRequestsHeading")}</h2>
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
@@ -292,7 +292,7 @@ export default async function EmployeesPage({
 
       {canApproveEmployeeData && pendingEmployees.length > 0 && (
         <div className="sru-card" style={{ padding: 16, marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("pendingApprovalHeading")}</h2>
+          <h2 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 10 }}>{t("pendingApprovalHeading")}</h2>
           <div className="table-scroll">
             <table className="admin-matrix">
               <thead>
@@ -340,7 +340,7 @@ export default async function EmployeesPage({
         <details className="sru-filter-details">
           <summary className="sru-btn">{t("filterButton")}</summary>
           <div className="sru-filter-panel">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+            <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 4 }}>
               {t("filterOrgUnitLabel")}
             </label>
             <select name="orgUnitId" defaultValue={orgUnitId ?? ""} style={{ width: "100%", padding: "6px 10px", marginBottom: 10 }}>
@@ -351,7 +351,7 @@ export default async function EmployeesPage({
                 </option>
               ))}
             </select>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+            <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 4 }}>
               {t("filterStatusLabel")}
             </label>
             <select name="status" defaultValue={status ?? ""} style={{ width: "100%", padding: "6px 10px", marginBottom: 10 }}>
@@ -360,7 +360,7 @@ export default async function EmployeesPage({
               <option value="on_leave">{t("statusOnLeave")}</option>
               <option value="terminated">{t("statusTerminated")}</option>
             </select>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+            <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 4 }}>
               {t("sortByLabel")}
             </label>
             <select name="sortBy" defaultValue={sortBy ?? "name"} style={{ width: "100%", padding: "6px 10px" }}>
@@ -380,13 +380,13 @@ export default async function EmployeesPage({
       </form>
 
       {sortedSectionEntries.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         sortedSectionEntries.map(([sectionName, list]) => (
           <div key={sectionName} className="sru-card" style={{ marginBottom: 20 }}>
             <div style={{ padding: "12px 16px 0" }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700 }}>
-                {sectionName} <span style={{ color: "var(--sru-muted)", fontWeight: 400, fontSize: 13 }}>({list.length})</span>
+              <h2 style={{ fontSize: 13.5, fontWeight: 700 }}>
+                {sectionName} <span style={{ color: "var(--sru-muted)", fontWeight: 400, fontSize: 12 }}>({list.length})</span>
               </h2>
             </div>
             <div className="table-scroll">

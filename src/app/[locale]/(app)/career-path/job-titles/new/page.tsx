@@ -22,7 +22,7 @@ export default async function CreateJobTitlePage({ params }: { params: Promise<{
   if (!canEdit) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPermission")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPermission")}</p>
       </div>
     );
   }
@@ -65,10 +65,10 @@ export default async function CreateJobTitlePage({ params }: { params: Promise<{
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <Link href="/career-path/job-titles" className="sru-btn">
           {t("backToList")}

@@ -129,18 +129,18 @@ export function StrategicPlanExcelButtons({ planId, canImport }: { planId: strin
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{t("exportSheetsHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{t("exportSheetsHeading")}</h3>
           <button type="button" onClick={() => sheetDialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
             ×
           </button>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>
           {exportFormat === "csv" ? t("exportSheetsNoteCsv") : t("exportSheetsNoteExcel")}
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 8, marginBottom: 16 }}>
           {SHEET_KEYS.map((key) => (
-            <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+            <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
               <input
                 // A CSV holds one table, so the picker becomes single-choice
                 // for it rather than quietly exporting only the first tick.
@@ -216,7 +216,7 @@ function StrategicPlanImportOutcome({ state }: { state: ImportStrategicPlanState
         })}
       </p>
       {state.warnings.length > 0 && (
-        <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 12, lineHeight: 1.8 }}>
+        <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 11.5, lineHeight: 1.8 }}>
           {state.warnings.map((warning, i) => (
             <li key={i}>{warning}</li>
           ))}

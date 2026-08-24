@@ -82,20 +82,20 @@ export function ExecutivePlanTargetsPanel({
 
   return (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>{t("targetsPickIntro")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginBottom: 12 }}>{t("targetsPickIntro")}</p>
 
       <div className="sru-filterbar no-print" style={{ marginBottom: 14 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <input type="checkbox" checked={showAll} onChange={() => setShowAll((v) => !v)} />
           <span>{t("targetsShowAll", { total: kpis.length })}</span>
         </label>
-        <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>
+        <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>
           {t("targetsSelectedCount", { count: selectedCount, total: kpis.length })}
         </span>
       </div>
 
       {visible.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>
           {kpis.length === 0 ? t("targetsNoKpis") : t("targetsNoneSelected")}
         </p>
       ) : (
@@ -163,7 +163,7 @@ function TargetRow({
     <div className="sru-card sru-initiative-card" style={{ opacity: kpi.selected ? 1 : 0.72 }}>
       <div className="sru-initiative-card-body">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: 15, fontWeight: 700 }}>{kpi.titleAr}</h4>
+          <h4 style={{ fontSize: 13.5, fontWeight: 700 }}>{kpi.titleAr}</h4>
           {kpi.titleEn && <span className="sru-name-en">{kpi.titleEn}</span>}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
             {kpi.goalTitle && <span className="sru-initiative-chip is-plain">{kpi.goalTitle}</span>}
@@ -308,20 +308,20 @@ function OrgUnitSplit({
   const canSave = valid && dirty;
 
   if (!canManage && rows.length === 0) {
-    return <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>{t("targetNoUnits")}</p>;
+    return <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>{t("targetNoUnits")}</p>;
   }
 
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid var(--sru-border)", paddingTop: 10 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700 }}>{t("targetUnitsHeading")}</span>
-        <span style={{ fontSize: 12, color: Math.abs(total - 100) < 0.001 || rows.length === 0 ? "var(--sru-muted)" : "var(--sru-danger, #b91c1c)" }}>
+        <span style={{ fontSize: 11.5, fontWeight: 700 }}>{t("targetUnitsHeading")}</span>
+        <span style={{ fontSize: 11.5, color: Math.abs(total - 100) < 0.001 || rows.length === 0 ? "var(--sru-muted)" : "var(--sru-danger, #b91c1c)" }}>
           {t("targetUnitsTotal", { total: String(total) })}
         </span>
       </div>
 
       {rows.length === 0 && !canManage && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 6 }}>{t("targetNoUnits")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 6 }}>{t("targetNoUnits")}</p>
       )}
 
       <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
@@ -355,7 +355,7 @@ function OrgUnitSplit({
               style={{ width: 90 }}
               aria-label={t("targetUnitPercentageLabel")}
             />
-            <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>%</span>
+            <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>%</span>
             {canManage && (
               <button
                 type="button"

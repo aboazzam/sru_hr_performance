@@ -102,7 +102,7 @@ export function ProgramsPanel({
           flexWrap: "wrap",
         }}
       >
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
         {/* One row, one style: "add" sits beside export/import (2026-08-21). */}
         <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
         {canManage && (
@@ -164,7 +164,7 @@ export function ProgramsPanel({
       </div>
 
       {programs.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("empty")}</p>
       ) : (
         <div style={{ display: "grid", gap: 12, marginBottom: 24 }}>
           {programs.map((program) => (
@@ -213,7 +213,7 @@ function ProgramCard({
     <div className="sru-card sru-initiative-card">
       <div className="sru-initiative-card-body">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: 15, fontWeight: 700 }}>
+          <h4 style={{ fontSize: 13.5, fontWeight: 700 }}>
             <Link href={href} className="sru-stretched sru-initiative-card-title">
               {program.nameAr}
               <ArrowLeft size={14} aria-hidden className="sru-initiative-card-go" />
@@ -269,7 +269,7 @@ function ProgramCard({
       </div>
 
       {program.descriptionAr && (
-        <p style={{ fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>{program.descriptionAr}</p>
+        <p style={{ fontSize: 12, marginTop: 8, lineHeight: 1.7 }}>{program.descriptionAr}</p>
       )}
     </div>
   );

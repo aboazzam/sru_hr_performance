@@ -69,13 +69,13 @@ export function InitiativeAssignmentsSection({
       </div>
 
       {assignments.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tCard("assignmentsNone")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{tCard("assignmentsNone")}</p>
       ) : (
         <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
           {assignments.map((a) => (
             <li
               key={a.orgUnitId}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: 13 }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: 12 }}
             >
               <span>
                 <strong>{a.orgUnitName}</strong>
@@ -119,7 +119,7 @@ export function InitiativeAssignmentsSection({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("formHeading")}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("formHeading")}</h3>
           <button
             type="button"
             className="sru-modal-close"

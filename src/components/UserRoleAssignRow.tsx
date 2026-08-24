@@ -78,7 +78,7 @@ export function UserRoleAssignRow({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="sru-icon-action"
-        style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, padding: "6px 10px", width: "auto" }}
+        style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, padding: "6px 10px", width: "auto" }}
       >
         {summary}
         <ChevronDown size={13} aria-hidden />
@@ -101,7 +101,7 @@ export function UserRoleAssignRow({
           }}
         >
           {roles.map((role) => (
-            <label key={role.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+            <label key={role.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
               <input type="checkbox" checked={selected.includes(role.id)} onChange={() => toggleRole(role.id)} />
               {role.name_ar}
             </label>
@@ -118,9 +118,9 @@ export function UserRoleAssignRow({
       >
         <Check size={15} />
       </button>
-      {saved && !error && <span style={{ color: "var(--sru-success, #15803d)", fontSize: 11.5 }}>{t("success")}</span>}
+      {saved && !error && <span style={{ color: "var(--sru-success, #15803d)", fontSize: 11 }}>{t("success")}</span>}
       {error && (
-        <span role="alert" style={{ color: "#b91c1c", fontSize: 11.5 }}>
+        <span role="alert" style={{ color: "#b91c1c", fontSize: 11 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </span>
       )}
