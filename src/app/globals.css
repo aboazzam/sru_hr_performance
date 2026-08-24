@@ -2171,3 +2171,161 @@ tr.sru-row-link:focus-within > td {
 table {
   font-size: 13px;
 }
+
+/* ---------------------------------------------------------------------------
+   Home — a worklist, not a dashboard (2026-08-24).
+
+   The page's whole job is "what needs me today", so the count carries the
+   weight: it is the largest type on the page, sitting on a purple rule that
+   marks each row as a live piece of work. Everything else is deliberately
+   quiet — no cards, no shadows, no gradients — so the numbers are the only
+   thing competing for attention. Square corners throughout, like the rest of
+   the app since the same date.
+--------------------------------------------------------------------------- */
+.sru-home {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 22px 48px;
+}
+
+.sru-home-head {
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--sru-purple);
+  margin-bottom: 26px;
+}
+.sru-home-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sru-purple);
+  margin-bottom: 6px;
+}
+.sru-home-head h1 {
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--sru-purple-dark);
+}
+.sru-home-role {
+  font-size: 13px;
+  color: var(--sru-ink);
+  margin-top: 4px;
+}
+.sru-home-cycle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sru-muted);
+  margin-top: 8px;
+}
+
+.sru-home-section + .sru-home-section {
+  margin-top: 30px;
+}
+.sru-home-section h2 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+}
+.sru-home-note {
+  font-size: 12px;
+  color: var(--sru-muted);
+  margin: 4px 0 12px;
+  line-height: 1.8;
+}
+
+.sru-home-clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sru-muted);
+  border: 1px solid var(--sru-border);
+  border-inline-start: 3px solid var(--sru-success, #1f9d55);
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.sru-home-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--sru-border);
+  background: #fff;
+}
+.sru-home-queue li + li {
+  border-top: 1px solid var(--sru-border);
+}
+.sru-home-queue a {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 13px 16px;
+  text-decoration: none;
+  color: inherit;
+  border-inline-start: 3px solid var(--sru-purple);
+  transition: background 0.14s ease;
+}
+.sru-home-queue a:hover,
+.sru-home-queue a:focus-visible {
+  background: var(--sru-purple-light);
+}
+.sru-home-queue-count {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sru-purple);
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+.sru-home-queue-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sru-ink);
+}
+
+.sru-home-mine {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--sru-border);
+  border: 1px solid var(--sru-border);
+}
+.sru-home-tile {
+  display: block;
+  background: #fff;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.14s ease;
+}
+.sru-home-tile:hover,
+.sru-home-tile:focus-visible {
+  background: var(--sru-purple-light);
+}
+.sru-home-tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--sru-muted);
+}
+.sru-home-tile strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .sru-home {
+    padding: 20px 14px 36px;
+  }
+}
