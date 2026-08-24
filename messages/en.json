@@ -2789,6 +2789,7 @@
     "actualPlaceholder": "Not recorded",
     "actualNotRecorded": "Not recorded",
     "actualSave": "Record",
+    "actualHint": "Type the achieved value, then press Record.",
     "actualRecordedBy": "Recorded by {name}",
     "actualSelfReportedBy": "Self-reported by {name}"
   },
