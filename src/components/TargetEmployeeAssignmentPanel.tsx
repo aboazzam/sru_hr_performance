@@ -123,7 +123,15 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
   const total = useMemo(() => rows.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0), [rows]);
   const duplicate = useMemo(() => new Set(rows.map((r) => r.employeeId)).size !== rows.length, [rows]);
   const complete = rows.every((r) => r.employeeId !== "" && Number(r.percentage) > 0);
-  const canSave = rows.length === 0 || (Math.abs(total - 100) < 0.001 && !duplicate && complete);
+  const valid = rows.length === 0 || (Math.abs(total - 100) < 0.001 && !duplicate && complete);
+  // ...and there has to be something to save. Without this the button stayed
+  // lit after a successful save, which reads as "it did not take" — the same
+  // defect fixed for the ORG-UNIT split, which lives in a different component
+  // and so did not carry over. Compared by shape rather than by a saved flag:
+  // an edit that happens to restore what is stored is nothing to save either.
+  const savedShape = JSON.stringify(share.employees.map((e) => [e.employeeId, Number(e.percentage)]));
+  const currentShape = JSON.stringify(rows.map((r) => [r.employeeId, Number(r.percentage)]));
+  const canSave = valid && savedShape !== currentShape;
 
   // The unit's own slice of the year's target, so the split is made against a
   // real number rather than a bare percentage.
@@ -175,14 +183,29 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
         <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>{t("employeesNoneYet")}</p>
       )}
 
-      <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
         {rows.map((row, index) => (
-          <div key={index} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div
+            key={index}
+            style={{
+              display: "grid",
+              gap: 6,
+              paddingTop: index === 0 ? 0 : 10,
+              borderTop: index === 0 ? "none" : "1px solid var(--sru-border)",
+            }}
+          >
+            {/* The employee select gets a line to itself. A native select's
+                dropdown is exactly as wide as the control, so while this sat in
+                the flex row with the percentage, the value and the buttons it
+                settled near its minimum width and clipped the option text —
+                reported live as "the employee name is cut off". Labels here are
+                "number — full name", and real names only get longer than the
+                two that surfaced it. */}
             <select
               value={row.employeeId}
               disabled={!share.canManage}
               onChange={(e) => setRows((prev) => prev.map((r, i) => (i === index ? { ...r, employeeId: e.target.value } : r)))}
-              style={{ flex: 1, minWidth: 200 }}
+              style={{ width: "100%" }}
             >
               <option value="">{t("employeePlaceholder")}</option>
               {options.map((emp) => (
@@ -191,6 +214,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
                 </option>
               ))}
             </select>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <input
               type="number"
               step="0.01"
@@ -241,6 +265,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
                 )}
               </>
             )}
+            </div>
           </div>
         ))}
       </div>
@@ -253,16 +278,16 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <button
               type="button"
-              className="sru-btn"
+              className="sru-btn sru-btn-slim"
               disabled={options.length === 0}
               onClick={() => setRows((prev) => [...prev, { employeeId: "", percentage: "" }])}
             >
-              <Plus size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+              <Plus size={13} aria-hidden />
               {t("employeeAdd")}
             </button>
             <button
               type="button"
-              className="sru-btn sru-btn-primary"
+              className="sru-btn sru-btn-primary sru-btn-slim"
               disabled={!canSave || pending}
               onClick={() => {
                 const formData = new FormData();
@@ -274,7 +299,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
                 startTransition(() => formAction(formData));
               }}
             >
-              <Check size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+              <Check size={13} aria-hidden />
               {pending ? t("savingButton") : t("employeesSave")}
             </button>
           </div>

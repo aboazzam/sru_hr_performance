@@ -380,7 +380,25 @@ table.admin-matrix {
 .sru-btn:disabled:hover {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--sru-purple);
+}
+/* The fade above is what marks a button as unavailable. Forcing a purple
+   background here as well — as this rule used to — turned every disabled
+   OUTLINE button into a filled block, which reads as a heavier, more
+   prominent control than the same button when it is actually usable. */
+
+/* ===== Slim buttons =====
+   For actions that sit inline beside a field rather than closing a form:
+   "record this value", "save this split". They carry the same weight as the
+   "add" buttons next to them instead of a block twice their height.
+   inline-flex with a gap is load-bearing, not cosmetic: with the icon as a
+   plain inline box it could drop to a second line whenever the button was
+   squeezed, which is what made these look tall in the first place. */
+.sru-btn-slim {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  line-height: 1.6;
 }
 
 /* ===== Simple modal dialog (native <dialog>) =====
