@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type VacanciesImportResult =
   | {
@@ -40,6 +41,15 @@ const COL_STATUS = "الحالة";
 const COL_REQUIREMENTS = "المتطلبات";
 
 const REQUIRED_COLUMNS = [COL_JOB_TITLE, COL_ORG_UNIT];
+
+/** Canonical field key -> the column label this importer reads it from. */
+export const VACANCY_IMPORT_COLUMNS = {
+  jobTitle: COL_JOB_TITLE,
+  orgUnit: COL_ORG_UNIT,
+  jobFamily: COL_JOB_FAMILY,
+  status: COL_STATUS,
+  requirements: COL_REQUIREMENTS,
+} as const;
 
 /**
  * Bulk import for `vacancies` — one sheet, one row per vacancy (job title +
@@ -105,7 +115,8 @@ export async function importVacanciesExcel(
     return { status: "error", message: "invalid_input" };
   }
 
-  const cols = headerMap(sheet);
+  const options = parseImportOptions(formData);
+  const cols = applyMapping(headerMap(sheet), options, VACANCY_IMPORT_COLUMNS);
   if (REQUIRED_COLUMNS.some((name) => !cols.has(name))) {
     return { status: "error", message: "invalid_input" };
   }
@@ -218,7 +229,7 @@ export async function importVacanciesExcel(
   const existingIdByPair = new Map((existingData ?? []).map((v) => [`${v.job_title_id}::${v.org_unit_id}`, v.id]));
 
   const toInsert: { job_title_id: string; org_unit_id: string; status: string; requirements_ar: string | null }[] = [];
-  const toUpdate: { id: string; status: string; requirements_ar: string | null }[] = [];
+  const toUpdate: { id: string; patch: { status?: string; requirements_ar?: string | null } }[] = [];
   const seenPairs = new Set<string>();
 
   for (const row of parsedRows) {
@@ -238,13 +249,24 @@ export async function importVacanciesExcel(
     const status = row.status ?? "open";
     const existingId = existingIdByPair.get(pair);
     if (existingId) {
-      toUpdate.push({ id: existingId, status, requirements_ar: row.requirementsAr });
+      // "Add new only" skips it entirely rather than silently rewriting a
+      // live posting — the default, and what the dialog promises.
+      if (updatesExisting(options)) {
+        const patch: { status?: string; requirements_ar?: string | null } = {};
+        if (writesField(options, "status")) patch.status = status;
+        if (writesField(options, "requirements")) patch.requirements_ar = row.requirementsAr;
+        // Every field deselected means there is nothing to write; updating
+        // with {} would count a row as changed without changing it.
+        if (Object.keys(patch).length > 0) toUpdate.push({ id: existingId, patch });
+      }
     } else {
       toInsert.push({
         job_title_id: jobTitleId,
         org_unit_id: orgUnitId,
-        status,
-        requirements_ar: row.requirementsAr,
+        // A deselected field is left at the column's default rather than
+        // written from the file.
+        status: writesField(options, "status") ? status : "open",
+        requirements_ar: writesField(options, "requirements") ? row.requirementsAr : null,
       });
     }
   }
@@ -261,8 +283,8 @@ export async function importVacanciesExcel(
     }
   }
 
-  for (const { id, status, requirements_ar } of toUpdate) {
-    const { error } = await supabase.from("vacancies").update({ status, requirements_ar }).eq("id", id);
+  for (const { id, patch } of toUpdate) {
+    const { error } = await supabase.from("vacancies").update(patch).eq("id", id);
     if (error) {
       rowErrors.push(`تحديث الشاغر ${id}: ${error.message}`);
     } else {
@@ -275,7 +297,7 @@ export async function importVacanciesExcel(
     actor_id: actor.id,
     action: "vacancies_excel_imported",
     entity: "vacancies",
-    after_data: { created, updated, rowErrorCount: rowErrors.length },
+    after_data: { created, updated, rowErrorCount: rowErrors.length, mode: options.mode },
   });
 
   return { status: "success", summary: { created, updated, rowErrors } };

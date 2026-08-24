@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition, type Form
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { importCareerPathExcel, type CareerPathImportResult } from "@/app/[locale]/(app)/career-path/import-actions";
+import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "importErrorInvalid",
@@ -52,9 +53,11 @@ export function ImportCareerPathExcelForm() {
   return (
     <>
       <a href="/templates/sru-career-path-import-template.xlsx" download className="sru-btn">
+        <ArrowUpFromLine size={15} aria-hidden style={{ marginInlineEnd: 6 }} />
         {t("downloadTemplateButton")}
       </a>
       <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn sru-btn-primary">
+        <ArrowDownToLine size={15} aria-hidden style={{ marginInlineEnd: 6 }} />
         {t("importTriggerButton")}
       </button>
 

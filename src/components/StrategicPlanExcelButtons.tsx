@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { AlertCircle, CheckCircle2, Download, Upload } from "lucide-react";
+import { AlertCircle, ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from "lucide-react";
 import { importStrategicPlanExcel, type ImportStrategicPlanState } from "@/app/[locale]/(app)/kpis/plans/[id]/import-actions";
 import { STRATEGIC_PLAN_SHEETS } from "@/lib/strategicPlanExcel";
 
@@ -125,7 +125,7 @@ export function StrategicPlanExcelButtons({ planId, canImport }: { planId: strin
           onClick={() => setMenuOpen((v) => !v)}
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
-          <Download size={15} aria-hidden />
+          <ArrowUpFromLine size={15} aria-hidden />
           {t("exportButton")}
         </button>
         {menuOpen && (
@@ -203,7 +203,7 @@ export function StrategicPlanExcelButtons({ planId, canImport }: { planId: strin
             className="sru-btn"
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <Upload size={15} aria-hidden />
+            <ArrowDownToLine size={15} aria-hidden />
             {t("importButton")}
           </button>
 

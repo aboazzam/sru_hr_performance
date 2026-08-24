@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ArrowUpFromLine } from "lucide-react";
 
 export interface ExportColumnOption {
   key: string;
@@ -92,6 +93,7 @@ export function ExportMenu({
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
         >
+          <ArrowUpFromLine size={15} aria-hidden style={{ marginInlineEnd: 6 }} />
           {labels.export}
         </button>
         {open && (

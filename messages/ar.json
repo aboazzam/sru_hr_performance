@@ -460,7 +460,14 @@
     "importErrorForbidden": "يجب تسجيل الدخول أولًا.",
     "importErrorUnknown": "حدث خطأ غير متوقع أثناء الاستيراد.",
     "importSuccess": "تم الاستيراد: {created} مسمى جديد، {updated} مسمى محدَّث، {competencies} جدارة مُحدَّدة.",
-    "importWarnings": "{count} صف تم تجاوزه أو به خطأ"
+    "importWarnings": "{count} صف تم تجاوزه أو به خطأ",
+    "importFieldNameAr": "اسم المسمى الوظيفي",
+    "importFieldJobFamily": "العائلة الوظيفية",
+    "importFieldGrade": "الدرجة",
+    "importFieldCategory": "الفئة",
+    "importFieldNameEn": "الاسم بالإنجليزية",
+    "importFieldQualification": "المؤهل المطلوب",
+    "importFieldDescription": "الوصف"
   },
   "CareerPathJobTitleDetailPage": {
     "noPermission": "لا تملك صلاحية إدارة الوظائف والجدارات.",
@@ -1746,7 +1753,12 @@
     "planHeader": "من خطة التوظيف",
     "createdAtHeader": "تاريخ الإنشاء",
     "printedOn": "تاريخ الطباعة: {date}",
-    "printedCount": "عرض {shown} من {total}"
+    "printedCount": "عرض {shown} من {total}",
+    "importFieldJobTitle": "المسمى الوظيفي",
+    "importFieldOrgUnit": "الوحدة التنظيمية",
+    "importFieldJobFamily": "العائلة الوظيفية",
+    "importFieldStatus": "الحالة",
+    "importFieldRequirements": "المتطلبات"
   },
   "CreateVacancyPage": {
     "title": "شاغر جديد",
@@ -2759,5 +2771,36 @@
     "actualSave": "تسجيل",
     "actualRecordedBy": "سجّلها: {name}",
     "actualSelfReportedBy": "بلاغ ذاتي من {name}"
+  },
+  "ExcelImport": {
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "reading": "جارٍ قراءة الملف...",
+    "template": "تنزيل نموذج فارغ",
+    "fileLabel": "ملف الإكسل",
+    "fileHint": "الصف الأول عناوين الأعمدة.",
+    "modeQuestion": "ماذا تريد أن يفعل الاستيراد؟",
+    "modeInsertTitle": "إضافة الجدد فقط",
+    "modeInsertNote": "يُنشئ ما ليس له سجل، ويتخطّى الموجودين بلا أن يمسّ بياناتهم.",
+    "modeUpsertTitle": "استبدال بيانات الموجودين وإضافة الجدد",
+    "modeUpsertNote": "يُنشئ الجدد، ويحدّث الموجودين في الأعمدة التي تختارها وحدها.",
+    "modeInsertShort": "إضافة الجدد فقط",
+    "modeUpsertShort": "استبدال وإضافة",
+    "noDeleteWarning": "لا يحذف الاستيراد أي سجل في أي وضع. الصفوف غير الموجودة في الملف تبقى كما هي — الحذف يقطع ما بُني عليها من ارتباطات وسجل تدقيق.",
+    "summaryLine": "{rows} صفًّا في الملف · {mode}",
+    "mappingHeading": "ربط أعمدة الملف بالحقول",
+    "mappingNote": "اقترحنا ربطًا مبدئيًّا بمطابقة الأسماء — راجعه. عمود يُقرأ على أنه حقل خاطئ يكتب بيانات خاطئة بلا شكوى.",
+    "fileColumn": "عمود الملف",
+    "platformField": "الحقل في المنصة",
+    "ignoreColumn": "— تجاهل —",
+    "fieldsHeadingInsert": "الحقول التي تُملأ للسجلات الجديدة",
+    "fieldsNoteInsert": "الحقول غير المحدَّدة تبقى فارغة عند الإنشاء.",
+    "fieldsHeadingUpsert": "الحقول التي تُملأ وتُحدَّث",
+    "fieldsNoteUpsert": "الحقول غير المحدَّدة لا تُمسّ في السجلات الموجودة.",
+    "unmappedDisabled": "الحقول غير المربوطة بعمود معطّلة هنا، وحقول التعريف إلزامية.",
+    "errorInvalidFile": "تعذّرت قراءة الملف — تأكد أنه ملف إكسل بصيغة xlsx.",
+    "errorEmpty": "الملف لا يحتوي على عناوين أعمدة في الصف الأول.",
+    "errorUnauthenticated": "انتهت الجلسة — أعد تسجيل الدخول."
   }
 }
