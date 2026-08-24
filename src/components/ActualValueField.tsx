@@ -76,7 +76,7 @@ export function ActualValueField({
       </span>
       <button
         type="button"
-        className="sru-btn sru-btn-primary"
+        className="sru-btn sru-btn-slim"
         title={value === stored ? t("actualHint") : undefined}
         disabled={pending || value === stored}
         onClick={() => {
@@ -86,7 +86,7 @@ export function ActualValueField({
           startTransition(() => formAction(formData));
         }}
       >
-        <Check size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+        <Check size={13} aria-hidden />
         {pending ? t("savingButton") : t("actualSave")}
       </button>
       {state?.status === "error" && (

@@ -189,11 +189,11 @@ function TargetRow({
                 {canManage && (
                   <button
                     type="button"
-                    className="sru-btn sru-btn-primary"
+                    className="sru-btn sru-btn-primary sru-btn-slim"
                     disabled={selectPending || targetValue === storedTargetValue}
                     onClick={submitSelection}
                   >
-                    <Check size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+                    <Check size={13} aria-hidden />
                     {selectPending ? t("savingButton") : t("saveButton")}
                   </button>
                 )}
@@ -218,8 +218,8 @@ function TargetRow({
           ) : (
             canManage && (
               <div style={{ marginTop: 10 }}>
-                <button type="button" className="sru-btn sru-btn-primary" disabled={selectPending} onClick={submitSelection}>
-                  <Plus size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+                <button type="button" className="sru-btn sru-btn-primary sru-btn-slim" disabled={selectPending} onClick={submitSelection}>
+                  <Plus size={13} aria-hidden />
                   {t("targetSelectButton")}
                 </button>
               </div>
@@ -375,15 +375,15 @@ function OrgUnitSplit({
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           <button
             type="button"
-            className="sru-btn"
+            className="sru-btn sru-btn-slim"
             onClick={() => setRows((prev) => [...prev, { orgUnitId: "", percentage: "" }])}
           >
-            <Plus size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+            <Plus size={13} aria-hidden />
             {t("targetUnitAdd")}
           </button>
           <button
             type="button"
-            className="sru-btn sru-btn-primary"
+            className="sru-btn sru-btn-primary sru-btn-slim"
             disabled={!canSave || pending}
             onClick={() => {
               const formData = new FormData();
@@ -395,7 +395,7 @@ function OrgUnitSplit({
               startTransition(() => formAction(formData));
             }}
           >
-            <Check size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
+            <Check size={13} aria-hidden />
             {pending ? t("savingButton") : t("targetUnitsSave")}
           </button>
         </div>
