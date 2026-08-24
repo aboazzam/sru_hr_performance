@@ -8,6 +8,8 @@ import { MyCertificatesEditor } from "@/components/MyCertificatesEditor";
 import { type CareerJobTitleInfo } from "@/lib/careerPathTree";
 import { getSelfScopedCareerTree } from "@/lib/careerPathData";
 import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
+import { ActualValueField } from "@/components/ActualValueField";
+import { recordEmployeeActual } from "@/app/[locale]/(app)/executive-plans/[id]/actions";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // Read-only for now, per the project owner's explicit "not editable yet"
@@ -192,7 +194,7 @@ export default async function MyProfilePage() {
   const { data: myTargetShareRows } = p?.id
     ? await supabase
         .from("executive_plan_target_employees")
-        .select("id, percentage, target_org_unit_id")
+        .select("id, percentage, target_org_unit_id, actual_value")
         .eq("employee_id", p.id)
         .is("deleted_at", null)
     : { data: [] };
@@ -200,6 +202,7 @@ export default async function MyProfilePage() {
     id: string;
     percentage: number | string;
     target_org_unit_id: string;
+    actual_value: number | string | null;
   }>;
 
   const { data: myUnitShareRows } =
@@ -293,6 +296,7 @@ export default async function MyProfilePage() {
       planName: planTarget ? myPlanNameById.get(planTarget.executive_plan_id) ?? "—" : "—",
       orgUnitName: unitShare ? myUnitNameById.get(unitShare.org_unit_id) ?? "—" : "—",
       myPercent,
+      actualValue: mine.actual_value,
       // Of the whole target, not of the unit's share — the number that
       // actually says how much of it is mine.
       overallPercent: Math.round(((unitPercent * myPercent) / 100) * 100) / 100,
@@ -405,6 +409,7 @@ export default async function MyProfilePage() {
                             <th>{t("planTargetsColumnUnit")}</th>
                             <th>{t("planTargetsColumnMyShare")}</th>
                             <th>{t("planTargetsColumnValue")}</th>
+                            <th>{t("planTargetsColumnActual")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -420,6 +425,16 @@ export default async function MyProfilePage() {
                                 })}
                               </td>
                               <td>{row.myValue == null ? "—" : row.myValue + " " + row.unit}</td>
+                              <td>
+                                <ActualValueField
+                                  id={row.id}
+                                  initialValue={row.actualValue}
+                                  unit={row.unit}
+                                  label={t("planTargetsColumnActual")}
+                                  canEdit
+                                  action={recordEmployeeActual}
+                                />
+                              </td>
                             </tr>
                           ))}
                         </tbody>
