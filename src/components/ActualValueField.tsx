@@ -70,10 +70,14 @@ export function ActualValueField({
           placeholder={t("actualPlaceholder")}
           onChange={(e) => setValue(e.target.value)}
         />
+        {/* The button is disabled until the number changes, which on an empty
+            box looks like a dead control rather than a waiting one. */}
+        <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>{t("actualHint")}</span>
       </span>
       <button
         type="button"
-        className="sru-btn"
+        className="sru-btn sru-btn-primary"
+        title={value === stored ? t("actualHint") : undefined}
         disabled={pending || value === stored}
         onClick={() => {
           const formData = new FormData();

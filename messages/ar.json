@@ -2789,6 +2789,7 @@
     "actualPlaceholder": "لم تُسجَّل",
     "actualNotRecorded": "لم تُسجَّل",
     "actualSave": "تسجيل",
+    "actualHint": "اكتب القيمة المتحققة ثم اضغط «تسجيل».",
     "actualRecordedBy": "سجّلها: {name}",
     "actualSelfReportedBy": "بلاغ ذاتي من {name}"
   },

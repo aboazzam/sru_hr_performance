@@ -152,6 +152,11 @@ function TargetRow({
     startTransition(() => selectAction(formData));
   }
 
+  // What the platform holds right now. Save is only live while the box
+  // differs from it, so a click cannot rewrite a figure with itself and the
+  // button stops inviting a second press once the value is stored.
+  const storedTargetValue = kpi.selected?.targetValue == null ? "" : String(kpi.selected.targetValue);
+
   const state = selectState ?? removeState;
 
   return (
@@ -182,7 +187,13 @@ function TargetRow({
                   />
                 </div>
                 {canManage && (
-                  <button type="button" className="sru-btn" disabled={selectPending} onClick={submitSelection}>
+                  <button
+                    type="button"
+                    className="sru-btn sru-btn-primary"
+                    disabled={selectPending || targetValue === storedTargetValue}
+                    onClick={submitSelection}
+                  >
+                    <Check size={14} aria-hidden style={{ marginInlineEnd: 6 }} />
                     {selectPending ? t("savingButton") : t("saveButton")}
                   </button>
                 )}
@@ -286,7 +297,15 @@ function OrgUnitSplit({
   const complete = rows.every((r) => r.orgUnitId !== "" && Number(r.percentage) > 0);
   // The same rule the database enforces, shown before the save rather than
   // after it.
-  const canSave = rows.length === 0 || (Math.abs(total - 100) < 0.001 && !duplicate && complete);
+  const valid = rows.length === 0 || (Math.abs(total - 100) < 0.001 && !duplicate && complete);
+  // ...and nothing to save once the rows match what is stored. Without this the
+  // button stayed lit after a successful save, which reads as "it didn't take".
+  // The saved shape is compared, not a flag: an edit that happens to restore
+  // the stored split is genuinely nothing to save either.
+  const savedShape = JSON.stringify(initialRows.map((r) => [r.orgUnitId, Number(r.percentage)]));
+  const currentShape = JSON.stringify(rows.map((r) => [r.orgUnitId, Number(r.percentage)]));
+  const dirty = savedShape !== currentShape;
+  const canSave = valid && dirty;
 
   if (!canManage && rows.length === 0) {
     return <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>{t("targetNoUnits")}</p>;
