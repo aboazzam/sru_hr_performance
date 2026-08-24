@@ -133,7 +133,9 @@ html[dir="ltr"] body {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 0;
+  /* A person is round here. The rest of the system is square (2026-08-24);
+     these two are the exception, because they carry a face. */
+  border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.12);
   color: inherit;
@@ -1923,7 +1925,9 @@ tr.sru-row-link:focus-within > td {
   width: 52px;
   height: 52px;
   flex: 0 0 auto;
-  border-radius: 0;
+  /* A person is round here. The rest of the system is square (2026-08-24);
+     these two are the exception, because they carry a face. */
+  border-radius: 50%;
   background: var(--sru-purple);
   color: #fff;
   font-size: 19px;
