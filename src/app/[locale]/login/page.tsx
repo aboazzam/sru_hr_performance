@@ -3,7 +3,21 @@ import { getTranslations } from "next-intl/server";
 import { locales, isLocale, getDir, type Locale } from "@/i18n/config";
 import { Link } from "@/i18n/navigation";
 import { LoginForm } from "@/components/LoginForm";
+import { LoginArtwork } from "@/components/LoginArtwork";
 
+/**
+ * Two columns: the form on one side, an illustrated panel on the other
+ * (2026-08-24, following a reference layout the project owner sent).
+ *
+ * Two things in that reference are deliberately NOT here, because they would
+ * be controls that do nothing:
+ *
+ *  - "Continue with Google". No Google provider is configured for this
+ *    project; sign-in is Supabase email/username + password.
+ *  - "Get started, it's free" and a sign-up link. Accounts here are created by
+ *    HR and sent as an invite (SECURITY_CHECKLIST 1.7 — signup disabled), so
+ *    that slot says how to obtain an account instead of offering to create one.
+ */
 export default async function LoginPage({
   params,
 }: {
@@ -16,20 +30,30 @@ export default async function LoginPage({
   const t = await getTranslations("LoginPage");
 
   return (
-    <main className="sru-auth-page" dir={getDir(locale)}>
+    <main className="sru-auth-split" dir={getDir(locale)}>
       <Link href="/login" locale={otherLocale} className="sru-auth-locale">
         {otherLocaleLabel}
       </Link>
 
-      <div className="sru-auth-card">
-        <div className="sru-auth-brand">
-          <Image src="/sru-logo.png" alt="شعار جامعة سليمان الراجحي" width={100} height={52} />
-          <h1>{t("title")}</h1>
-          <p>{t("subtitle")}</p>
-        </div>
+      <section className="sru-auth-split-form">
+        <div className="sru-auth-split-inner">
+          <div className="sru-auth-split-brand">
+            <Image src="/sru-logo.png" alt="شعار جامعة سليمان الراجحي" width={85} height={44} priority />
+            <span>{t("subtitle")}</span>
+          </div>
 
-        <LoginForm locale={locale} />
-      </div>
+          <h1>{t("welcomeTitle")}</h1>
+          <p className="sru-auth-split-lead">{t("welcomeLead")}</p>
+
+          <LoginForm locale={locale} />
+
+          <p className="sru-auth-split-note">{t("inviteNote")}</p>
+        </div>
+      </section>
+
+      <aside className="sru-auth-split-art">
+        <LoginArtwork />
+      </aside>
     </main>
   );
 }
