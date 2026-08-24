@@ -3,6 +3,8 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { JOB_TITLE_IMPORT_COLUMNS } from "@/lib/importColumns";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type JobTitlesImportResult =
   | {
@@ -66,6 +68,8 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 }
 
 const REQUIRED_COLUMNS = ["اسم المسمى الوظيفي", "العائلة الوظيفية", "الدرجة", "الفئة"];
+
+
 const BATCH_SIZE = 50;
 
 /**
@@ -145,7 +149,8 @@ export async function importJobTitlesExcel(
     return { status: "error", message: "invalid_input" };
   }
 
-  const cols = headerMap(sheet);
+  const options = parseImportOptions(formData);
+  const cols = applyMapping(headerMap(sheet), options, JOB_TITLE_IMPORT_COLUMNS);
   const missingColumn = requireColumns(cols, REQUIRED_COLUMNS);
   if (missingColumn) {
     return { status: "error", message: "invalid_input" };
@@ -274,17 +279,22 @@ export async function importJobTitlesExcel(
   }
 
   for (const { id, row } of toUpdate) {
-    const { error } = await supabase
-      .from("job_titles")
-      .update({
-        name_en: row.nameEn,
-        grade_level: row.gradeLevel,
-        category: row.category,
-        qualification_required: row.qualificationRequired,
-        description_ar: row.descriptionAr,
-        career_content_status: "draft",
-      })
-      .eq("id", id);
+    // "Add new only" leaves an existing title exactly as it is.
+    if (!updatesExisting(options)) break;
+
+    const patch: Record<string, unknown> = {};
+    if (writesField(options, "nameEn")) patch.name_en = row.nameEn;
+    if (writesField(options, "gradeLevel")) patch.grade_level = row.gradeLevel;
+    if (writesField(options, "category")) patch.category = row.category;
+    if (writesField(options, "qualification")) patch.qualification_required = row.qualificationRequired;
+    if (writesField(options, "description")) patch.description_ar = row.descriptionAr;
+    // Nothing ticked means nothing to write; an empty update would still be
+    // counted as a changed row.
+    if (Object.keys(patch).length === 0) continue;
+    // Content changed, so the approval it may already carry no longer applies.
+    patch.career_content_status = "draft";
+
+    const { error } = await supabase.from("job_titles").update(patch).eq("id", id);
     if (error) {
       rowErrors.push(`الصف ${row.rowNumber} ("${row.nameAr}"): ${error.message}`);
     } else {

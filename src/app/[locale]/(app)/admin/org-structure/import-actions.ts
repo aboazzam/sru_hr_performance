@@ -3,6 +3,8 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ORG_STRUCTURE_IMPORT_COLUMNS } from "@/lib/importColumns";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type ImportResult =
   | {
@@ -27,6 +29,7 @@ export type ImportResult =
 // sheet's row for "رئيس قسم القيادة والتنمية الطلابية" references parent
 // code 1132, which does not exist anywhere in the sheet — a typo for 1131
 // ("مدير إدارة الحياة الجامعية"), confirmed directly by the project owner.
+
 const KNOWN_PARENT_CODE_CORRECTIONS: Record<string, string> = {
   "1132": "1131",
 };
@@ -160,7 +163,10 @@ export async function importOrgStructureExcel(
     return { status: "error", message: "invalid_input" };
   }
 
-  const empCols = employeesSheet ? headerMap(employeesSheet) : null;
+  const options = parseImportOptions(formData);
+  const empCols = employeesSheet
+    ? applyMapping(headerMap(employeesSheet), options, ORG_STRUCTURE_IMPORT_COLUMNS)
+    : null;
   if (empCols) {
     const missingEmpCol = requireColumns(empCols, [
       "EMPLOYEE NUMBER",
@@ -172,7 +178,9 @@ export async function importOrgStructureExcel(
     }
   }
 
-  const structCols = structureSheet ? headerMap(structureSheet) : null;
+  const structCols = structureSheet
+    ? applyMapping(headerMap(structureSheet), options, ORG_STRUCTURE_IMPORT_COLUMNS)
+    : null;
   if (structCols) {
     const missingStructCol = requireColumns(structCols, [
       "المستوى",
@@ -331,33 +339,47 @@ export async function importOrgStructureExcel(
     const titleKey = emp.positionAr && familyId ? `${familyId}::${emp.positionAr}` : null;
     const jobTitleId = titleKey ? titleIdByKey.get(titleKey) ?? null : null;
 
-    return {
+    // The employee number identifies the row and is always written; every
+    // other column is written only if the caller ticked it, so an unticked
+    // field is left alone instead of being blanked from a column they did not
+    // intend to import.
+    const row: Record<string, unknown> = {
       employee_number: emp.employeeNumber,
       full_name_ar: emp.fullNameAr,
-      full_name_en: emp.fullNameEn,
-      email: emp.email,
-      org_unit_id: orgUnitId,
-      job_title_id: jobTitleId,
-      hire_date: emp.hireDate,
-      qualification: emp.qualification,
-      education_speciality: emp.educationSpeciality,
-      date_of_birth: emp.dateOfBirth,
-      mobile: emp.mobile,
-      marital_status: emp.maritalStatus,
-      gender: emp.gender,
-      nationality: emp.nationality,
-      employee_category: emp.employeeCategory,
-      insurance_category: emp.insuranceCategory,
     };
+    const optional: Array<[string, string, unknown]> = [
+      ["fullNameEn", "full_name_en", emp.fullNameEn],
+      ["email", "email", emp.email],
+      ["department", "org_unit_id", orgUnitId],
+      ["positionAr", "job_title_id", jobTitleId],
+      ["hireDate", "hire_date", emp.hireDate],
+      ["qualification", "qualification", emp.qualification],
+      ["educationSpeciality", "education_speciality", emp.educationSpeciality],
+      ["dateOfBirth", "date_of_birth", emp.dateOfBirth],
+      ["mobile", "mobile", emp.mobile],
+      ["maritalStatus", "marital_status", emp.maritalStatus],
+      ["gender", "gender", emp.gender],
+      ["nationality", "nationality", emp.nationality],
+      ["employeeCategory", "employee_category", emp.employeeCategory],
+      ["insuranceCategory", "insurance_category", emp.insuranceCategory],
+    ];
+    for (const [field, column, value] of optional) {
+      if (writesField(options, field)) row[column] = value;
+    }
+    return row;
   });
 
   let employeesUpserted = 0;
   const BATCH_SIZE = 50;
   for (let i = 0; i < profileRows.length; i += BATCH_SIZE) {
     const batch = profileRows.slice(i, i + BATCH_SIZE);
-    const { error, count } = await supabase
-      .from("profiles")
-      .upsert(batch, { onConflict: "employee_number", count: "exact" });
+    const { error, count } = await supabase.from("profiles").upsert(batch, {
+      onConflict: "employee_number",
+      // "Add new only" skips an employee who already has a record rather than
+      // rewriting it — the difference between the two modes, in one flag.
+      ignoreDuplicates: !updatesExisting(options),
+      count: "exact",
+    });
     if (error) {
       employeeErrors.push(`batch ${i / BATCH_SIZE + 1}: ${error.message}`);
     } else {
@@ -646,6 +668,7 @@ export async function importOrgStructureExcel(
     action: "org_structure_excel_imported",
     entity: "org_structure_positions",
     after_data: {
+      mode: options.mode,
       employeesUpserted,
       rolesAssigned,
       levelsCreated,

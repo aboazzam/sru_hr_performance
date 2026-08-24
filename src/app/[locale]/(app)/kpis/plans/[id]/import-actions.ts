@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseImportOptions, updatesExisting } from "@/lib/excelImportOptions";
 import { revalidatePath } from "next/cache";
 import {
   cellDateIso,
@@ -104,6 +105,13 @@ export async function importStrategicPlanExcel(
     return { status: "error", message: "invalid_input" };
   }
 
+  const options = parseImportOptions(formData);
+  // "Add new only" is the default: every sheet below creates what is missing
+  // and leaves what already exists exactly as it is. Column mapping and field
+  // selection are deliberately not offered for this workbook — its nine sheets
+  // and their columns ARE this app's own export format, so there is nothing to
+  // map them to.
+  const mayUpdate = updatesExisting(options);
   const warnings: string[] = [];
   const summary = {
     identityUpdated: false,
@@ -171,7 +179,9 @@ export async function importStrategicPlanExcel(
       // reading the affected rows back this would report a successful save
       // that never happened (caught live, 2026-08-19).
       const { data: saved, error } = existing
-        ? await supabase.from("strategic_identity").update(payload).eq("id", existing.id).select("id")
+        ? mayUpdate
+          ? await supabase.from("strategic_identity").update(payload).eq("id", existing.id).select("id")
+          : { data: null, error: null }
         : await supabase.from("strategic_identity").insert(payload).select("id");
       if (error) warnings.push(`الرؤية والرسالة: تعذّر الحفظ (${error.code ?? "خطأ"}) — تحقّق من صلاحيتك.`);
       else if (!saved || saved.length === 0) warnings.push("الرؤية والرسالة: لا تملك صلاحية التعديل — لم يتم الحفظ.");
@@ -212,6 +222,7 @@ export async function importStrategicPlanExcel(
       };
       const existing = valueByTitle.get(titleAr);
       if (existing) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_values")
           .update({ ...payload, display_order: order ?? existing.display_order })
@@ -302,6 +313,7 @@ export async function importStrategicPlanExcel(
         continue;
       }
       if (existing.length === 1) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase.from("strategic_goals").update(payload).eq("id", existing[0]).select("id");
         if (error) warnings.push(`الأهداف الاستراتيجية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
@@ -359,6 +371,7 @@ export async function importStrategicPlanExcel(
         .is("deleted_at", null)
         .maybeSingle();
       if (existingSub) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase.from("sub_goals").update(payload).eq("id", existingSub.id).select("id");
         if (error) warnings.push(`الأهداف الفرعية (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
@@ -446,6 +459,7 @@ export async function importStrategicPlanExcel(
         .is("deleted_at", null)
         .maybeSingle();
       if (existingKpi) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase.from("strategic_kpis").update(payload).eq("id", existingKpi.id).select("id");
         if (error) warnings.push(`المؤشرات (صف ${row.__row}): تعذّر التحديث (${error.code ?? "خطأ"}).`);
         else if (!saved || saved.length === 0)
@@ -517,6 +531,7 @@ export async function importStrategicPlanExcel(
         .is("deleted_at", null)
         .maybeSingle();
       if (existingTarget) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("kpi_annual_targets")
           .update({ target_value: targetValue, actual_value: actualValue })
@@ -594,6 +609,7 @@ export async function importStrategicPlanExcel(
         continue;
       }
       if (existing.length === 1) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_programs")
           .update(payload)
@@ -723,6 +739,7 @@ export async function importStrategicPlanExcel(
         continue;
       }
       if (existing.length === 1) {
+        if (!mayUpdate) continue;
         const { data: saved, error } = await supabase
           .from("strategic_initiatives")
           .update(payload)

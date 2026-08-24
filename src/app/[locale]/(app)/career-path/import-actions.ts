@@ -3,6 +3,8 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CAREER_PATH_IMPORT_COLUMNS } from "@/lib/importColumns";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type CareerPathImportResult =
   | {
@@ -41,6 +43,7 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 }
 
 const REQUIRED_COLUMNS = ["من (المسمى الوظيفي)", "إلى (المسمى الوظيفي)"];
+
 
 /**
  * Bulk import for `career_path` — one sheet, one row per promotion edge
@@ -100,7 +103,8 @@ export async function importCareerPathExcel(
     return { status: "error", message: "invalid_input" };
   }
 
-  const cols = headerMap(sheet);
+  const options = parseImportOptions(formData);
+  const cols = applyMapping(headerMap(sheet), options, CAREER_PATH_IMPORT_COLUMNS);
   const missingColumn = requireColumns(cols, REQUIRED_COLUMNS);
   if (missingColumn) {
     return { status: "error", message: "invalid_input" };
@@ -197,6 +201,8 @@ export async function importCareerPathExcel(
   }
 
   for (const { id, requirements_ar } of toUpdate) {
+    // "Add new only" leaves an existing edge's requirements untouched.
+    if (!updatesExisting(options) || !writesField(options, "requirements")) continue;
     const { error } = await supabase.from("career_path").update({ requirements_ar }).eq("id", id);
     if (error) {
       rowErrors.push(`تحديث الصف ${id}: ${error.message}`);

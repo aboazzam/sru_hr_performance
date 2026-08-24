@@ -2075,3 +2075,41 @@ tr.sru-row-link:focus-within > td {
   font-size: 10.5px;
   color: var(--sru-muted);
 }
+
+/* ---- shared Excel import dialog (2026-08-24) --------------------------
+   The warning that import never deletes, and the field chips in step 2.
+   Amber for the warning: it is a caution about scope, not an error, and
+   the danger red already means "this destroys something". */
+.sru-import-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #7a5300;
+  background: #fdf6e3;
+  border: 1px solid #f0d9a0;
+}
+.sru-import-fieldchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sru-border);
+  font-size: 12px;
+  cursor: pointer;
+}
+.sru-import-fieldchip.is-on {
+  border-color: var(--sru-purple);
+  background: var(--sru-purple-light);
+}
+/* A field no column feeds cannot be written, so it reads as unavailable
+   rather than merely unticked. */
+.sru-import-fieldchip.is-off {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

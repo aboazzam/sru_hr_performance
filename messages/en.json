@@ -271,7 +271,24 @@
     "wizardFinishing": "Finishing...",
     "orgChartHeading": "Organizational Structure Chart",
     "orgChartSubtitle": "A tree view of positions, their reporting lines, and the employees staffed on them.",
-    "orgChartVacant": "Vacant"
+    "orgChartVacant": "Vacant",
+    "importFieldEmployeeNumber": "Employee number",
+    "importFieldNameAr": "Name (Arabic)",
+    "importFieldNameEn": "Name (English)",
+    "importFieldEmail": "Email",
+    "importFieldDepartment": "Org unit",
+    "importFieldPosition": "Job title",
+    "importFieldRole": "System role",
+    "importFieldHireDate": "Hire date",
+    "importFieldQualification": "Qualification",
+    "importFieldSpeciality": "Speciality",
+    "importFieldDateOfBirth": "Date of birth",
+    "importFieldMobile": "Mobile",
+    "importFieldMaritalStatus": "Marital status",
+    "importFieldGender": "Gender",
+    "importFieldNationality": "Nationality",
+    "importFieldEmployeeCategory": "Employee category",
+    "importFieldInsuranceCategory": "Insurance category"
   },
   "OrgStructureStaffingPage": {
     "title": "Staff Employees onto Positions",
@@ -425,7 +442,10 @@
     "selfCompetenciesLabel": "Required Competencies",
     "selfNoCompetencies": "No competencies defined yet",
     "selfPendingApproval": "Pending approval — not yet approved.",
-    "selfEmpty": "No career path is defined for your job title yet."
+    "selfEmpty": "No career path is defined for your job title yet.",
+    "importFieldFrom": "From (job title)",
+    "importFieldTo": "To (job title)",
+    "importFieldRequirements": "Transition requirements"
   },
   "CareerPathJobTitlesPage": {
     "title": "Manage Job Titles & Competencies",
@@ -460,7 +480,14 @@
     "importErrorForbidden": "You must be logged in.",
     "importErrorUnknown": "An unexpected error occurred during import.",
     "importSuccess": "Imported: {created} new, {updated} updated, {competencies} competencies set.",
-    "importWarnings": "{count} row(s) skipped or with an error"
+    "importWarnings": "{count} row(s) skipped or with an error",
+    "importFieldNameAr": "Job title (Arabic)",
+    "importFieldJobFamily": "Job family",
+    "importFieldGrade": "Grade",
+    "importFieldCategory": "Category",
+    "importFieldNameEn": "English name",
+    "importFieldQualification": "Required qualification",
+    "importFieldDescription": "Description"
   },
   "CareerPathJobTitleDetailPage": {
     "noPermission": "You don't have permission to manage job titles & competencies.",
@@ -1746,7 +1773,12 @@
     "planHeader": "From recruitment plan",
     "createdAtHeader": "Created on",
     "printedOn": "Printed on: {date}",
-    "printedCount": "Showing {shown} of {total}"
+    "printedCount": "Showing {shown} of {total}",
+    "importFieldJobTitle": "Job title",
+    "importFieldOrgUnit": "Org unit",
+    "importFieldJobFamily": "Job family",
+    "importFieldStatus": "Status",
+    "importFieldRequirements": "Requirements"
   },
   "CreateVacancyPage": {
     "title": "New Vacancy",
@@ -2759,5 +2791,36 @@
     "actualSave": "Record",
     "actualRecordedBy": "Recorded by {name}",
     "actualSelfReportedBy": "Self-reported by {name}"
+  },
+  "ExcelImport": {
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "reading": "Reading the file...",
+    "template": "Download an empty template",
+    "fileLabel": "Excel file",
+    "fileHint": "The first row holds the column headers.",
+    "modeQuestion": "What should the import do?",
+    "modeInsertTitle": "Add new records only",
+    "modeInsertNote": "Creates what has no record yet and skips existing ones without touching their data.",
+    "modeUpsertTitle": "Update existing records and add new ones",
+    "modeUpsertNote": "Creates new records, and updates existing ones in the columns you choose — only those.",
+    "modeInsertShort": "Add new only",
+    "modeUpsertShort": "Update and add",
+    "noDeleteWarning": "Import never deletes a record, in either mode. Rows missing from the file are left as they are — deleting them would cut the references and audit trail built on them.",
+    "summaryLine": "{rows} rows in the file · {mode}",
+    "mappingHeading": "Map the file's columns to fields",
+    "mappingNote": "We pre-filled a mapping by matching names — check it. A column read as the wrong field writes wrong data without complaining.",
+    "fileColumn": "File column",
+    "platformField": "Platform field",
+    "ignoreColumn": "— ignore —",
+    "fieldsHeadingInsert": "Fields filled in for new records",
+    "fieldsNoteInsert": "Unselected fields are left empty on creation.",
+    "fieldsHeadingUpsert": "Fields filled in and updated",
+    "fieldsNoteUpsert": "Unselected fields are not touched on existing records.",
+    "unmappedDisabled": "Fields with no column mapped to them are disabled here, and identifying fields are required.",
+    "errorInvalidFile": "The file could not be read — make sure it is an .xlsx workbook.",
+    "errorEmpty": "The file has no column headers in its first row.",
+    "errorUnauthenticated": "Your session expired — please sign in again."
   }
 }
