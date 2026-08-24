@@ -76,45 +76,45 @@ export default async function RecommendationsPage() {
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="evaluationResults" current="recommendations" />
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 32 }}>
         <Link href="/promotions" className="sru-card" style={{ padding: 16, minWidth: 160, textDecoration: "none" }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" }}>{promotionsCount ?? 0}</div>
-          <div style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("typePromotion")}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" }}>{promotionsCount ?? 0}</div>
+          <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("typePromotion")}</div>
         </Link>
         <Link href="/rewards" className="sru-card" style={{ padding: 16, minWidth: 160, textDecoration: "none" }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" }}>{rewardsCount ?? 0}</div>
-          <div style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("typeReward")}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" }}>{rewardsCount ?? 0}</div>
+          <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("typeReward")}</div>
         </Link>
         <div className="sru-card" style={{ padding: 16, minWidth: 160 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" }}>{developmentCount}</div>
-          <div style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("typeDevelopment")}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" }}>{developmentCount}</div>
+          <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("typeDevelopment")}</div>
         </div>
         <div className="sru-card" style={{ padding: 16, minWidth: 160 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" }}>{separationCount}</div>
-          <div style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("typeSeparation")}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" }}>{separationCount}</div>
+          <div style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("typeSeparation")}</div>
         </div>
       </div>
 
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
         {t("newRecommendationHeading")}
       </h2>
       {canCreate && employees && employees.length > 0 ? (
         <CreateRecommendationForm employees={employees} cycles={cycles ?? []} />
       ) : (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       )}
 
-      <h2 className="sru-title" style={{ fontSize: 18, margin: "32px 0 12px" }}>
+      <h2 className="sru-title" style={{ fontSize: 16, margin: "32px 0 12px" }}>
         {t("listHeading")}
       </h2>
       {!recommendations || recommendations.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">

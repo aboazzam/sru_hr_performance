@@ -32,7 +32,7 @@ export function RecruitmentPlanRow({
           {nameAr}
         </Link>
         {notes && (
-          <div style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>{notes}</div>
+          <div style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>{notes}</div>
         )}
       </td>
       <td className="sru-en">{planYear}</td>

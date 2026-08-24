@@ -35,7 +35,7 @@ export default async function NewSubGoalPage({
   if (!canCreate) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -63,11 +63,11 @@ export default async function NewSubGoalPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backButton")}
       </Link>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
-      <p style={{ fontSize: 14, marginTop: 8, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
+      <p style={{ fontSize: 13, marginTop: 8, marginBottom: 20 }}>
         <strong>{t("strategicGoalLabel")}:</strong> {strategicGoal?.title_ar ?? "—"}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

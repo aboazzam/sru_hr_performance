@@ -24,7 +24,7 @@ export function EvaluationStateAction({
 
   if (!target) {
     return (
-      <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noFurtherTransition")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("noFurtherTransition")}</p>
     );
   }
 
@@ -61,12 +61,12 @@ export function EvaluationStateAction({
       </button>
 
       {result?.status === "success" && (
-        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13, marginTop: 8 }}>
+        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12, marginTop: 8 }}>
           {t("advanceSuccess")}
         </p>
       )}
       {result?.status === "error" && (
-        <p role="alert" style={{ color: "#dc2626", fontSize: 13, marginTop: 8 }}>
+        <p role="alert" style={{ color: "#dc2626", fontSize: 12, marginTop: 8 }}>
           {t(errorMessageKeys[result.message] ?? "errorUnknown")}
         </p>
       )}

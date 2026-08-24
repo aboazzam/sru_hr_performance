@@ -104,7 +104,7 @@ function CoreCompetencyRow({
           value=""
           disabled={isPending}
           onChange={(e) => handleSetLevel(e.target.value as BehavioralLevel)}
-          style={{ fontSize: 13 }}
+          style={{ fontSize: 12 }}
         >
           <option value="" disabled>
             {t("selectLevelPlaceholder")}
@@ -121,7 +121,7 @@ function CoreCompetencyRow({
         </span>
       )}
       {error && (
-        <span role="alert" style={{ fontSize: 11, color: "#b91c1c" }}>
+        <span role="alert" style={{ fontSize: 10.5, color: "#b91c1c" }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </span>
       )}
@@ -224,7 +224,7 @@ export function JobTitleCompetenciesManager({
             <select
               value={competencyId}
               onChange={(e) => setSelectedCompetencyId(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
+              className="px-3 py-2 border border-[var(--border)] bg-[var(--background)]"
             >
               {[...byPillar.entries()].map(([pillar, opts]) => (
                 <optgroup key={pillar} label={pillar}>
@@ -242,7 +242,7 @@ export function JobTitleCompetenciesManager({
             <select
               value={requiredLevel}
               onChange={(e) => setRequiredLevel(e.target.value as BehavioralLevel)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)]"
+              className="px-3 py-2 border border-[var(--border)] bg-[var(--background)]"
             >
               {levels.map((level) => (
                 <option key={level} value={level}>
@@ -279,8 +279,8 @@ export function JobTitleCompetenciesManager({
         )}
       </div>
 
-      <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("coreCompetenciesHeading")}</h4>
-      <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginBottom: 8 }}>{t("coreCompetenciesNote")}</p>
+      <h4 style={{ fontSize: 12, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("coreCompetenciesHeading")}</h4>
+      <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginBottom: 8 }}>{t("coreCompetenciesNote")}</p>
       <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px" }}>
         {coreCompetencies.map((c) => (
           <CoreCompetencyRow
@@ -294,14 +294,14 @@ export function JobTitleCompetenciesManager({
         ))}
       </ul>
 
-      <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("specializedCompetenciesHeading")}</h4>
+      <h4 style={{ fontSize: 12, fontWeight: 700, color: "var(--sru-blue)", margin: "0 0 4px" }}>{t("specializedCompetenciesHeading")}</h4>
       {specializedAssigned.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noCompetenciesYet")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("noCompetenciesYet")}</p>
       ) : (
         <div style={{ marginBottom: 16 }}>
           {sortedPillars.map((pillar) => (
             <div key={pillar} style={{ marginBottom: 12 }}>
-              <h5 style={{ fontSize: 12.5, fontWeight: 700, margin: "0 0 4px" }}>{pillar}</h5>
+              <h5 style={{ fontSize: 11.5, fontWeight: 700, margin: "0 0 4px" }}>{pillar}</h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {specializedByPillar.get(pillar)!.map((row) => (
                   <li

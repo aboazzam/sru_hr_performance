@@ -41,9 +41,9 @@ export function EvaluationScoresForm({
   );
 
   const scoreInputClass =
-    "w-24 px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-24 px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
   const commentInputClass =
-    "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   function renderRows(prefix: "competency" | "goal", subjects: ScoredSubject[]) {
     return subjects.map((subject) => (
@@ -87,11 +87,11 @@ export function EvaluationScoresForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+        <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
           {t("competenciesHeading")}
         </h2>
         {competencies.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("competenciesEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("competenciesEmpty")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">
@@ -111,11 +111,11 @@ export function EvaluationScoresForm({
       </div>
 
       <div>
-        <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+        <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
           {t("goalsHeading")}
         </h2>
         {goals.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("goalsEmpty")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">
@@ -140,7 +140,7 @@ export function EvaluationScoresForm({
         </p>
       )}
       {state?.status === "success" && (
-        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
           {t("successMessage")}
         </p>
       )}

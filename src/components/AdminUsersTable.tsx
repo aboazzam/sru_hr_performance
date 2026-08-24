@@ -83,13 +83,13 @@ export function AdminUsersTable({
             padding: "8px 34px 8px 10px",
             borderRadius: "var(--sru-radius)",
             border: "1px solid var(--sru-border)",
-            fontSize: 13,
+            fontSize: 12,
           }}
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("usersNoSearchResults")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("usersNoSearchResults")}</p>
       ) : (
         <>
           <div className="sru-card">
@@ -105,8 +105,8 @@ export function AdminUsersTable({
                 <tbody>
                   {paginated.map((employee) => (
                     <tr key={employee.id}>
-                      <td style={{ fontSize: 13 }}>{employee.employee_number}</td>
-                      <td style={{ fontSize: 13 }}>{employee.full_name_ar}</td>
+                      <td style={{ fontSize: 12 }}>{employee.employee_number}</td>
+                      <td style={{ fontSize: 12 }}>{employee.full_name_ar}</td>
                       <td>
                         {canManage ? (
                           <UserRoleAssignRow
@@ -116,7 +116,7 @@ export function AdminUsersTable({
                             initialRoleIds={employee.currentRoleIds}
                           />
                         ) : (
-                          <span style={{ fontSize: 13 }}>
+                          <span style={{ fontSize: 12 }}>
                             {employee.currentRoleIds.length > 0
                               ? employee.currentRoleIds
                                   .map((id) => roles.find((r) => r.id === id)?.name_ar)
@@ -134,7 +134,7 @@ export function AdminUsersTable({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-            <p style={{ fontSize: 12.5, color: "var(--sru-muted)", margin: 0 }}>
+            <p style={{ fontSize: 11.5, color: "var(--sru-muted)", margin: 0 }}>
               {t("usersPaginationShowing", {
                 from: pageStart + 1,
                 to: Math.min(pageStart + PAGE_SIZE, filtered.length),
@@ -146,19 +146,19 @@ export function AdminUsersTable({
                 <button
                   type="button"
                   className="sru-icon-action"
-                  style={{ width: "auto", padding: "6px 12px", fontSize: 12.5 }}
+                  style={{ width: "auto", padding: "6px 12px", fontSize: 11.5 }}
                   disabled={currentPage <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
                   {t("usersPaginationPrev")}
                 </button>
-                <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
+                <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
                   {t("usersPaginationPage", { page: currentPage, totalPages })}
                 </span>
                 <button
                   type="button"
                   className="sru-icon-action"
-                  style={{ width: "auto", padding: "6px 12px", fontSize: 12.5 }}
+                  style={{ width: "auto", padding: "6px 12px", fontSize: 11.5 }}
                   disabled={currentPage >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 >

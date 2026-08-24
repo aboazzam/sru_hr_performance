@@ -68,7 +68,7 @@ export function RecruitmentPlanHeaderActions({
         </span>
       )}
       {state?.status === "success" && state.createdCount !== undefined && (
-        <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+        <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
           {t("importDone", { created: state.createdCount, skipped: state.skippedCount ?? 0 })}
         </span>
       )}

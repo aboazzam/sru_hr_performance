@@ -150,7 +150,7 @@ export function CareerPathEdgesManager({
       </div>
 
       {edges.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noEdgesYet")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("noEdgesYet")}</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
           {edges.map((edge) => (
@@ -171,7 +171,7 @@ export function CareerPathEdgesManager({
                   {t("gradeLabel", { grade: edge.otherGradeLevel })}
                 </span>
               </span>
-              {edge.requirementsAr && <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>{edge.requirementsAr}</span>}
+              {edge.requirementsAr && <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{edge.requirementsAr}</span>}
               {canEdit && (
                 <button
                   type="button"

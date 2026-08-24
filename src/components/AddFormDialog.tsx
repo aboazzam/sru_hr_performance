@@ -92,8 +92,8 @@ export function AddFormDialog({
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div>
-            {heading && <h3 style={{ fontSize: 16, fontWeight: 700 }}>{heading}</h3>}
-            {subtitle && <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{subtitle}</span>}
+            {heading && <h3 style={{ fontSize: 14, fontWeight: 700 }}>{heading}</h3>}
+            {subtitle && <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{subtitle}</span>}
           </div>
           <button
             type="button"

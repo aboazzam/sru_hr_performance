@@ -34,7 +34,7 @@ export default async function EvaluationDetailPage({
   if (!evaluation) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNotFound")}</p>
       </div>
     );
   }
@@ -94,16 +94,16 @@ export default async function EvaluationDetailPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {employee?.full_name_ar ?? "—"}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
         {employee?.employee_number ?? "—"} — {cycle?.name_ar ?? "—"} — {evalTypeLabels[evalType]}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
       <div className="sru-card" style={{ padding: 16, marginBottom: 24 }}>
-        <p style={{ fontSize: 14, marginBottom: 12 }}>
+        <p style={{ fontSize: 13, marginBottom: 12 }}>
           <strong>{t("stateLabel")}</strong> {evaluationStateLabels[state]}
         </p>
         <EvaluationStateAction evaluationId={evaluation.id} currentState={state} />
@@ -114,11 +114,11 @@ export default async function EvaluationDetailPage({
         </div>
       </div>
 
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
         {t("goalsHeading")}
       </h2>
       {!goals || goals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 24 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 24 }}>
           {t("goalsEmpty")}
         </p>
       ) : (
@@ -146,11 +146,11 @@ export default async function EvaluationDetailPage({
         </div>
       )}
 
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 8 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
         {t("bauTasksHeading")}
       </h2>
       {!bauTasks || bauTasks.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("bauTasksEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("bauTasksEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">

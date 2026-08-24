@@ -59,11 +59,11 @@ export default async function PlanFinanceReviewPage({
           a bare link, easy to miss on a screen whose whole job is one save. */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
           {plan && (
-            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
               {plan.name_ar} — {plan.plan_year}
             </p>
           )}
@@ -76,9 +76,9 @@ export default async function PlanFinanceReviewPage({
 
       <div style={{ marginTop: 20 }}>
         {!canReview ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
         ) : !plan ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("planNotFound")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planNotFound")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="sru-card">
@@ -96,25 +96,25 @@ export default async function PlanFinanceReviewPage({
             <div className="sru-card">
               <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("totalHeadcount")}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("totalHeadcount")}</div>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>
                     {formatNumber(totals.totalHeadcount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("totalAnnualCost")}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("totalAnnualCost")}</div>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>
                     {formatNumber(totals.totalAnnualCost)}
                   </div>
                 </div>
               </div>
               {totals.itemsWithoutCost > 0 && (
-                <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>
+                <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>
                   {t("itemsWithoutCostNote", { count: totals.itemsWithoutCost })}
                 </p>
               )}
               {plan.hr_recommendation && (
-                <p style={{ fontSize: 12.5, marginTop: 10 }}>
+                <p style={{ fontSize: 11.5, marginTop: 10 }}>
                   <span style={{ color: "var(--sru-muted)" }}>{t("hrRecommendationLabel")} </span>
                   {plan.hr_recommendation}
                 </p>

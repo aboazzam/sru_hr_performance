@@ -154,7 +154,7 @@ export function ConsolidateRequestsPanel({
         </div>
 
         {requests.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noRequests")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noRequests")}</p>
         ) : (
           <div className="table-scroll">
             <table className="admin-matrix">
@@ -254,7 +254,7 @@ export function ConsolidateRequestsPanel({
             {t("mergeButton", { count: selected.length })}
           </button>
           {state?.status === "success" && state.createdCount !== undefined && (
-            <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+            <span role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
               {t("mergeDone", { created: state.createdCount, skipped: state.skippedCount ?? 0 })}
             </span>
           )}
@@ -273,7 +273,7 @@ export function ConsolidateRequestsPanel({
           </span>
           <h2>{t("recommendationHeading")}</h2>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>
           {t("recommendationHint")}
         </p>
         <textarea

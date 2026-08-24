@@ -128,12 +128,12 @@ export function ExportMenu({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{labels.columnsHeading}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{labels.columnsHeading}</h3>
           <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={labels.close}>
             ×
           </button>
         </div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{labels.columnsNote}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>{labels.columnsNote}</p>
 
         <div
           style={{
@@ -146,7 +146,7 @@ export function ExportMenu({
           }}
         >
           {columns.map((column) => (
-            <label key={column.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+            <label key={column.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
               <input
                 type="checkbox"
                 checked={selected.has(column.key)}

@@ -128,7 +128,7 @@ export function AddRecruitmentPlanItemForm({
           ×
         </button>
       </div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 10 }}>{t("addItemNote")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 10 }}>{t("addItemNote")}</p>
 
       <div className="sru-formgrid">
         <label className="sru-field">

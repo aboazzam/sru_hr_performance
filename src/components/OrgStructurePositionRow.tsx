@@ -143,12 +143,12 @@ export function OrgStructurePositionRow({
 
   return (
     <tr>
-      <td style={{ verticalAlign: "top", fontSize: 13 }}>{levelName}</td>
+      <td style={{ verticalAlign: "top", fontSize: 12 }}>{levelName}</td>
       <td style={{ verticalAlign: "top" }}>
         {isRootLevel ? (
-          <span style={{ fontSize: 13 }}>{parentName}</span>
+          <span style={{ fontSize: 12 }}>{parentName}</span>
         ) : parentOptions.length === 0 ? (
-          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noParentOptions")}</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noParentOptions")}</span>
         ) : (
           <div className="sru-position-edit-field">
             <label htmlFor={`row-parent-${positionId}`}>{t("positionParentLabel")}</label>
@@ -183,15 +183,15 @@ export function OrgStructurePositionRow({
           </select>
         </div>
       </td>
-      <td style={{ verticalAlign: "top", fontSize: 13 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>
+      <td style={{ verticalAlign: "top", fontSize: 12 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>
       <td>
         {assignments.length === 0 ? (
-          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>—</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>—</span>
         ) : (
           <ul style={{ display: "flex", flexDirection: "column", gap: 4, listStyle: "none" }}>
             {assignments.map((assignment) => (
               <li key={assignment.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13 }}>{assignment.label}</span>
+                <span style={{ fontSize: 12 }}>{assignment.label}</span>
                 <button
                   type="button"
                   disabled={isUnassigning && unassigningId === assignment.id}
@@ -209,11 +209,11 @@ export function OrgStructurePositionRow({
       </td>
       <td>
         {orgUnitEmployeeLabels.length === 0 ? (
-          <span style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>—</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>—</span>
         ) : (
           <ul style={{ display: "flex", flexDirection: "column", gap: 4, listStyle: "none", margin: 0, padding: 0 }}>
             {orgUnitEmployeeLabels.map((label) => (
-              <li key={label} style={{ fontSize: 13 }}>
+              <li key={label} style={{ fontSize: 12 }}>
                 {label}
               </li>
             ))}

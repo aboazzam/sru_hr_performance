@@ -121,7 +121,7 @@ export function InitiativeAssignmentsEditor({
   return (
     <div className="sru-position-edit-card" style={{ marginTop: 14 }}>
       <span className="sru-position-edit-title">{t("formHeading")}</span>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 10 }}>{t("formNote")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 10 }}>{t("formNote")}</p>
 
       <div className="table-scroll">
         <table className="admin-matrix">
@@ -168,7 +168,7 @@ export function InitiativeAssignmentsEditor({
                 </td>
                 <td>
                   {row.role === "supporter" ? (
-                    <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("noPercentage")}</span>
+                    <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noPercentage")}</span>
                   ) : (
                     <input
                       type="number"
@@ -215,7 +215,7 @@ export function InitiativeAssignmentsEditor({
         </button>
         <span
           style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 700,
             color: Math.abs(total - 100) < 0.001 ? "inherit" : "var(--sru-danger, #b91c1c)",
           }}
@@ -223,11 +223,11 @@ export function InitiativeAssignmentsEditor({
           {t("totalLabel", { total: Number(total.toFixed(2)) })}
         </span>
         {leadCount !== 1 && rows.length > 0 && (
-          <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorNoLead")}</span>
+          <span style={{ fontSize: 11.5, color: "var(--sru-danger, #b91c1c)" }}>{t("errorNoLead")}</span>
         )}
-        {duplicateUnit && <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorDuplicateUnit")}</span>}
+        {duplicateUnit && <span style={{ fontSize: 11.5, color: "var(--sru-danger, #b91c1c)" }}>{t("errorDuplicateUnit")}</span>}
         {missingPercentage && (
-          <span style={{ fontSize: 12, color: "var(--sru-danger, #b91c1c)" }}>{t("errorMissingPercentage")}</span>
+          <span style={{ fontSize: 11.5, color: "var(--sru-danger, #b91c1c)" }}>{t("errorMissingPercentage")}</span>
         )}
       </div>
 

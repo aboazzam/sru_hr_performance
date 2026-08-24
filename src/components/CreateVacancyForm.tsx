@@ -215,7 +215,7 @@ export function CreateVacancyForm({
               placeholder={t("requirementsPlaceholder")}
             />
             {selectedJobTitle && (
-              <p style={{ fontSize: 12, color: "var(--sru-muted)", marginTop: 6 }}>
+              <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginTop: 6 }}>
                 {sourceKind === "none" ? (
                   t("requirementsNoSource")
                 ) : requirements === sourceRequirements ? (

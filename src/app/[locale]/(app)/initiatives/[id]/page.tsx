@@ -72,7 +72,7 @@ export default async function InitiativePage({
   if (!initiative) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNotFound")}</p>
       </div>
     );
   }
@@ -291,7 +291,7 @@ export default async function InitiativePage({
   );
 
   const cell = (label: string, value: string) => (
-    <div style={{ display: "flex", gap: 6, fontSize: 13 }}>
+    <div style={{ display: "flex", gap: 6, fontSize: 12 }}>
       <span style={{ color: "var(--sru-muted)", whiteSpace: "nowrap" }}>{label}:</span>
       <span style={{ fontWeight: 600 }}>{value}</span>
     </div>
@@ -368,7 +368,7 @@ export default async function InitiativePage({
       <div className="sru-card sru-initiative-sheet">
         <header className="sru-initiative-sheet-head">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 className="sru-title" style={{ fontSize: 22 }}>
+            <h1 className="sru-title" style={{ fontSize: 19 }}>
               {initiative.title_ar}
             </h1>
             {initiative.title_en && (
@@ -419,9 +419,9 @@ export default async function InitiativePage({
           <section className="sru-initiative-block is-wide">
             <h2>{t("definitionLabel")}</h2>
             {initiative.description_ar ? (
-              <p style={{ fontSize: 13, lineHeight: 1.9 }}>{initiative.description_ar}</p>
+              <p style={{ fontSize: 12, lineHeight: 1.9 }}>{initiative.description_ar}</p>
             ) : (
-              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+              <p style={{ fontSize: 12, color: "var(--sru-muted)" }}>—</p>
             )}
           </section>
 
@@ -445,7 +445,7 @@ export default async function InitiativePage({
           <section className="sru-initiative-block">
             <h2>{t("outcomesLabel")}</h2>
             {outcomes.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+              <p style={{ fontSize: 12, color: "var(--sru-muted)" }}>—</p>
             ) : (
               <ul className="sru-initiative-outcomes">
                 {outcomes.map((line, i) => (
@@ -458,7 +458,7 @@ export default async function InitiativePage({
           <section className="sru-initiative-block">
             <h2>{t("dependenciesLabel")}</h2>
             {dependencies.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>—</p>
+              <p style={{ fontSize: 12, color: "var(--sru-muted)" }}>—</p>
             ) : (
               <ul className="sru-initiative-outcomes">
                 {dependencies.map((d) => (
@@ -479,16 +479,16 @@ export default async function InitiativePage({
           <div
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}
           >
-            <h2 style={{ fontSize: 15, fontWeight: 700 }}>{t("activitiesHeading")}</h2>
+            <h2 style={{ fontSize: 13.5, fontWeight: 700 }}>{t("activitiesHeading")}</h2>
             {canEditActivities && (
               <InitiativeActivityAdd initiativeId={initiative.id} employeeOptions={employeeOptions} />
             )}
           </div>
           {activities.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noActivities")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("noActivities")}</p>
           ) : (
             <div className="table-scroll">
-              <table className="admin-matrix" style={{ fontSize: 12 }}>
+              <table className="admin-matrix" style={{ fontSize: 11.5 }}>
                 <thead>
                   <tr>
                     <th rowSpan={3} style={{ minWidth: 240 }}>
@@ -567,7 +567,7 @@ export default async function InitiativePage({
             </div>
           )}
           {activities.length > 0 && months.length === 0 && (
-            <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8 }}>{t("noTimeline")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>{t("noTimeline")}</p>
           )}
         </div>
       </div>

@@ -36,19 +36,19 @@ export function UpdateProgressForm({
         step="0.01"
         defaultValue={currentActualValue ?? undefined}
         aria-label={t("updateProgressLabel")}
-        style={{ width: 90, padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)" }}
+        style={{ width: 90, padding: "4px 6px", borderRadius: 0, border: "1px solid var(--border)" }}
       />
-      <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>{unitAr}</span>
-      <button type="submit" disabled={pending} className="sru-btn" style={{ fontSize: 12, padding: "4px 10px" }}>
+      <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{unitAr}</span>
+      <button type="submit" disabled={pending} className="sru-btn" style={{ fontSize: 11.5, padding: "4px 10px" }}>
         {t("updateProgressButton")}
       </button>
       {state?.status === "error" && (
-        <span role="alert" style={{ fontSize: 11, color: "#b91c1c" }}>
+        <span role="alert" style={{ fontSize: 10.5, color: "#b91c1c" }}>
           ✕
         </span>
       )}
       {state?.status === "success" && (
-        <span role="status" style={{ fontSize: 11, color: "#15803d" }}>
+        <span role="status" style={{ fontSize: 10.5, color: "#15803d" }}>
           ✓
         </span>
       )}

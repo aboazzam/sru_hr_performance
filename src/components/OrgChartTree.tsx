@@ -225,7 +225,7 @@ export function OrgChartTree({
   }, [positions, levels]);
 
   if (positions.length === 0) {
-    return <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{emptyLabel}</p>;
+    return <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{emptyLabel}</p>;
   }
 
   return (

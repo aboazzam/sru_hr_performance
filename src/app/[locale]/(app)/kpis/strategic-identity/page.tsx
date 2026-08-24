@@ -49,10 +49,10 @@ export default async function StrategicIdentityPage() {
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="strategicPlan" current="kpis/strategic-identity" />
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <StrategicIdentityForm canEdit={canEdit} identity={identity ?? null} />
@@ -67,7 +67,7 @@ export default async function StrategicIdentityPage() {
           </div>
         </div>
         {values.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("valuesEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("valuesEmpty")}</p>
         ) : (
           values.map((v) => (
             <StrategicValueRow key={v.id} canEdit={canEdit} valueId={v.id} initialTitleAr={v.title_ar} initialTitleEn={v.title_en} initialDescriptionAr={v.description_ar} />

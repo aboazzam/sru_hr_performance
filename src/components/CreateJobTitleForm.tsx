@@ -214,7 +214,7 @@ export function CreateJobTitleForm({
           </div>
         </div>
         <StagedCompetenciesPicker value={competencies} onChange={setCompetencies} allCompetencies={allCompetencies} />
-        {!allLevelsChosen && <p style={{ fontSize: 12.5, color: "var(--sru-muted)", marginTop: 8 }}>{t("levelsRequiredNote")}</p>}
+        {!allLevelsChosen && <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginTop: 8 }}>{t("levelsRequiredNote")}</p>}
       </section>
 
       <section className="sru-formsection">
@@ -227,7 +227,7 @@ export function CreateJobTitleForm({
             <span>{t("linkSubtitle")}</span>
           </div>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, marginBottom: linkEnabled ? 12 : 0 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: linkEnabled ? 12 : 0 }}>
           <input type="checkbox" checked={linkEnabled} onChange={(e) => setLinkEnabled(e.target.checked)} />
           {t("linkEnableLabel")}
         </label>

@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { updateStrategicValue, deleteStrategicValue } from "@/app/[locale]/(app)/kpis/strategic-identity/actions";
 
 const inputClass =
-  "px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+  "px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 export function StrategicValueRow({
   canEdit,
@@ -85,14 +85,14 @@ export function StrategicValueRow({
   if (!isEditing) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--sru-border)" }}>
-        <strong style={{ fontSize: 14 }}>{initialTitleAr}</strong>
+        <strong style={{ fontSize: 13 }}>{initialTitleAr}</strong>
         {initialTitleEn && (
           <span className="sru-name-en">
             {initialTitleEn}
           </span>
         )}
         {initialDescriptionAr && (
-          <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>— {initialDescriptionAr}</span>
+          <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>— {initialDescriptionAr}</span>
         )}
         {canEdit && (
           <div className="sru-icon-action-group">
@@ -105,7 +105,7 @@ export function StrategicValueRow({
           </div>
         )}
         {error && (
-          <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
+          <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11 }}>
             {t(errorMessageKeys[error] ?? "errorUnknown")}
           </span>
         )}
@@ -137,7 +137,7 @@ export function StrategicValueRow({
         </button>
       </div>
       {error && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
+        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </span>
       )}

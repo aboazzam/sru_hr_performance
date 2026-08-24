@@ -32,7 +32,7 @@ export function OrgIdentityForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const inputClass =
-    "w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-full px-4 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -81,7 +81,7 @@ export function OrgIdentityForm({
       <div>
         <label className="block text-sm font-medium mb-1">{t("logoUrlLabel")}</label>
         <input type="hidden" name="logoUrl" value={logoUrl} />
-        <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginBottom: 8 }}>{t("logoUploadInstructions")}</p>
+        <p style={{ fontSize: 11, color: "var(--sru-muted)", marginBottom: 8 }}>{t("logoUploadInstructions")}</p>
         {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- Storage public URL, not a static asset next/image can optimize without a remote-pattern config.
           <img src={logoUrl} alt="" style={{ maxHeight: 64, marginBottom: 8, display: "block" }} />
@@ -128,7 +128,7 @@ export function OrgIdentityForm({
           {identity?.primary_color && (
             <span
               aria-hidden
-              style={{ width: 28, height: 28, borderRadius: 6, background: identity.primary_color, border: "1px solid var(--sru-border)", flexShrink: 0 }}
+              style={{ width: 28, height: 28, borderRadius: 0, background: identity.primary_color, border: "1px solid var(--sru-border)", flexShrink: 0 }}
             />
           )}
         </div>
@@ -149,7 +149,7 @@ export function OrgIdentityForm({
           {identity?.secondary_color && (
             <span
               aria-hidden
-              style={{ width: 28, height: 28, borderRadius: 6, background: identity.secondary_color, border: "1px solid var(--sru-border)", flexShrink: 0 }}
+              style={{ width: 28, height: 28, borderRadius: 0, background: identity.secondary_color, border: "1px solid var(--sru-border)", flexShrink: 0 }}
             />
           )}
         </div>
@@ -170,12 +170,12 @@ export function OrgIdentityForm({
         <button
           type="submit"
           disabled={pending || uploading}
-          className="w-full py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
+          className="w-full py-2 bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
         >
           {pending ? t("submitting") : t("submit")}
         </button>
       ) : (
-        <p style={{ fontSize: 13, color: "var(--sru-muted)" }}>{t("viewOnlyNote")}</p>
+        <p style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("viewOnlyNote")}</p>
       )}
     </form>
   );

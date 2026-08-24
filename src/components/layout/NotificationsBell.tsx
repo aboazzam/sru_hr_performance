@@ -78,7 +78,7 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
               marginInlineStart: 6,
               background: "#b91c1c",
               color: "#fff",
-              fontSize: 11,
+              fontSize: 10.5,
               padding: "0 6px",
             }}
           >
@@ -99,12 +99,12 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
               borderBottom: "1px solid var(--sru-border)",
             }}
           >
-            <strong style={{ fontSize: 13 }}>{t("notifications")}</strong>
+            <strong style={{ fontSize: 12 }}>{t("notifications")}</strong>
             {unreadCount > 0 && (
               <button
                 type="button"
                 className="sru-btn"
-                style={{ fontSize: 11, padding: "2px 8px" }}
+                style={{ fontSize: 10.5, padding: "2px 8px" }}
                 disabled={pending}
                 onClick={markAllRead}
               >
@@ -114,14 +114,14 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
           </div>
 
           {notifications.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, padding: "10px" }}>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, padding: "10px" }}>
               {t("noNotifications")}
             </p>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 340, overflowY: "auto" }}>
               {notifications.map((notification) => {
                 const body = (
-                  <span style={{ fontSize: 12.5, lineHeight: 1.7 }}>{notification.message_ar}</span>
+                  <span style={{ fontSize: 11.5, lineHeight: 1.7 }}>{notification.message_ar}</span>
                 );
                 return (
                   <li

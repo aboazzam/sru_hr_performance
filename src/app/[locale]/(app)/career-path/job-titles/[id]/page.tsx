@@ -42,7 +42,7 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
   if (!canEdit) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPermission")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPermission")}</p>
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
   if (!jt) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorNotFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNotFound")}</p>
       </div>
     );
   }
@@ -186,7 +186,7 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {jt.name_ar}
             <span className="sru-chip sru-en" style={{ marginInlineStart: 10 }}>
               {t("gradeLabel", { grade: jt.grade_level })}
@@ -202,7 +202,7 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
             </span>
           </h1>
           {jt.name_en && <p className="sru-name-en is-lg">{jt.name_en}</p>}
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {jt.job_families?.name_ar ?? "—"}
             {jt.qualification_required ? ` · ${jt.qualification_required.replace(/\n/g, "، ")}` : ""}
           </p>

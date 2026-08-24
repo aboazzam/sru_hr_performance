@@ -62,7 +62,7 @@ export default async function UserActivityPage({
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
         <GroupTabs groupKey="administration" current="admin/user-activity" />
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -136,21 +136,21 @@ export default async function UserActivityPage({
   const distinctLoginActors = new Set(loginEvents.filter((e) => e.actor_id).map((e) => e.actor_id));
 
   const cardStyle: React.CSSProperties = { padding: 16, minWidth: 200 };
-  const numberStyle: React.CSSProperties = { fontSize: 28, fontWeight: 800, color: "var(--sru-purple)" };
-  const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--sru-muted)" };
+  const numberStyle: React.CSSProperties = { fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "var(--sru-muted)" };
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <GroupTabs groupKey="administration" current="admin/user-activity" />
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>{t("subtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       <form method="get" className="no-print" style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 24 }}>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{t("periodLabel")}</label>
+          <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 4 }}>{t("periodLabel")}</label>
           <select name="period" defaultValue={period} style={{ padding: "8px 10px", borderRadius: "var(--sru-radius)", border: "1px solid var(--sru-border)" }}>
             <option value="day">{t("periodDay")}</option>
             <option value="week">{t("periodWeek")}</option>
@@ -167,7 +167,7 @@ export default async function UserActivityPage({
         <button type="submit" className="sru-btn sru-btn-primary">
           {t("applyButton")}
         </button>
-        <p style={{ fontSize: 11.5, color: "var(--sru-muted)", width: "100%", margin: 0 }}>{t("customRangeNote")}</p>
+        <p style={{ fontSize: 11, color: "var(--sru-muted)", width: "100%", margin: 0 }}>{t("customRangeNote")}</p>
       </form>
 
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
@@ -188,10 +188,10 @@ export default async function UserActivityPage({
       </div>
 
       <div className="sru-card" style={{ padding: 16, marginBottom: 32, background: "var(--sru-purple-light)" }}>
-        <p style={{ fontSize: 13, color: "var(--sru-ink)" }}>{t("loginTrackingNote")}</p>
+        <p style={{ fontSize: 12, color: "var(--sru-ink)" }}>{t("loginTrackingNote")}</p>
       </div>
 
-      <h2 className="sru-title" style={{ fontSize: 18, marginBottom: 12 }}>
+      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
         {t("tableHeading")}
       </h2>
       <div className="sru-card">

@@ -30,7 +30,7 @@ export function DeleteEmployeeButton({ profileId }: { profileId: string }) {
         <Trash2 size={15} />
       </button>
       {state?.status === "error" && (
-        <span role="alert" style={{ color: "#b91c1c", fontSize: 11 }}>
+        <span role="alert" style={{ color: "#b91c1c", fontSize: 10.5 }}>
           {t("actionDeleteError")}
         </span>
       )}

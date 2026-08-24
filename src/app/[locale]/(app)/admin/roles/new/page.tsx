@@ -20,11 +20,11 @@ export default async function CreateRolePage() {
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px", maxWidth: 1180, margin: "0 auto" }}>
       <GroupTabs groupKey="administration" current="admin" />
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("createRoleTitle")}
       </h1>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
-      {canManage ? <CreateRoleForm /> : <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>}
+      {canManage ? <CreateRoleForm /> : <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>}
     </div>
   );
 }

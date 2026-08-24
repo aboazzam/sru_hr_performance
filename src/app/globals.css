@@ -2,6 +2,13 @@
 @import "../styles/sru-ui.css";
 @import "../styles/sru-print.css";
 
+/* Every corner in this app is a right angle (2026-08-24). The kit reads its
+   button and input radius from this token, so zeroing it here squares both
+   without touching sru-ui.css. */
+:root {
+  --sru-radius: 0;
+}
+
 /* Single source of truth: SRU_IDENTITY.md / sru-ui.css.
    These names are kept for existing components; values now alias the
    official --sru-* tokens instead of ad hoc hex. Light only — no .dark
@@ -63,7 +70,7 @@ html[dir="ltr"] body {
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
 }
 
@@ -81,7 +88,7 @@ html[dir="ltr"] body {
   border: none;
   color: inherit;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -90,9 +97,9 @@ html[dir="ltr"] body {
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 20px;
+  border-radius: 0;
   padding: 4px 12px;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: inherit;
   text-decoration: none;
@@ -126,6 +133,8 @@ html[dir="ltr"] body {
   justify-content: center;
   width: 30px;
   height: 30px;
+  /* A person is round here. The rest of the system is square (2026-08-24);
+     these two are the exception, because they carry a face. */
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.12);
@@ -142,7 +151,7 @@ html[dir="ltr"] body {
   background: var(--surface);
   color: var(--sru-ink);
   border: 1px solid var(--sru-border);
-  border-radius: 10px;
+  border-radius: 0;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   padding: 6px;
   z-index: 40;
@@ -150,7 +159,7 @@ html[dir="ltr"] body {
 
 .sru-user-menu-name {
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--sru-ink);
   border-bottom: 1px solid var(--sru-border);
@@ -160,10 +169,10 @@ html[dir="ltr"] body {
 .sru-user-menu-item {
   display: block;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--sru-ink);
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .sru-user-menu-item:hover {
@@ -185,7 +194,7 @@ html[dir="ltr"] body {
   border-bottom: 2px solid transparent;
   color: var(--sru-muted);
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   padding: 10px 4px;
   margin-inline-end: 22px;
@@ -214,7 +223,7 @@ html[dir="ltr"] body {
 
 .sru-admin-action strong {
   color: var(--sru-purple);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* ===== Competency framework page ===== */
@@ -225,7 +234,7 @@ html[dir="ltr"] body {
   justify-content: space-between;
   gap: 12px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   list-style: none;
 }
 
@@ -246,7 +255,7 @@ html[dir="ltr"] body {
 }
 
 .competency-level h4 {
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-purple);
   margin-bottom: 6px;
@@ -257,7 +266,7 @@ html[dir="ltr"] body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* ===== Org chart page ===== */
@@ -278,7 +287,7 @@ html[dir="ltr"] body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
   list-style: none;
   padding: 4px 0;
@@ -289,16 +298,16 @@ html[dir="ltr"] body {
 }
 
 .org-count {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--sru-muted);
   background: rgba(107, 90, 128, 0.12);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 1px 8px;
 }
 
 .org-leaf {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--sru-ink);
   padding: 4px 0;
 }
@@ -306,7 +315,7 @@ html[dir="ltr"] body {
 /* ===== Admin / roles & permissions page ===== */
 .admin-role-code {
   margin-inline-start: 6px;
-  font-size: 11px;
+  font-size: 10.5px;
   opacity: 0.65;
 }
 
@@ -321,7 +330,7 @@ table.admin-matrix {
 }
 
 .admin-matrix th {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-muted);
   text-align: start;
@@ -340,13 +349,13 @@ table.admin-matrix {
 }
 
 .admin-matrix-state {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .admin-matrix-chip {
-  font-size: 12px;
+  font-size: 11.5px;
   white-space: nowrap;
 }
 
@@ -381,7 +390,7 @@ table.admin-matrix {
 */
 dialog.sru-modal {
   border: none;
-  border-radius: var(--sru-radius);
+  border-radius: 0;
   padding: 22px;
   width: min(520px, calc(100vw - 32px));
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
@@ -394,7 +403,7 @@ dialog.sru-modal::backdrop {
 .sru-modal-close {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
   color: var(--sru-muted);
@@ -425,7 +434,7 @@ dialog.sru-modal::backdrop {
   min-width: 240px;
   background: var(--surface);
   border: 1px solid var(--sru-border);
-  border-radius: 10px;
+  border-radius: 0;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   padding: 12px;
   z-index: 10;
@@ -458,9 +467,9 @@ dialog.sru-modal::backdrop {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 0;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   border-inline-start: 3px solid transparent;
@@ -491,7 +500,7 @@ dialog.sru-modal::backdrop {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--sru-muted);
   text-decoration: none;
@@ -556,15 +565,15 @@ dialog.sru-modal::backdrop {
   gap: 4px;
   width: 190px;
   padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 12.5px;
+  border-radius: 0;
+  font-size: 11.5px;
   font-weight: 700;
   text-align: center;
   box-shadow: 0 4px 10px rgba(80, 30, 140, 0.14);
   white-space: normal;
 }
 .sru-orgchart-node-nameen {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   opacity: 0.9;
   direction: ltr;
@@ -574,7 +583,7 @@ dialog.sru-modal::backdrop {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   opacity: 0.95;
 }
@@ -582,7 +591,7 @@ dialog.sru-modal::backdrop {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   opacity: 0.9;
 }
@@ -605,7 +614,7 @@ dialog.sru-modal::backdrop {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 0;
   border: 1px solid var(--sru-border);
   background: var(--surface);
   color: var(--sru-muted);
@@ -650,7 +659,7 @@ dialog.sru-modal::backdrop {
 .sru-position-edit-card {
   background: var(--sru-purple-light);
   border: 1.5px solid var(--sru-purple);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px 16px 12px;
   margin: 6px 0;
 }
@@ -661,7 +670,7 @@ dialog.sru-modal::backdrop {
 }
 .sru-position-edit-grouplabel {
   display: block;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.03em;
   color: var(--sru-purple);
@@ -679,7 +688,7 @@ dialog.sru-modal::backdrop {
 }
 .sru-position-edit-field label {
   display: block;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--sru-muted);
   margin-bottom: 4px;
@@ -689,9 +698,9 @@ dialog.sru-modal::backdrop {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--sru-border);
-  border-radius: 8px;
+  border-radius: 0;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   background: #fff;
   color: var(--sru-ink);
 }
@@ -702,7 +711,7 @@ dialog.sru-modal::backdrop {
 }
 .sru-position-edit-field p {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--sru-muted);
   padding: 8px 0 2px;
 }
@@ -733,7 +742,7 @@ dialog.sru-modal::backdrop {
 }
 .sru-draggable-item.drag-over > .sru-drag-handle-col {
   box-shadow: 0 0 0 2px var(--sru-purple);
-  border-radius: 12px;
+  border-radius: 0;
 }
 .sru-drag-handle-col {
   flex: 1;
@@ -747,7 +756,7 @@ dialog.sru-modal::backdrop {
   width: 26px;
   height: 26px;
   margin-top: 16px;
-  border-radius: 6px;
+  border-radius: 0;
   color: var(--sru-muted);
   cursor: grab;
 }
@@ -765,7 +774,7 @@ dialog.sru-modal::backdrop {
   height: 34px;
   padding: 0;
   border: 1px solid var(--sru-border);
-  border-radius: 8px;
+  border-radius: 0;
   cursor: pointer;
   background: none;
 }
@@ -773,7 +782,7 @@ dialog.sru-modal::backdrop {
   padding: 2px;
 }
 .sru-color-swatch::-webkit-color-swatch {
-  border-radius: 6px;
+  border-radius: 0;
   border: none;
 }
 .sru-color-swatch-pick {
@@ -781,7 +790,7 @@ dialog.sru-modal::backdrop {
   height: 22px;
   padding: 0;
   border: 1px solid var(--sru-border);
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
 }
 .sru-color-swatch-pick:hover {
@@ -811,7 +820,7 @@ dialog.sru-modal::backdrop {
   background: var(--sru-purple-light);
   color: var(--sru-purple-dark);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   padding: 8px 12px;
 }
 
@@ -839,11 +848,11 @@ dialog.sru-modal::backdrop {
   position: absolute;
   top: 20px;
   left: 20px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-purple);
   border: 1px solid var(--sru-purple);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 6px 12px;
   background: #fff;
   text-decoration: none;
@@ -861,7 +870,7 @@ dialog.sru-modal::backdrop {
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 22px;
+  border-radius: 0;
   padding: 34px 30px 30px;
   box-shadow: 0 30px 50px -30px rgba(80, 30, 140, 0.4);
 }
@@ -880,12 +889,12 @@ dialog.sru-modal::backdrop {
   margin-bottom: 6px;
 }
 .sru-auth-brand h1 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--sru-purple-dark);
 }
 .sru-auth-brand p {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: var(--sru-muted);
 }
 
@@ -896,11 +905,11 @@ dialog.sru-modal::backdrop {
 .sru-field-float input {
   width: 100%;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--sru-ink);
   background: rgba(247, 245, 251, 0.7);
   border: 1.4px solid rgba(80, 30, 140, 0.14);
-  border-radius: 14px;
+  border-radius: 0;
   padding: 20px 14px 8px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -915,7 +924,7 @@ dialog.sru-modal::backdrop {
   position: absolute;
   top: 15px;
   inset-inline-start: 15px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--sru-muted);
   font-weight: 600;
   pointer-events: none;
@@ -929,7 +938,7 @@ dialog.sru-modal::backdrop {
 .sru-field-float input:focus ~ label,
 .sru-field-float input:not(:placeholder-shown) ~ label {
   top: 6px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
   color: var(--sru-purple);
 }
@@ -960,11 +969,11 @@ dialog.sru-modal::backdrop {
   border: none;
   font-family: inherit;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   color: #fff;
   cursor: pointer;
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: 0;
   background: linear-gradient(90deg, var(--sru-purple), var(--sru-purple-dark));
   box-shadow: 0 14px 24px -12px rgba(80, 30, 140, 0.55);
   transition: filter 0.15s ease, transform 0.05s ease;
@@ -986,7 +995,7 @@ dialog.sru-modal::backdrop {
 
 .sru-auth-link-row {
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 18px;
 }
 .sru-auth-link-row a {
@@ -999,8 +1008,8 @@ dialog.sru-modal::backdrop {
 }
 
 .sru-auth-alert {
-  font-size: 12.5px;
-  border-radius: 10px;
+  font-size: 11.5px;
+  border-radius: 0;
   padding: 10px 12px;
   margin-bottom: 14px;
   display: flex;
@@ -1023,7 +1032,7 @@ dialog.sru-modal::backdrop {
 
 .sru-auth-status {
   text-align: center;
-  font-size: 13.5px;
+  font-size: 12.5px;
   color: var(--sru-muted);
   padding: 10px 0 2px;
 }
@@ -1036,7 +1045,7 @@ dialog.sru-modal::backdrop {
 .sru-formsection {
   background: #fff;
   border: 1px solid var(--sru-border);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 20px 20px 6px;
   margin-bottom: 16px;
 }
@@ -1049,7 +1058,7 @@ dialog.sru-modal::backdrop {
 .sru-formsection-badge {
   width: 34px;
   height: 34px;
-  border-radius: 11px;
+  border-radius: 0;
   background: linear-gradient(135deg, var(--sru-purple-light), var(--sru-blue-light));
   color: var(--sru-purple);
   display: flex;
@@ -1058,13 +1067,13 @@ dialog.sru-modal::backdrop {
   flex-shrink: 0;
 }
 .sru-formsection-head h3 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--sru-ink);
 }
 .sru-formsection-head span {
   display: block;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--sru-muted);
   font-weight: 500;
   margin-top: 1px;
@@ -1093,10 +1102,10 @@ dialog.sru-modal::backdrop {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 700;
   border: 1.4px solid var(--sru-border);
-  border-radius: 999px;
+  border-radius: 0;
   padding: 7px 14px;
   background: #fff;
   color: var(--sru-muted);
@@ -1119,7 +1128,7 @@ dialog.sru-modal::backdrop {
   max-height: 190px;
   overflow-y: auto;
   border: 1px solid var(--sru-border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 10px 12px;
   flex-direction: column;
   gap: 6px;
@@ -1132,7 +1141,7 @@ dialog.sru-modal::backdrop {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 500;
 }
 
@@ -1167,7 +1176,7 @@ dialog.sru-modal::backdrop {
   gap: 8px;
 }
 .sru-user-greeting {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -1307,10 +1316,10 @@ th.sru-en {
   width: max-content;
   max-width: 240px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--sru-purple-dark);
   color: #fff;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 400;
   line-height: 1.55;
   text-align: right;
@@ -1444,11 +1453,11 @@ tr.sru-row-link:focus-within > td {
   gap: 8px;
   padding: 9px 11px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   background: #fff;
   color: inherit;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: var(--sru-radius, 6px);
+  border-radius: 0;
   cursor: pointer;
   text-align: start;
 }
@@ -1471,7 +1480,7 @@ tr.sru-row-link:focus-within > td {
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--sru-muted);
 }
 .sru-datefield-clear:hover {
@@ -1489,7 +1498,7 @@ tr.sru-row-link:focus-within > td {
   z-index: 60;
   background: #fff;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 10px;
+  border-radius: 0;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
   padding: 10px;
   min-width: 258px;
@@ -1502,10 +1511,10 @@ tr.sru-row-link:focus-within > td {
 }
 .sru-datefield-head select {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   padding: 4px 6px;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 6px;
+  border-radius: 0;
   background: #fff;
 }
 .sru-datefield-nav {
@@ -1515,7 +1524,7 @@ tr.sru-row-link:focus-within > td {
   width: 28px;
   height: 28px;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 6px;
+  border-radius: 0;
   background: #fff;
   cursor: pointer;
   color: var(--sru-purple);
@@ -1528,7 +1537,7 @@ tr.sru-row-link:focus-within > td {
   width: 100%;
 }
 .sru-datefield-grid th {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--sru-muted);
   padding: 2px 0 6px;
@@ -1542,10 +1551,10 @@ tr.sru-row-link:focus-within > td {
   width: 32px;
   height: 30px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   color: inherit;
 }
@@ -1571,14 +1580,14 @@ tr.sru-row-link:focus-within > td {
 }
 .sru-datefield-quick {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-purple);
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: 0;
 }
 .sru-datefield-quick:hover {
   background: var(--sru-purple-light);
@@ -1587,7 +1596,7 @@ tr.sru-row-link:focus-within > td {
    keep the kit's normal size (found live — the import dialog inherited the
    60% scale and became unreadable). */
 .sru-actionbar dialog .sru-btn {
-  font-size: 14px;
+  font-size: 13px;
   padding: 9px 18px;
   line-height: normal;
   background: #fff;
@@ -1660,10 +1669,10 @@ tr.sru-row-link:focus-within > td {
 .sru-initiative-chip {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   padding: 2px 9px;
-  border-radius: 20px;
+  border-radius: 0;
   background: var(--sru-purple-light);
   color: var(--sru-purple);
 }
@@ -1711,7 +1720,7 @@ tr.sru-row-link:focus-within > td {
   background: linear-gradient(180deg, var(--sru-purple-light) 0%, #fff 100%);
 }
 .sru-initiative-sheet-deliverable {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   margin-top: 10px;
   padding-inline-start: 12px;
@@ -1726,10 +1735,10 @@ tr.sru-row-link:focus-within > td {
   background: #fafafa;
 }
 .sru-perspective {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   padding: 3px 12px;
-  border-radius: 20px;
+  border-radius: 0;
   border: 1px solid var(--sru-border, #e5e7eb);
   color: var(--sru-muted);
   background: #fff;
@@ -1757,7 +1766,7 @@ tr.sru-row-link:focus-within > td {
   grid-column: span 2;
 }
 .sru-initiative-block h2 {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-purple);
   letter-spacing: 0.2px;
@@ -1768,7 +1777,7 @@ tr.sru-row-link:focus-within > td {
 .sru-initiative-outcomes {
   margin: 0;
   padding-inline-start: 18px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.9;
 }
 .sru-initiative-timeline {
@@ -1806,10 +1815,10 @@ tr.sru-row-link:focus-within > td {
   align-items: flex-start;
   background: var(--sru-warning-bg, #fff7ed);
   border: 1px solid var(--sru-warning, #f59e0b);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 12px;
   margin-top: 16px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.8;
 }
 
@@ -1833,31 +1842,31 @@ tr.sru-row-link:focus-within > td {
   margin-bottom: 16px;
   background: var(--sru-purple-light);
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 8px;
+  border-radius: 0;
 }
 .sru-filterbar label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
 }
 .sru-filterbar select {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   padding: 5px 8px;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 6px;
+  border-radius: 0;
   background: #fff;
   max-width: 220px;
 }
 .sru-filterbar-count {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--sru-muted);
 }
 .sru-filterbar-reset {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-purple);
   background: transparent;
@@ -1907,7 +1916,7 @@ tr.sru-row-link:focus-within > td {
   padding: 16px 18px;
   background: var(--sru-purple-light);
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 10px;
+  border-radius: 0;
 }
 .sru-profile-avatar {
   display: inline-flex;
@@ -1916,14 +1925,16 @@ tr.sru-row-link:focus-within > td {
   width: 52px;
   height: 52px;
   flex: 0 0 auto;
+  /* A person is round here. The rest of the system is square (2026-08-24);
+     these two are the exception, because they carry a face. */
   border-radius: 50%;
   background: var(--sru-purple);
   color: #fff;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
 }
 .sru-profile-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   margin: 0;
 }
@@ -1941,11 +1952,11 @@ tr.sru-row-link:focus-within > td {
 .sru-profile-group {
   background: #fff;
   border: 1px solid var(--sru-border, #e5e7eb);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px 16px;
 }
 .sru-profile-group h3 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--sru-purple);
   margin: 0 0 10px;
@@ -1955,7 +1966,7 @@ tr.sru-row-link:focus-within > td {
   grid-template-columns: auto 1fr;
   gap: 8px 12px;
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
 }
 .sru-profile-group dt {
   color: var(--sru-muted);
@@ -1985,7 +1996,7 @@ tr.sru-row-link:focus-within > td {
 .sru-name-en {
   display: block;
   color: var(--sru-muted);
-  font-size: 15px;
+  font-size: 13.5px;
   line-height: 1.5;
   margin-top: 2px;
   direction: ltr;
@@ -1997,7 +2008,7 @@ tr.sru-row-link:focus-within > td {
 }
 /* Beside a page title (22-24px), not a row title. */
 .sru-name-en.is-lg {
-  font-size: 17px;
+  font-size: 15px;
 }
 
 /* ---- destructive confirmation ----------------------------------------
@@ -2020,19 +2031,19 @@ tr.sru-row-link:focus-within > td {
   width: 40px;
   height: 40px;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--sru-danger, #b91c1c);
   background: color-mix(in srgb, var(--sru-danger, #b91c1c) 12%, #fff);
 }
 .sru-danger-note {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.8;
   margin-top: 12px;
 }
 .sru-danger-list {
   margin: 8px 0 0;
   padding-inline-start: 20px;
-  font-size: 12.5px;
+  font-size: 11.5px;
   line-height: 1.9;
   color: var(--sru-danger, #b91c1c);
 }
@@ -2060,19 +2071,19 @@ tr.sru-row-link:focus-within > td {
   position: relative;
   flex: 1;
   height: 6px;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--sru-border);
   overflow: hidden;
 }
 .sru-plan-timeline-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--sru-blue, #1f7ae0);
 }
 .sru-plan-timeline-label {
   flex: 0 0 auto;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--sru-muted);
 }
 
@@ -2086,8 +2097,8 @@ tr.sru-row-link:focus-within > td {
   gap: 8px;
   margin-top: 12px;
   padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 0;
+  font-size: 11.5px;
   line-height: 1.7;
   color: #7a5300;
   background: #fdf6e3;
@@ -2098,9 +2109,9 @@ tr.sru-row-link:focus-within > td {
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid var(--sru-border);
-  font-size: 12px;
+  font-size: 11.5px;
   cursor: pointer;
 }
 .sru-import-fieldchip.is-on {
@@ -2112,4 +2123,209 @@ tr.sru-row-link:focus-within > td {
 .sru-import-fieldchip.is-off {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   Sharp corners, kit-side (2026-08-24).
+
+   sru-ui.css is never edited (CLAUDE.md §7), so the three corners it hardcodes
+   are squared here instead. Buttons and inputs need no rule at all: the kit
+   reads them from --sru-radius, which is set to 0 above.
+
+   Also carries the kit's two type sizes down to the tightened scale, for the
+   same reason — the file that declares them is off limits.
+--------------------------------------------------------------------------- */
+.sru-card {
+  border-radius: 0;
+}
+.sru-chip {
+  border-radius: 0;
+  font-size: 12px;
+}
+.sru-topbar .sru-logo {
+  border-radius: 0;
+}
+.sru-btn {
+  font-size: 13px;
+}
+.sru-field label {
+  font-size: 12px;
+}
+.sru-field input,
+.sru-field select,
+.sru-field textarea {
+  font-size: 13px;
+}
+
+/* The print kit's own button, squared and rescaled here for the same reason
+   as the UI kit's: sru-print.css is not ours to edit. */
+.sru-print-btn {
+  border-radius: 0;
+  font-size: 13px;
+}
+
+/* Tables carried the document body size (16px), which is a reading size, not a
+   scanning one — a roster of 300 employees is read by scanning. Setting it on
+   the table lets every cell inherit one step down, while any cell that states
+   its own size still wins. */
+table {
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------------------
+   Home — a worklist, not a dashboard (2026-08-24).
+
+   The page's whole job is "what needs me today", so the count carries the
+   weight: it is the largest type on the page, sitting on a purple rule that
+   marks each row as a live piece of work. Everything else is deliberately
+   quiet — no cards, no shadows, no gradients — so the numbers are the only
+   thing competing for attention. Square corners throughout, like the rest of
+   the app since the same date.
+--------------------------------------------------------------------------- */
+.sru-home {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 22px 48px;
+}
+
+.sru-home-head {
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--sru-purple);
+  margin-bottom: 26px;
+}
+.sru-home-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sru-purple);
+  margin-bottom: 6px;
+}
+.sru-home-head h1 {
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--sru-purple-dark);
+}
+.sru-home-role {
+  font-size: 13px;
+  color: var(--sru-ink);
+  margin-top: 4px;
+}
+.sru-home-cycle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sru-muted);
+  margin-top: 8px;
+}
+
+.sru-home-section + .sru-home-section {
+  margin-top: 30px;
+}
+.sru-home-section h2 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+}
+.sru-home-note {
+  font-size: 12px;
+  color: var(--sru-muted);
+  margin: 4px 0 12px;
+  line-height: 1.8;
+}
+
+.sru-home-clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sru-muted);
+  border: 1px solid var(--sru-border);
+  border-inline-start: 3px solid var(--sru-success, #1f9d55);
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.sru-home-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--sru-border);
+  background: #fff;
+}
+.sru-home-queue li + li {
+  border-top: 1px solid var(--sru-border);
+}
+.sru-home-queue a {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 13px 16px;
+  text-decoration: none;
+  color: inherit;
+  border-inline-start: 3px solid var(--sru-purple);
+  transition: background 0.14s ease;
+}
+.sru-home-queue a:hover,
+.sru-home-queue a:focus-visible {
+  background: var(--sru-purple-light);
+}
+.sru-home-queue-count {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sru-purple);
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+.sru-home-queue-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sru-ink);
+}
+
+.sru-home-mine {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--sru-border);
+  border: 1px solid var(--sru-border);
+}
+.sru-home-tile {
+  display: block;
+  background: #fff;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.14s ease;
+}
+.sru-home-tile:hover,
+.sru-home-tile:focus-visible {
+  background: var(--sru-purple-light);
+}
+.sru-home-tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--sru-muted);
+}
+.sru-home-tile strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .sru-home {
+    padding: 20px 14px 36px;
+  }
 }

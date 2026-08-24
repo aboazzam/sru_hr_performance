@@ -53,7 +53,7 @@ export function ActualValueField({
 
   if (!canEdit) {
     return (
-      <span style={{ fontSize: 12.5 }}>
+      <span style={{ fontSize: 11.5 }}>
         {label}: {stored === "" ? t("actualNotRecorded") : `${stored}${unit ? " " + unit : ""}`}
       </span>
     );
@@ -72,7 +72,7 @@ export function ActualValueField({
         />
         {/* The button is disabled until the number changes, which on an empty
             box looks like a dead control rather than a waiting one. */}
-        <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>{t("actualHint")}</span>
+        <span style={{ color: "var(--sru-muted)", fontSize: 10.5 }}>{t("actualHint")}</span>
       </span>
       <button
         type="button"
@@ -90,7 +90,7 @@ export function ActualValueField({
         {pending ? t("savingButton") : t("actualSave")}
       </button>
       {state?.status === "error" && (
-        <span role="alert" style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12 }}>
+        <span role="alert" style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 11.5 }}>
           <AlertCircle size={13} aria-hidden style={{ marginInlineEnd: 4, verticalAlign: "middle" }} />
           {t(errorKeys[state.message] ?? "errorUnknown")}
         </span>

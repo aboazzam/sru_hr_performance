@@ -139,11 +139,11 @@ export function InitiativeCardEditor({
       <span
         style={{
           marginInlineStart: 6,
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: 700,
           color: "var(--sru-danger, #b91c1c)",
           border: "1px solid currentColor",
-          borderRadius: 999,
+          borderRadius: 0,
           padding: "0 6px",
         }}
       >
@@ -176,10 +176,10 @@ export function InitiativeCardEditor({
               alignItems: "flex-start",
               background: "var(--sru-warning-bg, #fff7ed)",
               border: "1px solid var(--sru-warning, #f59e0b)",
-              borderRadius: 8,
+              borderRadius: 0,
               padding: "10px 12px",
               marginBottom: 14,
-              fontSize: 13,
+              fontSize: 12,
               lineHeight: 1.8,
             }}
           >
@@ -196,7 +196,7 @@ export function InitiativeCardEditor({
               gap: 8,
               alignItems: "center",
               color: "var(--sru-success, #15803d)",
-              fontSize: 13,
+              fontSize: 12,
               marginBottom: 14,
             }}
           >
@@ -402,12 +402,12 @@ export function InitiativeCardEditor({
       </section>
 
       {state?.status === "error" && (
-        <p style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 13, marginTop: 10 }}>
+        <p style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12, marginTop: 10 }}>
           {t(errorKeys[state.message] ?? "cardErrorUnknown")}
         </p>
       )}
       {state?.status === "success" && !dirty && (
-        <p style={{ color: "var(--sru-success, #15803d)", fontSize: 13, marginTop: 10 }}>{t("cardSaved")}</p>
+        <p style={{ color: "var(--sru-success, #15803d)", fontSize: 12, marginTop: 10 }}>{t("cardSaved")}</p>
       )}
 
       <div className="sru-form-submitrow">
@@ -523,13 +523,13 @@ function InitiativeDependenciesEditor({
       </div>
 
       {dependencies.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("dependencyNone")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("dependencyNone")}</p>
       ) : (
         <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
           {dependencies.map((d) => (
             <li
               key={d.id}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: 13 }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: 12 }}
             >
               <span>{d.label}</span>
               {/* View opens that initiative; there is nothing to "edit" on a
@@ -563,7 +563,7 @@ function InitiativeDependenciesEditor({
       )}
 
       {(addState?.status === "error" || removeState?.status === "error") && (
-        <p style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 13, marginTop: 8 }}>
+        <p style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12, marginTop: 8 }}>
           {t(errorKeys[(addState ?? removeState)?.status === "error" ? ((addState ?? removeState) as { message: string }).message : "unknown"] ?? "cardErrorUnknown")}
         </p>
       )}

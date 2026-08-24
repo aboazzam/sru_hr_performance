@@ -217,7 +217,7 @@ export function InitiativesPanel({
             {/* Required now, so a plan with no sub-goals yet would be a
                 dead end without saying why. */}
             {subGoalOptions.length === 0 && (
-              <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalEmptyHint")}</span>
+              <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("subGoalEmptyHint")}</span>
             )}
           </div>
           <div className="sru-field">
@@ -255,7 +255,7 @@ export function InitiativesPanel({
           {creating ? t("addSubmitting") : t("addSubmit")}
         </button>
         {(startDate === "" || endDate === "") && (
-          <span style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("datesRequiredNote")}</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("datesRequiredNote")}</span>
         )}
       </div>
     </form>
@@ -273,7 +273,7 @@ export function InitiativesPanel({
           flexWrap: "wrap",
         }}
       >
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, flex: 1, minWidth: 240 }}>{t("intro")}</p>
         {/* One row, one style: "add" sits beside export/import rather than a
             step below them in a different size (2026-08-21 request). */}
         <div className="sru-actionbar no-print" style={{ flex: "0 0 auto" }}>
@@ -347,9 +347,9 @@ export function InitiativesPanel({
       )}
 
       {initiatives.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("empty")}</p>
       ) : visibleInitiatives.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 20 }}>{t("filterEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 20 }}>{t("filterEmpty")}</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
           {visibleInitiatives.map((initiative) => (
@@ -410,7 +410,7 @@ function InitiativeCard({
     <div className="sru-card sru-initiative-card">
       <div className="sru-initiative-card-body">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: 15, fontWeight: 700 }}>
+          <h4 style={{ fontSize: 13.5, fontWeight: 700 }}>
             {/* The whole card follows this one link: `sru-stretched` casts an
                 overlay across the card, and the controls below sit above it,
                 so delete / link / unlink still work as their own targets. */}
@@ -431,7 +431,7 @@ function InitiativeCard({
             {period && <span className="sru-initiative-chip is-plain">{period}</span>}
           </div>
           {initiative.descriptionAr && (
-            <p style={{ fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>{initiative.descriptionAr}</p>
+            <p style={{ fontSize: 12, marginTop: 8, lineHeight: 1.7 }}>{initiative.descriptionAr}</p>
           )}
         </div>
         {/* Placed after the text, so in an RTL row it renders on the LEFT. */}
@@ -476,9 +476,9 @@ function InitiativeCard({
       </div>
 
       <div className="sru-initiative-card-foot" style={{ marginTop: 12 }}>
-        <span style={{ fontSize: 12, fontWeight: 700 }}>{t("linkedTargets")}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 700 }}>{t("linkedTargets")}</span>
         {initiative.links.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("noLinkedTargets")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 4 }}>{t("noLinkedTargets")}</p>
         ) : (
           <ul style={{ margin: "6px 0 0", paddingInlineStart: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: 8 }}>
             {initiative.links.map((link) => (

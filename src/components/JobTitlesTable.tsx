@@ -69,13 +69,13 @@ export function JobTitlesTable({ rows }: { rows: JobTitleRow[] }) {
             borderRadius: "var(--sru-radius)",
             border: "1px solid var(--sru-border)",
             background: "var(--background)",
-            fontSize: 13,
+            fontSize: 12,
           }}
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">

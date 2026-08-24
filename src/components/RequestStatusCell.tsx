@@ -78,7 +78,7 @@ export function RequestStatusCell({
       </div>
 
       {state?.status === "error" && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12 }}>
+        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
           {recruitmentRequestErrorText(state.message, t)}
         </span>
       )}

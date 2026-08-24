@@ -173,10 +173,10 @@ export default async function GoalLibraryPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -200,20 +200,20 @@ export default async function GoalLibraryPage() {
           </div>
         </div>
         {strategicGoals.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("strategicGoalsEmpty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("strategicGoalsEmpty")}</p>
         ) : (
           strategicGoals.map((goal) => {
             const goalSubGoals = subGoalsByStrategicGoal.get(goal.id) ?? [];
             return (
               <div key={goal.id} style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--sru-border)" }}>
-                <strong style={{ fontSize: 14 }}>{goal.title_ar}</strong>
-                <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2, marginBottom: 10 }}>
+                <strong style={{ fontSize: 13 }}>{goal.title_ar}</strong>
+                <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2, marginBottom: 10 }}>
                   {t("columnKpi")}:{" "}
                   {describeKpis(kpisByGoal.get(goal.id) ?? [])}
                   {goal.weight != null ? ` · ${t("columnWeight")}: ${goal.weight}%` : ""}
                 </p>
                 {goalSubGoals.length === 0 ? (
-                  <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("subGoalsEmpty")}</p>
+                  <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("subGoalsEmpty")}</p>
                 ) : (
                   <div className="table-scroll">
                     <table className="admin-matrix">
@@ -244,12 +244,12 @@ export default async function GoalLibraryPage() {
         )}
       </section>
 
-      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 12 }}>
+      <h2 className="sru-title" style={{ fontSize: 14, marginBottom: 12 }}>
         {t("libraryHeading")}
       </h2>
 
       {!goals || goals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -267,7 +267,7 @@ export default async function GoalLibraryPage() {
                     <td>
                       {goal.title_ar}
                       {goal.description_ar && (
-                        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>
+                        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>
                           {goal.description_ar}
                         </p>
                       )}

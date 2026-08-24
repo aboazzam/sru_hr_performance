@@ -127,10 +127,10 @@ export default async function OrgStructureStaffingPage() {
       <GroupTabs groupKey="administration" current="admin/org-structure/staffing" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <ImportOrgStructureExcelForm />
@@ -144,7 +144,7 @@ export default async function OrgStructureStaffingPage() {
 
       <section>
         {positions.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPositions")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noPositions")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">

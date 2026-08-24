@@ -104,11 +104,11 @@ export default async function PlanAuditPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
       {plan && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
           {plan.name_ar} — {plan.plan_year}
         </p>
       )}
@@ -120,9 +120,9 @@ export default async function PlanAuditPage({
 
       <div style={{ marginTop: 20 }}>
         {!canView ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
         ) : !entries || entries.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">

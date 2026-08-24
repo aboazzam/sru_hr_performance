@@ -90,14 +90,14 @@ export function PromotionsTable({
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           {summary.map((s) => (
             <div key={s.key}>
-              <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{s.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{s.value}</div>
+              <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{s.label}</div>
+              <div style={{ fontSize: 19, fontWeight: 700 }}>{s.value}</div>
             </div>
           ))}
           {counts.other > 0 && (
             <div>
-              <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("summaryOther")}</div>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{counts.other}</div>
+              <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("summaryOther")}</div>
+              <div style={{ fontSize: 19, fontWeight: 700 }}>{counts.other}</div>
             </div>
           )}
         </div>
@@ -166,8 +166,8 @@ export function PromotionsTable({
           is: the screen's title, when it was printed, and which filter produced
           these rows. */}
       <div className="print-only">
-        <strong style={{ fontSize: 15 }}>{t("title")}</strong>
-        <div style={{ fontSize: 12 }}>
+        <strong style={{ fontSize: 13.5 }}>{t("title")}</strong>
+        <div style={{ fontSize: 11.5 }}>
           {t("printedOn", { date: printedOn })}
           {" — "}
           {t("printedCount", { shown: filtered.length, total: promotions.length })}
@@ -178,7 +178,7 @@ export function PromotionsTable({
 
       <div className="sru-card">
         {filtered.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>
             {promotions.length === 0 ? t("empty") : t("noMatches")}
           </p>
         ) : (
@@ -220,7 +220,7 @@ export function PromotionsTable({
                       {promotion.careerPathMatch !== "unknown" && (
                         <div
                           style={{
-                            fontSize: 12,
+                            fontSize: 11.5,
                             marginTop: 3,
                             color:
                               promotion.careerPathMatch === "on_path"

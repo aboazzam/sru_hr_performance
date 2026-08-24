@@ -73,11 +73,11 @@ export default async function AssignTargetPage({
         <ArrowRight size={15} aria-hidden className="sru-back-arrow" />
         {t("backButton")}
       </Link>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
-      <p style={{ fontSize: 14, marginTop: 8, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
+      <p style={{ fontSize: 13, marginTop: 8, marginBottom: 20 }}>
         <strong>{t("parentContextLabel")}:</strong> {parentTitle}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
@@ -87,7 +87,7 @@ export default async function AssignTargetPage({
           point at the cause instead of rendering it. */}
       {kpis.length === 0 || cycles.length === 0 ? (
         <div className="sru-card" style={{ padding: 16 }}>
-          <p style={{ fontSize: 14 }}>{kpis.length === 0 ? t("noKpisMessage") : t("noCyclesMessage")}</p>
+          <p style={{ fontSize: 13 }}>{kpis.length === 0 ? t("noKpisMessage") : t("noCyclesMessage")}</p>
         </div>
       ) : (
         <AssignTargetForm

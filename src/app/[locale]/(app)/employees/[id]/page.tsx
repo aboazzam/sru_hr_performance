@@ -27,7 +27,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   if (!profile) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("notFound")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("notFound")}</p>
       </div>
     );
   }
@@ -111,11 +111,11 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {employee.full_name_ar}
           </h1>
           {employee.full_name_en && <p className="sru-name-en is-lg">{employee.full_name_en}</p>}
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{employee.employee_number}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{employee.employee_number}</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {canEdit && (

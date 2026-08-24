@@ -48,7 +48,7 @@ export function DeleteRoleButton({ roleId, disabled }: { roleId: string; disable
         <Trash2 size={15} />
       </button>
       {error && (
-        <span role="alert" style={{ color: "#b91c1c", fontSize: 11 }}>
+        <span role="alert" style={{ color: "#b91c1c", fontSize: 10.5 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </span>
       )}

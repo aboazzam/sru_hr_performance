@@ -67,7 +67,7 @@ export function SuggestDescriptionButton({
       <button type="button" disabled={!canSuggest || isPending} onClick={handleClick} className="sru-btn">
         {isPending ? t("aiSuggesting") : t("aiSuggestButton")}
       </button>
-      {!canSuggest && !isPending && <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginTop: 4 }}>{t("aiSuggestNeedsFields")}</p>}
+      {!canSuggest && !isPending && <p style={{ fontSize: 11, color: "var(--sru-muted)", marginTop: 4 }}>{t("aiSuggestNeedsFields")}</p>}
       {error && (
         <p role="alert" className="text-sm text-red-600" style={{ marginTop: 6 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}

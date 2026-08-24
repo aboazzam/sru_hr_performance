@@ -61,7 +61,7 @@ export function RecruitmentRequestActions({
     (rule) => !rule.statusAdjacent
   );
   if (options.length === 0) {
-    return <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>—</span>;
+    return <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>—</span>;
   }
 
   const openRule = options.find((rule) => rule.to === openTarget);
@@ -119,7 +119,7 @@ export function RecruitmentRequestActions({
           label above it said so; with icons nothing would, and rejecting when
           you meant to return for revision is not a recoverable slip. */}
       {openTarget && openRule && (
-        <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>{openRule.labelAr}</span>
+        <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{openRule.labelAr}</span>
       )}
 
       {openTarget && (
@@ -129,7 +129,7 @@ export function RecruitmentRequestActions({
             value={note}
             placeholder={t("reasonPlaceholder")}
             onChange={(event) => setNote(event.target.value)}
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 12 }}
           />
           <div style={{ display: "flex", gap: 6 }}>
             <button
@@ -157,7 +157,7 @@ export function RecruitmentRequestActions({
       )}
 
       {state?.status === "error" && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12 }}>
+        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
           {/* Two error families reach here: refusals from the workflow guard,
               which carry their own Arabic wording, and action-level failures.
               The latter used to fall through to a bare "تعذر إتمام العملية" —

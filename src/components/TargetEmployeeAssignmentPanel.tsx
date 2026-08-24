@@ -75,15 +75,15 @@ export function TargetEmployeeAssignmentPanel({
   if (shares.length === 0) {
     return (
       <div>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8 }}>{t("employeesIntro")}</p>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 10 }}>{t("employeesNoShares")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8 }}>{t("employeesIntro")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 10 }}>{t("employeesNoShares")}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, marginBottom: 12 }}>{t("employeesIntro")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, marginBottom: 12 }}>{t("employeesIntro")}</p>
 
       <div style={{ display: "grid", gap: 12 }}>
         {mine.map((share) => (
@@ -93,8 +93,8 @@ export function TargetEmployeeAssignmentPanel({
 
       {others.length > 0 && (
         <section style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("employeesOtherUnitsHeading")}</h3>
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("employeesOtherUnitsNote")}</p>
+          <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t("employeesOtherUnitsHeading")}</h3>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>{t("employeesOtherUnitsNote")}</p>
           <div style={{ display: "grid", gap: 12 }}>
             {others.map((share) => (
               <ShareCard key={share.shareId} share={share} employees={employees} />
@@ -138,7 +138,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
     <div className="sru-card">
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700 }}>{share.targetTitle}</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 700 }}>{share.targetTitle}</h4>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             <span className="sru-initiative-chip">{share.orgUnitName}</span>
             <span className="sru-initiative-chip is-plain">{t("shareOfTarget", { percent: String(share.percentage) })}</span>
@@ -151,7 +151,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
         </div>
         <span
           style={{
-            fontSize: 12,
+            fontSize: 11.5,
             color: Math.abs(total - 100) < 0.001 || rows.length === 0 ? "var(--sru-muted)" : "var(--sru-danger, #b91c1c)",
           }}
         >
@@ -172,7 +172,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
       </div>
 
       {rows.length === 0 && !share.canManage && (
-        <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>{t("employeesNoneYet")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>{t("employeesNoneYet")}</p>
       )}
 
       <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
@@ -202,9 +202,9 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
               style={{ width: 90 }}
               aria-label={t("employeePercentageLabel")}
             />
-            <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>%</span>
+            <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>%</span>
             {unitValue != null && Number(row.percentage) > 0 && (
-              <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
+              <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>
                 {t("employeeValue", {
                   value: String(Math.round(((unitValue * Number(row.percentage)) / 100) * 100) / 100),
                   unit: share.targetUnit,
@@ -233,7 +233,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
                   action={recordEmployeeActual}
                 />
                 {savedByEmployee.get(row.employeeId)!.actualRecordedBy && (
-                  <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
+                  <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>
                     {savedByEmployee.get(row.employeeId)!.actualSelfReported
                       ? t("actualSelfReportedBy", { name: savedByEmployee.get(row.employeeId)!.actualRecordedBy as string })
                       : t("actualRecordedBy", { name: savedByEmployee.get(row.employeeId)!.actualRecordedBy as string })}
@@ -248,7 +248,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
       {share.canManage && (
         <>
           {options.length === 0 && (
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 8 }}>{t("employeesNoneVisible")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>{t("employeesNoneVisible")}</p>
           )}
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <button

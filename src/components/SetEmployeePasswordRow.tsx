@@ -99,15 +99,15 @@ export function SetEmployeePasswordRow({ profileId }: { profileId: string }) {
         </button>
       </div>
 
-      <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("passwordHint")}</span>
+      <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("passwordHint")}</span>
 
       {state?.status === "error" && (
-        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 12.5 }}>
+        <span role="alert" className="text-sm text-red-600" style={{ fontSize: 11.5 }}>
           {t(errorKeys[state.message] ?? "passwordErrorUnknown")}
         </span>
       )}
       {state?.status === "success" && (
-        <span role="status" style={{ color: "#15803d", fontSize: 12.5 }}>
+        <span role="status" style={{ color: "#15803d", fontSize: 11.5 }}>
           {t("passwordSet")}
         </span>
       )}

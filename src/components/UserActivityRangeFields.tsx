@@ -19,7 +19,7 @@ export function UserActivityRangeFields({
   const t = useTranslations("UserActivityPage");
   const labelStyle: React.CSSProperties = {
     display: "block",
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: 700,
     marginBottom: 4,
   };

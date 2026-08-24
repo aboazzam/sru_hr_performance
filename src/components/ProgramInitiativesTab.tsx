@@ -193,7 +193,7 @@ export function ProgramInitiativesTab({
               </button>
             </div>
             {suggestError && (
-              <span style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12, marginTop: 4, display: "block" }}>
+              <span style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 11.5, marginTop: 4, display: "block" }}>
                 {t(suggestError === "rate_limited" ? "suggestRateLimited" : "suggestFailed")}
               </span>
             )}
@@ -219,7 +219,7 @@ export function ProgramInitiativesTab({
             {/* Required now, so a plan with no sub-goals yet would be a
                 dead end without saying why. */}
             {subGoalOptions.length === 0 && (
-              <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalEmptyHint")}</span>
+              <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("subGoalEmptyHint")}</span>
             )}
           </div>
           <div className="sru-field">
@@ -270,7 +270,7 @@ export function ProgramInitiativesTab({
           {t("cancel")}
         </button>
         {(startDate === "" || endDate === "") && (
-          <span style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("datesRequiredNote")}</span>
+          <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("datesRequiredNote")}</span>
         )}
       </div>
     </form>
@@ -279,7 +279,7 @@ export function ProgramInitiativesTab({
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, lineHeight: 1.8, margin: 0, maxWidth: 620 }}>{t("intro")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.8, margin: 0, maxWidth: 620 }}>{t("intro")}</p>
         {canManage && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <AddFormDialog
@@ -308,13 +308,13 @@ export function ProgramInitiativesTab({
         <div className="sru-position-edit-card" style={{ marginBottom: 16 }}>
           <span className="sru-position-edit-title">{t("attachHeading")}</span>
           {availableInitiatives.length === 0 ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 8 }}>{t("attachNoneAvailable")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8 }}>{t("attachNoneAvailable")}</p>
           ) : (
             <>
-              <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 6, marginBottom: 10 }}>{t("attachNote")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 6, marginBottom: 10 }}>{t("attachNote")}</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 260, overflowY: "auto" }}>
                 {availableInitiatives.map((i) => (
-                  <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
                     <input
                       type="checkbox"
                       checked={picked.includes(i.id)}
@@ -344,7 +344,7 @@ export function ProgramInitiativesTab({
 
 
       {rows.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{canManage ? t("emptyManager") : t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{canManage ? t("emptyManager") : t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -374,7 +374,7 @@ export function ProgramInitiativesTab({
                         {row.titleAr}
                       </Link>
                       {row.deliverableAr && (
-                        <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>
+                        <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5 }}>
                           {t("deliverableInline", { deliverable: row.deliverableAr })}
                         </span>
                       )}
@@ -382,7 +382,7 @@ export function ProgramInitiativesTab({
                     <td>
                       {row.strategicGoalTitle ?? "—"}
                       {row.subGoalTitle && (
-                        <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12 }}>{row.subGoalTitle}</span>
+                        <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5 }}>{row.subGoalTitle}</span>
                       )}
                     </td>
                     <td>{row.ownerOrgUnitName ?? "—"}</td>

@@ -66,7 +66,7 @@ export function StagedCompetenciesPicker({
   return (
     <div>
       {value.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 16 }}>{t("noCompetenciesStaged")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("noCompetenciesStaged")}</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
           {value.map((row) => (
@@ -84,7 +84,7 @@ export function StagedCompetenciesPicker({
               <select
                 value={row.requiredLevel}
                 onChange={(e) => updateLevel(row.competencyId, e.target.value as BehavioralLevel)}
-                style={{ fontSize: 13 }}
+                style={{ fontSize: 12 }}
               >
                 <option value="" disabled>
                   {t("selectLevelPlaceholder")}

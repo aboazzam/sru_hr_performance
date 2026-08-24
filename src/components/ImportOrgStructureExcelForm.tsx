@@ -101,7 +101,7 @@ function OrgStructureImportOutcome({ state }: { state: ImportResult | null }) {
   ];
 
   return (
-    <div style={{ marginTop: 12, fontSize: 12.5 }}>
+    <div style={{ marginTop: 12, fontSize: 11.5 }}>
       <p role="status" style={{ color: "var(--sru-success, #15803d)", marginBottom: 8 }}>
         {t("importSuccess", {
           employees: state.summary.employeesUpserted,

@@ -101,10 +101,10 @@ export default async function EvaluationCyclesPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -130,12 +130,12 @@ export default async function EvaluationCyclesPage() {
 
       {rows.length === 0 ? (
         <div>
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
           {/* Zero cycles is not a cosmetic empty state: `cycle_id` is NOT
               NULL on promotions/rewards/calibration/goals/BAU tasks/targets,
               so those modules cannot be used at all until one exists. Say so
               here, where the fix is one click away. */}
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 8, lineHeight: 1.9 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8, lineHeight: 1.9 }}>
             {canManageCycles ? t("emptyBlocksModulesManager") : t("emptyBlocksModules")}
           </p>
         </div>

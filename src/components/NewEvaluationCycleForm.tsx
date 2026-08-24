@@ -197,11 +197,11 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
 
           <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
             {invalidRange ? (
-              <p role="alert" style={{ fontSize: 12.5, color: "#b91c1c" }}>
+              <p role="alert" style={{ fontSize: 11.5, color: "#b91c1c" }}>
                 {t("periodInvalidRange")}
               </p>
             ) : span ? (
-              <p style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>
+              <p style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
                 {span.months
                   ? t("periodSummaryMonths", { months: span.months, days: span.days })
                   : t("periodSummaryDays", { days: span.days })}

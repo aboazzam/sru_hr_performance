@@ -51,7 +51,7 @@ export function CareerPathForwardTree({
   return (
     <div>
       <div className="sru-card" style={{ marginBottom: 16, padding: 14 }}>
-        <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>{labels.currentJobLabel}</span>
+        <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{labels.currentJobLabel}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 10px" }}>
           <strong>{currentInfo?.nameAr ?? "—"}</strong>
           {currentInfo && <span className="sru-chip sru-en">{labels.gradeLabel(currentInfo.gradeLevel)}</span>}
@@ -70,18 +70,18 @@ function hasUnapprovedContent(info: CareerJobTitleInfo | undefined): boolean {
 function renderContentSection(info: CareerJobTitleInfo | undefined, labels: CareerPathTreeLabels) {
   if (hasUnapprovedContent(info)) {
     return (
-      <p style={{ fontSize: 13, color: "var(--sru-muted)" }} role="status">
+      <p style={{ fontSize: 12, color: "var(--sru-muted)" }} role="status">
         {labels.pendingApprovalLabel}
       </p>
     );
   }
   return (
     <>
-      <p style={{ fontSize: 13, marginBottom: 6 }}>
+      <p style={{ fontSize: 12, marginBottom: 6 }}>
         <b>{labels.descriptionLabel}: </b>
         {info?.descriptionAr ?? labels.noDescriptionLabel}
       </p>
-      <div style={{ fontSize: 13 }}>
+      <div style={{ fontSize: 12 }}>
         <b>{labels.competenciesLabel}: </b>
         {info && info.competencies.length > 0 ? (
           <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
@@ -117,7 +117,7 @@ function renderNodes(
                 {info && <span className="sru-chip sru-en">{labels.gradeLabel(info.gradeLevel)}</span>}
               </div>
               {node.requirementsAr && (
-                <p style={{ fontSize: 13, marginBottom: 6 }}>
+                <p style={{ fontSize: 12, marginBottom: 6 }}>
                   <b>{labels.requirementsLabel}: </b>
                   {node.requirementsAr}
                 </p>

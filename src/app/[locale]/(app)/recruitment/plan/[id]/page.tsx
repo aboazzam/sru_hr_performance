@@ -53,12 +53,12 @@ export default async function RecruitmentPlanDetailPage({
   if (!canView) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
         <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
         <GroupTabs groupKey="recruitment" current="recruitment/plan" />
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 24 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 24 }}>{t("forbidden")}</p>
       </div>
     );
   }
@@ -161,10 +161,10 @@ export default async function RecruitmentPlanDetailPage({
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {plan.name_ar}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("planMeta", {
               year: plan.plan_year,
               status: planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null }),
@@ -221,20 +221,20 @@ export default async function RecruitmentPlanDetailPage({
       <div className="sru-card" style={{ marginTop: 16 }}>
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("totalHeadcount")}</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{formatNumber(totals.totalHeadcount)}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("totalHeadcount")}</div>
+            <div style={{ fontSize: 19, fontWeight: 700 }}>{formatNumber(totals.totalHeadcount)}</div>
           </div>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("totalMonthlyCost")}</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{formatNumber(totals.totalMonthlyCost)}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("totalMonthlyCost")}</div>
+            <div style={{ fontSize: 19, fontWeight: 700 }}>{formatNumber(totals.totalMonthlyCost)}</div>
           </div>
           <div>
-            <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("totalAnnualCost")}</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{formatNumber(totals.totalAnnualCost)}</div>
+            <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("totalAnnualCost")}</div>
+            <div style={{ fontSize: 19, fontWeight: 700 }}>{formatNumber(totals.totalAnnualCost)}</div>
           </div>
         </div>
         {totals.itemsWithoutCost > 0 && (
-          <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 10 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 10 }}>
             {t("itemsWithoutCostNote", { count: totals.itemsWithoutCost })}
           </p>
         )}
@@ -244,20 +244,20 @@ export default async function RecruitmentPlanDetailPage({
             recorded one. */}
         <div style={{ marginTop: 14, borderTop: "1px solid var(--sru-border)", paddingTop: 12 }}>
           {budget.status === "no_budget" ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("noApprovedBudget")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noApprovedBudget")}</p>
           ) : (
             <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "flex-end" }}>
               <div>
-                <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("approvedBudget")}</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("approvedBudget")}</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>
                   {formatNumber(budget.approvedBudget ?? 0)}
                 </div>
               </div>
               <div>
-                <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("budgetVariance")}</div>
+                <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("budgetVariance")}</div>
                 <div
                   style={{
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: 700,
                     color: budget.status === "over" ? "#b91c1c" : "#15803d",
                   }}
@@ -267,10 +267,10 @@ export default async function RecruitmentPlanDetailPage({
               </div>
               {budget.consumedPercentage !== null && (
                 <div>
-                  <div style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("budgetConsumed")}</div>
+                  <div style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("budgetConsumed")}</div>
                   <div
                     style={{
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: 700,
                       color: budget.status === "over" ? "#b91c1c" : "#15803d",
                     }}
@@ -282,13 +282,13 @@ export default async function RecruitmentPlanDetailPage({
             </div>
           )}
           {plan.finance_note && (
-            <p style={{ fontSize: 12.5, marginTop: 10 }}>
+            <p style={{ fontSize: 11.5, marginTop: 10 }}>
               <span style={{ color: "var(--sru-muted)" }}>{t("financeNoteLabel")} </span>
               {plan.finance_note}
             </p>
           )}
           {plan.hr_recommendation && (
-            <p style={{ fontSize: 12.5, marginTop: 6 }}>
+            <p style={{ fontSize: 11.5, marginTop: 6 }}>
               <span style={{ color: "var(--sru-muted)" }}>{t("hrRecommendationLabel")} </span>
               {plan.hr_recommendation}
             </p>
@@ -312,8 +312,8 @@ export default async function RecruitmentPlanDetailPage({
             { heading: t("byQuarter"), rows: byQuarter },
           ].map((group) => (
             <div className="sru-card" key={group.heading}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{group.heading}</h3>
-              <table className="admin-matrix" style={{ fontSize: 12.5 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{group.heading}</h3>
+              <table className="admin-matrix" style={{ fontSize: 11.5 }}>
                 <thead>
                   <tr>
                     <th>{t("distributionGroup")}</th>
@@ -340,7 +340,7 @@ export default async function RecruitmentPlanDetailPage({
 
       <div className="sru-card" style={{ marginTop: 16 }}>
         {items.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noItems")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noItems")}</p>
         ) : (
           <div className="table-scroll">
             <table className="admin-matrix">

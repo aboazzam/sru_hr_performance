@@ -163,10 +163,10 @@ export default async function KpisPage() {
       <GroupTabs groupKey="strategicPlan" current="kpis" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         {canManageStrategicGoals && (
           <Link href="/kpis/strategic-goals" className="sru-btn sru-btn-primary">
@@ -182,14 +182,14 @@ export default async function KpisPage() {
           together with owned targets under one "ownedHeading" table; split
           out here so KPIs and targets read as two distinct, clearly labeled
           sections on this one page, in that order. */}
-      <h2 className="sru-title" style={{ fontSize: 20, margin: "8px 0 16px" }}>
+      <h2 className="sru-title" style={{ fontSize: 17, margin: "8px 0 16px" }}>
         {t("receivedHeading")}
       </h2>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("receivedSubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 16 }}>{t("receivedSubtitle")}</p>
 
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("kpiSectionHeading")}</h3>
+      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{t("kpiSectionHeading")}</h3>
       {ownedSubGoals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("kpiSectionEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{t("kpiSectionEmpty")}</p>
       ) : (
         <div className="sru-card" style={{ marginBottom: 32 }}>
           <div className="table-scroll">
@@ -217,7 +217,7 @@ export default async function KpisPage() {
                     </td>
                     <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
                     <td>
-                      <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 12, padding: "4px 10px" }}>
+                      <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 11.5, padding: "4px 10px" }}>
                         {t("cascadeButton")}
                       </Link>
                     </td>
@@ -235,9 +235,9 @@ export default async function KpisPage() {
           assigned-to-me / team) keep their distinct meaning, now nested
           under this one umbrella heading instead of owned-targets being
           mixed into the KPI table above. */}
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("ownedHeading")}</h3>
+      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{t("ownedHeading")}</h3>
       {ownedTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginBottom: 32 }}>{t("ownedEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{t("ownedEmpty")}</p>
       ) : (
         <div className="sru-card" style={{ marginBottom: 32 }}>
           <div className="table-scroll">
@@ -270,7 +270,7 @@ export default async function KpisPage() {
                       <Link
                         href={`/kpis/assign?parentTargetId=${tg.id}`}
                         className="sru-btn"
-                        style={{ fontSize: 12, padding: "4px 10px" }}
+                        style={{ fontSize: 11.5, padding: "4px 10px" }}
                       >
                         {t("cascadeButton")}
                       </Link>
@@ -283,9 +283,9 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t("assignedHeading")}</h3>
+      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{t("assignedHeading")}</h3>
       {assignedToMeTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("assignedEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("assignedEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -319,12 +319,12 @@ export default async function KpisPage() {
         </div>
       )}
 
-      <h2 className="sru-title" style={{ fontSize: 20, margin: "36px 0 8px" }}>
+      <h2 className="sru-title" style={{ fontSize: 17, margin: "36px 0 8px" }}>
         {t("cascadedHeading")}
       </h2>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 16 }}>{t("cascadedSubtitle")}</p>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 16 }}>{t("cascadedSubtitle")}</p>
       {teamTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("cascadedEmpty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("cascadedEmpty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">

@@ -80,7 +80,7 @@ export default async function PlanPrintPage({
   if (!canView || !plan) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("forbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("forbidden")}</p>
       </div>
     );
   }
@@ -109,8 +109,8 @@ export default async function PlanPrintPage({
         }}
       >
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{t("documentTitle")}</h1>
-          <p style={{ fontSize: 13, margin: "4px 0 0", color: "var(--sru-muted)" }}>
+          <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>{t("documentTitle")}</h1>
+          <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--sru-muted)" }}>
             {plan.name_ar} — {plan.plan_year} —{" "}
             {planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })}
           </p>
@@ -120,36 +120,36 @@ export default async function PlanPrintPage({
 
       <section style={{ marginTop: 16, display: "flex", gap: 28, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("totalHeadcount")}</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{formatNumber(totals.totalHeadcount)}</div>
+          <div style={{ fontSize: 10.5, color: "var(--sru-muted)" }}>{t("totalHeadcount")}</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{formatNumber(totals.totalHeadcount)}</div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("totalAnnualCost")}</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{formatNumber(totals.totalAnnualCost)}</div>
+          <div style={{ fontSize: 10.5, color: "var(--sru-muted)" }}>{t("totalAnnualCost")}</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{formatNumber(totals.totalAnnualCost)}</div>
         </div>
         {budget.status !== "no_budget" && (
           <>
             <div>
-              <div style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("approvedBudget")}</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>
+              <div style={{ fontSize: 10.5, color: "var(--sru-muted)" }}>{t("approvedBudget")}</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>
                 {formatNumber(budget.approvedBudget ?? 0)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("variance")}</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{formatNumber(budget.variance ?? 0)}</div>
+              <div style={{ fontSize: 10.5, color: "var(--sru-muted)" }}>{t("variance")}</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{formatNumber(budget.variance ?? 0)}</div>
             </div>
           </>
         )}
       </section>
 
       {totals.itemsWithoutCost > 0 && (
-        <p style={{ fontSize: 11.5, color: "var(--sru-muted)", marginTop: 8 }}>
+        <p style={{ fontSize: 11, color: "var(--sru-muted)", marginTop: 8 }}>
           {t("itemsWithoutCostNote", { count: totals.itemsWithoutCost })}
         </p>
       )}
 
-      <table className="admin-matrix" style={{ marginTop: 16, fontSize: 12 }}>
+      <table className="admin-matrix" style={{ marginTop: 16, fontSize: 11.5 }}>
         <thead>
           <tr>
             <th>#</th>
@@ -185,7 +185,7 @@ export default async function PlanPrintPage({
       </table>
 
       {(plan.hr_recommendation || plan.finance_note || plan.approval_note) && (
-        <section style={{ marginTop: 18, fontSize: 12, lineHeight: 2 }}>
+        <section style={{ marginTop: 18, fontSize: 11.5, lineHeight: 2 }}>
           {plan.hr_recommendation && (
             <p>
               <strong>{t("hrRecommendation")}</strong> {plan.hr_recommendation}
@@ -210,7 +210,7 @@ export default async function PlanPrintPage({
           marginTop: 28,
           paddingTop: 10,
           borderTop: "1px solid var(--sru-border)",
-          fontSize: 11,
+          fontSize: 10.5,
           color: "var(--sru-muted)",
           display: "flex",
           justifyContent: "space-between",

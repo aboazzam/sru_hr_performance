@@ -111,8 +111,8 @@ export function NewExecutivePlanForm({
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t("formHeading")}</h3>
-            <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("formSubtitle")}</span>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>{t("formHeading")}</h3>
+            <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("formSubtitle")}</span>
           </div>
           <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
             ×
@@ -172,14 +172,14 @@ export function NewExecutivePlanForm({
               </div>
             </div>
             {span && (
-              <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 8 }}>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 8 }}>
                 {span.months != null
                   ? t("periodSummaryMonths", { months: span.months, days: span.days })
                   : t("periodSummaryDays", { days: span.days })}
               </p>
             )}
             {invalidRange && (
-              <p role="alert" style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 12, marginTop: 8 }}>
+              <p role="alert" style={{ color: "var(--sru-danger, #b91c1c)", fontSize: 11.5, marginTop: 8 }}>
                 {t("errorRange")}
               </p>
             )}

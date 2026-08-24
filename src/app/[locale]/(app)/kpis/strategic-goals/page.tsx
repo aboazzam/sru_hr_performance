@@ -59,7 +59,7 @@ export default async function StrategicGoalsPage() {
   if (!canView) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("errorForbidden")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       </div>
     );
   }
@@ -125,10 +125,10 @@ export default async function StrategicGoalsPage() {
       <GroupTabs groupKey="strategicPlan" current="kpis/strategic-goals" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/kpis/strategic-identity" className="sru-btn">
@@ -145,7 +145,7 @@ export default async function StrategicGoalsPage() {
 
       {!identityComplete && (
         <div className="sru-card" style={{ padding: 16, marginBottom: 20, borderColor: "var(--sru-purple)" }}>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: 13 }}>
             {t("identityGateMessage")}{" "}
             <Link href="/kpis/strategic-identity" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
               {t("identityLinkButton")}
@@ -155,7 +155,7 @@ export default async function StrategicGoalsPage() {
       )}
 
       {goals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         goals.map((goal) => {
           const goalSubGoals = subGoalsByStrategicGoal.get(goal.id) ?? [];
@@ -163,26 +163,26 @@ export default async function StrategicGoalsPage() {
             <div key={goal.id} className="sru-card" style={{ marginBottom: 24, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
-                  <strong style={{ fontSize: 16 }}>{goal.title_ar}</strong>
+                  <strong style={{ fontSize: 14 }}>{goal.title_ar}</strong>
                   {goal.weight != null && (
-                    <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 2 }}>
+                    <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 2 }}>
                       {t("columnWeight")}: {goal.weight}%
                     </p>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <Link href={`/kpis/manage-kpis?goalId=${goal.id}`} className="sru-btn" style={{ fontSize: 13 }}>
+                  <Link href={`/kpis/manage-kpis?goalId=${goal.id}`} className="sru-btn" style={{ fontSize: 12 }}>
                     {t("manageKpisButton")}
                   </Link>
-                  <Link href={`/kpis/strategic-goals/${goal.id}/sub-goals/new`} className="sru-btn" style={{ fontSize: 13 }}>
+                  <Link href={`/kpis/strategic-goals/${goal.id}/sub-goals/new`} className="sru-btn" style={{ fontSize: 12 }}>
                     {t("addSubGoalButton")}
                   </Link>
                 </div>
               </div>
 
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("kpisHeading")}</h3>
+              <h3 style={{ fontSize: 13, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("kpisHeading")}</h3>
               {(kpisByGoal.get(goal.id) ?? []).length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("kpisEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("kpisEmpty")}</p>
               ) : (
                 <div className="table-scroll">
                   <table className="admin-matrix">
@@ -208,9 +208,9 @@ export default async function StrategicGoalsPage() {
                 </div>
               )}
 
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("subGoalsHeading")}</h3>
+              <h3 style={{ fontSize: 13, fontWeight: 700, marginTop: 12, marginBottom: 8 }}>{t("subGoalsHeading")}</h3>
               {goalSubGoals.length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("subGoalsEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("subGoalsEmpty")}</p>
               ) : (
                 <div className="table-scroll">
                   <table className="admin-matrix">
@@ -240,7 +240,7 @@ export default async function StrategicGoalsPage() {
                             <Link
                               href={`/kpis/manage-kpis?subGoalId=${sg.id}`}
                               className="sru-btn"
-                              style={{ fontSize: 12, padding: "4px 10px" }}
+                              style={{ fontSize: 11.5, padding: "4px 10px" }}
                             >
                               {t("manageKpisButton")}
                             </Link>

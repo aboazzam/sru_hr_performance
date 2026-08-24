@@ -309,7 +309,7 @@ export function EmployeeInviteForm({
                 {t("accountModeDirect")}
               </label>
             </div>
-            <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>
+            <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
               {mode === "none" ? t("accountModeNoneHint") : mode === "invite" ? t("accountModeInviteHint") : t("accountModeDirectHint")}
             </span>
           </div>
@@ -352,7 +352,7 @@ export function EmployeeInviteForm({
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              <span style={{ fontSize: 12, color: "var(--sru-muted)" }}>{t("passwordHint")}</span>
+              <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{t("passwordHint")}</span>
             </div>
           )}
 

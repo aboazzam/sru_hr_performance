@@ -391,13 +391,13 @@ export default async function MyProfilePage() {
           label: t("kpisTitle"),
           content: (
             <>
-              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("kpisNote")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>{t("kpisNote")}</p>
 
               <section style={{ marginBottom: 20 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("planTargetsHeading")}</h3>
-                <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>{t("planTargetsNote")}</p>
+                <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t("planTargetsHeading")}</h3>
+                <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>{t("planTargetsNote")}</p>
                 {myTargets.length === 0 ? (
-                  <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("planTargetsEmpty")}</p>
+                  <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("planTargetsEmpty")}</p>
                 ) : (
                   <div className="sru-card">
                     <div className="table-scroll">
@@ -444,7 +444,7 @@ export default async function MyProfilePage() {
                 )}
               </section>
               {!goals || goals.length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("goalsEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("goalsEmpty")}</p>
               ) : (
                 <div className="sru-card">
                   <div className="table-scroll">
@@ -479,7 +479,7 @@ export default async function MyProfilePage() {
           label: t("tasksTitle"),
           content:
             !tasks || tasks.length === 0 ? (
-              <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("tasksEmpty")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("tasksEmpty")}</p>
             ) : (
               <div className="sru-card">
                 <div className="table-scroll">
@@ -517,14 +517,14 @@ export default async function MyProfilePage() {
                   this shows the full institutional framework (same source as /competencies)
                   rather than a personalized subset, flagged to the project owner as a data
                   gap rather than building a filter with nothing to filter by. */}
-              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>
                 {t("competenciesNote")}
               </p>
               {pillars.map((pillar) => {
                 const items = getCompetenciesByPillar(pillar);
                 return (
                   <div key={pillar} style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--sru-blue)", marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--sru-blue)", marginBottom: 8 }}>
                       {pillar}
                     </h3>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -544,7 +544,7 @@ export default async function MyProfilePage() {
           id: "career-path",
           label: t("careerPathTitle"),
           content: !p.job_title_id || !careerTree ? (
-            <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("careerPathNoJobTitle")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("careerPathNoJobTitle")}</p>
           ) : (
             <div>
               <CareerPathForwardTree
@@ -563,7 +563,7 @@ export default async function MyProfilePage() {
                 }}
               />
               {careerTree.children.length === 0 && (
-                <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 16 }}>{t("careerPathEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 16 }}>{t("careerPathEmpty")}</p>
               )}
             </div>
           ),
@@ -573,9 +573,9 @@ export default async function MyProfilePage() {
           label: t("performanceTitle"),
           content: (
             <>
-              <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginBottom: 12 }}>{t("performanceNote")}</p>
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>{t("performanceNote")}</p>
               {!evaluationsList || evaluationsList.length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("performanceEvaluationsEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("performanceEvaluationsEmpty")}</p>
               ) : (
                 <div className="sru-card" style={{ marginBottom: 20 }}>
                   <div className="table-scroll">
@@ -607,9 +607,9 @@ export default async function MyProfilePage() {
                 </div>
               )}
 
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t("calibrationTitle")}</h3>
+              <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 10 }}>{t("calibrationTitle")}</h3>
               {!calibrationResults || calibrationResults.length === 0 ? (
-                <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("calibrationEmpty")}</p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("calibrationEmpty")}</p>
               ) : (
                 <div className="sru-card">
                   <div className="table-scroll">
@@ -643,15 +643,15 @@ export default async function MyProfilePage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <h1 className="sru-title" style={{ fontSize: 24 }}>
+      <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
-      <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4, marginBottom: 20 }}>
+      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4, marginBottom: 20 }}>
         {t("subtitle")}
       </p>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
-      {!p ? <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noProfile")}</p> : <ProfileTabs tabs={tabs} />}
+      {!p ? <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noProfile")}</p> : <ProfileTabs tabs={tabs} />}
     </div>
   );
 }

@@ -59,10 +59,10 @@ export default async function CalibrationSessionsPage() {
         }}
       >
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("subtitle")}
           </p>
         </div>
@@ -75,7 +75,7 @@ export default async function CalibrationSessionsPage() {
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
       {!sessions || sessions.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("empty")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
         <div className="sru-card">
           <div className="table-scroll">
@@ -100,7 +100,7 @@ export default async function CalibrationSessionsPage() {
                       <Link
                         href={`/calibration/${session.id}`}
                         className="sru-btn sru-btn-primary"
-                        style={{ fontSize: 13, padding: "6px 12px" }}
+                        style={{ fontSize: 12, padding: "6px 12px" }}
                       >
                         {t("enterRatings")}
                       </Link>

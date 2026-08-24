@@ -31,10 +31,10 @@ export default async function CareerPathJobTitlesPage() {
   if (!canManage) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-        <h1 className="sru-title" style={{ fontSize: 24 }}>
+        <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
-        <p style={{ color: "var(--sru-muted)", fontSize: 14, marginTop: 16 }}>{t("noPermission")}</p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 16 }}>{t("noPermission")}</p>
       </div>
     );
   }
@@ -69,10 +69,10 @@ export default async function CareerPathJobTitlesPage() {
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
         <div>
-          <h1 className="sru-title" style={{ fontSize: 24 }}>
+          <h1 className="sru-title" style={{ fontSize: 20 }}>
             {t("title")}
           </h1>
-          <p style={{ color: "var(--sru-muted)", fontSize: 13, marginTop: 4 }}>{t("subtitle")}</p>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link href="/career-path/job-titles/new" className="sru-btn sru-btn-primary">

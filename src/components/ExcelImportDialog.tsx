@@ -173,11 +173,11 @@ export function ExcelImportDialog({
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{heading}</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>{heading}</h3>
             {step === 1
-              ? subtitle && <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2 }}>{subtitle}</p>
+              ? subtitle && <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>{subtitle}</p>
               : inspect?.status === "success" && (
-                  <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: 2 }}>
+                  <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>
                     {t("summaryLine", { rows: totalRows, mode: t(mode === "upsert" ? "modeUpsertShort" : "modeInsertShort") })}
                   </p>
                 )}
@@ -205,7 +205,7 @@ export function ExcelImportDialog({
             style={{ marginTop: 14 }}
           >
             <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t("modeQuestion")}</legend>
+              <legend style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{t("modeQuestion")}</legend>
               {(["insert_only", "upsert"] as const).map((value) => (
                 <label key={value} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
                   <input
@@ -217,10 +217,10 @@ export function ExcelImportDialog({
                     style={{ marginTop: 3 }}
                   />
                   <span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>
                       {t(value === "insert_only" ? "modeInsertTitle" : "modeUpsertTitle")}
                     </span>
-                    <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.7 }}>
+                    <span style={{ display: "block", color: "var(--sru-muted)", fontSize: 11.5, lineHeight: 1.7 }}>
                       {t(value === "insert_only" ? "modeInsertNote" : "modeUpsertNote")}
                     </span>
                   </span>
@@ -235,7 +235,7 @@ export function ExcelImportDialog({
               <span>{t("noDeleteWarning")}</span>
             </p>
 
-            {note && <div style={{ color: "var(--sru-muted)", fontSize: 12.5, lineHeight: 1.7, marginTop: 10 }}>{note}</div>}
+            {note && <div style={{ color: "var(--sru-muted)", fontSize: 11.5, lineHeight: 1.7, marginTop: 10 }}>{note}</div>}
 
             <div className="sru-field" style={{ marginTop: 12 }}>
               <label>{t("fileLabel")}</label>
@@ -245,7 +245,7 @@ export function ExcelImportDialog({
                 accept=".xlsx"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
-              <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("fileHint")}</span>
+              <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>{t("fileHint")}</span>
             </div>
 
             {inspect?.status === "error" && (
@@ -303,8 +303,8 @@ export function ExcelImportDialog({
             }}
             style={{ marginTop: 14 }}
           >
-            <h4 style={{ fontSize: 13, fontWeight: 700 }}>{t("mappingHeading")}</h4>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.7, marginBottom: 8 }}>{t("mappingNote")}</p>
+            <h4 style={{ fontSize: 12, fontWeight: 700 }}>{t("mappingHeading")}</h4>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, lineHeight: 1.7, marginBottom: 8 }}>{t("mappingNote")}</p>
 
             <div className="table-scroll" style={{ maxHeight: 260 }}>
               <table className="admin-matrix">
@@ -321,7 +321,7 @@ export function ExcelImportDialog({
                       <Fragment key={sheet.name}>
                         {sheetScoped && (
                           <tr>
-                            <th colSpan={2} style={{ textAlign: "start", fontSize: 12, background: "var(--sru-purple-light)" }}>
+                            <th colSpan={2} style={{ textAlign: "start", fontSize: 11.5, background: "var(--sru-purple-light)" }}>
                               {sheet.name}
                             </th>
                           </tr>
@@ -330,7 +330,7 @@ export function ExcelImportDialog({
                           const mapKey = sheetScoped ? qualifyColumn(sheet.name, header) : header;
                           return (
                             <tr key={mapKey}>
-                              <td style={{ fontSize: 12.5 }}>{header}</td>
+                              <td style={{ fontSize: 11.5 }}>{header}</td>
                               <td>
                                 <select
                                   value={mapping[mapKey] ?? ""}
@@ -364,16 +364,16 @@ export function ExcelImportDialog({
               </table>
             </div>
 
-            <h4 style={{ fontSize: 13, fontWeight: 700, marginTop: 14 }}>
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginTop: 14 }}>
               {t(mode === "upsert" ? "fieldsHeadingUpsert" : "fieldsHeadingInsert")}
             </h4>
-            <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 8 }}>
               {t(mode === "upsert" ? "fieldsNoteUpsert" : "fieldsNoteInsert")}
             </p>
             {sheetScoped ? (
               mappedSheets.map((sheet) => (
                 <div key={sheet.name} style={{ marginBottom: 10 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{sheet.name}</p>
+                  <p style={{ fontSize: 11.5, fontWeight: 600, marginBottom: 4 }}>{sheet.name}</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {fieldsForSheet(fields, sheet.name, sheetScoped).map((f) => (
                       <FieldChip
@@ -415,7 +415,7 @@ export function ExcelImportDialog({
               })}
             </div>
             )}
-            <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 6 }}>{t("unmappedDisabled")}</p>
+            <p style={{ color: "var(--sru-muted)", fontSize: 11, marginTop: 6 }}>{t("unmappedDisabled")}</p>
 
             {children?.(importState)}
 

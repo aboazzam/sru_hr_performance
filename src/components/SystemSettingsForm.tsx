@@ -49,16 +49,16 @@ export function SystemSettingsForm({
       className="sru-card"
       style={{ padding: 20, maxWidth: 480, display: "flex", flexDirection: "column", gap: 14 }}
     >
-      {!canEdit && <p style={{ color: "var(--sru-muted)", fontSize: 12.5, margin: 0 }}>{t("viewOnlyNote")}</p>}
+      {!canEdit && <p style={{ color: "var(--sru-muted)", fontSize: 11.5, margin: 0 }}>{t("viewOnlyNote")}</p>}
 
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={{ fontSize: 13, fontWeight: 700 }}>{t("timezoneLabel")}</span>
+        <span style={{ fontSize: 12, fontWeight: 700 }}>{t("timezoneLabel")}</span>
         <select
           name="timezone"
           value={timezone}
           disabled={!canEdit}
           onChange={(e) => setTimezone(e.target.value)}
-          style={{ padding: "8px 10px", borderRadius: "var(--sru-radius)", border: "1px solid var(--sru-border)", fontSize: 13 }}
+          style={{ padding: "8px 10px", borderRadius: "var(--sru-radius)", border: "1px solid var(--sru-border)", fontSize: 12 }}
           dir="ltr"
         >
           {timezoneOptions.map((tz) => (
@@ -75,9 +75,9 @@ export function SystemSettingsForm({
         </button>
       )}
 
-      {state?.status === "success" && <p style={{ color: "var(--sru-success, #15803d)", fontSize: 12.5, margin: 0 }}>{t("successMessage")}</p>}
+      {state?.status === "success" && <p style={{ color: "var(--sru-success, #15803d)", fontSize: 11.5, margin: 0 }}>{t("successMessage")}</p>}
       {state?.status === "error" && (
-        <p role="alert" style={{ color: "#b91c1c", fontSize: 12.5, margin: 0 }}>
+        <p role="alert" style={{ color: "#b91c1c", fontSize: 11.5, margin: 0 }}>
           {t(errorMessageKeys[state.message] ?? "errorUnknown")}
         </p>
       )}

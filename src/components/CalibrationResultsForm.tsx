@@ -40,9 +40,9 @@ export function CalibrationResultsForm({
   );
 
   const ratingInputClass =
-    "w-24 px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-24 px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
   const textInputClass =
-    "w-full px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+    "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
   // See EmployeeInviteForm.tsx: React 19's <form action={fn}> resets every
   // uncontrolled field after ANY submission, success or error alike -- here
@@ -118,7 +118,7 @@ export function CalibrationResultsForm({
         </p>
       )}
       {state?.status === "success" && (
-        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 13 }}>
+        <p role="status" style={{ color: "var(--sru-success, #15803d)", fontSize: 12 }}>
           {t("successMessage")}
         </p>
       )}
