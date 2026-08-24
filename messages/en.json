@@ -1235,7 +1235,8 @@
     "planTargetsColumnUnit": "Unit",
     "planTargetsColumnMyShare": "My share",
     "planTargetsColumnValue": "My target value",
-    "planTargetsShareValue": "{ofUnit}% of the unit's share ({ofTarget}% of the target)"
+    "planTargetsShareValue": "{ofUnit}% of the unit's share ({ofTarget}% of the target)",
+    "planTargetsColumnActual": "What I achieved"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",
@@ -2755,6 +2756,8 @@
     "actualEmployeeLabel": "Employee actual",
     "actualPlaceholder": "Not recorded",
     "actualNotRecorded": "Not recorded",
-    "actualSave": "Record"
+    "actualSave": "Record",
+    "actualRecordedBy": "Recorded by {name}",
+    "actualSelfReportedBy": "Self-reported by {name}"
   }
 }

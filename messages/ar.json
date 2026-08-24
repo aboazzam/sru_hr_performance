@@ -1235,7 +1235,8 @@
     "planTargetsColumnUnit": "الجهة",
     "planTargetsColumnMyShare": "حصتي",
     "planTargetsColumnValue": "قيمتي المستهدفة",
-    "planTargetsShareValue": "{ofUnit}% من حصة الجهة ({ofTarget}% من المستهدف)"
+    "planTargetsShareValue": "{ofUnit}% من حصة الجهة ({ofTarget}% من المستهدف)",
+    "planTargetsColumnActual": "ما أنجزتُه"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",
@@ -2755,6 +2756,8 @@
     "actualEmployeeLabel": "فعلي الموظف",
     "actualPlaceholder": "لم تُسجَّل",
     "actualNotRecorded": "لم تُسجَّل",
-    "actualSave": "تسجيل"
+    "actualSave": "تسجيل",
+    "actualRecordedBy": "سجّلها: {name}",
+    "actualSelfReportedBy": "بلاغ ذاتي من {name}"
   }
 }

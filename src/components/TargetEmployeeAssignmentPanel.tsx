@@ -37,6 +37,9 @@ export interface UnitShareRow {
     employeeName: string;
     percentage: number;
     actualValue: number | string | null;
+    /** Who typed the figure — the employee about themselves, or the unit. */
+    actualRecordedBy: string | null;
+    actualSelfReported: boolean;
   }>;
   /** Whether THIS caller may write this unit's split. */
   canManage: boolean;
@@ -220,14 +223,23 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
               </button>
             )}
             {savedByEmployee.has(row.employeeId) && (
-              <ActualValueField
-                id={savedByEmployee.get(row.employeeId)!.assignmentId}
-                initialValue={savedByEmployee.get(row.employeeId)!.actualValue}
-                unit={share.targetUnit}
-                label={t("actualEmployeeLabel")}
-                canEdit={share.canManage}
-                action={recordEmployeeActual}
-              />
+              <>
+                <ActualValueField
+                  id={savedByEmployee.get(row.employeeId)!.assignmentId}
+                  initialValue={savedByEmployee.get(row.employeeId)!.actualValue}
+                  unit={share.targetUnit}
+                  label={t("actualEmployeeLabel")}
+                  canEdit={share.canManage}
+                  action={recordEmployeeActual}
+                />
+                {savedByEmployee.get(row.employeeId)!.actualRecordedBy && (
+                  <span style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>
+                    {savedByEmployee.get(row.employeeId)!.actualSelfReported
+                      ? t("actualSelfReportedBy", { name: savedByEmployee.get(row.employeeId)!.actualRecordedBy as string })
+                      : t("actualRecordedBy", { name: savedByEmployee.get(row.employeeId)!.actualRecordedBy as string })}
+                  </span>
+                )}
+              </>
             )}
           </div>
         ))}

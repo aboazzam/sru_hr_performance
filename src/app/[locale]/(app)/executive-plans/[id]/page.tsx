@@ -193,7 +193,7 @@ export default async function ExecutivePlanDetailPage({
     shares.length > 0
       ? await supabase
           .from("executive_plan_target_employees")
-          .select("id, target_org_unit_id, employee_id, percentage, actual_value")
+          .select("id, target_org_unit_id, employee_id, percentage, actual_value, actual_recorded_by")
           .in(
             "target_org_unit_id",
             shares.map((sh) => sh.id)
@@ -206,6 +206,7 @@ export default async function ExecutivePlanDetailPage({
     employee_id: string;
     percentage: number | string;
     actual_value: number | string | null;
+    actual_recorded_by: string | null;
   }>;
 
   // Employees the caller can actually see — profiles_select's own RLS decides,
@@ -255,6 +256,8 @@ export default async function ExecutivePlanDetailPage({
           employeeName: employeeNameById.get(es.employee_id) ?? "—",
           percentage: Number(es.percentage),
           actualValue: es.actual_value,
+          actualRecordedBy: es.actual_recorded_by ? employeeNameById.get(es.actual_recorded_by) ?? null : null,
+          actualSelfReported: es.actual_recorded_by != null && es.actual_recorded_by === es.employee_id,
         })),
       canManage: canManageTargets || scopedUnitIds.has(sh.org_unit_id),
     };
