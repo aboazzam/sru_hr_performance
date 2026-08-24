@@ -2799,7 +2799,7 @@
     "reading": "Reading the file...",
     "template": "Download an empty template",
     "fileLabel": "Excel file",
-    "fileHint": "The first row holds the column headers.",
+    "fileHint": "The first row holds the column headers. Up to 5 MB and 2,000 rows.",
     "modeQuestion": "What should the import do?",
     "modeInsertTitle": "Add new records only",
     "modeInsertNote": "Creates what has no record yet and skips existing ones without touching their data.",
@@ -2816,11 +2816,15 @@
     "ignoreColumn": "— ignore —",
     "fieldsHeadingInsert": "Fields filled in for new records",
     "fieldsNoteInsert": "Unselected fields are left empty on creation.",
-    "fieldsHeadingUpsert": "Fields filled in and updated",
-    "fieldsNoteUpsert": "Unselected fields are not touched on existing records.",
+    "fieldsHeadingUpsert": "Fields updated on existing records",
+    "fieldsNoteUpsert": "Anything you leave unticked stays as it is in the platform.",
     "unmappedDisabled": "Fields with no column mapped to them are disabled here, and identifying fields are required.",
     "errorInvalidFile": "The file could not be read — make sure it is an .xlsx workbook.",
     "errorEmpty": "The file has no column headers in its first row.",
-    "errorUnauthenticated": "Your session expired — please sign in again."
+    "errorUnauthenticated": "Your session expired — please sign in again.",
+    "runImport": "Run the import",
+    "subtitleDefault": "Upload a file and choose what gets added or updated.",
+    "errorTooLarge": "The file is larger than 5 MB.",
+    "errorTooManyRows": "The file exceeds 2,000 rows — split it into smaller files."
   }
 }

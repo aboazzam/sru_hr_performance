@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ExcelImportDialog, type ImportFieldSpec } from "@/components/ExcelImportDialog";
 import { importOrgStructureExcel, type ImportResult } from "@/app/[locale]/(app)/admin/org-structure/import-actions";
+import { ORG_STRUCTURE_IMPORT_COLUMNS } from "@/lib/importColumns";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "importErrorInvalid",
@@ -39,23 +40,23 @@ export function ImportOrgStructureExcelForm({
   const t = useTranslations("OrgStructurePage");
 
   const fields: ImportFieldSpec[] = [
-    { key: "employeeNumber", label: t("importFieldEmployeeNumber"), isKey: true },
-    { key: "fullNameAr", label: t("importFieldNameAr"), isKey: true },
-    { key: "fullNameEn", label: t("importFieldNameEn") },
-    { key: "email", label: t("importFieldEmail") },
-    { key: "department", label: t("importFieldDepartment") },
-    { key: "positionAr", label: t("importFieldPosition") },
-    { key: "role", label: t("importFieldRole") },
-    { key: "hireDate", label: t("importFieldHireDate") },
-    { key: "qualification", label: t("importFieldQualification") },
-    { key: "educationSpeciality", label: t("importFieldSpeciality") },
-    { key: "dateOfBirth", label: t("importFieldDateOfBirth") },
-    { key: "mobile", label: t("importFieldMobile") },
-    { key: "maritalStatus", label: t("importFieldMaritalStatus") },
-    { key: "gender", label: t("importFieldGender") },
-    { key: "nationality", label: t("importFieldNationality") },
-    { key: "employeeCategory", label: t("importFieldEmployeeCategory") },
-    { key: "insuranceCategory", label: t("importFieldInsuranceCategory") },
+    { key: "employeeNumber", label: t("importFieldEmployeeNumber"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.employeeNumber, isKey: true },
+    { key: "fullNameAr", label: t("importFieldNameAr"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.fullNameAr, isKey: true },
+    { key: "fullNameEn", label: t("importFieldNameEn"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.fullNameEn },
+    { key: "email", label: t("importFieldEmail"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.email },
+    { key: "department", label: t("importFieldDepartment"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.department },
+    { key: "positionAr", label: t("importFieldPosition"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.positionAr },
+    { key: "role", label: t("importFieldRole"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.role },
+    { key: "hireDate", label: t("importFieldHireDate"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.hireDate },
+    { key: "qualification", label: t("importFieldQualification"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.qualification },
+    { key: "educationSpeciality", label: t("importFieldSpeciality"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.educationSpeciality },
+    { key: "dateOfBirth", label: t("importFieldDateOfBirth"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.dateOfBirth },
+    { key: "mobile", label: t("importFieldMobile"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.mobile },
+    { key: "maritalStatus", label: t("importFieldMaritalStatus"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.maritalStatus },
+    { key: "gender", label: t("importFieldGender"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.gender },
+    { key: "nationality", label: t("importFieldNationality"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.nationality },
+    { key: "employeeCategory", label: t("importFieldEmployeeCategory"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.employeeCategory },
+    { key: "insuranceCategory", label: t("importFieldInsuranceCategory"), columnLabel: ORG_STRUCTURE_IMPORT_COLUMNS.insuranceCategory },
   ];
 
   return (
@@ -68,7 +69,6 @@ export function ImportOrgStructureExcelForm({
       fields={fields}
       action={importOrgStructureExcel}
       pendingLabel={t("importing")}
-      submitLabel={t("importButton")}
     >
       {(state: ImportResult | null) => <OrgStructureImportOutcome state={state} />}
     </ExcelImportDialog>

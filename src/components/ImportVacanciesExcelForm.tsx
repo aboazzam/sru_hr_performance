@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ExcelImportDialog, type ImportFieldSpec } from "@/components/ExcelImportDialog";
 import { importVacanciesExcel, type VacanciesImportResult } from "@/app/[locale]/(app)/vacancies/import-actions";
+import { VACANCY_IMPORT_COLUMNS } from "@/lib/importColumns";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "importErrorInvalid",
@@ -23,11 +24,11 @@ export function ImportVacanciesExcelForm() {
 
   const fields: ImportFieldSpec[] = [
     // The two that identify the posting; a row without them cannot be placed.
-    { key: "jobTitle", label: t("importFieldJobTitle"), isKey: true },
-    { key: "orgUnit", label: t("importFieldOrgUnit"), isKey: true },
-    { key: "jobFamily", label: t("importFieldJobFamily") },
-    { key: "status", label: t("importFieldStatus") },
-    { key: "requirements", label: t("importFieldRequirements") },
+    { key: "jobTitle", label: t("importFieldJobTitle"), columnLabel: VACANCY_IMPORT_COLUMNS.jobTitle, isKey: true },
+    { key: "orgUnit", label: t("importFieldOrgUnit"), columnLabel: VACANCY_IMPORT_COLUMNS.orgUnit, isKey: true },
+    { key: "jobFamily", label: t("importFieldJobFamily"), columnLabel: VACANCY_IMPORT_COLUMNS.jobFamily },
+    { key: "status", label: t("importFieldStatus"), columnLabel: VACANCY_IMPORT_COLUMNS.status },
+    { key: "requirements", label: t("importFieldRequirements"), columnLabel: VACANCY_IMPORT_COLUMNS.requirements },
   ];
 
   return (
@@ -40,7 +41,6 @@ export function ImportVacanciesExcelForm() {
       fields={fields}
       action={importVacanciesExcel}
       pendingLabel={t("importing")}
-      submitLabel={t("importButton")}
     >
       {(state: VacanciesImportResult | null) => <VacanciesImportOutcome state={state} />}
     </ExcelImportDialog>

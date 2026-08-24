@@ -8,7 +8,12 @@ export type InspectExcelResult =
       status: "success";
       sheets: Array<{ name: string; headers: string[]; rowCount: number }>;
     }
-  | { status: "error"; message: "invalid_input" | "unauthenticated" | "empty" };
+  | { status: "error"; message: "invalid_input" | "unauthenticated" | "empty" | "too_large" | "too_many_rows" };
+
+// The limits the dialog puts on screen. They are enforced here because a
+// stated limit nobody checks is just a wrong label.
+const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_ROWS = 2000;
 
 function cellText(value: ExcelJS.CellValue): string {
   if (value == null) return "";
@@ -40,6 +45,10 @@ export async function inspectExcelFile(_prev: InspectExcelResult | null, formDat
     return { status: "error", message: "invalid_input" };
   }
 
+  if (file.size > MAX_BYTES) {
+    return { status: "error", message: "too_large" };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -66,6 +75,10 @@ export async function inspectExcelFile(_prev: InspectExcelResult | null, formDat
     // Row 1 is the header, so the data rows are what is left.
     sheets.push({ name: sheet.name, headers, rowCount: Math.max(0, sheet.rowCount - 1) });
   });
+
+  if (sheets.reduce((sum, sheet) => sum + sheet.rowCount, 0) > MAX_ROWS) {
+    return { status: "error", message: "too_many_rows" };
+  }
 
   if (sheets.every((s) => s.headers.length === 0)) {
     return { status: "error", message: "empty" };
