@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { VACANCY_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type VacanciesImportResult =
@@ -42,14 +43,6 @@ const COL_REQUIREMENTS = "المتطلبات";
 
 const REQUIRED_COLUMNS = [COL_JOB_TITLE, COL_ORG_UNIT];
 
-/** Canonical field key -> the column label this importer reads it from. */
-export const VACANCY_IMPORT_COLUMNS = {
-  jobTitle: COL_JOB_TITLE,
-  orgUnit: COL_ORG_UNIT,
-  jobFamily: COL_JOB_FAMILY,
-  status: COL_STATUS,
-  requirements: COL_REQUIREMENTS,
-} as const;
 
 /**
  * Bulk import for `vacancies` — one sheet, one row per vacancy (job title +

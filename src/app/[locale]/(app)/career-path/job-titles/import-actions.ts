@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { JOB_TITLE_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type JobTitlesImportResult =
@@ -68,16 +69,7 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 
 const REQUIRED_COLUMNS = ["اسم المسمى الوظيفي", "العائلة الوظيفية", "الدرجة", "الفئة"];
 
-/** Canonical field key -> the column label this importer reads it from. */
-export const JOB_TITLE_IMPORT_COLUMNS = {
-  nameAr: "اسم المسمى الوظيفي",
-  jobFamily: "العائلة الوظيفية",
-  gradeLevel: "الدرجة",
-  category: "الفئة",
-  nameEn: "الاسم بالإنجليزية",
-  qualification: "المؤهل المطلوب",
-  description: "الوصف",
-} as const;
+
 const BATCH_SIZE = 50;
 
 /**

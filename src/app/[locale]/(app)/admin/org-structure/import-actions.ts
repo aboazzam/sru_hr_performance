@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ORG_STRUCTURE_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type ImportResult =
@@ -28,39 +29,6 @@ export type ImportResult =
 // sheet's row for "رئيس قسم القيادة والتنمية الطلابية" references parent
 // code 1132, which does not exist anywhere in the sheet — a typo for 1131
 // ("مدير إدارة الحياة الجامعية"), confirmed directly by the project owner.
-/**
- * Canonical field key -> the column label this importer reads it from, across
- * BOTH sheets. The mapping the dialog produces is applied to each sheet's own
- * header row, so a label only ever matches the sheet that actually has it.
- */
-export const ORG_STRUCTURE_IMPORT_COLUMNS = {
-  employeeNumber: "EMPLOYEE NUMBER",
-  fullNameAr: "اسم الموظف",
-  email: "EMAIL ID",
-  fullNameEn: "Employee Name",
-  gradeCode: "GRADE CODE",
-  hireDate: "Hire Date",
-  qualification: "Qualification",
-  educationSpeciality: "Education Speciality",
-  dateOfBirth: "DATE OF BIRTH (YYYY-MM-DD)",
-  mobile: "Mobile",
-  maritalStatus: "MARITIAL STATUS",
-  gender: "GENDER",
-  nationality: "NATIONALITY",
-  department: "الادارة",
-  positionAr: "اسم الوظيفة",
-  positionEn: "POSITION",
-  employeeCategory: "Category",
-  insuranceCategory: "Insurance Category",
-  role: "الدور في النظام",
-  // The organisational-structure sheet.
-  structLevel: "المستوى",
-  structCode: "الرمز",
-  structUnit: "الوحدة التنظيمية",
-  structUnitEn: "Organizational Unit",
-  structParentCode: "رمز التبعية",
-  structHolderNumber: "الرقم الوظيفي لمن يشغل المنصب",
-} as const;
 
 const KNOWN_PARENT_CODE_CORRECTIONS: Record<string, string> = {
   "1132": "1131",

@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CAREER_PATH_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
 
 export type CareerPathImportResult =
@@ -43,12 +44,6 @@ function requireColumns(map: Map<string, number>, names: string[]): string | nul
 
 const REQUIRED_COLUMNS = ["من (المسمى الوظيفي)", "إلى (المسمى الوظيفي)"];
 
-/** Canonical field key -> the column label this importer reads it from. */
-export const CAREER_PATH_IMPORT_COLUMNS = {
-  fromJobTitle: "من (المسمى الوظيفي)",
-  toJobTitle: "إلى (المسمى الوظيفي)",
-  requirements: "متطلبات الانتقال",
-} as const;
 
 /**
  * Bulk import for `career_path` — one sheet, one row per promotion edge
