@@ -2329,3 +2329,107 @@ table {
     padding: 20px 14px 36px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Login: a two-column split — form on one side, an illustrated panel on the
+   other (2026-08-24, matching a reference layout the project owner sent).
+   Additive, like every other chrome rule here: sru-ui.css is never edited.
+
+   The panel is decorative only. It collapses below 900px rather than shrinking,
+   because a login form that has to compete for width with a picture on a phone
+   is a worse form.
+--------------------------------------------------------------------------- */
+.sru-auth-split {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--sru-bg);
+  position: relative;
+}
+
+.sru-auth-split-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: #fff;
+}
+
+.sru-auth-split-inner {
+  width: 100%;
+  max-width: 420px;
+}
+
+.sru-auth-split-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.sru-auth-split-brand img {
+  height: 44px;
+  width: auto;
+}
+.sru-auth-split-brand span {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sru-purple-dark);
+}
+
+.sru-auth-split-inner h1 {
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--sru-purple-dark);
+  margin-bottom: 10px;
+}
+.sru-auth-split-lead {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--sru-muted);
+  margin-bottom: 28px;
+}
+
+/* The reference's footnote slot. Here it says how an account is obtained,
+   since this system has no self-service sign-up to link to. */
+.sru-auth-split-note {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--sru-border);
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--sru-muted);
+  text-align: center;
+}
+
+.sru-auth-split-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(10, 110, 170, 0.55), transparent 55%),
+    linear-gradient(150deg, var(--sru-purple-dark) 0%, var(--sru-purple) 55%, #0a2540 100%);
+}
+.sru-auth-split-art svg {
+  width: min(100%, 560px);
+  height: auto;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.35));
+}
+
+.sru-auth-split .sru-auth-locale {
+  top: 20px;
+  inset-inline-start: 20px;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .sru-auth-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sru-auth-split-art {
+    display: none;
+  }
+}
