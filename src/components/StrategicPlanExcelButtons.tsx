@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AlertCircle, ArrowUpFromLine, CheckCircle2 } from "lucide-react";
-import { ExcelImportDialog } from "@/components/ExcelImportDialog";
+import { ExcelImportDialog, type ImportFieldSpec } from "@/components/ExcelImportDialog";
 import { importStrategicPlanExcel, type ImportStrategicPlanState } from "@/app/[locale]/(app)/kpis/plans/[id]/import-actions";
-import { STRATEGIC_PLAN_SHEETS } from "@/lib/strategicPlanExcel";
+import { STRATEGIC_PLAN_FIELDS, STRATEGIC_PLAN_SHEETS, type StrategicPlanSheetKey } from "@/lib/strategicPlanExcel";
 
 type ErrorMessage = Extract<ImportStrategicPlanState, { status: "error" }>["message"];
 
@@ -169,11 +169,7 @@ export function StrategicPlanExcelButtons({ planId, canImport }: { planId: strin
           triggerLabel={t("importButton")}
           heading={t("importHeading")}
           subtitle={t("importNote")}
-          // No mappable fields on purpose: this workbook's nine sheets and
-          // their columns ARE this app's own export format, so there is
-          // nothing to map them onto. The dialog still asks what the import
-          // may do, which is the question that matters here.
-          fields={[]}
+          fields={IMPORT_FIELDS}
           action={importStrategicPlanExcel}
           pendingLabel={t("importSubmitting")}
           extraFields={{ planId }}
@@ -229,3 +225,26 @@ function StrategicPlanImportOutcome({ state }: { state: ImportStrategicPlanState
     </div>
   );
 }
+
+/**
+ * Every importable sheet’s columns, flattened into one list tagged by sheet.
+ *
+ * The dialog groups them again by `sheet`, which is what makes a workbook with
+ * repeating headers mappable at all: "الوصف (عربي)" appears on five sheets
+ * here, so a mapping keyed by header text alone would have one choice govern
+ * all five.
+ *
+ * "الأهداف المسندة" is absent on purpose: it is export-only, so offering
+ * its columns for mapping would promise an import that never runs.
+ */
+const IMPORT_FIELDS: ImportFieldSpec[] = (
+  Object.keys(STRATEGIC_PLAN_FIELDS) as StrategicPlanSheetKey[]
+).flatMap((sheetKey) =>
+  STRATEGIC_PLAN_FIELDS[sheetKey].map((field) => ({
+    key: field.key,
+    label: field.label,
+    columnLabel: field.label,
+    isKey: field.isKey,
+    sheet: STRATEGIC_PLAN_SHEETS[sheetKey],
+  }))
+);

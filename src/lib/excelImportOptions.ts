@@ -95,6 +95,18 @@ export function parseImportOptions(formData: FormData): ImportOptions {
   return { mode, fields: fieldList == null ? null : new Set(fieldList), mapping, ignored };
 }
 
+/**
+ * How a mapping entry names a column that belongs to one specific sheet.
+ *
+ * A single-sheet import keys its mapping by the bare header. A workbook whose
+ * sheets REPEAT header names cannot: the strategic-plan file has
+ * "الوصف (عربي)" on five sheets and "الهدف الاستراتيجي" on three, so a bare
+ * key would make one choice govern all of them at once.
+ */
+export function qualifyColumn(sheet: string, header: string): string {
+  return `${sheet}${header}`;
+}
+
 /** Whether a canonical field may be written at all. */
 export function writesField(options: ImportOptions, field: string): boolean {
   return options.fields == null || options.fields.has(field);
@@ -120,15 +132,21 @@ export function updatesExisting(options: ImportOptions): boolean {
 export function applyMapping(
   fileHeaders: ReadonlyMap<string, number>,
   options: ImportOptions,
-  columnLabels: Readonly<Record<string, string>>
+  columnLabels: Readonly<Record<string, string>>,
+  /** Set for a multi-sheet workbook, so a repeated header maps per sheet. */
+  sheet?: string
 ): Map<string, number> {
   if (options.mapping.size === 0 && options.ignored.size === 0) return new Map(fileHeaders);
 
   const resolved = new Map<string, number>();
   for (const [fileColumn, columnNumber] of fileHeaders) {
+    // A sheet-qualified entry wins over a bare one, so a per-sheet choice is
+    // never overridden by a same-named column elsewhere in the workbook.
+    const qualified = sheet == null ? null : qualifyColumn(sheet, fileColumn);
     // Explicitly ignored: dropped, so the importer never sees it.
-    if (options.ignored.has(fileColumn)) continue;
-    const mappedField = options.mapping.get(fileColumn);
+    if (qualified != null && options.ignored.has(qualified)) continue;
+    if (qualified == null && options.ignored.has(fileColumn)) continue;
+    const mappedField = (qualified != null ? options.mapping.get(qualified) : undefined) ?? options.mapping.get(fileColumn);
     if (mappedField == null) {
       // Not mentioned by the dialog at all: keep it as-is.
       if (!resolved.has(fileColumn)) resolved.set(fileColumn, columnNumber);

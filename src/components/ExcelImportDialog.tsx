@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, startTransition, type ReactNode } from "react";
+import { Fragment, useActionState, useEffect, useRef, useState, startTransition, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { inspectExcelFile, type InspectExcelResult } from "@/app/actions/inspect-excel";
-import type { ImportMode } from "@/lib/excelImportOptions";
+import { qualifyColumn, type ImportMode } from "@/lib/excelImportOptions";
 
 export interface ImportFieldSpec {
   /** Canonical key the importer knows this field by. */
@@ -23,6 +23,15 @@ export interface ImportFieldSpec {
    * tell which row a line refers to.
    */
   isKey?: boolean;
+  /**
+   * The sheet this field belongs to, for a multi-sheet workbook.
+   *
+   * Needed because sheets repeat header names: the strategic-plan file has
+   * "الوصف (عربي)" on five sheets. Without this, one mapping choice would
+   * silently govern every sheet sharing that header, and the field list would
+   * be fifty unlabelled chips with no hint of which sheet each belonged to.
+   */
+  sheet?: string;
 }
 
 /**
@@ -74,6 +83,10 @@ export function ExcelImportDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasMappableFields = fields.length > 0;
+  // One workbook, several sheets, repeating headers: mapping keys are then
+  // qualified by sheet. A single-sheet import keeps bare header keys, so
+  // nothing about those five importers changes.
+  const sheetScoped = fields.some((f) => f.sheet != null);
   const [step, setStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<ImportMode>("insert_only");
   const [file, setFile] = useState<File | null>(null);
@@ -92,11 +105,16 @@ export function ExcelImportDialog({
   if (inspect !== handledInspect) {
     setHandledInspect(inspect);
     if (inspect?.status === "success" && hasMappableFields) {
-      const headers = inspect.sheets.flatMap((s) => s.headers);
       const guess: Record<string, string> = {};
-      for (const header of headers) {
-        const exact = fields.find((f) => f.label === header || f.columnLabel === header);
-        guess[header] = exact ? exact.key : "";
+      for (const sheet of inspect.sheets) {
+        // A sheet this import knows nothing about is left out entirely rather
+        // than listed with an empty field list to choose from.
+        const forSheet = fieldsForSheet(fields, sheet.name, sheetScoped);
+        if (forSheet.length === 0) continue;
+        for (const header of sheet.headers) {
+          const exact = forSheet.find((f) => f.label === header || f.columnLabel === header);
+          guess[sheetScoped ? qualifyColumn(sheet.name, header) : header] = exact ? exact.key : "";
+        }
       }
       setMapping(guess);
       // Only fields an actual column feeds can be written; the rest would
@@ -111,15 +129,32 @@ export function ExcelImportDialog({
     if (importState?.status === "success" && fileInputRef.current) fileInputRef.current.value = "";
   }, [importState]);
 
+  function toggleField(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   function open() {
     setStep(1);
     setMode("insert_only");
     setFile(null);
-    setHandledInspect(null);
+    // Marks the LAST inspection as handled rather than clearing it. Clearing
+    // made the derived block below see an unhandled success from the previous
+    // file and jump straight back to step 2 — showing the old mapping with no
+    // file selected. Caught reopening the dialog during live testing.
+    setHandledInspect(inspect);
     dialogRef.current?.showModal();
   }
 
   const mappedFields = new Set(Object.values(mapping).filter((v) => v !== ""));
+  const mappedSheets =
+    inspect?.status === "success"
+      ? inspect.sheets.filter((sheet) => fieldsForSheet(fields, sheet.name, sheetScoped).length > 0)
+      : [];
   const totalRows = inspect?.status === "success" ? inspect.sheets.reduce((sum, s) => sum + s.rowCount, 0) : 0;
 
   return (
@@ -271,7 +306,7 @@ export function ExcelImportDialog({
             <h4 style={{ fontSize: 13, fontWeight: 700 }}>{t("mappingHeading")}</h4>
             <p style={{ color: "var(--sru-muted)", fontSize: 12, lineHeight: 1.7, marginBottom: 8 }}>{t("mappingNote")}</p>
 
-            <div className="table-scroll" style={{ maxHeight: 220 }}>
+            <div className="table-scroll" style={{ maxHeight: 260 }}>
               <table className="admin-matrix">
                 <thead>
                   <tr>
@@ -280,34 +315,51 @@ export function ExcelImportDialog({
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.keys(mapping).map((header) => (
-                    <tr key={header}>
-                      <td style={{ fontSize: 12.5 }}>{header}</td>
-                      <td>
-                        <select
-                          value={mapping[header] ?? ""}
-                          onChange={(e) => {
-                            const next = { ...mapping, [header]: e.target.value };
-                            setMapping(next);
-                            const nowMapped = new Set(Object.values(next).filter((v) => v !== ""));
-                            setSelected((prev) => {
-                              const kept = new Set([...prev].filter((k) => nowMapped.has(k)));
-                              for (const f of fields) if (f.isKey) kept.add(f.key);
-                              if (e.target.value !== "") kept.add(e.target.value);
-                              return kept;
-                            });
-                          }}
-                        >
-                          <option value="">{t("ignoreColumn")}</option>
-                          {fields.map((f) => (
-                            <option key={f.key} value={f.key}>
-                              {f.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
+                  {mappedSheets.map((sheet) => {
+                    const forSheet = fieldsForSheet(fields, sheet.name, sheetScoped);
+                    return (
+                      <Fragment key={sheet.name}>
+                        {sheetScoped && (
+                          <tr>
+                            <th colSpan={2} style={{ textAlign: "start", fontSize: 12, background: "var(--sru-purple-light)" }}>
+                              {sheet.name}
+                            </th>
+                          </tr>
+                        )}
+                        {sheet.headers.map((header) => {
+                          const mapKey = sheetScoped ? qualifyColumn(sheet.name, header) : header;
+                          return (
+                            <tr key={mapKey}>
+                              <td style={{ fontSize: 12.5 }}>{header}</td>
+                              <td>
+                                <select
+                                  value={mapping[mapKey] ?? ""}
+                                  onChange={(e) => {
+                                    const next = { ...mapping, [mapKey]: e.target.value };
+                                    setMapping(next);
+                                    const nowMapped = new Set(Object.values(next).filter((v) => v !== ""));
+                                    setSelected((prev) => {
+                                      const kept = new Set([...prev].filter((k) => nowMapped.has(k)));
+                                      for (const f of fields) if (f.isKey) kept.add(f.key);
+                                      if (e.target.value !== "") kept.add(e.target.value);
+                                      return kept;
+                                    });
+                                  }}
+                                >
+                                  <option value="">{t("ignoreColumn")}</option>
+                                  {forSheet.map((f) => (
+                                    <option key={f.key} value={f.key}>
+                                      {f.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -318,6 +370,24 @@ export function ExcelImportDialog({
             <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 8 }}>
               {t(mode === "upsert" ? "fieldsNoteUpsert" : "fieldsNoteInsert")}
             </p>
+            {sheetScoped ? (
+              mappedSheets.map((sheet) => (
+                <div key={sheet.name} style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{sheet.name}</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {fieldsForSheet(fields, sheet.name, sheetScoped).map((f) => (
+                      <FieldChip
+                        key={f.key}
+                        field={f}
+                        selected={selected.has(f.key)}
+                        available={f.isKey === true || mappedFields.has(f.key)}
+                        onToggle={toggleField}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {fields.map((f) => {
                 const available = f.isKey || mappedFields.has(f.key);
@@ -344,6 +414,7 @@ export function ExcelImportDialog({
                 );
               })}
             </div>
+            )}
             <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 6 }}>{t("unmappedDisabled")}</p>
 
             {children?.(importState)}
@@ -361,5 +432,35 @@ export function ExcelImportDialog({
         )}
       </dialog>
     </>
+  );
+}
+
+/** The fields a given sheet may map to (all of them when not sheet-scoped). */
+function fieldsForSheet(fields: ImportFieldSpec[], sheetName: string, sheetScoped: boolean): ImportFieldSpec[] {
+  if (!sheetScoped) return fields;
+  return fields.filter((f) => f.sheet === sheetName);
+}
+
+function FieldChip({
+  field,
+  selected,
+  available,
+  onToggle,
+}: {
+  field: ImportFieldSpec;
+  selected: boolean;
+  available: boolean;
+  onToggle: (key: string) => void;
+}) {
+  return (
+    <label className={`sru-import-fieldchip${selected ? " is-on" : ""}${available ? "" : " is-off"}`}>
+      <input
+        type="checkbox"
+        checked={selected}
+        disabled={!available || field.isKey === true}
+        onChange={() => onToggle(field.key)}
+      />
+      {field.label}
+    </label>
   );
 }
