@@ -81,7 +81,7 @@ export function FinanceReviewPanel({
   const budgetIsValid = parsedBudget === null || (Number.isFinite(parsedBudget) && parsedBudget >= 0);
   const preview = computeBudgetVariance(totalAnnualCost, budgetIsValid ? parsedBudget : null);
 
-  const formatNumber = (value: number) => value.toLocaleString("ar-SA");
+  const formatNumber = (value: number) => value.toLocaleString("ar-SA-u-nu-latn");
   const overBudget = preview.status === "over";
 
   // Compared as typed, so "500000" vs "500000.00" counts as a change — the

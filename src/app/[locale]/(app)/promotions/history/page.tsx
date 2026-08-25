@@ -130,7 +130,7 @@ export default async function PromotionsRewardsHistoryPage() {
 
                   return (
                     <tr key={entry.id}>
-                      <td>{new Date(entry.created_at).toLocaleString("ar-SA", { timeZone: displayTimezone })}</td>
+                      <td>{new Date(entry.created_at).toLocaleString("ar-SA-u-nu-latn", { timeZone: displayTimezone })}</td>
                       <td>{entry.entity === "promotions" ? t("typePromotion") : t("typeReward")}</td>
                       <td>
                         {employee ? `${employee.employee_number} — ${employee.full_name_ar}` : "—"}

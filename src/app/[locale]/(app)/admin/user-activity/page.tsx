@@ -212,7 +212,7 @@ export default async function UserActivityPage({
                   <tr key={r.id}>
                     <td>{r.employee_number}</td>
                     <td>{r.full_name_ar}</td>
-                    <td>{r.lastSignInAt ? new Date(r.lastSignInAt).toLocaleString("ar-SA", { timeZone: displayTimezone }) : t("neverSignedIn")}</td>
+                    <td>{r.lastSignInAt ? new Date(r.lastSignInAt).toLocaleString("ar-SA-u-nu-latn", { timeZone: displayTimezone }) : t("neverSignedIn")}</td>
                     <td>{isActive ? t("activeYes") : t("activeNo")}</td>
                   </tr>
                 );

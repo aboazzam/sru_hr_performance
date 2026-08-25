@@ -74,8 +74,8 @@ export default async function PlanPrintPage({
   );
   const budget = computeBudgetVariance(totals.totalAnnualCost, plan?.approved_budget ?? null);
   const timeZone = await getDisplayTimezone(supabase);
-  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
-  const printedAt = new Date().toLocaleString(locale === "ar" ? "ar-SA" : "en-US", { timeZone });
+  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US");
+  const printedAt = new Date().toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US", { timeZone });
 
   if (!canView || !plan) {
     return (

@@ -155,7 +155,7 @@ export default async function RecruitmentPlanDetailPage({
       ])
     : [{ data: null }, { data: null }];
 
-  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
+  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US");
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>

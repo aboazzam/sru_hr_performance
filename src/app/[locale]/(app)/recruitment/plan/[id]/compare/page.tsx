@@ -101,7 +101,7 @@ export default async function PlanComparePage({
   const currentTotals = computeRecruitmentPlanTotals(currentItems);
   const previousTotals = computeRecruitmentPlanTotals(previousItems);
 
-  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
+  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US");
   const delta = (value: number) => (value > 0 ? `+${formatNumber(value)}` : formatNumber(value));
   const deltaColor = (value: number) =>
     value > 0 ? "#b45309" : value < 0 ? "#15803d" : "var(--sru-muted)";
