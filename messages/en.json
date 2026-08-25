@@ -89,7 +89,8 @@
     "mineEvaluation": "Your evaluation",
     "mineEvaluationNone": "None yet",
     "mineGoals": "KPIs assigned to you",
-    "mineTasks": "Routine tasks"
+    "mineTasks": "Routine tasks",
+    "boardTab": "My board"
   },
   "LoginPage": {
     "title": "Performance Evaluation System",
@@ -1228,7 +1229,7 @@
     "qualificationLabel": "Qualification",
     "certificatesLabel": "Certificates",
     "comingSoon": "Coming soon",
-    "kpisTitle": "My KPIs",
+    "kpisTitle": "My targets",
     "kpisNote": "KPIs are currently built from the goals assigned to you in each cycle.",
     "goalsEmpty": "No goals assigned to you yet.",
     "goalsColumnTitle": "Goal",
@@ -1245,7 +1246,7 @@
     "careerPathRequiredCompetencies": "Required Competencies",
     "careerPathNoCompetencies": "No competencies defined yet",
     "careerPathPendingApproval": "Pending approval — not yet approved.",
-    "tasksTitle": "My Routine Tasks",
+    "tasksTitle": "My tasks",
     "tasksEmpty": "No routine tasks assigned to you yet.",
     "tasksColumnTitle": "Task",
     "tasksColumnCycle": "Cycle",

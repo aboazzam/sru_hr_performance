@@ -26,6 +26,8 @@ import {
 } from "@/lib/vpra";
 import { availableRequestTransitions } from "@/lib/recruitmentWorkflow";
 import { isLocale, type Locale } from "@/i18n/config";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
+import { buildEmployeeSelfTabs } from "@/app/[locale]/(app)/employee-self-sections";
 
 /**
  * The home page answers one question: what needs me today.
@@ -253,19 +255,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const displayName = locale === "en" && profile?.full_name_en ? profile.full_name_en : profile?.full_name_ar;
   const roleLine = [profile?.job_titles?.name_ar, profile?.org_units?.name_ar].filter(Boolean).join(" — ");
 
-  return (
-    <div className="sru-home">
-      <header className="sru-home-head">
-        <p className="sru-home-eyebrow">{t("eyebrow")}</p>
-        <h1>{displayName ? t("greetingNamed", { name: displayName }) : t("greeting")}</h1>
-        <p className="sru-home-role">{roleLine || t("noRoleYet")}</p>
-        <p className="sru-home-cycle">
-          <CalendarRange size={14} aria-hidden />
-          {activeCycle
-            ? t("cycleActive", { name: activeCycle.name_ar, end: formatDateDmy(activeCycle.end_date, locale) })
-            : t("cycleNone")}
-        </p>
-      </header>
+  // Everything an employee has about their own work now lives here beside the
+  // worklist (2026-08-25), instead of behind the profile page. "work" gates the
+  // queries too, so the details tab this page does not show costs nothing.
+  const workTabs = await buildEmployeeSelfTabs("work");
+
+  const dashboard = (
+    <>
+      <p className="sru-home-cycle" style={{ marginBottom: 18 }}>
+        <CalendarRange size={14} aria-hidden />
+        {activeCycle
+          ? t("cycleActive", { name: activeCycle.name_ar, end: formatDateDmy(activeCycle.end_date, locale) })
+          : t("cycleNone")}
+      </p>
 
       <section className="sru-home-section">
         <h2>{t("queueHeading")}</h2>
@@ -302,22 +304,35 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </span>
             <strong>{myEvaluation ? evaluationStateLabels[myEvaluation.state] : t("mineEvaluationNone")}</strong>
           </Link>
-          <Link href="/profile" className="sru-home-tile">
+          <span className="sru-home-tile">
             <span className="sru-home-tile-label">
               <Target size={14} aria-hidden />
               {t("mineGoals")}
             </span>
             <strong>{myGoals.toLocaleString(digits)}</strong>
-          </Link>
-          <Link href="/profile" className="sru-home-tile">
+          </span>
+          <span className="sru-home-tile">
             <span className="sru-home-tile-label">
               <ListTodo size={14} aria-hidden />
               {t("mineTasks")}
             </span>
             <strong>{myTasks.toLocaleString(digits)}</strong>
-          </Link>
+          </span>
         </div>
       </section>
+    </>
+  );
+
+  const tabs: ProfileTab[] = [{ id: "my-board", label: t("boardTab"), content: dashboard }, ...workTabs];
+
+  return (
+    <div className="sru-home">
+      <header className="sru-home-head">
+        <p className="sru-home-eyebrow">{t("eyebrow")}</p>
+        <h1>{displayName ? t("greetingNamed", { name: displayName }) : t("greeting")}</h1>
+        <p className="sru-home-role">{roleLine || t("noRoleYet")}</p>
+      </header>
+      <ProfileTabs tabs={tabs} />
     </div>
   );
 }
