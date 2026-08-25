@@ -83,7 +83,7 @@ export default async function PlanAuditPage({
 
   const timeZone = await getDisplayTimezone(supabase);
   const formatDate = (value: string) =>
-    new Date(value).toLocaleString(locale === "ar" ? "ar-SA" : "en-US", { timeZone });
+    new Date(value).toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US", { timeZone });
 
   /** Renders a transition as "من ← إلى" using the shared status vocabularies. */
   const describe = (entry: {

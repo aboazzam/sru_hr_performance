@@ -36,7 +36,7 @@ export function SalaryScaleTable({
   const t = useTranslations("SalaryScalePage");
   const [query, setQuery] = useState("");
 
-  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
+  const formatNumber = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US");
 
   const filtered = useMemo(() => {
     const q = query.trim();

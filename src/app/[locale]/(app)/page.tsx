@@ -49,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "ar";
   const t = await getTranslations("HomePage");
   const supabase = await createClient();
-  const digits = locale === "ar" ? "ar-SA" : "en-US";
+  const digits = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US";
 
   const {
     data: { user },

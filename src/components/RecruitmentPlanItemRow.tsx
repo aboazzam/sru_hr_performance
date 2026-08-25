@@ -73,7 +73,7 @@ export function RecruitmentPlanItemRow({
   const [status, setStatus] = useState(item.status);
   const [justification, setJustification] = useState(item.justification ?? "");
 
-  const format = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA" : "en-US");
+  const format = (value: number) => value.toLocaleString(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US");
 
   function reset() {
     setHeadcount(String(item.headcount));
