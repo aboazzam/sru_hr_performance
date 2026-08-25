@@ -77,7 +77,6 @@
     "queueHeading": "يحتاج إجراءك",
     "queueNote": "ما لا يتقدّم حتى تتصرّف فيه أنت. لا يظهر هنا إلا ما تملك صلاحية إنهائه.",
     "queueClear": "لا شيء ينتظرك الآن.",
-    "queue_unread": "إشعار لم تقرأه",
     "queue_evaluationsToReview": "تقييم بانتظار مراجعتك",
     "queue_myEvaluation": "تقييمك أنت بانتظار خطوتك",
     "queue_employeeApprovals": "موظف بانتظار اعتمادك",

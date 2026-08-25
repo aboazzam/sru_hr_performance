@@ -70,7 +70,7 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form method="post" onSubmit={handleSubmit}>
       <div className="sru-field-float has-toggle">
         <input
           id="change-password"

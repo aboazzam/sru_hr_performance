@@ -35,8 +35,14 @@ export function LoginForm({ locale }: { locale: Locale }) {
     });
   }
 
+  // method="post" matters even though onSubmit always intercepts: if the page
+  // scripts fail to load, the browser submits natively, and a form with no
+  // method defaults to GET — which puts the password in the URL, and from
+  // there into history and every access log on the way. Seen for real while
+  // verifying: a blocked bundle turned a sign-in into
+  // /ar/login?identifier=…&password=…
   return (
-    <form onSubmit={handleSubmit}>
+    <form method="post" onSubmit={handleSubmit}>
       <div className="sru-field-float">
         <input
           id="login-identifier"

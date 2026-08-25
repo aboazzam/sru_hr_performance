@@ -117,7 +117,7 @@ export function EmployeeInviteForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
+    <form method="post" ref={formRef} onSubmit={handleSubmit}>
       <section className="sru-formsection">
         <div className="sru-formsection-head">
           <span className="sru-formsection-badge">

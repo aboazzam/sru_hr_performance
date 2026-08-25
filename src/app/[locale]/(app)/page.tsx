@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import {
-  BellDot,
   CalendarRange,
   CheckCircle2,
   ClipboardCheck,
@@ -146,16 +145,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // ---- the queue ---------------------------------------------------------
   const queue: Array<{ key: string; count: number; href: string; icon: ReactNode }> = [];
 
-  // Unread notifications. notifications_select is self-only with no oversight
-  // branch, so the unread filter is the only one needed.
-  const { count: unread } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .is("read_at", null)
-    .is("deleted_at", null);
-  if ((unread ?? 0) > 0) {
-    queue.push({ key: "unread", count: unread ?? 0, href: "/notifications", icon: <BellDot size={15} aria-hidden /> });
-  }
+  // Unread notifications are deliberately NOT a row here. There is no
+  // /notifications route — they live in the top bar's bell, which already
+  // carries its own unread badge. The row that used to be here linked to a
+  // page that does not exist, and said a second time what the bell says.
 
   // Evaluations I can advance right now — visible to me AND actionable at
   // their exact state by one of my real roles. The same rule /evaluations/
