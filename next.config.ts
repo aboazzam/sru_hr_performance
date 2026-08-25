@@ -17,6 +17,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // "الخطة التنفيذية" became "الخطة التشغيلية" on 2026-08-25, and the route
+  // moved with it. Anyone holding a link to the old path — a bookmark, a
+  // message, a printed plan — still lands on the right screen. Permanent, so
+  // browsers and search stop asking.
+  async redirects() {
+    return [
+      { source: "/:locale/executive-plans", destination: "/:locale/operational-plans", permanent: true },
+      { source: "/:locale/executive-plans/:path*", destination: "/:locale/operational-plans/:path*", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

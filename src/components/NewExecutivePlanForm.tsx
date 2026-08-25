@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition, type Form
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AlertCircle, CalendarRange, Plus } from "lucide-react";
-import { createExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/executive-plans/actions";
+import { createExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/operational-plans/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { computeEndDate, describeCycleDuration } from "@/lib/cyclePeriod";
 

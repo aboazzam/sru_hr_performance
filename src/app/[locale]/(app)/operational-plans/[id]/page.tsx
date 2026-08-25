@@ -39,7 +39,7 @@ export default async function ExecutivePlanDetailPage({
   const supabase = await createClient();
 
   const { data: plan } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .select("id, strategic_plan_id, cycle_id, name_ar, name_en, start_date, end_date, status")
     .eq("id", id)
     .is("deleted_at", null)
@@ -49,7 +49,7 @@ export default async function ExecutivePlanDetailPage({
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
         <Link
-          href="/executive-plans"
+          href="/operational-plans"
           className="sru-btn"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
         >
@@ -118,7 +118,7 @@ export default async function ExecutivePlanDetailPage({
   const canManageTargets = hasVpraAccess(strategicLevel, "approve");
 
   const { data: selectedRows } = await supabase
-    .from("executive_plan_targets")
+    .from("operational_plan_targets")
     .select("id, strategic_kpi_id, target_value, actual_value")
     .eq("executive_plan_id", id)
     .is("deleted_at", null);
@@ -132,7 +132,7 @@ export default async function ExecutivePlanDetailPage({
   const { data: shareRows } =
     selectedTargets.length > 0
       ? await supabase
-          .from("executive_plan_target_org_units")
+          .from("operational_plan_target_org_units")
           .select("id, executive_plan_target_id, org_unit_id, percentage, actual_value")
           .in(
             "executive_plan_target_id",
@@ -192,7 +192,7 @@ export default async function ExecutivePlanDetailPage({
   const { data: employeeShareRows } =
     shares.length > 0
       ? await supabase
-          .from("executive_plan_target_employees")
+          .from("operational_plan_target_employees")
           .select("id, target_org_unit_id, employee_id, percentage, actual_value, actual_recorded_by")
           .in(
             "target_org_unit_id",
@@ -479,7 +479,7 @@ export default async function ExecutivePlanDetailPage({
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <Link
-        href="/executive-plans"
+        href="/operational-plans"
         className="sru-btn"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, textDecoration: "none" }}
       >

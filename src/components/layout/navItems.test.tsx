@@ -132,11 +132,11 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     // only as a tab inside the per-plan detail page (/kpis/plans/[id]),
     // which has no static NavItem segment to gate here; their standalone
     // routes are still reachable directly, just not from this tab bar.
-    // 2026-08-20: "executive-plans" joins them, for the same reason as
+    // 2026-08-20: "operational-plans" joins them, for the same reason as
     // "kpis/plans" -- browsing which plans exist is for all staff, and
     // creating one is gated on the page itself. "kpis" moved into the new
     // executivePlan group but stays ungated for the same row-level reason.
-    const ungated = new Set(["kpis/plans", "executive-plans", "initiative-assignments"]);
+    const ungated = new Set(["kpis/plans", "operational-plans", "initiative-assignments"]);
     for (const group of navGroups) {
       for (const child of group.children) {
         if (ungated.has(child.segment)) {
@@ -160,7 +160,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     // "تنقل تاب الاهداف المسندة وبنك الاهداف الى موديول جديد بمسمى الخطة
     // التنفيذية" — the move, asserted from the other side too.
     const executive = navGroups.find((g) => g.groupKey === "executivePlan")!;
-    expect(executive.children.map((c) => c.segment)).toEqual(["executive-plans", "initiative-assignments"]);
+    expect(executive.children.map((c) => c.segment)).toEqual(["operational-plans", "initiative-assignments"]);
   });
 
   it("no segment is duplicated across navItems and all group children combined", () => {
@@ -264,14 +264,14 @@ describe("visibleNavGroups", () => {
     const groups = visibleNavGroups(navGroups, {});
     expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan"]);
     expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans"]);
-    expect(groups[1].children.map((c) => c.segment)).toEqual(["executive-plans", "initiative-assignments"]);
+    expect(groups[1].children.map((c) => c.segment)).toEqual(["operational-plans", "initiative-assignments"]);
   });
 
   it("still shows both plan groups for a strategy_admin-level permission set", () => {
     const groups = visibleNavGroups(navGroups, { strategicPlanning: "approve", goalsLibrary: "prepare" });
     expect(groups.find((g) => g.groupKey === "strategicPlan")!.children.map((c) => c.segment)).toEqual(["kpis/plans"]);
     expect(groups.find((g) => g.groupKey === "executivePlan")!.children.map((c) => c.segment)).toEqual([
-      "executive-plans",
+      "operational-plans",
       "initiative-assignments",
     ]);
   });

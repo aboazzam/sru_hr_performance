@@ -178,7 +178,7 @@ export const navGroups: NavGroup[] = [
     labelKey: "executivePlan",
     icon: ClipboardCheck,
     children: [
-      { segment: "executive-plans", labelKey: "executivePlans", icon: CalendarRange },
+      { segment: "operational-plans", labelKey: "executivePlans", icon: CalendarRange },
       // 2026-08-20: replaces "الأهداف المسندة" (`kpis`) here — "ادمج بنك
       // الأهداف مع الأهداف المسندة بحيث يكون العنوان اسناد المبادرات". The
       // /kpis page still exists and is still reachable directly; it just no

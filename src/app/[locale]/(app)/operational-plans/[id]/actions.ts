@@ -77,7 +77,7 @@ export async function selectExecutivePlanTarget(
   const d = parsed.data;
 
   const { data: existing } = await supabase
-    .from("executive_plan_targets")
+    .from("operational_plan_targets")
     .select("id")
     .eq("executive_plan_id", d.executivePlanId)
     .eq("strategic_kpi_id", d.strategicKpiId)
@@ -88,14 +88,14 @@ export async function selectExecutivePlanTarget(
     // .select() reads the rows back: an UPDATE blocked by RLS affects zero
     // rows and returns NO error.
     const { data: saved, error } = await supabase
-      .from("executive_plan_targets")
+      .from("operational_plan_targets")
       .update({ target_value: d.targetValue })
       .eq("id", existing.id)
       .select("id");
     if (error) return mapError(error);
     if (!saved || saved.length === 0) return { status: "error", message: "forbidden" };
   } else {
-    const { error } = await supabase.from("executive_plan_targets").insert({
+    const { error } = await supabase.from("operational_plan_targets").insert({
       executive_plan_id: d.executivePlanId,
       strategic_kpi_id: d.strategicKpiId,
       target_value: d.targetValue,
@@ -109,7 +109,7 @@ export async function selectExecutivePlanTarget(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: existing ? "executive_plan_target_updated" : "executive_plan_target_selected",
-      entity: "executive_plan_targets",
+      entity: "operational_plan_targets",
       entity_id: existing?.id ?? null,
       after_data: { executive_plan_id: d.executivePlanId, strategic_kpi_id: d.strategicKpiId, target_value: d.targetValue },
     });
@@ -117,7 +117,7 @@ export async function selectExecutivePlanTarget(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   return { status: "success" };
 }
 
@@ -133,7 +133,7 @@ export async function unselectExecutivePlanTarget(
   if (!user) return { status: "error", message: "unauthenticated" };
 
   const { data: saved, error } = await supabase
-    .from("executive_plan_targets")
+    .from("operational_plan_targets")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", parsed.data.targetId)
     .is("deleted_at", null)
@@ -146,14 +146,14 @@ export async function unselectExecutivePlanTarget(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_target_unselected",
-      entity: "executive_plan_targets",
+      entity: "operational_plan_targets",
       entity_id: parsed.data.targetId,
     });
   } catch {
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   return { status: "success" };
 }
 
@@ -197,7 +197,7 @@ export async function saveTargetOrgUnits(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_target_units_saved",
-      entity: "executive_plan_target_org_units",
+      entity: "operational_plan_target_org_units",
       entity_id: parsed.data.targetId,
       after_data: { rows: parsed.data.rows },
     });
@@ -205,7 +205,7 @@ export async function saveTargetOrgUnits(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   return { status: "success" };
 }
 
@@ -254,7 +254,7 @@ export async function saveTargetEmployees(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_target_employees_saved",
-      entity: "executive_plan_target_employees",
+      entity: "operational_plan_target_employees",
       entity_id: parsed.data.shareId,
       after_data: { rows: parsed.data.rows },
     });
@@ -262,7 +262,7 @@ export async function saveTargetEmployees(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   revalidatePath("/[locale]/profile", "page");
   return { status: "success" };
 }
@@ -317,7 +317,7 @@ async function recordActual(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   revalidatePath("/[locale]/profile", "page");
   return { status: "success" };
 }
@@ -330,7 +330,7 @@ export async function recordPlanTargetActual(
     "record_executive_plan_target_actual",
     "p_target_id",
     "executive_plan_target_actual_recorded",
-    "executive_plan_targets",
+    "operational_plan_targets",
     formData
   );
 }
@@ -343,7 +343,7 @@ export async function recordOrgUnitActual(
     "record_target_org_unit_actual",
     "p_share_id",
     "executive_plan_target_unit_actual_recorded",
-    "executive_plan_target_org_units",
+    "operational_plan_target_org_units",
     formData
   );
 }
@@ -356,7 +356,7 @@ export async function recordEmployeeActual(
     "record_target_employee_actual",
     "p_assignment_id",
     "executive_plan_target_employee_actual_recorded",
-    "executive_plan_target_employees",
+    "operational_plan_target_employees",
     formData
   );
 }

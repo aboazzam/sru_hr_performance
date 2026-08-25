@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition } from "re
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AlertTriangle, Trash2 } from "lucide-react";
-import { deleteExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/executive-plans/actions";
+import { deleteExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/operational-plans/actions";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",

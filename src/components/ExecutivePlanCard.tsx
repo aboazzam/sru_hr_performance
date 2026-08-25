@@ -9,7 +9,7 @@ import { initiativeProgress } from "@/lib/initiativeProgress";
 import { planAchievement, type PlanAchievementInitiative } from "@/lib/planAchievement";
 import { DeleteExecutivePlanButton } from "@/components/DeleteExecutivePlanButton";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import { updateExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/executive-plans/actions";
+import { updateExecutivePlan, type CreateExecutivePlanState } from "@/app/[locale]/(app)/operational-plans/actions";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -81,7 +81,7 @@ export function ExecutivePlanCard({
     startTransition(() => formAction(formData));
   }
 
-  const href = `/executive-plans/${plan.id}`;
+  const href = `/operational-plans/${plan.id}`;
   const elapsed = initiativeProgress({ startDate: plan.startDate, endDate: plan.endDate }, todayIso);
   const achievement = planAchievement({ initiatives: plan.initiatives });
   const achievementCaption =
