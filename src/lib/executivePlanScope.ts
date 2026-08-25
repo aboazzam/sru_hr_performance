@@ -3,7 +3,7 @@
  *
  * Requested 2026-08-19: the executive plan's own tabs must show the strategic
  * plan's targets and initiatives, but "لا يظهر الا المبادرات المحددة في نفس
- * توقيت الخطة التنفيذية".
+ * توقيت الخطة التشغيلية".
  *
  * TWO DECISIONS WORTH STATING, because both are judgement calls the request
  * does not settle on its own:
