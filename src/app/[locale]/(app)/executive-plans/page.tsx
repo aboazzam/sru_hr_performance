@@ -21,7 +21,7 @@ interface ExecutivePlanRow {
 }
 
 /**
- * الخطة التنفيذية — the module's first tab, deliberately shaped like the
+ * الخطة التشغيلية — the module's first tab, deliberately shaped like the
  * strategic-plans list it mirrors ("اول تاب شبيه بقائمة الخطط الاستراتيجية").
  *
  * Viewing is open to every authenticated user (executive_plans_select is

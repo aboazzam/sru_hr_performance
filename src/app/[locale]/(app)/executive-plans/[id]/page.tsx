@@ -18,7 +18,7 @@ import type { Locale } from "@/i18n/config";
 /**
  * One executive plan: the strategic plan's targets and initiatives, narrowed
  * to this plan's own window ("لا يظهر الا المبادرات المحددة في نفس توقيت
- * الخطة التنفيذية").
+ * الخطة التشغيلية").
  *
  * Nothing is duplicated into the executive plan — both tabs read the
  * strategic plan's own rows and filter them, so an initiative edited in the
