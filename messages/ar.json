@@ -89,7 +89,8 @@
     "mineEvaluation": "حالة تقييمك",
     "mineEvaluationNone": "لا تقييم بعد",
     "mineGoals": "مؤشرات أداء مسندة إليك",
-    "mineTasks": "مهام تشغيلية"
+    "mineTasks": "مهام تشغيلية",
+    "boardTab": "لوحتي"
   },
   "LoginPage": {
     "title": "نظام تقييم الأداء",
@@ -1228,7 +1229,7 @@
     "qualificationLabel": "المؤهل العلمي",
     "certificatesLabel": "الشهادات",
     "comingSoon": "قريبًا",
-    "kpisTitle": "مؤشرات الأداء",
+    "kpisTitle": "مستهدفاتي",
     "kpisNote": "تُبنى مؤشرات الأداء حاليًا من الأهداف المُسندة إليك في كل دورة.",
     "goalsEmpty": "لا توجد أهداف مُسندة إليك بعد.",
     "goalsColumnTitle": "الهدف",
@@ -1245,7 +1246,7 @@
     "careerPathRequiredCompetencies": "الجدارات المطلوبة",
     "careerPathNoCompetencies": "لم تُحدَّد جدارات بعد",
     "careerPathPendingApproval": "قيد الاعتماد — لم يُعتمد بعد.",
-    "tasksTitle": "مهامي التشغيلية",
+    "tasksTitle": "مهامي",
     "tasksEmpty": "لا توجد مهام تشغيلية مُسندة إليك بعد.",
     "tasksColumnTitle": "المهمة",
     "tasksColumnCycle": "الدورة",
