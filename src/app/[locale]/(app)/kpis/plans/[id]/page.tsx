@@ -5,8 +5,6 @@ import { ArrowRight, Flag, Star } from "lucide-react";
 import { StrategicIdentityForm } from "@/components/StrategicIdentityForm";
 import { StrategicValueRow } from "@/components/StrategicValueRow";
 import { AddStrategicValueForm } from "@/components/AddStrategicValueForm";
-import { UpdateProgressForm } from "@/components/UpdateProgressForm";
-import { PrintButton } from "@/components/PrintButton";
 import { StrategicPlanExcelButtons } from "@/components/StrategicPlanExcelButtons";
 import {
   InitiativesPanel,
@@ -41,24 +39,6 @@ interface KpiRow {
   unit_ar: string;
   plan_target_value: number | null;
   weight: number | null;
-}
-
-interface TargetRow {
-  id: string;
-  sub_goal_id: string;
-  assigned_position_id: string | null;
-  assigned_employee_id: string | null;
-  title_ar: string;
-  target_value: number;
-  actual_value: number | null;
-  unit_ar: string;
-  weight: number | null;
-  status: string;
-}
-
-function achievementPercent(row: { target_value: number | null; actual_value: number | null }): number | null {
-  if (row.actual_value == null || !row.target_value) return null;
-  return Math.round((row.actual_value / row.target_value) * 100);
 }
 
 function describeKpis(list: KpiRow[]): string {
@@ -98,8 +78,6 @@ export default async function StrategicPlanDetailPage({
   const t = await getTranslations("StrategicPlanDetailPage");
   const tIdentity = await getTranslations("StrategicIdentityPage");
   const tGoals = await getTranslations("StrategicGoalsPage");
-  const tKpis = await getTranslations("KpisPage");
-  const tLibrary = await getTranslations("GoalLibraryPage");
   const supabase = await createClient();
 
   const { data: plan } = await supabase
@@ -124,14 +102,6 @@ export default async function StrategicPlanDetailPage({
       </div>
     );
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: myProfile } = user
-    ? await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle()
-    : { data: null };
-  const myProfileId = myProfile?.id ?? null;
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
   const permissions = Object.fromEntries(
@@ -162,7 +132,6 @@ export default async function StrategicPlanDetailPage({
     .order("created_at", { ascending: false });
   const goals = (goalsData ?? []) as StrategicGoalRow[];
   const goalIds = new Set(goals.map((g) => g.id));
-  const strategicGoalTitleById = new Map(goals.map((g) => [g.id, g.title_ar]));
 
   const { data: subGoalsData } = await supabase
     .from("sub_goals")
@@ -203,52 +172,6 @@ export default async function StrategicPlanDetailPage({
     list.push(sg);
     subGoalsByStrategicGoal.set(sg.strategic_goal_id, list);
   }
-
-  // ---- Assigned-to-me content, scoped to this plan's sub-goals/targets ----
-  const { data: myAssignments } = myProfileId
-    ? await supabase.from("org_structure_assignments").select("position_id").eq("employee_id", myProfileId).is("deleted_at", null)
-    : { data: null };
-  const myPositionIds = new Set((myAssignments ?? []).map((a) => a.position_id));
-
-  const { data: targetsData } = await supabase
-    .from("targets")
-    .select("id, sub_goal_id, assigned_position_id, assigned_employee_id, title_ar, target_value, actual_value, unit_ar, weight, status")
-    .is("deleted_at", null);
-  const targets = ((targetsData ?? []) as TargetRow[]).filter((tg) => subGoalIds.has(tg.sub_goal_id));
-
-  const ownedSubGoals = subGoals.filter((sg) => myPositionIds.has(sg.owner_position_id));
-  const ownedTargets = targets.filter((tg) => tg.assigned_position_id != null && myPositionIds.has(tg.assigned_position_id));
-  const assignedToMeTargets = targets.filter((tg) => tg.assigned_employee_id === myProfileId);
-  const cascadedDownTargets = targets.filter(
-    (tg) =>
-      (tg.assigned_employee_id != null && tg.assigned_employee_id !== myProfileId) ||
-      (tg.assigned_position_id != null && !myPositionIds.has(tg.assigned_position_id))
-  );
-  const teamEmployeeIds = Array.from(
-    new Set(cascadedDownTargets.map((tg) => tg.assigned_employee_id).filter((v): v is string => v != null))
-  );
-  const { data: teamEmployeesData } =
-    teamEmployeeIds.length > 0
-      ? await supabase.from("profiles").select("id, employee_number, full_name_ar").in("id", teamEmployeeIds)
-      : { data: [] };
-  const teamEmployeeById = new Map(
-    ((teamEmployeesData ?? []) as Array<{ id: string; employee_number: string; full_name_ar: string }>).map((p) => [p.id, p])
-  );
-
-  // ---- Goal library catalog: global, not plan-scoped ----
-  const { data: libraryData } = await supabase
-    .from("goal_library")
-    .select("id, title_ar, title_en, description_ar, default_weight, job_families(name_ar)")
-    .is("deleted_at", null)
-    .order("title_ar");
-  const libraryGoals = libraryData as unknown as Array<{
-    id: string;
-    title_ar: string;
-    title_en: string | null;
-    description_ar: string | null;
-    default_weight: number | null;
-    job_families: { name_ar: string } | null;
-  }> | null;
 
   const identityContent = (
     <div>
@@ -415,225 +338,7 @@ export default async function StrategicPlanDetailPage({
     </div>
   );
 
-  const assignedContent = (
-    <div>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{tKpis("receivedSubtitle")}</p>
 
-      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{tKpis("kpiSectionHeading")}</h3>
-      {ownedSubGoals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{tKpis("kpiSectionEmpty")}</p>
-      ) : (
-        <div className="sru-card" style={{ marginBottom: 32 }}>
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{tKpis("columnTitle")}</th>
-                  <th>{tKpis("columnStrategicGoal")}</th>
-                  <th>{tKpis("columnKpi")}</th>
-                  <th>{tKpis("columnWeight")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {ownedSubGoals.map((sg) => (
-                  <tr key={sg.id}>
-                    <td>{sg.title_ar}</td>
-                    <td>{strategicGoalTitleById.get(sg.strategic_goal_id) ?? "—"}</td>
-                    <td>{describeKpis(kpisBySubGoal.get(sg.id) ?? [])}</td>
-                    <td>{sg.weight != null ? `${sg.weight}%` : "—"}</td>
-                    <td>
-                      <Link href={`/kpis/assign?subGoalId=${sg.id}`} className="sru-btn" style={{ fontSize: 11.5, padding: "4px 10px" }}>
-                        {tKpis("cascadeButton")}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{tKpis("ownedHeading")}</h3>
-      {ownedTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 32 }}>{tKpis("ownedEmpty")}</p>
-      ) : (
-        <div className="sru-card" style={{ marginBottom: 32 }}>
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{tKpis("columnTitle")}</th>
-                  <th>{tKpis("columnStrategicGoal")}</th>
-                  <th>{tKpis("columnTarget")}</th>
-                  <th>{tKpis("columnActual")}</th>
-                  <th>{tKpis("columnAchievement")}</th>
-                  <th>{tKpis("columnWeight")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {ownedTargets.map((tg) => (
-                  <tr key={tg.id}>
-                    <td>{tg.title_ar}</td>
-                    <td>{strategicGoalTitleById.get(subGoals.find((sg) => sg.id === tg.sub_goal_id)?.strategic_goal_id ?? "") ?? "—"}</td>
-                    <td>
-                      {tg.target_value} {tg.unit_ar}
-                    </td>
-                    <td>
-                      <UpdateProgressForm nodeType="target" id={tg.id} currentActualValue={tg.actual_value} unitAr={tg.unit_ar} />
-                    </td>
-                    <td>{achievementPercent(tg) != null ? `${achievementPercent(tg)}%` : "—"}</td>
-                    <td>{tg.weight != null ? `${tg.weight}%` : "—"}</td>
-                    <td>
-                      <Link
-                        href={`/kpis/assign?parentTargetId=${tg.id}`}
-                        className="sru-btn"
-                        style={{ fontSize: 11.5, padding: "4px 10px" }}
-                      >
-                        {tKpis("cascadeButton")}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <h3 style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>{tKpis("assignedHeading")}</h3>
-      {assignedToMeTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tKpis("assignedEmpty")}</p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{tKpis("columnTitle")}</th>
-                  <th>{tKpis("columnStrategicGoal")}</th>
-                  <th>{tKpis("columnTarget")}</th>
-                  <th>{tKpis("columnActual")}</th>
-                  <th>{tKpis("columnAchievement")}</th>
-                  <th>{tKpis("columnWeight")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assignedToMeTargets.map((tg) => (
-                  <tr key={tg.id}>
-                    <td>{tg.title_ar}</td>
-                    <td>{strategicGoalTitleById.get(subGoals.find((sg) => sg.id === tg.sub_goal_id)?.strategic_goal_id ?? "") ?? "—"}</td>
-                    <td>
-                      {tg.target_value} {tg.unit_ar}
-                    </td>
-                    <td>{tg.actual_value != null ? `${tg.actual_value} ${tg.unit_ar}` : tKpis("notReportedYet")}</td>
-                    <td>{achievementPercent(tg) != null ? `${achievementPercent(tg)}%` : "—"}</td>
-                    <td>{tg.weight != null ? `${tg.weight}%` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <h2 className="sru-title" style={{ fontSize: 16, margin: "36px 0 8px" }}>
-        {tKpis("cascadedHeading")}
-      </h2>
-      <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 16 }}>{tKpis("cascadedSubtitle")}</p>
-      {cascadedDownTargets.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tKpis("cascadedEmpty")}</p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{tKpis("columnAssignee")}</th>
-                  <th>{tKpis("columnTitle")}</th>
-                  <th>{tKpis("columnTarget")}</th>
-                  <th>{tKpis("columnActual")}</th>
-                  <th>{tKpis("columnAchievement")}</th>
-                  <th>{tKpis("columnWeight")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cascadedDownTargets.map((tg) => {
-                  const employee = tg.assigned_employee_id ? teamEmployeeById.get(tg.assigned_employee_id) : undefined;
-                  const assignee = employee
-                    ? `${employee.employee_number} — ${employee.full_name_ar}`
-                    : tg.assigned_position_id
-                      ? (positionNameById.get(tg.assigned_position_id) ?? "—")
-                      : "—";
-                  return (
-                    <tr key={tg.id}>
-                      <td>{assignee}</td>
-                      <td>{tg.title_ar}</td>
-                      <td>
-                        {tg.target_value} {tg.unit_ar}
-                      </td>
-                      <td>
-                        <UpdateProgressForm nodeType="target" id={tg.id} currentActualValue={tg.actual_value} unitAr={tg.unit_ar} />
-                      </td>
-                      <td>{achievementPercent(tg) != null ? `${achievementPercent(tg)}%` : "—"}</td>
-                      <td>{tg.weight != null ? `${tg.weight}%` : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const libraryContent = (
-    <div>
-      <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
-        <p style={{ color: "var(--sru-muted)", fontSize: 12 }}>{tLibrary("subtitle")}</p>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <Link href="/goals/assign" className="sru-btn sru-btn-primary">
-            {tLibrary("assignGoal")}
-          </Link>
-          <PrintButton />
-        </div>
-      </div>
-      {!libraryGoals || libraryGoals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{tLibrary("empty")}</p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{tLibrary("columnTitle")}</th>
-                  <th>{tLibrary("columnJobFamily")}</th>
-                  <th>{tLibrary("columnDefaultWeight")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {libraryGoals.map((goal) => (
-                  <tr key={goal.id}>
-                    <td>
-                      {goal.title_ar}
-                      {goal.description_ar && (
-                        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginTop: 2 }}>{goal.description_ar}</p>
-                      )}
-                    </td>
-                    <td>{goal.job_families?.name_ar ?? tLibrary("allJobFamilies")}</td>
-                    <td>{goal.default_weight != null ? `${goal.default_weight}%` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   // ---- المبادرات: what will actually achieve this plan's targets ----
   // Requested 2026-08-19, placed directly after الأهداف الاستراتيجية ("وبعد
@@ -846,8 +551,6 @@ export default async function StrategicPlanDetailPage({
     { id: "goals", label: tGoals("title"), content: goalsContent },
     { id: "initiatives", label: t("initiativesTab"), content: initiativesContent },
     { id: "programs", label: t("programsTab"), content: programsContent },
-    { id: "assigned", label: tKpis("title"), content: assignedContent },
-    { id: "library", label: tLibrary("title"), content: libraryContent },
   ];
 
   return (
