@@ -9,7 +9,7 @@ import {
   recordOrgUnitActual,
   recordEmployeeActual,
   type ExecutivePlanTargetState,
-} from "@/app/[locale]/(app)/executive-plans/[id]/actions";
+} from "@/app/[locale]/(app)/operational-plans/[id]/actions";
 import { ActualValueField } from "@/components/ActualValueField";
 
 const errorKeys: Record<string, string> = {

@@ -43,7 +43,7 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
   const canCreate = hasVpraAccess(level, "approve");
 
   const { data } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .select("id, name_ar, name_en, start_date, end_date, status, cycle_id, strategic_plan_id")
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
@@ -120,7 +120,7 @@ export default async function ExecutivePlansPage({ params }: { params: Promise<{
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <GroupTabs groupKey="executivePlan" current="executive-plans" />
+      <GroupTabs groupKey="executivePlan" current="operational-plans" />
 
       <div
         style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}

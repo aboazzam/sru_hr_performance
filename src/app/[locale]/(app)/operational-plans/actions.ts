@@ -53,7 +53,7 @@ export async function createExecutivePlan(
   // check_vpra_global('strategicPlanning','approve') — this write goes
   // through the caller's own client, not the service role.
   const { data: created, error } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .insert({
       strategic_plan_id: d.strategicPlanId,
       cycle_id: d.cycleId ?? null,
@@ -80,7 +80,7 @@ export async function createExecutivePlan(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_created",
-      entity: "executive_plans",
+      entity: "operational_plans",
       entity_id: created?.id ?? null,
       after_data: { strategic_plan_id: d.strategicPlanId, name_ar: d.nameAr, start_date: d.startDate, end_date: d.endDate },
     });
@@ -88,7 +88,7 @@ export async function createExecutivePlan(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans", "page");
+  revalidatePath("/[locale]/operational-plans", "page");
   return { status: "success" };
 }
 
@@ -129,7 +129,7 @@ export async function updateExecutivePlan(
 
   const d = parsed.data;
   const { data: before } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .select("name_ar, name_en, strategic_plan_id, cycle_id, start_date, end_date, status")
     .eq("id", d.planId)
     .maybeSingle();
@@ -138,7 +138,7 @@ export async function updateExecutivePlan(
   // returns NO error, so without reading the rows back this would report a
   // save that never happened.
   const { data: saved, error } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .update({
       strategic_plan_id: d.strategicPlanId,
       cycle_id: d.cycleId ?? null,
@@ -164,7 +164,7 @@ export async function updateExecutivePlan(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_updated",
-      entity: "executive_plans",
+      entity: "operational_plans",
       entity_id: d.planId,
       before_data: before ?? null,
       after_data: {
@@ -181,8 +181,8 @@ export async function updateExecutivePlan(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans", "page");
-  revalidatePath("/[locale]/executive-plans/[id]", "page");
+  revalidatePath("/[locale]/operational-plans", "page");
+  revalidatePath("/[locale]/operational-plans/[id]", "page");
   return { status: "success" };
 }
 
@@ -210,13 +210,13 @@ export async function deleteExecutivePlan(
   if (!user) return { status: "error", message: "unauthenticated" };
 
   const { data: before } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .select("name_ar, start_date, end_date, status")
     .eq("id", parsed.data.planId)
     .maybeSingle();
 
   const { data: saved, error } = await supabase
-    .from("executive_plans")
+    .from("operational_plans")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", parsed.data.planId)
     .is("deleted_at", null)
@@ -232,7 +232,7 @@ export async function deleteExecutivePlan(
     await admin.from("audit_log").insert({
       actor_id: user.id,
       action: "executive_plan_deleted",
-      entity: "executive_plans",
+      entity: "operational_plans",
       entity_id: parsed.data.planId,
       before_data: before ?? null,
     });
@@ -240,6 +240,6 @@ export async function deleteExecutivePlan(
     // A failed audit write must not fail a write that already happened.
   }
 
-  revalidatePath("/[locale]/executive-plans", "page");
+  revalidatePath("/[locale]/operational-plans", "page");
   return { status: "success" };
 }

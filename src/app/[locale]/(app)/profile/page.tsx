@@ -9,7 +9,7 @@ import { type CareerJobTitleInfo } from "@/lib/careerPathTree";
 import { getSelfScopedCareerTree } from "@/lib/careerPathData";
 import { CareerPathForwardTree } from "@/components/CareerPathForwardTree";
 import { ActualValueField } from "@/components/ActualValueField";
-import { recordEmployeeActual } from "@/app/[locale]/(app)/executive-plans/[id]/actions";
+import { recordEmployeeActual } from "@/app/[locale]/(app)/operational-plans/[id]/actions";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 // Read-only for now, per the project owner's explicit "not editable yet"
@@ -193,7 +193,7 @@ export default async function MyProfilePage() {
   // ---- مستهدفاتي من الخطة التنفيذية (2026-08-23) ----
   const { data: myTargetShareRows } = p?.id
     ? await supabase
-        .from("executive_plan_target_employees")
+        .from("operational_plan_target_employees")
         .select("id, percentage, target_org_unit_id, actual_value")
         .eq("employee_id", p.id)
         .is("deleted_at", null)
@@ -208,7 +208,7 @@ export default async function MyProfilePage() {
   const { data: myUnitShareRows } =
     myTargetShares.length > 0
       ? await supabase
-          .from("executive_plan_target_org_units")
+          .from("operational_plan_target_org_units")
           .select("id, executive_plan_target_id, org_unit_id, percentage")
           .in(
             "id",
@@ -226,7 +226,7 @@ export default async function MyProfilePage() {
   const { data: myPlanTargetRows } =
     myUnitShares.length > 0
       ? await supabase
-          .from("executive_plan_targets")
+          .from("operational_plan_targets")
           .select("id, executive_plan_id, strategic_kpi_id, target_value")
           .in(
             "id",
@@ -258,7 +258,7 @@ export default async function MyProfilePage() {
   const { data: myPlanRows } =
     myPlanTargets.length > 0
       ? await supabase
-          .from("executive_plans")
+          .from("operational_plans")
           .select("id, name_ar")
           .in(
             "id",
