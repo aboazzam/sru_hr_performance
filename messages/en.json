@@ -1304,7 +1304,10 @@
     "planTargetsColumnMyShare": "My share",
     "planTargetsColumnValue": "My target value",
     "planTargetsShareValue": "{ofUnit}% of the unit's share ({ofTarget}% of the target)",
-    "planTargetsColumnActual": "What I achieved"
+    "planTargetsColumnActual": "What I achieved",
+    "myCompetenciesNote": "The competencies your direct manager set for you, and the level required for each. They are managed from your record by your manager, so anything missing is theirs to add.",
+    "myCompetenciesColumnName": "Competency",
+    "myCompetenciesColumnLevel": "Required level"
   },
   "MyEvaluationsPage": {
     "title": "My Evaluations",

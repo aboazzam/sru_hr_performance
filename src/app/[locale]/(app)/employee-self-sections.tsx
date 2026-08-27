@@ -1,7 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { formatDateDmy } from "@/lib/dateParts";
 import { createClient } from "@/lib/supabase/server";
-import { pillars, getCompetenciesByPillar } from "@/lib/data/competencies";
+import {
+  pillars,
+  getCompetenciesByPillar,
+  behavioralLevelLabels,
+  type BehavioralLevel,
+} from "@/lib/data/competencies";
 import { evalTypeLabels, evaluationStateLabels, type EvalType, type EvaluationState } from "@/lib/vpra";
 import { type ProfileTab } from "@/components/ProfileTabs";
 import { MyCertificatesEditor } from "@/components/MyCertificatesEditor";
@@ -120,6 +125,25 @@ export async function buildEmployeeSelfTabs(mode: EmployeeSectionsMode): Promise
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
     : { data: null };
+
+  // The competencies my direct manager actually set for me
+  // (employee_competencies, 20260827000003). Self-scoped explicitly even
+  // though that table's SELECT policy already has a self-row branch — the
+  // same discipline as goals and tasks above, so a manager viewing their own
+  // home page never sees a report's rows here.
+  const { data: myCompetencyData } = wantsWork && p
+    ? await supabase
+        .from("employee_competencies")
+        .select("id, required_level, competencies(name_ar, type)")
+        .eq("employee_id", p.id)
+        .is("deleted_at", null)
+    : { data: null };
+
+  const myCompetencies = (myCompetencyData ?? []) as unknown as Array<{
+    id: string;
+    required_level: BehavioralLevel;
+    competencies: { name_ar: string; type: string } | null;
+  }>;
 
   const tasks = tasksData as unknown as Array<{
     id: string;
@@ -523,13 +547,43 @@ export async function buildEmployeeSelfTabs(mode: EmployeeSectionsMode): Promise
         {
           id: "my-competencies",
           label: t("competenciesTitle"),
-          content: (
+          content: myCompetencies.length > 0 ? (
+            // What my direct manager actually set for me, with the level
+            // required of me. The full framework below is only the fallback
+            // for someone nobody has assessed yet — showing 27 generic chips
+            // to a person whose manager HAS decided would hide the real
+            // answer behind a catalogue.
             <>
-              {/* [استنتاج] The real `competencies` table has job_family_id populated on 0
-                  of 27 rows today, so there is no actual per-job-family data to cascade --
-                  this shows the full institutional framework (same source as /competencies)
-                  rather than a personalized subset, flagged to the project owner as a data
-                  gap rather than building a filter with nothing to filter by. */}
+              <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>
+                {t("myCompetenciesNote")}
+              </p>
+              <div className="table-scroll">
+                <table className="admin-matrix">
+                  <thead>
+                    <tr>
+                      <th>{t("myCompetenciesColumnName")}</th>
+                      <th>{t("myCompetenciesColumnLevel")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myCompetencies.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.competencies?.name_ar ?? "—"}</td>
+                        <td>
+                          <span className="sru-chip">{behavioralLevelLabels[row.required_level]}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Fallback only: nobody has set this person's competencies yet.
+                  competencies.job_family_id is populated on 0 of 27 rows, so
+                  there is still nothing to personalise by here either — the
+                  note says so rather than implying this list is theirs. */}
               <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 12 }}>
                 {t("competenciesNote")}
               </p>

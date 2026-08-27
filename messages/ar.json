@@ -1304,7 +1304,10 @@
     "planTargetsColumnMyShare": "حصتي",
     "planTargetsColumnValue": "قيمتي المستهدفة",
     "planTargetsShareValue": "{ofUnit}% من حصة الجهة ({ofTarget}% من المستهدف)",
-    "planTargetsColumnActual": "ما أنجزتُه"
+    "planTargetsColumnActual": "ما أنجزتُه",
+    "myCompetenciesNote": "الجدارات التي حدّدها لك رئيسك المباشر ومستوى كل منها. تُدار من ملفك لدى رئيسك، فإن نقص منها شيء فمرجعه إليه.",
+    "myCompetenciesColumnName": "الجدارة",
+    "myCompetenciesColumnLevel": "المستوى المطلوب"
   },
   "MyEvaluationsPage": {
     "title": "تقييماتي",
