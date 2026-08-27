@@ -211,6 +211,9 @@ export default async function OrgStructurePage() {
                 jobTitleByPosition={jobTitleByPosition}
                 emptyLabel={t("noPositions")}
                 vacantLabel={t("orgChartVacant")}
+                zoomOutLabel={t("orgChartZoomOut")}
+                zoomInLabel={t("orgChartZoomIn")}
+                fitToScreenLabel={t("orgChartFitToScreen")}
               />
             </div>
           </section>
