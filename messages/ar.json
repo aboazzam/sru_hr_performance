@@ -1185,7 +1185,9 @@
     "metricScored": "تقييمات تمت",
     "metricRemaining": "بانتظار التقييم",
     "metricAverage": "متوسط التقييم",
-    "metricNoAverage": "لم تُسجَّل درجات بعد"
+    "metricNoAverage": "لم تُسجَّل درجات بعد",
+    "columnStart": "البداية",
+    "columnEnd": "النهاية"
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
@@ -1377,7 +1379,11 @@
     "feedbackEmpty": "لا توجد تقييمات 360 لهذا الموظف في هذه الدورة.",
     "columnScore": "الدرجة",
     "columnRelation": "المصدر",
-    "columnComment": "الملاحظة"
+    "columnComment": "الملاحظة",
+    "weightedResultHeading": "نتيجة التقييم الموزونة",
+    "weightedResultNote": "وفق توزيع الدورة: {distribution}.",
+    "weightedResultEmpty": "لم تُسجَّل أي درجة بعد، فلا نتيجة موزونة.",
+    "weightedResultPartial": "نتيجة جزئية: احتُسبت على {applied}٪ من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}."
   },
   "EvaluationScoresPage": {
     "title": "إدخال الدرجات",
@@ -2887,6 +2893,18 @@
     "columnEmployee": "الموظف",
     "columnEmployeeNumber": "الرقم الوظيفي",
     "columnType": "نوع التقييم",
-    "columnState": "مرحلة الاعتماد"
+    "columnState": "مرحلة الاعتماد",
+    "subTabWeights": "توزيع الأوزان",
+    "methodGoals": "مستهدفات الاستراتيجية",
+    "methodCompetencies": "الجدارات",
+    "methodBau": "المهام التشغيلية",
+    "methodFeedback360": "تقييم 360",
+    "weightsNote": "توزيع درجة الدورة على طرق التقييم الأربعة. يسري على كل تقييمات هذه الدورة بلا استثناء، ويجب أن يكون المجموع 100%.",
+    "weightsTotal": "المجموع",
+    "weightsSave": "حفظ التوزيع",
+    "weightsSaved": "تم حفظ التوزيع.",
+    "weightsError": "تعذر حفظ التوزيع.",
+    "weightsInvalid": "يجب أن يكون مجموع الأوزان ١٠٠٪ بالضبط.",
+    "weightsReadOnly": "للاطلاع فقط — لا تملك صلاحية تعديل توزيع الأوزان."
   }
 }

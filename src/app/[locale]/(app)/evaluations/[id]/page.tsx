@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { createClient } from "@/lib/supabase/server";
+import { evaluationMethods, weightedCycleScore, type EvaluationMethod, type MethodWeights } from "@/lib/evaluationCycle";
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
@@ -26,7 +27,7 @@ export default async function EvaluationDetailPage({
   const { data: evaluation } = await supabase
     .from("evaluations")
     .select(
-      "id, employee_id, cycle_id, state, eval_type, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar)"
+      "id, employee_id, cycle_id, state, eval_type, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar, weight_goals, weight_competencies, weight_bau, weight_feedback_360)"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -53,7 +54,13 @@ export default async function EvaluationDetailPage({
   // queue crashing here for an org_unit-scoped manager -- null-safety
   // fixed here (not the underlying evaluation_cycles RLS gap, which stays
   // a separate, already-flagged follow-up).
-  const cycle = evaluation.evaluation_cycles as unknown as { name_ar: string } | null;
+  const cycle = evaluation.evaluation_cycles as unknown as {
+    name_ar: string;
+    weight_goals: number;
+    weight_competencies: number;
+    weight_bau: number;
+    weight_feedback_360: number;
+  } | null;
   const state = evaluation.state as EvaluationState;
   const evalType = evaluation.eval_type as EvalType;
 
@@ -95,7 +102,7 @@ export default async function EvaluationDetailPage({
 
   const { data: feedbackData } = await supabase
     .from("feedback_360")
-    .select("id, evaluator_relation, comments")
+    .select("id, evaluator_relation, comments, scores")
     .eq("cycle_id", evaluation.cycle_id)
     .eq("target_employee_id", evaluation.employee_id)
     .is("deleted_at", null);
@@ -116,6 +123,39 @@ export default async function EvaluationDetailPage({
   const scores = (scoreData ?? []) as Array<{ competency_id: string | null; goal_id: string | null; score: number | null }>;
   const scoreByCompetency = new Map(scores.filter((x) => x.competency_id).map((x) => [x.competency_id as string, x.score]));
   const scoreByGoal = new Map(scores.filter((x) => x.goal_id).map((x) => [x.goal_id as string, x.score]));
+
+  // The cycle-wide distribution (20260827000001), applied to this one
+  // evaluation. A method with weight but nothing recorded is excluded and the
+  // rest renormalised rather than counted as zero — see weightedCycleScore.
+  const weights: MethodWeights = {
+    goals: Number(cycle?.weight_goals ?? 0),
+    competencies: Number(cycle?.weight_competencies ?? 0),
+    bau: Number(cycle?.weight_bau ?? 0),
+    feedback360: Number(cycle?.weight_feedback_360 ?? 0),
+  };
+  const average = (values: Array<number | null | undefined>) => {
+    const real = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+    return real.length === 0 ? null : real.reduce((sum, value) => sum + value, 0) / real.length;
+  };
+  const feedbackScores = feedback.map((row) => {
+    const raw = (row as { scores?: { overall_score?: unknown } | null }).scores;
+    const overall = raw && typeof raw === "object" ? (raw as { overall_score?: unknown }).overall_score : null;
+    return typeof overall === "number" ? overall : null;
+  });
+  const weighted = weightedCycleScore(weights, {
+    goals: average([...scoreByGoal.values()]),
+    competencies: average([...scoreByCompetency.values()]),
+    // BAU tasks have no scorable column on evaluation_scores yet, so this
+    // method can never contribute until that schema gap is closed.
+    bau: null,
+    feedback360: average(feedbackScores),
+  });
+  const methodLabel: Record<EvaluationMethod, string> = {
+    goals: t("methodGoals"),
+    competencies: t("methodCompetencies"),
+    bau: t("methodBau"),
+    feedback360: t("method360"),
+  };
 
   const editButton = (method: string) => (
     <div style={{ marginBottom: 12 }}>
@@ -221,6 +261,11 @@ export default async function EvaluationDetailPage({
     },
   ];
 
+  // A method weighted at zero does not take part in this cycle at all, so it
+  // is not shown as a tab (2026-08-27 request). The cycle CHECK forces the
+  // four weights to total 100, so at least one tab always survives this.
+  const visibleMethodTabs = methodTabs.filter((tab) => weights[tab.id as EvaluationMethod] > 0);
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 20 }}>
@@ -238,7 +283,34 @@ export default async function EvaluationDetailPage({
         <EvaluationStateAction evaluationId={evaluation.id} currentState={state} />
       </div>
 
-      <ProfileTabs tabs={methodTabs} />
+      <section className="sru-card" style={{ marginBottom: 20, padding: "14px 16px" }}>
+        <h2 style={{ fontSize: 14, margin: 0 }}>{t("weightedResultHeading")}</h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, margin: "4px 0 10px" }}>
+          {t("weightedResultNote", {
+            distribution: evaluationMethods
+              .filter((method) => weights[method] > 0)
+              .map((method) => `${methodLabel[method]} ${weights[method]}%`)
+              .join("، "),
+          })}
+        </p>
+        {weighted.score == null ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 13, margin: 0 }}>{t("weightedResultEmpty")}</p>
+        ) : (
+          <>
+            <p style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{weighted.score.toFixed(1)}%</p>
+            {weighted.missing.length > 0 ? (
+              <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 6 }}>
+                {t("weightedResultPartial", {
+                  applied: weighted.appliedWeight,
+                  methods: weighted.missing.map((method) => methodLabel[method]).join("، "),
+                })}
+              </p>
+            ) : null}
+          </>
+        )}
+      </section>
+
+      <ProfileTabs tabs={visibleMethodTabs} />
     </div>
   );
 }

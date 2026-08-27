@@ -6,13 +6,18 @@ import { Link } from "@/i18n/navigation";
 import { RowLink } from "@/components/RowLink";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { formatDateDmy } from "@/lib/dateParts";
+import { CycleMethodWeightsForm } from "@/components/CycleMethodWeightsForm";
+
 import {
   canAdvanceEvaluationState,
   evaluationStateLabels,
   evalTypeLabels,
   type EvalType,
   type EvaluationState,
+  hasVpraAccess,
+  type ProcessArea,
   type RoleCode,
+  type VpraLevel,
 } from "@/lib/vpra";
 
 /**
@@ -45,7 +50,9 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
 
   const { data: cycle } = await supabase
     .from("evaluation_cycles")
-    .select("id, name_ar, name_en, start_date, end_date")
+    .select(
+      "id, name_ar, name_en, start_date, end_date, weight_goals, weight_competencies, weight_bau, weight_feedback_360"
+    )
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -57,6 +64,13 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
   const { data: myProfile } = user
     ? await supabase.from("profiles").select("id").eq("auth_user_id", user.id).maybeSingle()
     : { data: null };
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const evaluationLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "evaluation"
+    )?.vpra_level ?? "none";
+  const canEditWeights = hasVpraAccess(evaluationLevel, "approve");
 
   const { data: roleCodes } = await supabase.rpc("get_my_role_codes");
   const myRoles = (roleCodes ?? []) as RoleCode[];
@@ -173,6 +187,22 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 12 }}>{t("reviewNote")}</p>
           {table(reviewEvaluations, t("reviewEmpty"))}
         </>
+      ),
+    },
+    {
+      id: "weights",
+      label: t("subTabWeights"),
+      content: (
+        <CycleMethodWeightsForm
+          cycleId={cycle.id}
+          canEdit={canEditWeights}
+          initial={{
+            goals: Number(cycle.weight_goals),
+            competencies: Number(cycle.weight_competencies),
+            bau: Number(cycle.weight_bau),
+            feedback360: Number(cycle.weight_feedback_360),
+          }}
+        />
       ),
     },
   ];

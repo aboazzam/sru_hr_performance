@@ -130,3 +130,71 @@ export function summariseCycleScoring(
   }
   return summary;
 }
+
+/**
+ * The four evaluation methods, and how a cycle splits its score between them.
+ *
+ * The distribution lives on the CYCLE (20260827000001), so every evaluation
+ * inside it is weighted identically — that is the whole point of the request
+ * ("يتم تطبيقه على جميع التقييمات في هذه الدورة"). Two employees in one cycle
+ * measured on different weightings could not be compared, let alone calibrated.
+ */
+export const evaluationMethods = ["goals", "competencies", "bau", "feedback360"] as const;
+export type EvaluationMethod = (typeof evaluationMethods)[number];
+export type MethodWeights = Record<EvaluationMethod, number>;
+
+/** Tolerance matches the DB CHECK — NUMERIC(5,2) makes exact equality brittle. */
+export const WEIGHT_TOTAL_TOLERANCE = 0.01;
+
+export function weightsTotal(weights: MethodWeights): number {
+  return evaluationMethods.reduce((sum, method) => sum + (Number(weights[method]) || 0), 0);
+}
+
+export function isValidWeights(weights: MethodWeights): boolean {
+  const inRange = evaluationMethods.every((method) => {
+    const value = Number(weights[method]);
+    return Number.isFinite(value) && value >= 0 && value <= 100;
+  });
+  return inRange && Math.abs(weightsTotal(weights) - 100) < WEIGHT_TOTAL_TOLERANCE;
+}
+
+export type WeightedScore = {
+  /** null when nothing scorable exists yet — never 0, which would read as a real zero. */
+  score: number | null;
+  /** Share of the cycle's 100% that actually contributed. */
+  appliedWeight: number;
+  /** Methods carrying weight but holding no score yet. */
+  missing: EvaluationMethod[];
+};
+
+/**
+ * Applies a cycle's distribution to whatever a single evaluation actually has.
+ *
+ * A method with weight but no score is NOT counted as zero — that would punish
+ * an employee for paperwork nobody has filled in. Its weight is excluded and
+ * the rest renormalised, with the excluded methods reported so the screen can
+ * say the total is partial instead of presenting it as final.
+ */
+export function weightedCycleScore(
+  weights: MethodWeights,
+  scores: Partial<Record<EvaluationMethod, number | null>>
+): WeightedScore {
+  let weighted = 0;
+  let appliedWeight = 0;
+  const missing: EvaluationMethod[] = [];
+
+  for (const method of evaluationMethods) {
+    const weight = Number(weights[method]) || 0;
+    if (weight <= 0) continue;
+    const value = scores[method];
+    if (value == null || !Number.isFinite(value)) {
+      missing.push(method);
+      continue;
+    }
+    weighted += value * weight;
+    appliedWeight += weight;
+  }
+
+  if (appliedWeight <= 0) return { score: null, appliedWeight: 0, missing };
+  return { score: weighted / appliedWeight, appliedWeight, missing };
+}
