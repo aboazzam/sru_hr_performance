@@ -26,6 +26,7 @@ interface EmployeeRow {
   created_by: string | null;
   approval_status: string;
   org_units: { name_ar: string } | null;
+  supervisor_id: string | null;
 }
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -61,8 +62,9 @@ export default async function EmployeesPage({
   const userManagementLevel = permissionsByArea.get("userManagement") ?? "none";
   const canManageAccounts = hasVpraAccess(userManagementLevel, "approve");
 
+
   const selectColumns =
-    "id, employee_number, full_name_ar, full_name_en, status, auth_user_id, created_by, approval_status, org_units(name_ar)";
+    "id, employee_number, full_name_ar, full_name_en, status, auth_user_id, created_by, approval_status, supervisor_id, org_units(name_ar)";
 
   // RLS-scoped to the caller (profiles_select: self row, employeeData-scoped
   // view, recursive subordinate-chain view under employeeDataSubordinates,
@@ -119,6 +121,19 @@ export default async function EmployeesPage({
   // userManagement>=view/approve respectively, so a caller without that
   // grant simply gets empty results here.
   const allVisibleRows = [...approvedEmployees, ...pendingEmployees, ...myPendingOrRejected];
+
+  // The "view" icon (2026-08-27): a grant on employeeData, or actually having
+  // someone report to you.
+  //
+  // "Has subordinates" is read off the rows already fetched, not counted with
+  // its own query: that count runs through the caller own RLS-scoped client,
+  // which hides the very rows being counted, and returned zero for exactly the
+  // supervisor the rule exists to serve. A subordinate that IS visible proves
+  // the relationship; one that is not would not be openable anyway.
+  const myProfileIdForIcon = allVisibleRows.find((row) => row.auth_user_id === user?.id)?.id ?? null;
+  const hasSubordinates =
+    myProfileIdForIcon != null && allVisibleRows.some((row) => row.supervisor_id === myProfileIdForIcon);
+  const canViewDetails = hasVpraAccess(employeeDataLevel, "view") || hasSubordinates;
   const authUserIds = allVisibleRows.map((e) => e.auth_user_id).filter((id): id is string => !!id);
   const pendingProfileIds = allVisibleRows.filter((e) => !e.auth_user_id).map((e) => e.id);
 
@@ -198,9 +213,11 @@ export default async function EmployeesPage({
         <td>{employee.auth_user_id ? t("accountActive") : t("accountPending")}</td>
         <td className="no-print">
           <div className="sru-icon-action-group">
-            <Link href={`/employees/${employee.id}`} className="sru-icon-action" title={t("actionView")} aria-label={t("actionView")}>
-              <Eye size={15} />
-            </Link>
+            {canViewDetails && (
+              <Link href={`/employees/${employee.id}`} className="sru-icon-action" title={t("actionView")} aria-label={t("actionView")}>
+                <Eye size={15} />
+              </Link>
+            )}
             {canEditDelete && (
               <>
                 <Link
