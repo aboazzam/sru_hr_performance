@@ -2,7 +2,7 @@
 
 import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { CalendarRange, Tag } from "lucide-react";
+import { CalendarRange, Tag, Scale } from "lucide-react";
 import {
   createEvaluationCycle,
   type CreateEvaluationCycleState,
@@ -15,6 +15,13 @@ import {
   type CycleDurationPreset,
 } from "@/lib/cyclePeriod";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
+import {
+  evaluationMethods,
+  isValidWeights,
+  weightsTotal,
+  type EvaluationMethod,
+  type MethodWeights,
+} from "@/lib/evaluationCycle";
 import type { Locale } from "@/i18n/config";
 
 type ErrorMessage = Extract<CreateEvaluationCycleState, { status: "error" }>["message"];
@@ -55,6 +62,31 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
   const [duration, setDuration] = useState<CycleDurationPreset | "custom">(12);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // The distribution belongs here, not only on the cycle screen afterwards:
+  // it governs every evaluation in the cycle, so creation is the moment it
+  // is actually a decision. 25 each is the DB default, so the form opens on
+  // a valid total rather than an error.
+  const [weights, setWeights] = useState<MethodWeights>({
+    goals: 25,
+    competencies: 25,
+    bau: 25,
+    feedback360: 25,
+  });
+  const weightsSum = weightsTotal(weights);
+  const weightsValid = isValidWeights(weights);
+  const weightFieldNames: Record<EvaluationMethod, string> = {
+    goals: "weightGoals",
+    competencies: "weightCompetencies",
+    bau: "weightBau",
+    feedback360: "weightFeedback360",
+  };
+  const weightLabelKeys: Record<EvaluationMethod, string> = {
+    goals: "weightGoalsLabel",
+    competencies: "weightCompetenciesLabel",
+    bau: "weightBauLabel",
+    feedback360: "weightFeedback360Label",
+  };
 
   function applyStartDate(value: string) {
     setStartDate(value);
@@ -211,6 +243,44 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Scale size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("sectionWeightsTitle")}</h3>
+            <span>{t("sectionWeightsSubtitle")}</span>
+          </div>
+        </div>
+
+        <div className="sru-formgrid">
+          {evaluationMethods.map((method) => (
+            <div className="sru-field" key={method}>
+              <label htmlFor={`new-cycle-${method}`}>{t(weightLabelKeys[method])}</label>
+              <input
+                id={`new-cycle-${method}`}
+                name={weightFieldNames[method]}
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                dir="ltr"
+                value={weights[method]}
+                onChange={(event) =>
+                  setWeights((current) => ({ ...current, [method]: Number(event.target.value) }))
+                }
+              />
+            </div>
+          ))}
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <p style={{ fontSize: 11.5, color: weightsValid ? "var(--sru-muted)" : "#b91c1c" }}>
+              {t("weightsTotalLabel")}: {weightsSum}%
+              {weightsValid ? "" : ` — ${t("weightsInvalid")}`}
+            </p>
+          </div>
+        </div>
+      </section>
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">
           {t(errorMessageKeys[state.message])}
@@ -223,7 +293,7 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
             kept here instead of being quietly lost. */}
         <button
           type="submit"
-          disabled={pending || startDate === "" || endDate === ""}
+          disabled={pending || startDate === "" || endDate === "" || !weightsValid}
           className="sru-btn sru-btn-primary"
         >
           {pending ? t("submitting") : t("submit")}
