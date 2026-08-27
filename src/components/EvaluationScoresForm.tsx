@@ -29,10 +29,18 @@ export function EvaluationScoresForm({
   evaluationId,
   competencies,
   goals,
+  bauTasks = [],
+  showCompetencies = true,
+  showGoals = true,
+  showBau = true,
 }: {
   evaluationId: string;
   competencies: ScoredSubject[];
   goals: ScoredSubject[];
+  bauTasks?: ScoredSubject[];
+  showCompetencies?: boolean;
+  showGoals?: boolean;
+  showBau?: boolean;
 }) {
   const t = useTranslations("EvaluationScoresPage");
   const [state, formAction, pending] = useActionState<SaveEvaluationScoresState, FormData>(
@@ -45,7 +53,7 @@ export function EvaluationScoresForm({
   const commentInputClass =
     "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
-  function renderRows(prefix: "competency" | "goal", subjects: ScoredSubject[]) {
+  function renderRows(prefix: "competency" | "goal" | "bau", subjects: ScoredSubject[]) {
     return subjects.map((subject) => (
       <tr key={subject.id}>
         <td>{subject.nameAr ?? subject.titleAr}</td>
@@ -86,6 +94,7 @@ export function EvaluationScoresForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {showCompetencies ? (
       <div>
         <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
           {t("competenciesHeading")}
@@ -109,7 +118,9 @@ export function EvaluationScoresForm({
           </div>
         )}
       </div>
+      ) : null}
 
+      {showGoals ? (
       <div>
         <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
           {t("goalsHeading")}
@@ -133,6 +144,33 @@ export function EvaluationScoresForm({
           </div>
         )}
       </div>
+      ) : null}
+
+      {showBau ? (
+      <div>
+        <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
+          {t("bauHeading")}
+        </h2>
+        {bauTasks.length === 0 ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("bauEmpty")}</p>
+        ) : (
+          <div className="sru-card">
+            <div className="table-scroll">
+              <table className="admin-matrix">
+                <thead>
+                  <tr>
+                    <th>{t("columnSubject")}</th>
+                    <th>{t("columnScore")}</th>
+                    <th>{t("columnComment")}</th>
+                  </tr>
+                </thead>
+                <tbody>{renderRows("bau", bauTasks)}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+      ) : null}
 
       {state?.status === "error" && (
         <p role="alert" className="text-sm text-red-600">
