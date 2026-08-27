@@ -1193,7 +1193,12 @@
     "metricAverage": "Average score",
     "metricNoAverage": "No scores recorded yet",
     "columnStart": "Start",
-    "columnEnd": "End"
+    "columnEnd": "End",
+    "columnWeights": "Weight distribution",
+    "weightGoalsShort": "Strategic targets",
+    "weightCompetenciesShort": "Competencies",
+    "weightBauShort": "Routine tasks",
+    "weightFeedback360Short": "360 feedback"
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
@@ -1224,7 +1229,15 @@
     "durationCustom": "Custom duration",
     "periodSummaryMonths": "Duration: {months, plural, one {# month} other {# months}} ({days, plural, one {# day} other {# days}}).",
     "periodSummaryDays": "Duration: {days, plural, one {# day} other {# days}}.",
-    "periodInvalidRange": "The end date must be after the start date."
+    "periodInvalidRange": "The end date must be after the start date.",
+    "sectionWeightsTitle": "Evaluation method weights",
+    "sectionWeightsSubtitle": "Each method's share of the cycle score — it applies to every evaluation in this cycle and must total 100%.",
+    "weightGoalsLabel": "Strategic targets (%)",
+    "weightCompetenciesLabel": "Competencies (%)",
+    "weightBauLabel": "Routine tasks (%)",
+    "weightFeedback360Label": "360 feedback (%)",
+    "weightsTotalLabel": "Total",
+    "weightsInvalid": "The total must be exactly 100%."
   },
   "MyProfilePage": {
     "title": "My Profile",

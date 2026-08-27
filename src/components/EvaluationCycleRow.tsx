@@ -10,7 +10,13 @@ import {
   deleteEvaluationCycle,
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
-import { cycleStatus, cycleStatusLabels } from "@/lib/evaluationCycle";
+import {
+  cycleStatus,
+  cycleStatusLabels,
+  evaluationMethods,
+  type EvaluationMethod,
+  type MethodWeights,
+} from "@/lib/evaluationCycle";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import { formatDateDmy } from "@/lib/dateParts";
 
@@ -37,6 +43,7 @@ export interface EvaluationCycleRowData {
   startDate: string;
   endDate: string;
   usageCount: number;
+  weights: MethodWeights;
 }
 
 /**
@@ -58,6 +65,19 @@ export function EvaluationCycleRow({
   typeLabels: Record<string, string>;
 }) {
   const t = useTranslations("EvaluationCyclesPage");
+
+  // The distribution shown where cycles are actually browsed, not only inside
+  // the cycle. Short form in the cell, full method names in the tooltip.
+  const weightLabelKeys: Record<EvaluationMethod, string> = {
+    goals: "weightGoalsShort",
+    competencies: "weightCompetenciesShort",
+    bau: "weightBauShort",
+    feedback360: "weightFeedback360Short",
+  };
+  const weightsSummary = evaluationMethods.map((m) => `${cycle.weights[m]}%`).join(" / ");
+  const weightsTitle = evaluationMethods
+    .map((m) => `${t(weightLabelKeys[m])}: ${cycle.weights[m]}%`)
+    .join("، ");
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -156,6 +176,9 @@ export function EvaluationCycleRow({
 
       <td>
         <span className="pill">{cycleStatusLabels[status]}</span>
+      </td>
+      <td style={{ fontSize: 11.5, whiteSpace: "nowrap" }} title={weightsTitle}>
+        {weightsSummary}
       </td>
       <td className="sru-en">{cycle.usageCount}</td>
 

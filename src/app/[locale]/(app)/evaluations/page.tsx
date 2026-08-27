@@ -30,7 +30,9 @@ export default async function EvaluationCyclesPage() {
   // cycles are university-wide metadata, not per-employee/org-unit scoped.
   const { data } = await supabase
     .from("evaluation_cycles")
-    .select("id, name_ar, name_en, cycle_type, start_date, end_date")
+    .select(
+      "id, name_ar, name_en, cycle_type, start_date, end_date, weight_goals, weight_competencies, weight_bau, weight_feedback_360"
+    )
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
 
@@ -41,6 +43,10 @@ export default async function EvaluationCyclesPage() {
     cycle_type: EvaluationCycleType;
     start_date: string;
     end_date: string;
+    weight_goals: number;
+    weight_competencies: number;
+    weight_bau: number;
+    weight_feedback_360: number;
   }> | null;
 
   // How many real records depend on each cycle, across every table with a
@@ -107,6 +113,12 @@ export default async function EvaluationCyclesPage() {
     startDate: cycle.start_date,
     endDate: cycle.end_date,
     usageCount: usageByCycle.get(cycle.id) ?? 0,
+    weights: {
+      goals: Number(cycle.weight_goals),
+      competencies: Number(cycle.weight_competencies),
+      bau: Number(cycle.weight_bau),
+      feedback360: Number(cycle.weight_feedback_360),
+    },
   }));
 
   return (
@@ -161,6 +173,7 @@ export default async function EvaluationCyclesPage() {
                   <th>{t("columnStartDate")}</th>
                   <th>{t("columnEndDate")}</th>
                   <th>{t("columnStatus")}</th>
+                  <th>{t("columnWeights")}</th>
                   <th>{t("columnUsage")}</th>
                   <th className="no-print">{t("columnActions")}</th>
                 </tr>

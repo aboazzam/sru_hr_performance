@@ -1193,7 +1193,12 @@
     "metricAverage": "متوسط التقييم",
     "metricNoAverage": "لم تُسجَّل درجات بعد",
     "columnStart": "البداية",
-    "columnEnd": "النهاية"
+    "columnEnd": "النهاية",
+    "columnWeights": "توزيع الأوزان",
+    "weightGoalsShort": "مستهدفات الاستراتيجية",
+    "weightCompetenciesShort": "الجدارات",
+    "weightBauShort": "المهام التشغيلية",
+    "weightFeedback360Short": "تقييم 360"
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
@@ -1224,7 +1229,15 @@
     "durationCustom": "مدة مخصصة",
     "periodSummaryMonths": "المدة: {months, plural, few {# أشهر} many {# شهرًا} other {# شهر}} ({days, plural, few {# أيام} many {# يومًا} other {# يوم}}).",
     "periodSummaryDays": "المدة: {days, plural, few {# أيام} many {# يومًا} other {# يوم}}.",
-    "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية."
+    "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
+    "sectionWeightsTitle": "توزيع أوزان طرق التقييم",
+    "sectionWeightsSubtitle": "نصيب كل طريقة من درجة الدورة — يسري على كل تقييمات هذه الدورة، ومجموعه 100%.",
+    "weightGoalsLabel": "مستهدفات الاستراتيجية (%)",
+    "weightCompetenciesLabel": "الجدارات (%)",
+    "weightBauLabel": "المهام التشغيلية (%)",
+    "weightFeedback360Label": "تقييم 360 (%)",
+    "weightsTotalLabel": "المجموع",
+    "weightsInvalid": "يجب أن يكون المجموع 100% بالضبط."
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",
