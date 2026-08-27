@@ -1185,7 +1185,9 @@
     "metricScored": "Scored",
     "metricRemaining": "Awaiting scoring",
     "metricAverage": "Average score",
-    "metricNoAverage": "No scores recorded yet"
+    "metricNoAverage": "No scores recorded yet",
+    "columnStart": "Start",
+    "columnEnd": "End"
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
@@ -1377,7 +1379,11 @@
     "feedbackEmpty": "No 360 feedback for this employee in this cycle.",
     "columnScore": "Score",
     "columnRelation": "Source",
-    "columnComment": "Comment"
+    "columnComment": "Comment",
+    "weightedResultHeading": "Weighted result",
+    "weightedResultNote": "Using the cycle distribution: {distribution}.",
+    "weightedResultEmpty": "Nothing has been scored yet, so there is no weighted result.",
+    "weightedResultPartial": "Partial result: computed over {applied}% of the cycle weight only. No scores recorded for: {methods}."
   },
   "EvaluationScoresPage": {
     "title": "Enter Scores",
@@ -2887,6 +2893,18 @@
     "columnEmployee": "Employee",
     "columnEmployeeNumber": "Employee no.",
     "columnType": "Evaluation type",
-    "columnState": "Approval stage"
+    "columnState": "Approval stage",
+    "subTabWeights": "Weight distribution",
+    "methodGoals": "Strategic targets",
+    "methodCompetencies": "Competencies",
+    "methodBau": "Routine tasks",
+    "methodFeedback360": "360 feedback",
+    "weightsNote": "How the cycle score is split across the four evaluation methods. It applies to every evaluation in this cycle, and must total 100%.",
+    "weightsTotal": "Total",
+    "weightsSave": "Save distribution",
+    "weightsSaved": "Distribution saved.",
+    "weightsError": "Could not save the distribution.",
+    "weightsInvalid": "The weights must total exactly 100%.",
+    "weightsReadOnly": "View only — you do not have permission to change the distribution."
   }
 }

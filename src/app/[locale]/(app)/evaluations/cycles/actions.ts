@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cycleDependentTables } from "@/lib/evaluationCycle";
+import { cycleDependentTables, isValidWeights } from "@/lib/evaluationCycle";
 
 export type EvaluationCycleActionState =
   | { status: "success" }
@@ -191,6 +191,88 @@ export async function deleteEvaluationCycle(cycleId: string): Promise<Evaluation
     entity: "evaluation_cycles",
     entity_id: cycleId,
     after_data: { deleted: true },
+  });
+
+  return { status: "success" };
+}
+
+const weightsSchema = z
+  .object({
+    cycleId: z.string().uuid(),
+    goals: z.number().min(0).max(100),
+    competencies: z.number().min(0).max(100),
+    bau: z.number().min(0).max(100),
+    feedback360: z.number().min(0).max(100),
+  })
+  .refine(
+    (data) =>
+      isValidWeights({
+        goals: data.goals,
+        competencies: data.competencies,
+        bau: data.bau,
+        feedback360: data.feedback360,
+      }),
+    { message: "weights must total 100" }
+  );
+
+/**
+ * Sets the cycle's split between the four evaluation methods.
+ *
+ * No new permission: this is a property of the cycle, so it rides on
+ * `evaluation_cycles_update`'s existing RLS
+ * (`check_vpra_global('evaluation','approve')`) exactly like the name and the
+ * dates do. The total is validated here AND by the DB CHECK — the action's
+ * check gives a usable message, the constraint makes it true regardless of how
+ * a row is written.
+ */
+export async function updateCycleMethodWeights(input: {
+  cycleId: string;
+  goals: number;
+  competencies: number;
+  bau: number;
+  feedback360: number;
+}): Promise<EvaluationCycleActionState> {
+  const parsed = weightsSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: before } = await supabase
+    .from("evaluation_cycles")
+    .select("weight_goals, weight_competencies, weight_bau, weight_feedback_360")
+    .eq("id", parsed.data.cycleId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  const after = {
+    weight_goals: parsed.data.goals,
+    weight_competencies: parsed.data.competencies,
+    weight_bau: parsed.data.bau,
+    weight_feedback_360: parsed.data.feedback360,
+  };
+
+  const { data: updated, error } = await supabase
+    .from("evaluation_cycles")
+    .update(after)
+    .eq("id", parsed.data.cycleId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) return mapError(error);
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "evaluation_cycle_weights_updated",
+    entity: "evaluation_cycles",
+    entity_id: parsed.data.cycleId,
+    before_data: before ?? null,
+    after_data: after,
   });
 
   return { status: "success" };

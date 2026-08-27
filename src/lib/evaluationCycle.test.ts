@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cycleStatus, cycleStatusLabels, cycleStatuses, todayInTimezone, totalCycleUsage, cycleDependentTables, summariseCycleScoring } from "./evaluationCycle";
+import { cycleStatus, cycleStatusLabels, cycleStatuses, todayInTimezone, totalCycleUsage, cycleDependentTables, summariseCycleScoring, isValidWeights, weightedCycleScore, type MethodWeights } from "./evaluationCycle";
 
 describe("cycleStatus", () => {
   it("classifies a cycle by its own dates", () => {
@@ -120,5 +120,59 @@ describe("summariseCycleScoring", () => {
     );
     expect(s.get("c1")?.averageScore).toBe(100);
     expect(s.get("c2")?.averageScore).toBe(50);
+  });
+});
+
+describe("method weights", () => {
+  const even: MethodWeights = { goals: 25, competencies: 25, bau: 25, feedback360: 25 };
+
+  it("accepts a distribution totalling 100", () => {
+    expect(isValidWeights(even)).toBe(true);
+    expect(isValidWeights({ goals: 40, competencies: 30, bau: 20, feedback360: 10 })).toBe(true);
+  });
+
+  it("rejects a distribution that does not total 100", () => {
+    expect(isValidWeights({ goals: 40, competencies: 30, bau: 20, feedback360: 20 })).toBe(false);
+    expect(isValidWeights({ goals: 0, competencies: 0, bau: 0, feedback360: 0 })).toBe(false);
+  });
+
+  it("rejects an out-of-range weight even when the total works out", () => {
+    expect(isValidWeights({ goals: 110, competencies: 0, bau: 0, feedback360: -10 })).toBe(false);
+  });
+
+  it("weights the methods that have scores", () => {
+    const result = weightedCycleScore({ goals: 50, competencies: 50, bau: 0, feedback360: 0 }, {
+      goals: 80,
+      competencies: 60,
+    });
+    expect(result.score).toBe(70);
+    expect(result.appliedWeight).toBe(100);
+    expect(result.missing).toEqual([]);
+  });
+
+  it("renormalises over what exists instead of scoring a missing method as zero", () => {
+    const result = weightedCycleScore(
+      { goals: 40, competencies: 30, bau: 20, feedback360: 10 },
+      { goals: 90, competencies: 70 }
+    );
+    // (90*40 + 70*30) / 70 — not /100, which would have read as 79.
+    expect(result.score).toBeCloseTo(81.4285, 3);
+    expect(result.appliedWeight).toBe(70);
+    expect(result.missing).toEqual(["bau", "feedback360"]);
+  });
+
+  it("returns null, not zero, when nothing is scored yet", () => {
+    const result = weightedCycleScore(even, {});
+    expect(result.score).toBeNull();
+    expect(result.appliedWeight).toBe(0);
+  });
+
+  it("ignores a method carrying no weight, scored or not", () => {
+    const result = weightedCycleScore({ goals: 100, competencies: 0, bau: 0, feedback360: 0 }, {
+      goals: 50,
+      competencies: 100,
+    });
+    expect(result.score).toBe(50);
+    expect(result.missing).toEqual([]);
   });
 });
