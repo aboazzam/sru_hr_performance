@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { RowLink } from "@/components/RowLink";
 import { useTranslations, useLocale } from "next-intl";
-import { useRouter, Link } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Pencil, Save, X, Trash2 } from "lucide-react";
 import {
   updateEvaluationCycle,
@@ -100,7 +101,7 @@ export function EvaluationCycleRow({
   }
 
   return (
-    <tr>
+    <RowLink href={`/evaluations/cycles/${cycle.id}`}>
       <td>
         {editing ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -160,14 +161,6 @@ export function EvaluationCycleRow({
 
       <td className="no-print">
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          {/* Opening the cycle is now the primary move: the views that used
-              to be buttons on this screen live inside it. */}
-          <Link href={`/evaluations/cycles/${cycle.id}`} className="sru-btn sru-btn-primary sru-btn-slim">
-            {t("openCycle")}
-          </Link>
-          <Link href={`/evaluations/new?cycleId=${cycle.id}`} className="sru-btn sru-btn-slim">
-            {t("createEvaluation")}
-          </Link>
 
           {canManage &&
             (editing ? (
@@ -234,6 +227,6 @@ export function EvaluationCycleRow({
             ))}
         </div>
       </td>
-    </tr>
+    </RowLink>
   );
 }

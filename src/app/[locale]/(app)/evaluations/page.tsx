@@ -1,7 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { AddEvaluationCycleButton } from "@/components/AddEvaluationCycleButton";
-import { GroupTabs } from "@/components/layout/GroupTabs";
 import { EvaluationCycleRow, type EvaluationCycleRowData } from "@/components/EvaluationCycleRow";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { Locale } from "@/i18n/config";
@@ -90,7 +89,6 @@ export default async function EvaluationCyclesPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <GroupTabs groupKey="evaluationMethods" current="evaluations" />
       <div
         className="no-print"
         style={{
