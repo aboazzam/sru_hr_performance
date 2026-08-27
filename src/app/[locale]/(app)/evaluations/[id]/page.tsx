@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
@@ -92,6 +93,134 @@ export default async function EvaluationDetailPage({
     status: string;
   }> | null;
 
+  const { data: feedbackData } = await supabase
+    .from("feedback_360")
+    .select("id, evaluator_relation, comments")
+    .eq("cycle_id", evaluation.cycle_id)
+    .eq("target_employee_id", evaluation.employee_id)
+    .is("deleted_at", null);
+  const feedback = (feedbackData ?? []) as Array<{ id: string; evaluator_relation: EvalType; comments: string | null }>;
+
+  const { data: competencyData } = await supabase
+    .from("competencies")
+    .select("id, name_ar")
+    .is("deleted_at", null)
+    .order("name_ar");
+  const competencies = (competencyData ?? []) as Array<{ id: string; name_ar: string }>;
+
+  const { data: scoreData } = await supabase
+    .from("evaluation_scores")
+    .select("competency_id, goal_id, score")
+    .eq("evaluation_id", evaluation.id)
+    .is("deleted_at", null);
+  const scores = (scoreData ?? []) as Array<{ competency_id: string | null; goal_id: string | null; score: number | null }>;
+  const scoreByCompetency = new Map(scores.filter((x) => x.competency_id).map((x) => [x.competency_id as string, x.score]));
+  const scoreByGoal = new Map(scores.filter((x) => x.goal_id).map((x) => [x.goal_id as string, x.score]));
+
+  const editButton = (method: string) => (
+    <div style={{ marginBottom: 12 }}>
+      <Link href={`/evaluations/${evaluation.id}/scores?method=${method}`} className="sru-btn sru-btn-primary sru-btn-slim">
+        {t("editEvaluation")}
+      </Link>
+    </div>
+  );
+
+  const simpleTable = (
+    head: string[],
+    rows: Array<Array<string | number | null>>,
+    empty: string
+  ) =>
+    rows.length === 0 ? (
+      <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{empty}</p>
+    ) : (
+      <div className="table-scroll">
+        <table className="admin-matrix">
+          <thead>
+            <tr>
+              {head.map((h) => (
+                <th key={h}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((cells, i) => (
+              <tr key={i}>
+                {cells.map((c, j) => (
+                  <td key={j}>{c ?? "—"}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+
+  const methodTabs: ProfileTab[] = [
+    {
+      id: "goals",
+      label: t("methodGoals"),
+      content: (
+        <>
+          {editButton("goals")}
+          {simpleTable(
+            [t("columnTitle"), t("columnWeight"), t("columnScore")],
+            (goals ?? []).map((g) => [
+              g.custom_title_ar ?? g.goal_library?.title_ar ?? "—",
+              g.weight != null ? `${g.weight}%` : "—",
+              scoreByGoal.get(g.id) ?? "—",
+            ]),
+            t("goalsEmpty")
+          )}
+        </>
+      ),
+    },
+    {
+      id: "competencies",
+      label: t("methodCompetencies"),
+      content: (
+        <>
+          {editButton("competencies")}
+          {simpleTable(
+            [t("columnTitle"), t("columnScore")],
+            competencies.map((c) => [c.name_ar, scoreByCompetency.get(c.id) ?? "—"]),
+            t("competenciesEmpty")
+          )}
+        </>
+      ),
+    },
+    {
+      id: "bau",
+      label: t("methodBau"),
+      content: (
+        <>
+          {/* No edit button: a score row holds a competency or a goal, never a
+              routine task, so there is nothing here to record yet. Saying so
+              beats offering a button that cannot save. */}
+          <p className="sru-home-clear" style={{ marginBottom: 12 }}>{t("bauNotScorable")}</p>
+          {simpleTable(
+            [t("columnTitle"), t("columnWeight"), t("columnStatus")],
+            (bauTasks ?? []).map((task) => [task.title_ar, task.weight != null ? `${task.weight}%` : "—", task.status]),
+            t("bauTasksEmpty")
+          )}
+        </>
+      ),
+    },
+    {
+      id: "feedback360",
+      label: t("method360"),
+      content: (
+        <>
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 12 }}>{t("feedbackNote")}</p>
+          {simpleTable(
+            [t("columnRelation"), t("columnComment")],
+            feedback.map((f) => [evalTypeLabels[f.evaluator_relation], f.comments]),
+            t("feedbackEmpty")
+          )}
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 20 }}>
@@ -107,74 +236,9 @@ export default async function EvaluationDetailPage({
           <strong>{t("stateLabel")}</strong> {evaluationStateLabels[state]}
         </p>
         <EvaluationStateAction evaluationId={evaluation.id} currentState={state} />
-        <div style={{ marginTop: 12 }}>
-          <Link href={`/evaluations/${evaluation.id}/scores`} className="sru-btn sru-btn-primary">
-            {t("enterScores")}
-          </Link>
-        </div>
       </div>
 
-      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
-        {t("goalsHeading")}
-      </h2>
-      {!goals || goals.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13, marginBottom: 24 }}>
-          {t("goalsEmpty")}
-        </p>
-      ) : (
-        <div className="sru-card" style={{ marginBottom: 24 }}>
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnTitle")}</th>
-                  <th>{t("columnWeight")}</th>
-                  <th>{t("columnStatus")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {goals.map((goal) => (
-                  <tr key={goal.id}>
-                    <td>{goal.custom_title_ar ?? goal.goal_library?.title_ar ?? "—"}</td>
-                    <td>{goal.weight != null ? `${goal.weight}%` : "—"}</td>
-                    <td>{goal.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
-        {t("bauTasksHeading")}
-      </h2>
-      {!bauTasks || bauTasks.length === 0 ? (
-        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("bauTasksEmpty")}</p>
-      ) : (
-        <div className="sru-card">
-          <div className="table-scroll">
-            <table className="admin-matrix">
-              <thead>
-                <tr>
-                  <th>{t("columnTitle")}</th>
-                  <th>{t("columnWeight")}</th>
-                  <th>{t("columnStatus")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bauTasks.map((task) => (
-                  <tr key={task.id}>
-                    <td>{task.title_ar}</td>
-                    <td>{task.weight != null ? `${task.weight}%` : "—"}</td>
-                    <td>{task.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <ProfileTabs tabs={methodTabs} />
     </div>
   );
 }
