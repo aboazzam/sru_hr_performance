@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  cycleStatus,
-  cycleStatusLabels,
-  cycleStatuses,
-  todayInTimezone,
-  totalCycleUsage,
-  cycleDependentTables,
-} from "./evaluationCycle";
+import { cycleStatus, cycleStatusLabels, cycleStatuses, todayInTimezone, totalCycleUsage, cycleDependentTables, summariseCycleScoring } from "./evaluationCycle";
 
 describe("cycleStatus", () => {
   it("classifies a cycle by its own dates", () => {
@@ -60,5 +53,72 @@ describe("totalCycleUsage", () => {
     expect(cycleDependentTables).toContain("evaluations");
     expect(cycleDependentTables).toContain("kpi_annual_targets");
     expect(new Set(cycleDependentTables).size).toBe(cycleDependentTables.length);
+  });
+});
+
+describe("summariseCycleScoring", () => {
+  it("counts an evaluation as scored once, however many scores it has", () => {
+    const s = summariseCycleScoring(
+      [
+        { id: "e1", cycle_id: "c1" },
+        { id: "e2", cycle_id: "c1" },
+      ],
+      [
+        { evaluation_id: "e1", score: 80 },
+        { evaluation_id: "e1", score: 60 },
+      ]
+    );
+    expect(s.get("c1")).toEqual({ total: 2, scored: 1, remaining: 1, averageScore: 70 });
+  });
+
+  it("averages over scores, not over evaluations", () => {
+    // e1 carries three scores and e2 one: the cycle's average is the mean of
+    // all four, not the mean of the two evaluations' own means.
+    const s = summariseCycleScoring(
+      [
+        { id: "e1", cycle_id: "c1" },
+        { id: "e2", cycle_id: "c1" },
+      ],
+      [
+        { evaluation_id: "e1", score: 90 },
+        { evaluation_id: "e1", score: 90 },
+        { evaluation_id: "e1", score: 90 },
+        { evaluation_id: "e2", score: 10 },
+      ]
+    );
+    expect(s.get("c1")?.averageScore).toBe(70);
+  });
+
+  it("reports no average at all when nothing is scored, rather than zero", () => {
+    const s = summariseCycleScoring([{ id: "e1", cycle_id: "c1" }], []);
+    expect(s.get("c1")).toEqual({ total: 1, scored: 0, remaining: 1, averageScore: null });
+  });
+
+  it("keeps a null score out of the average but still marks the evaluation scored", () => {
+    const s = summariseCycleScoring(
+      [{ id: "e1", cycle_id: "c1" }],
+      [{ evaluation_id: "e1", score: null }]
+    );
+    expect(s.get("c1")).toEqual({ total: 1, scored: 1, remaining: 0, averageScore: null });
+  });
+
+  it("ignores a score whose evaluation is not in view", () => {
+    const s = summariseCycleScoring([{ id: "e1", cycle_id: "c1" }], [{ evaluation_id: "unknown", score: 100 }]);
+    expect(s.get("c1")).toEqual({ total: 1, scored: 0, remaining: 1, averageScore: null });
+  });
+
+  it("keeps cycles apart", () => {
+    const s = summariseCycleScoring(
+      [
+        { id: "e1", cycle_id: "c1" },
+        { id: "e2", cycle_id: "c2" },
+      ],
+      [
+        { evaluation_id: "e1", score: 100 },
+        { evaluation_id: "e2", score: 50 },
+      ]
+    );
+    expect(s.get("c1")?.averageScore).toBe(100);
+    expect(s.get("c2")?.averageScore).toBe(50);
   });
 });

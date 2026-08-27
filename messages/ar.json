@@ -1179,7 +1179,13 @@
     "manageErrorHasDependents": "لا يمكن حذف الدورة لارتباط سجلات بها.",
     "manageErrorUnknown": "حدث خطأ غير متوقع.",
     "closeButton": "إغلاق",
-    "openCycle": "فتح الدورة"
+    "openCycle": "فتح الدورة",
+    "metricsHeading": "مؤشرات الدورة",
+    "metricsNote": "«قُيِّم» تعني وجود درجة مسجَّلة فعلًا — وهو المعنى نفسه الذي تشير إليه الأيقونة أمام كل موظف داخل الدورة. والمتوسط محسوب على الدرجات لا على التقييمات.",
+    "metricScored": "تقييمات تمت",
+    "metricRemaining": "بانتظار التقييم",
+    "metricAverage": "متوسط التقييم",
+    "metricNoAverage": "لم تُسجَّل درجات بعد"
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
