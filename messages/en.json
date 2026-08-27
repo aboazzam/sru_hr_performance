@@ -1179,7 +1179,13 @@
     "manageErrorHasDependents": "This cycle cannot be deleted while records are linked to it.",
     "manageErrorUnknown": "An unexpected error occurred.",
     "closeButton": "Close",
-    "openCycle": "Open cycle"
+    "openCycle": "Open cycle",
+    "metricsHeading": "Cycle indicators",
+    "metricsNote": "\"Scored\" means a score is actually recorded — the same meaning as the icon beside each employee inside the cycle. The average is over scores, not over evaluations.",
+    "metricScored": "Scored",
+    "metricRemaining": "Awaiting scoring",
+    "metricAverage": "Average score",
+    "metricNoAverage": "No scores recorded yet"
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",

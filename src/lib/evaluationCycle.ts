@@ -64,3 +64,69 @@ export type CycleDependentTable = (typeof cycleDependentTables)[number];
 export function totalCycleUsage(counts: Partial<Record<CycleDependentTable, number>>): number {
   return Object.values(counts).reduce((sum: number, n) => sum + (n ?? 0), 0);
 }
+
+/**
+ * Per-cycle scoring progress, for the indicators under the cycles table
+ * (2026-08-27).
+ *
+ * "Scored" means an evaluation has at least one recorded score — the SAME
+ * meaning the per-employee icon inside a cycle uses. That is deliberate: a
+ * reader can count the icons on one screen and reach the number shown on the
+ * other. Approval stage answers a different question (where the paperwork got
+ * to) and is not mixed in here.
+ *
+ * The average is over SCORES, not over evaluations: an evaluation with twenty
+ * scores and one with two do not weigh the same, because the average answers
+ * "what did this cycle score", not "what did the average form score". And it
+ * is null — not zero — when nothing has been scored, so an untouched cycle
+ * never reads as a cycle that scored zero.
+ */
+export interface CycleScoringSummary {
+  total: number;
+  scored: number;
+  remaining: number;
+  averageScore: number | null;
+}
+
+export function summariseCycleScoring(
+  evaluations: ReadonlyArray<{ id: string; cycle_id: string }>,
+  scores: ReadonlyArray<{ evaluation_id: string; score: number | null }>
+): Map<string, CycleScoringSummary> {
+  const cycleOf = new Map(evaluations.map((e) => [e.id, e.cycle_id]));
+
+  const scoredEvaluations = new Map<string, Set<string>>();
+  const sums = new Map<string, { total: number; count: number }>();
+
+  for (const row of scores) {
+    const cycleId = cycleOf.get(row.evaluation_id);
+    // A score whose evaluation is not in view (RLS, another cycle) must not
+    // land in any cycle's numbers.
+    if (cycleId == null) continue;
+
+    const seen = scoredEvaluations.get(cycleId) ?? new Set<string>();
+    seen.add(row.evaluation_id);
+    scoredEvaluations.set(cycleId, seen);
+
+    if (row.score == null) continue;
+    const agg = sums.get(cycleId) ?? { total: 0, count: 0 };
+    agg.total += row.score;
+    agg.count += 1;
+    sums.set(cycleId, agg);
+  }
+
+  const totals = new Map<string, number>();
+  for (const e of evaluations) totals.set(e.cycle_id, (totals.get(e.cycle_id) ?? 0) + 1);
+
+  const summary = new Map<string, CycleScoringSummary>();
+  for (const [cycleId, total] of totals) {
+    const scored = scoredEvaluations.get(cycleId)?.size ?? 0;
+    const agg = sums.get(cycleId);
+    summary.set(cycleId, {
+      total,
+      scored,
+      remaining: total - scored,
+      averageScore: agg && agg.count > 0 ? Math.round((agg.total / agg.count) * 10) / 10 : null,
+    });
+  }
+  return summary;
+}
