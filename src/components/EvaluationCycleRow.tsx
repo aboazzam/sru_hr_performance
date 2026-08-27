@@ -160,11 +160,12 @@ export function EvaluationCycleRow({
 
       <td className="no-print">
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <Link
-            href={`/evaluations/new?cycleId=${cycle.id}`}
-            className="sru-btn"
-            style={{ fontSize: 12, padding: "6px 12px" }}
-          >
+          {/* Opening the cycle is now the primary move: the views that used
+              to be buttons on this screen live inside it. */}
+          <Link href={`/evaluations/cycles/${cycle.id}`} className="sru-btn sru-btn-primary sru-btn-slim">
+            {t("openCycle")}
+          </Link>
+          <Link href={`/evaluations/new?cycleId=${cycle.id}`} className="sru-btn sru-btn-slim">
             {t("createEvaluation")}
           </Link>
 

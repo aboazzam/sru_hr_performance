@@ -1,16 +1,17 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
-import { PrintButton } from "@/components/PrintButton";
+import { AddEvaluationCycleButton } from "@/components/AddEvaluationCycleButton";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { EvaluationCycleRow, type EvaluationCycleRowData } from "@/components/EvaluationCycleRow";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import type { Locale } from "@/i18n/config";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { cycleDependentTables, todayInTimezone } from "@/lib/evaluationCycle";
 import type { EvaluationCycleType } from "./cycles/new/actions";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationCyclesPage() {
+  const locale = (await getLocale()) as Locale;
   const t = await getTranslations("EvaluationCyclesPage");
   const tType = await getTranslations("NewEvaluationCyclePage");
   const supabase = await createClient();
@@ -108,22 +109,12 @@ export default async function EvaluationCyclesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          {canManageCycles && (
-            <Link href="/evaluations/cycles/new" className="sru-btn sru-btn-primary">
-              {t("addCycle")}
-            </Link>
-          )}
-          <Link href="/evaluations/mine" className="sru-btn">
-            {t("myEvaluations")}
-          </Link>
-          <Link href="/evaluations/team" className="sru-btn">
-            {t("myTeamEvaluations")}
-          </Link>
-          <Link href="/evaluations/review" className="sru-btn">
-            {t("needsMyReview")}
-          </Link>
-          <PrintButton />
+        {/* One button only (2026-08-25 request). "My evaluations", "my team"
+            and "needs my review" moved off this screen: they are things you do
+            INSIDE a cycle, and listing them here asked the reader to choose a
+            view before choosing a period. */}
+        <div className="sru-actionbar no-print">
+          {canManageCycles && <AddEvaluationCycleButton locale={locale} />}
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

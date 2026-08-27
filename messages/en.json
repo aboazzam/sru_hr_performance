@@ -1177,7 +1177,9 @@
     "manageErrorUnauthenticated": "You must be logged in.",
     "manageErrorForbidden": "You do not have permission to modify evaluation cycles.",
     "manageErrorHasDependents": "This cycle cannot be deleted while records are linked to it.",
-    "manageErrorUnknown": "An unexpected error occurred."
+    "manageErrorUnknown": "An unexpected error occurred.",
+    "closeButton": "Close",
+    "openCycle": "Open cycle"
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
@@ -2852,5 +2854,32 @@
     "subtitleDefault": "Upload a file and choose what gets added or updated.",
     "errorTooLarge": "The file is larger than 5 MB.",
     "errorTooManyRows": "The file exceeds 2,000 rows — split it into smaller files."
+  },
+  "EvaluationCyclePage": {
+    "backToCycles": "Back to evaluation cycles",
+    "methodGoals": "University vision targets",
+    "methodCompetencies": "Competencies",
+    "methodBau": "Routine tasks",
+    "method360": "360 feedback",
+    "subTabTeam": "Score my team",
+    "subTabReview": "Awaiting my review",
+    "subTabSelf": "Self-assessment",
+    "subTabPeer": "Peer feedback",
+    "subTabSupervisor": "Supervisor feedback",
+    "teamNote": "Your direct reports in this cycle. Scoring opens this method only.",
+    "teamEmpty": "None of your direct reports has an evaluation in this cycle.",
+    "reviewNote": "What you can move right now given your role and its state — not merely what you can see.",
+    "reviewEmpty": "Nothing is waiting on your review in this cycle.",
+    "bauNotScorable": "Routine tasks are shown for reference: a score row holds a competency or a goal, not yet a routine task.",
+    "feedbackNote": "What arrived in this cycle from this source. The evaluator stays anonymous by design.",
+    "feedbackEmpty": "No feedback from this source in this cycle.",
+    "scoreButton": "Enter scores",
+    "columnEmployee": "Employee",
+    "columnEmployeeNumber": "Employee no.",
+    "columnType": "Evaluation type",
+    "columnState": "State",
+    "columnAction": "Action",
+    "columnComment": "Comment",
+    "columnSubmittedAt": "Submitted"
   }
 }

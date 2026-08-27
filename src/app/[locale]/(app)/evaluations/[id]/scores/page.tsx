@@ -5,10 +5,19 @@ import { EvaluationScoresForm } from "@/components/EvaluationScoresForm";
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationScoresPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ method?: string }>;
 }) {
   const { id } = await params;
+  // The cycle screen sends the method it was opened from, so scoring shows one
+  // method at a time instead of the whole framework plus every goal at once
+  // (2026-08-25). Absent or unrecognised, everything is shown — the direct
+  // link to this page keeps behaving as it always did.
+  const { method } = await searchParams;
+  const showCompetencies = method !== "goals" && method !== "bau";
+  const showGoals = method !== "competencies" && method !== "bau";
   const t = await getTranslations("EvaluationScoresPage");
   const supabase = await createClient();
 
@@ -88,13 +97,13 @@ export default async function EvaluationScoresPage({
 
       <EvaluationScoresForm
         evaluationId={evaluation.id}
-        competencies={(competencies ?? []).map((c) => ({
+        competencies={(showCompetencies ? competencies ?? [] : []).map((c) => ({
           id: c.id,
           nameAr: c.name_ar,
           initialScore: scoresByCompetency.get(c.id)?.score ?? null,
           initialComment: scoresByCompetency.get(c.id)?.comment ?? null,
         }))}
-        goals={goals.map((g) => ({
+        goals={(showGoals ? goals : []).map((g) => ({
           id: g.id,
           titleAr: g.custom_title_ar ?? g.goal_library?.title_ar ?? "—",
           initialScore: scoresByGoal.get(g.id)?.score ?? null,
