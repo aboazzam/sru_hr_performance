@@ -13,11 +13,10 @@ import {
 import {
   cycleStatus,
   cycleStatusLabels,
-  evaluationMethods,
-  type EvaluationMethod,
   type MethodWeights,
 } from "@/lib/evaluationCycle";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
+import { CycleWeightsDrawer } from "@/components/CycleWeightsDrawer";
 import { formatDateDmy } from "@/lib/dateParts";
 
 const errorKeys: Record<string, string> = {
@@ -68,16 +67,6 @@ export function EvaluationCycleRow({
 
   // The distribution shown where cycles are actually browsed, not only inside
   // the cycle. Short form in the cell, full method names in the tooltip.
-  const weightLabelKeys: Record<EvaluationMethod, string> = {
-    goals: "weightGoalsShort",
-    competencies: "weightCompetenciesShort",
-    bau: "weightBauShort",
-    feedback360: "weightFeedback360Short",
-  };
-  const weightsSummary = evaluationMethods.map((m) => `${cycle.weights[m]}%`).join(" / ");
-  const weightsTitle = evaluationMethods
-    .map((m) => `${t(weightLabelKeys[m])}: ${cycle.weights[m]}%`)
-    .join("، ");
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -177,8 +166,13 @@ export function EvaluationCycleRow({
       <td>
         <span className="pill">{cycleStatusLabels[status]}</span>
       </td>
-      <td style={{ fontSize: 11.5, whiteSpace: "nowrap" }} title={weightsTitle}>
-        {weightsSummary}
+      <td>
+        <CycleWeightsDrawer
+          cycleId={cycle.id}
+          cycleName={cycle.nameAr}
+          initial={cycle.weights}
+          canEdit={canManage}
+        />
       </td>
       <td className="sru-en">{cycle.usageCount}</td>
 

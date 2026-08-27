@@ -1198,7 +1198,18 @@
     "weightGoalsShort": "Strategic targets",
     "weightCompetenciesShort": "Competencies",
     "weightBauShort": "Routine tasks",
-    "weightFeedback360Short": "360 feedback"
+    "weightFeedback360Short": "360 feedback",
+    "weightsEditTitle": "Edit weight distribution",
+    "weightsDrawerTitle": "Evaluation method weights",
+    "weightsDrawerNote": "Each method's share of the cycle score. It applies to every evaluation in this cycle and must total exactly 100%.",
+    "weightsTotalLabel": "Total",
+    "weightsInvalid": "The total must be exactly 100%.",
+    "weightsSave": "Save distribution",
+    "weightsSaving": "Saving...",
+    "weightsSaved": "Distribution saved.",
+    "weightsErrorInvalid": "Invalid values.",
+    "weightsErrorForbidden": "You do not have permission to change the distribution.",
+    "weightsErrorUnknown": "Could not save the distribution."
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
