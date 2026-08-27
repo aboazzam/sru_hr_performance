@@ -117,12 +117,18 @@ export default async function EvaluationDetailPage({
 
   const { data: scoreData } = await supabase
     .from("evaluation_scores")
-    .select("competency_id, goal_id, score")
+    .select("competency_id, goal_id, bau_task_id, score")
     .eq("evaluation_id", evaluation.id)
     .is("deleted_at", null);
-  const scores = (scoreData ?? []) as Array<{ competency_id: string | null; goal_id: string | null; score: number | null }>;
+  const scores = (scoreData ?? []) as Array<{
+    competency_id: string | null;
+    goal_id: string | null;
+    bau_task_id: string | null;
+    score: number | null;
+  }>;
   const scoreByCompetency = new Map(scores.filter((x) => x.competency_id).map((x) => [x.competency_id as string, x.score]));
   const scoreByGoal = new Map(scores.filter((x) => x.goal_id).map((x) => [x.goal_id as string, x.score]));
+  const scoreByBauTask = new Map(scores.filter((x) => x.bau_task_id).map((x) => [x.bau_task_id as string, x.score]));
 
   // The cycle-wide distribution (20260827000001), applied to this one
   // evaluation. A method with weight but nothing recorded is excluded and the
@@ -145,9 +151,7 @@ export default async function EvaluationDetailPage({
   const weighted = weightedCycleScore(weights, {
     goals: average([...scoreByGoal.values()]),
     competencies: average([...scoreByCompetency.values()]),
-    // BAU tasks have no scorable column on evaluation_scores yet, so this
-    // method can never contribute until that schema gap is closed.
-    bau: null,
+    bau: average([...scoreByBauTask.values()]),
     feedback360: average(feedbackScores),
   });
   const methodLabel: Record<EvaluationMethod, string> = {
@@ -233,13 +237,15 @@ export default async function EvaluationDetailPage({
       label: t("methodBau"),
       content: (
         <>
-          {/* No edit button: a score row holds a competency or a goal, never a
-              routine task, so there is nothing here to record yet. Saying so
-              beats offering a button that cannot save. */}
-          <p className="sru-home-clear" style={{ marginBottom: 12 }}>{t("bauNotScorable")}</p>
+          {editButton("bau")}
           {simpleTable(
-            [t("columnTitle"), t("columnWeight"), t("columnStatus")],
-            (bauTasks ?? []).map((task) => [task.title_ar, task.weight != null ? `${task.weight}%` : "—", task.status]),
+            [t("columnTitle"), t("columnWeight"), t("columnStatus"), t("columnScore")],
+            (bauTasks ?? []).map((task) => [
+              task.title_ar,
+              task.weight != null ? `${task.weight}%` : "—",
+              task.status,
+              scoreByBauTask.get(task.id) ?? "—",
+            ]),
             t("bauTasksEmpty")
           )}
         </>
