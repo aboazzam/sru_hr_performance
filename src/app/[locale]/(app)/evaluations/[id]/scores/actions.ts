@@ -88,7 +88,16 @@ export async function saveEvaluationScores(
     .eq("cycle_id", evaluation.cycle_id)
     .is("deleted_at", null);
 
-  type Row = { subjectColumn: "competency_id" | "goal_id"; subjectId: string; score: string | null; comment: string | null };
+  // Routine tasks became scorable in 20260827000002 -- until then the cycle
+  // could weight them but nothing could carry the score.
+  const { data: bauTasks } = await supabase
+    .from("bau_tasks")
+    .select("id")
+    .eq("employee_id", evaluation.employee_id)
+    .eq("cycle_id", evaluation.cycle_id)
+    .is("deleted_at", null);
+
+  type Row = { subjectColumn: "competency_id" | "goal_id" | "bau_task_id"; subjectId: string; score: string | null; comment: string | null };
   const rows: Row[] = [];
 
   for (const competency of competencies ?? []) {
@@ -119,8 +128,23 @@ export async function saveEvaluationScores(
     });
   }
 
+  for (const task of bauTasks ?? []) {
+    const scoreParsed = scoreFieldSchema.safeParse(formData.get(`score_bau_${task.id}`)?.toString());
+    const comment = formData.get(`comment_bau_${task.id}`)?.toString().trim();
+    if (!scoreParsed.success) {
+      return { status: "error", message: "invalid_input" };
+    }
+    rows.push({
+      subjectColumn: "bau_task_id",
+      subjectId: task.id,
+      score: scoreParsed.data,
+      comment: comment || null,
+    });
+  }
+
   let touchedCompetencies = 0;
   let touchedGoals = 0;
+  let touchedBauTasks = 0;
 
   for (const row of rows) {
     const { data: existing } = await supabase
@@ -155,7 +179,8 @@ export async function saveEvaluationScores(
     }
 
     if (row.subjectColumn === "competency_id") touchedCompetencies++;
-    else touchedGoals++;
+    else if (row.subjectColumn === "goal_id") touchedGoals++;
+    else touchedBauTasks++;
   }
 
   const admin = createAdminClient();
@@ -164,7 +189,11 @@ export async function saveEvaluationScores(
     action: "evaluation_scores_saved",
     entity: "evaluation_scores",
     entity_id: parsedId.data,
-    after_data: { competencies_saved: touchedCompetencies, goals_saved: touchedGoals },
+    after_data: {
+      competencies_saved: touchedCompetencies,
+      goals_saved: touchedGoals,
+      bau_tasks_saved: touchedBauTasks,
+    },
   });
 
   return { status: "success" };

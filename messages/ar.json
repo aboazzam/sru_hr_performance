@@ -1374,7 +1374,6 @@
     "methodBau": "المهام التشغيلية",
     "method360": "تقييم 360",
     "competenciesEmpty": "لا توجد جدارات في الإطار بعد.",
-    "bauNotScorable": "المهام التشغيلية تُعرض للاطّلاع: صف الدرجة يحمل جدارة أو هدفًا، ولا يحمل مهمة تشغيلية بعد.",
     "feedbackNote": "ما وصل عن هذا الموظف في هذه الدورة. هوية المقيّم محجوبة عمدًا.",
     "feedbackEmpty": "لا توجد تقييمات 360 لهذا الموظف في هذه الدورة.",
     "columnScore": "الدرجة",
@@ -1383,7 +1382,7 @@
     "weightedResultHeading": "نتيجة التقييم الموزونة",
     "weightedResultNote": "وفق توزيع الدورة: {distribution}.",
     "weightedResultEmpty": "لم تُسجَّل أي درجة بعد، فلا نتيجة موزونة.",
-    "weightedResultPartial": "نتيجة جزئية: احتُسبت على {applied}٪ من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}."
+    "weightedResultPartial": "نتيجة جزئية: احتُسبت على {applied}% من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}."
   },
   "EvaluationScoresPage": {
     "title": "إدخال الدرجات",
@@ -1401,7 +1400,9 @@
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "errorNotFound": "هذا التقييم غير موجود أو ليست لديك صلاحية الوصول إليه.",
     "errorForbidden": "ليست لديك صلاحية إدخال الدرجات لهذا التقييم.",
-    "errorUnknown": "حدث خطأ غير متوقع."
+    "errorUnknown": "حدث خطأ غير متوقع.",
+    "bauHeading": "المهام التشغيلية",
+    "bauEmpty": "لا توجد مهام تشغيلية لهذا الموظف في هذه الدورة."
   },
   "Feedback360Page": {
     "title": "تقييم 360",

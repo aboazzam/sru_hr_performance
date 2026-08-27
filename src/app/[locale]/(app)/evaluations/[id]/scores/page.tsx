@@ -18,6 +18,7 @@ export default async function EvaluationScoresPage({
   const { method } = await searchParams;
   const showCompetencies = method !== "goals" && method !== "bau";
   const showGoals = method !== "competencies" && method !== "bau";
+  const showBau = method === undefined || method === "bau";
   const t = await getTranslations("EvaluationScoresPage");
   const supabase = await createClient();
 
@@ -69,19 +70,32 @@ export default async function EvaluationScoresPage({
     goal_library: { title_ar: string } | null;
   }>;
 
+  // Routine tasks became scorable in 20260827000002; before it, a cycle could
+  // weight them but nothing could hold the score.
+  const { data: bauData } = await supabase
+    .from("bau_tasks")
+    .select("id, title_ar")
+    .eq("employee_id", evaluation.employee_id)
+    .eq("cycle_id", evaluation.cycle_id)
+    .is("deleted_at", null);
+  const bauTasks = (bauData ?? []) as Array<{ id: string; title_ar: string }>;
+
   const { data: existingScores } = await supabase
     .from("evaluation_scores")
-    .select("competency_id, goal_id, score, comment")
+    .select("competency_id, goal_id, bau_task_id, score, comment")
     .eq("evaluation_id", evaluation.id)
     .is("deleted_at", null);
 
   const scoresByCompetency = new Map<string, { score: number | null; comment: string | null }>();
   const scoresByGoal = new Map<string, { score: number | null; comment: string | null }>();
+  const scoresByBauTask = new Map<string, { score: number | null; comment: string | null }>();
   for (const row of existingScores ?? []) {
     if (row.competency_id) {
       scoresByCompetency.set(row.competency_id, { score: row.score, comment: row.comment });
     } else if (row.goal_id) {
       scoresByGoal.set(row.goal_id, { score: row.score, comment: row.comment });
+    } else if (row.bau_task_id) {
+      scoresByBauTask.set(row.bau_task_id, { score: row.score, comment: row.comment });
     }
   }
 
@@ -109,6 +123,15 @@ export default async function EvaluationScoresPage({
           initialScore: scoresByGoal.get(g.id)?.score ?? null,
           initialComment: scoresByGoal.get(g.id)?.comment ?? null,
         }))}
+        bauTasks={(showBau ? bauTasks : []).map((task) => ({
+          id: task.id,
+          titleAr: task.title_ar,
+          initialScore: scoresByBauTask.get(task.id)?.score ?? null,
+          initialComment: scoresByBauTask.get(task.id)?.comment ?? null,
+        }))}
+        showCompetencies={showCompetencies}
+        showGoals={showGoals}
+        showBau={showBau}
       />
     </div>
   );

@@ -1374,7 +1374,6 @@
     "methodBau": "Routine tasks",
     "method360": "360 feedback",
     "competenciesEmpty": "No competencies in the framework yet.",
-    "bauNotScorable": "Routine tasks are shown for reference: a score row holds a competency or a goal, not yet a routine task.",
     "feedbackNote": "What arrived about this employee in this cycle. The evaluator stays anonymous by design.",
     "feedbackEmpty": "No 360 feedback for this employee in this cycle.",
     "columnScore": "Score",
@@ -1401,7 +1400,9 @@
     "errorUnauthenticated": "You must be logged in.",
     "errorNotFound": "This evaluation doesn't exist or you don't have permission to view it.",
     "errorForbidden": "You don't have permission to enter scores for this evaluation.",
-    "errorUnknown": "An unexpected error occurred."
+    "errorUnknown": "An unexpected error occurred.",
+    "bauHeading": "Routine tasks",
+    "bauEmpty": "This employee has no routine tasks in this cycle."
   },
   "Feedback360Page": {
     "title": "360 Feedback",
