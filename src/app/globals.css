@@ -2451,3 +2451,94 @@ table {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------
+   Side drawer (2026-08-28). A <dialog> so Escape and the backdrop
+   come from the browser; only the placement and slide are CSS. Used
+   where a handful of related fields must be seen together while being
+   edited, and a table cell cannot hold them without pushing every
+   other column aside.
+   --------------------------------------------------------------- */
+.sru-drawer {
+  margin: 0 0 0 auto;
+  inset-block: 0;
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(420px, 92vw);
+  max-width: 92vw;
+  border: 0;
+  border-inline-start: 1px solid var(--sru-border);
+  border-radius: 0;
+  padding: 0;
+  background: var(--sru-surface, #fff);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+.sru-drawer::backdrop {
+  background: rgba(17, 12, 28, 0.38);
+}
+/* Fade only, never a transform: an animation that is throttled (a
+   background tab, a pane that is not compositing) freezes at its first
+   frame, and a frozen translate would leave the drawer sitting off-screen.
+   A frozen opacity is at worst slightly pale. */
+.sru-drawer[open] {
+  animation: sru-drawer-in 0.16s ease-out;
+}
+@keyframes sru-drawer-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sru-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--sru-border);
+}
+.sru-drawer-head h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.sru-drawer-head p {
+  font-size: 12px;
+  color: var(--sru-muted);
+  margin: 4px 0 0;
+}
+.sru-drawer-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.sru-drawer-foot {
+  display: flex;
+  gap: 8px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--sru-border);
+}
+
+/* The weights cell reads as text until hovered, so the table stays calm
+   while still saying the number is editable. */
+.sru-weights-trigger {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font: inherit;
+  font-size: 11.5px;
+  white-space: nowrap;
+  color: inherit;
+  cursor: pointer;
+}
+.sru-weights-trigger:hover,
+.sru-weights-trigger:focus-visible {
+  border-color: var(--sru-border);
+  background: var(--sru-purple-light, #f3eefa);
+}
