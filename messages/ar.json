@@ -1177,7 +1177,9 @@
     "manageErrorUnauthenticated": "يجب تسجيل الدخول أولًا.",
     "manageErrorForbidden": "لا تملك صلاحية تعديل دورات التقييم.",
     "manageErrorHasDependents": "لا يمكن حذف الدورة لارتباط سجلات بها.",
-    "manageErrorUnknown": "حدث خطأ غير متوقع."
+    "manageErrorUnknown": "حدث خطأ غير متوقع.",
+    "closeButton": "إغلاق",
+    "openCycle": "فتح الدورة"
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
@@ -2852,5 +2854,32 @@
     "subtitleDefault": "ارفع ملفاً وحدّد ما يُضاف أو يُحدّث.",
     "errorTooLarge": "الملف أكبر من 5 ميجابايت.",
     "errorTooManyRows": "الملف يتجاوز 2000 صف — قسّمه إلى ملفات أصغر."
+  },
+  "EvaluationCyclePage": {
+    "backToCycles": "العودة إلى دورات التقييم",
+    "methodGoals": "مستهدفات رؤية الجامعة",
+    "methodCompetencies": "الجدارات",
+    "methodBau": "المهام التشغيلية",
+    "method360": "تقييم 360",
+    "subTabTeam": "تقييم أعضاء الفريق",
+    "subTabReview": "بانتظار مراجعتي",
+    "subTabSelf": "التقييم الذاتي",
+    "subTabPeer": "تقييم الزملاء",
+    "subTabSupervisor": "تقييم الرئيس المباشر",
+    "teamNote": "من يتبعك مباشرة في هذه الدورة. الضغط على «إدخال الدرجات» يفتح هذه الطريقة وحدها.",
+    "teamEmpty": "لا يوجد من يتبعك مباشرة له تقييم في هذه الدورة.",
+    "reviewNote": "ما تستطيع تحريكه الآن بحكم دورك وحالته — لا ما تراه فحسب.",
+    "reviewEmpty": "لا شيء ينتظر مراجعتك في هذه الدورة.",
+    "bauNotScorable": "المهام التشغيلية تُعرض هنا للاطّلاع: جدول الدرجات يحمل جدارة أو هدفًا، ولا يحمل مهمة تشغيلية بعد.",
+    "feedbackNote": "ما وصل في هذه الدورة من هذا المصدر. هوية المقيّم محجوبة عمدًا.",
+    "feedbackEmpty": "لا توجد تقييمات من هذا المصدر في هذه الدورة.",
+    "scoreButton": "إدخال الدرجات",
+    "columnEmployee": "الموظف",
+    "columnEmployeeNumber": "الرقم الوظيفي",
+    "columnType": "نوع التقييم",
+    "columnState": "الحالة",
+    "columnAction": "إجراء",
+    "columnComment": "الملاحظة",
+    "columnSubmittedAt": "تاريخ الإرسال"
   }
 }
