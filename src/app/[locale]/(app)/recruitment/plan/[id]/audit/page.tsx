@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { planStatusLabel, requestStatusLabel } from "@/lib/recruitmentWorkflow";
@@ -104,6 +104,10 @@ export default async function PlanAuditPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href={`/recruitment/plan/${id}`}>{t("backToPlan")}</BackLink>
+      </div>
+
       <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
@@ -113,10 +117,6 @@ export default async function PlanAuditPage({
         </p>
       )}
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
-
-      <Link href={`/recruitment/plan/${id}`} className="sru-btn">
-        {t("backToPlan")}
-      </Link>
 
       <div style={{ marginTop: 20 }}>
         {!canView ? (

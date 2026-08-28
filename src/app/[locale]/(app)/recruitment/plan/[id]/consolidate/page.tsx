@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { ConsolidateRequestsPanel } from "@/components/ConsolidateRequestsPanel";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
@@ -68,6 +68,10 @@ export default async function ConsolidatePlanPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href={`/recruitment/plan/${id}`}>{t("backToPlan")}</BackLink>
+      </div>
+
       <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>
@@ -77,10 +81,6 @@ export default async function ConsolidatePlanPage({
         </p>
       )}
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
-
-      <Link href={`/recruitment/plan/${id}`} className="sru-btn">
-        {t("backToPlan")}
-      </Link>
 
       <div style={{ marginTop: 20 }}>
         {!canConsolidate ? (

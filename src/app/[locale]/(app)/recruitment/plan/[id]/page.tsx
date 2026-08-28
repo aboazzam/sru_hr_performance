@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
-import { ArrowRight } from "lucide-react";
+import { BackLink } from "@/components/BackLink";
 import { RecruitmentPlanExportMenu } from "@/components/RecruitmentPlanExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { RecruitmentPlanHeaderActions } from "@/components/RecruitmentPlanHeaderActions";
@@ -161,15 +161,8 @@ export default async function RecruitmentPlanDetailPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      {/* الرجوع وحده أعلى اليمين بلا خلفية، وسهمٌ قبله — asked for directly.
-          In RTL the arrow points RIGHT: that is the direction "back" travels
-          when the text runs right-to-left, so ArrowRight is the correct glyph,
-          not a mirrored ArrowLeft. */}
       <div style={{ marginBottom: 10 }}>
-        <Link href="/recruitment/plan" className="sru-backlink">
-          <ArrowRight size={15} aria-hidden />
-          {t("backToPlans")}
-        </Link>
+        <BackLink href="/recruitment/plan">{t("backToPlans")}</BackLink>
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>

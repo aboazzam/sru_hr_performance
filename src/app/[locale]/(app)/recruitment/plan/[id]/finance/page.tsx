@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { FinanceReviewPanel } from "@/components/FinanceReviewPanel";
 import { PlanProgressBar } from "@/components/PlanProgressBar";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -54,6 +54,10 @@ export default async function PlanFinanceReviewPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href={`/recruitment/plan/${id}`}>{t("backToPlan")}</BackLink>
+      </div>
+
       {/* Title on the reading side, the way out opposite it — the same header
           shape the plan page itself uses. It used to sit under the divider as
           a bare link, easy to miss on a screen whose whole job is one save. */}
@@ -68,9 +72,6 @@ export default async function PlanFinanceReviewPage({
             </p>
           )}
         </div>
-        <Link href={`/recruitment/plan/${id}`} className="sru-btn">
-          {t("backToPlan")}
-        </Link>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 

@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { VacancyAnnouncementForm } from "@/components/VacancyAnnouncementForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
@@ -35,6 +35,10 @@ export default async function AnnouncedJobDetailPage({
   if (!canView) {
     return (
       <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+        <div style={{ marginBottom: 10 }}>
+          <BackLink href="/recruitment/announced">{t("backToList")}</BackLink>
+        </div>
+
         <h1 className="sru-title" style={{ fontSize: 20 }}>
           {t("title")}
         </h1>
@@ -83,6 +87,10 @@ export default async function AnnouncedJobDetailPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href="/recruitment/announced">{t("backToList")}</BackLink>
+      </div>
+
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
           <h1 className="sru-title" style={{ fontSize: 20 }}>
@@ -93,9 +101,6 @@ export default async function AnnouncedJobDetailPage({
             {job.job_titles && ` — ${t("gradeLabel", { grade: job.job_titles.grade_level })}`}
           </p>
         </div>
-        <Link href="/recruitment/announced" className="sru-btn">
-          {t("backToList")}
-        </Link>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
       <GroupTabs groupKey="recruitment" current="recruitment/announced" />
