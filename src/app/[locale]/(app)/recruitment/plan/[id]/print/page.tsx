@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { PrintButton } from "@/components/PrintButton";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
@@ -87,14 +87,15 @@ export default async function PlanPrintPage({
 
   return (
     <div className="sru-container" style={{ padding: "24px 22px 60px" }}>
+      <div className="no-print" style={{ marginBottom: 10 }}>
+        <BackLink href={`/recruitment/plan/${id}`}>{t("backToPlan")}</BackLink>
+      </div>
+
       <div className="no-print" style={{ display: "flex", gap: 10, marginBottom: 18 }}>
         {/* The shared PrintButton reads its own label from the `PrintButton`
             message namespace — used unchanged by 8 other screens, so it takes
             no props. */}
         <PrintButton />
-        <Link href={`/recruitment/plan/${id}`} className="sru-btn">
-          {t("backToPlan")}
-        </Link>
       </div>
 
       {/* ترويسة الطباعة */}

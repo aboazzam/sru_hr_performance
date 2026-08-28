@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/BackLink";
 import { CreateRecruitmentRequestForm } from "@/components/CreateRecruitmentRequestForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type BehavioralLevel } from "@/lib/data/competencies";
@@ -73,15 +73,15 @@ export default async function NewRecruitmentRequestPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href="/recruitment/requests">{t("backToRequests")}</BackLink>
+      </div>
+
       <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("newRequestHeading")}
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("newRequestSubtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
-
-      <Link href="/recruitment/requests" className="sru-btn">
-        {t("backToRequests")}
-      </Link>
 
       <div style={{ marginTop: 20 }}>
         {!canRaise ? (
