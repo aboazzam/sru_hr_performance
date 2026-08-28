@@ -4,18 +4,12 @@ import { useState, useTransition } from "react";
 import { RowLink } from "@/components/RowLink";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Pencil, Save, X, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
-  updateEvaluationCycle,
   deleteEvaluationCycle,
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
-import {
-  cycleStatus,
-  cycleStatusLabels,
-  type MethodWeights,
-} from "@/lib/evaluationCycle";
-import { DateFieldDmy } from "@/components/DateFieldDmy";
+import { cycleStatus, cycleStatusLabels, type MethodWeights } from "@/lib/evaluationCycle";
 import { CycleEditDrawer } from "@/components/CycleEditDrawer";
 import { formatDateDmy } from "@/lib/dateParts";
 
@@ -27,8 +21,9 @@ const errorKeys: Record<string, string> = {
   unknown: "manageErrorUnknown",
 };
 
-const cycleTypes = ["academic", "calendar", "fiscal"] as const;
-const cycleTypeLabelKeys: Record<(typeof cycleTypes)[number], string> = {
+type CycleType = "academic" | "calendar" | "fiscal";
+
+const cycleTypeLabelKeys: Record<CycleType, string> = {
   academic: "cycleTypeAcademic",
   calendar: "cycleTypeCalendar",
   fiscal: "cycleTypeFiscal",
@@ -38,7 +33,7 @@ export interface EvaluationCycleRowData {
   id: string;
   nameAr: string;
   nameEn: string | null;
-  cycleType: (typeof cycleTypes)[number];
+  cycleType: CycleType;
   startDate: string;
   endDate: string;
   usageCount: number;
@@ -46,10 +41,13 @@ export interface EvaluationCycleRowData {
 }
 
 /**
- * One cycle row: read-only by default with an explicit edit toggle (the same
- * view/edit shape used by the org-structure rows and the recruitment-plan
- * items), plus a delete that is disabled outright while anything still
- * depends on the cycle.
+ * One cycle row: read-only, plus a delete that is disabled outright while
+ * anything still depends on the cycle.
+ *
+ * Editing moved out of the row entirely (2026-08-28, requested directly).
+ * In place, a cell had to hold a date picker and a type select, which pushed
+ * every other column aside and left the row looking like a form. The drawer
+ * behind the weights cell is now the single place a cycle is changed.
  */
 export function EvaluationCycleRow({
   cycle,
@@ -64,69 +62,27 @@ export function EvaluationCycleRow({
   typeLabels: Record<string, string>;
 }) {
   const t = useTranslations("EvaluationCyclesPage");
-
-  // The distribution shown where cycles are actually browsed, not only inside
-  // the cycle. Short form in the cell, full method names in the tooltip.
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [editing, setEditing] = useState(false);
   const [state, setState] = useState<EvaluationCycleActionState | null>(null);
 
-  const [nameAr, setNameAr] = useState(cycle.nameAr);
-  const [nameEn, setNameEn] = useState(cycle.nameEn ?? "");
-  const [cycleType, setCycleType] = useState<string>(cycle.cycleType);
-  const [startDate, setStartDate] = useState(cycle.startDate);
-  const [endDate, setEndDate] = useState(cycle.endDate);
-
   const status = cycleStatus(cycle.startDate, cycle.endDate, today);
-  const dirty =
-    nameAr !== cycle.nameAr ||
-    nameEn !== (cycle.nameEn ?? "") ||
-    cycleType !== cycle.cycleType ||
-    startDate !== cycle.startDate ||
-    endDate !== cycle.endDate;
 
-  function reset() {
-    setNameAr(cycle.nameAr);
-    setNameEn(cycle.nameEn ?? "");
-    setCycleType(cycle.cycleType);
-    setStartDate(cycle.startDate);
-    setEndDate(cycle.endDate);
-    setState(null);
-    setEditing(false);
-  }
-
-  function run(fn: () => Promise<EvaluationCycleActionState>, closeEditor = false) {
+  function run(fn: () => Promise<EvaluationCycleActionState>) {
     setState(null);
     startTransition(async () => {
       const result = await fn();
       setState(result);
-      if (result.status === "success") {
-        if (closeEditor) setEditing(false);
-        router.refresh();
-      }
+      if (result.status === "success") router.refresh();
     });
   }
 
   return (
     <RowLink href={`/evaluations/cycles/${cycle.id}`}>
       <td>
-        {editing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-            <input value={nameEn} dir="ltr" onChange={(e) => setNameEn(e.target.value)} placeholder="English name" />
-          </div>
-        ) : (
-          <>
-            {cycle.nameAr}
-            {cycle.nameEn && (
-              <div className="sru-name-en">
-                {cycle.nameEn}
-              </div>
-            )}
-          </>
-        )}
+        {cycle.nameAr}
+        {cycle.nameEn && <div className="sru-name-en">{cycle.nameEn}</div>}
         {state?.status === "error" && (
           <div role="alert" className="text-sm text-red-600" style={{ marginTop: 4 }}>
             {t(errorKeys[state.message] ?? "manageErrorUnknown")}
@@ -134,34 +90,9 @@ export function EvaluationCycleRow({
         )}
       </td>
 
-      <td>
-        {editing ? (
-          <select value={cycleType} onChange={(e) => setCycleType(e.target.value)}>
-            {cycleTypes.map((type) => (
-              <option key={type} value={type}>
-                {typeLabels[cycleTypeLabelKeys[type]]}
-              </option>
-            ))}
-          </select>
-        ) : (
-          typeLabels[cycleTypeLabelKeys[cycle.cycleType]]
-        )}
-      </td>
-
-      <td className="sru-en">
-        {editing ? (
-          <DateFieldDmy value={startDate} onChange={setStartDate} ariaLabel={t("columnStartDate")} />
-        ) : (
-          formatDateDmy(cycle.startDate, locale)
-        )}
-      </td>
-      <td className="sru-en">
-        {editing ? (
-          <DateFieldDmy value={endDate} onChange={setEndDate} ariaLabel={t("columnEndDate")} />
-        ) : (
-          formatDateDmy(cycle.endDate, locale)
-        )}
-      </td>
+      <td>{typeLabels[cycleTypeLabelKeys[cycle.cycleType]]}</td>
+      <td>{formatDateDmy(cycle.startDate, locale)}</td>
+      <td>{formatDateDmy(cycle.endDate, locale)}</td>
 
       <td>
         <span className="pill">{cycleStatusLabels[status]}</span>
@@ -173,70 +104,23 @@ export function EvaluationCycleRow({
 
       <td className="no-print">
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-
-          {canManage &&
-            (editing ? (
-              <>
-                <button
-                  type="button"
-                  className="sru-icon-action"
-                  title={t("saveButton")}
-                  aria-label={t("saveButton")}
-                  disabled={pending || !dirty}
-                  onClick={() =>
-                    run(
-                      () =>
-                        updateEvaluationCycle({
-                          cycleId: cycle.id,
-                          nameAr,
-                          nameEn: nameEn.trim() === "" ? null : nameEn,
-                          cycleType,
-                          startDate,
-                          endDate,
-                        }),
-                      true
-                    )
-                  }
-                >
-                  <Save size={15} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="sru-icon-action"
-                  title={t("cancelButton")}
-                  aria-label={t("cancelButton")}
-                  disabled={pending}
-                  onClick={reset}
-                >
-                  <X size={15} aria-hidden />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="sru-icon-action"
-                  title={t("editButton")}
-                  aria-label={t("editButton")}
-                  onClick={() => setEditing(true)}
-                >
-                  <Pencil size={15} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="sru-icon-action"
-                  title={cycle.usageCount > 0 ? t("deleteBlockedTitle", { count: cycle.usageCount }) : t("deleteButton")}
-                  aria-label={t("deleteButton")}
-                  disabled={pending || cycle.usageCount > 0}
-                  onClick={() => {
-                    if (!window.confirm(t("deleteConfirm"))) return;
-                    run(() => deleteEvaluationCycle(cycle.id));
-                  }}
-                >
-                  <Trash2 size={15} aria-hidden />
-                </button>
-              </>
-            ))}
+          {canManage && (
+            <button
+              type="button"
+              className="sru-icon-action"
+              title={
+                cycle.usageCount > 0 ? t("deleteBlockedTitle", { count: cycle.usageCount }) : t("deleteButton")
+              }
+              aria-label={t("deleteButton")}
+              disabled={pending || cycle.usageCount > 0}
+              onClick={() => {
+                if (!window.confirm(t("deleteConfirm"))) return;
+                run(() => deleteEvaluationCycle(cycle.id));
+              }}
+            >
+              <Trash2 size={15} aria-hidden />
+            </button>
+          )}
         </div>
       </td>
     </RowLink>
