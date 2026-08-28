@@ -99,7 +99,22 @@ const BRANCH_TOP_GAP = 26; // gap between a container's own row band and its bra
 // git-log graph uses, and it needs no per-depth special-casing since it's
 // driven purely by grouping on `parent_id`, same as the elbow style it
 // replaces for this one relationship.
-const BRANCH_SPINE_GUTTER = 12; // spine offset from a branch child's own left edge -- stays inside BRANCH_INDENT (22) so it never lands under the next-deeper level's box
+// 2026-08-29, follow-up: "حسن من الخطوط العلائقية" -- confirmed live on
+// production that the 12px gutter above, while geometrically clear of
+// every box, was too small to actually SEE: the default auto-fit scale
+// for a real 57-position tree lands around 28%, at which a 12-canvas-unit
+// tick renders as ~3 screen pixels -- for the common case (a container
+// with only FLAT children, the majority of branches), that made the
+// entire connector look missing at first glance, even though only the
+// one branch with real nested depth (whose spine sits further out,
+// sized off the full subtree) read as connected at all. Raised to a
+// value that stays clearly visible at typical zoom while still leaving
+// real clearance from the adjacent branch column: two neighbouring
+// branch containers sit one SLOT_WIDTH (226) apart, so even a fully
+// flat-vs-flat pair leaves roughly 50px between this gutter and the next
+// column's own boxes -- verified live with the same exhaustive box-
+// crossing check used when this connector shape was first built.
+const BRANCH_SPINE_GUTTER = 28; // spine offset from a branch subtree's own leftmost edge -- comfortably inside the ~74px slot gap between two adjacent branch containers' flat-child columns
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
@@ -614,7 +629,15 @@ export function OrgChartTree({
           >
             <svg className="sru-orgchart-lines">
               {lines.map((line) => (
-                <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
+                <path
+                  key={line.id}
+                  d={line.d}
+                  fill="none"
+                  stroke="var(--sru-border)"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               ))}
             </svg>
             {mainPositions.map((p) => {
