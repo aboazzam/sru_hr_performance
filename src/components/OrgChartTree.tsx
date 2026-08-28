@@ -82,6 +82,25 @@ const BRANCH_ROW_HEIGHT_FALLBACK = 92; // used only until a branch item's real h
 const BRANCH_INDENT = 22; // horizontal shift per nesting depth within a branch (small -- this is a list, not a second pyramid)
 const BRANCH_TOP_GAP = 26; // gap between a container's own row band and its branch list's first row
 
+// 2026-08-29: "الخطوط العلائقية تحتاج الى اعادة ضبط" -- confirmed live
+// against real production data before touching anything: the classic
+// top-down elbow (parent center-bottom -> midpoint -> child center-top)
+// draws every one of a branch's children as its OWN line back to the
+// SAME shared parent point, but a vertical list stacks those children in
+// one column -- so any child past the first has its line's final descent
+// pass straight through every sibling box sitting between it and the
+// parent (measured live: 47 of 56 real connector paths crossed an
+// unrelated box). Fixed with a real tree "spine + tick" connector for any
+// parent-children group where the children are branch-list items: one
+// shared vertical spine drawn in the INDENT GUTTER (outside every box's
+// left edge at that depth, never through a box body), one short stem from
+// the parent into the spine, and one short horizontal tick per child from
+// the spine into its own left edge -- the same convention a file-tree or
+// git-log graph uses, and it needs no per-depth special-casing since it's
+// driven purely by grouping on `parent_id`, same as the elbow style it
+// replaces for this one relationship.
+const BRANCH_SPINE_GUTTER = 12; // spine offset from a branch child's own left edge -- stays inside BRANCH_INDENT (22) so it never lands under the next-deeper level's box
+
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
 // means varied depth within that palette, not an arbitrary rainbow. These
@@ -414,23 +433,38 @@ export function OrgChartTree({
   // over the FULL `positions` list (not just the main pyramid's own), so
   // branch-list connectors come for free — this loop only ever needs a
   // position's registered element and its parent's, regardless of which
-  // layout placed either of them.
+  // layout placed either of them. Two distinct connector shapes: the main
+  // pyramid keeps its classic top-down elbow (each row has room to itself),
+  // while any parent whose children are branch-list items gets a shared
+  // spine + tick tree connector instead (see BRANCH_SPINE_GUTTER above) —
+  // required once children stack in one column, since an elbow back to a
+  // shared parent point would cross through whichever sibling sits between
+  // a deeper child and that parent.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const measure = () => {
       const canvasRect = canvas.getBoundingClientRect();
+      const toLocalX = (clientX: number) => (clientX - canvasRect.left) / scale;
+      const toLocalY = (clientY: number) => (clientY - canvasRect.top) / scale;
       const nextLines: ConnectorLine[] = [];
+
+      const branchChildrenByParentId = new Map<string, OrgChartPosition[]>();
       for (const p of positions) {
-        if (!p.parent_id) continue;
+        if (!p.parent_id || !excludedFromMain.has(p.id)) continue;
+        const list = branchChildrenByParentId.get(p.parent_id);
+        if (list) list.push(p);
+        else branchChildrenByParentId.set(p.parent_id, [p]);
+      }
+
+      for (const p of positions) {
+        if (!p.parent_id || excludedFromMain.has(p.id)) continue; // branch children are drawn per-parent-group below
         const parent = positionById.get(p.parent_id);
         const childEl = nodeElsRef.current.get(p.id);
         const parentEl = nodeElsRef.current.get(p.parent_id);
         if (!parent || !childEl || !parentEl) continue;
         const childRect = childEl.getBoundingClientRect();
         const parentRect = parentEl.getBoundingClientRect();
-        const toLocalX = (clientX: number) => (clientX - canvasRect.left) / scale;
-        const toLocalY = (clientY: number) => (clientY - canvasRect.top) / scale;
         // Classic top-down elbow: leaves the parent's BOTTOM edge, arrives
         // at the child's TOP edge, split at the midpoint row between them.
         const x1 = toLocalX(parentRect.left + parentRect.width / 2);
@@ -440,6 +474,62 @@ export function OrgChartTree({
         const midY = (y1 + y2) / 2;
         nextLines.push({ id: p.id, d: `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}` });
       }
+
+      // A shallower group's spine must clear every box in its FULL
+      // descendant subtree, not just its immediate children — a depth-1
+      // sibling that itself has depth-2 children (e.g. "إدارة التدريب
+      // والاستشارات" under "تطوير الأعمال") sits at a Y this group's spine
+      // must still pass through, so a gutter sized only for the immediate
+      // children's indent isn't enough clearance once that nested subtree's
+      // (wider, further-left) boxes fall inside the same Y range — measured
+      // live: this was still 2 real crossings before this walk was added.
+      function collectSubtreeLeftEdges(rootId: string): number[] {
+        const edges: number[] = [];
+        const queue = [rootId];
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          for (const child of branchChildrenByParentId.get(current) ?? []) {
+            const el = nodeElsRef.current.get(child.id);
+            if (el) edges.push(toLocalX(el.getBoundingClientRect().left));
+            queue.push(child.id);
+          }
+        }
+        return edges;
+      }
+
+      for (const [parentId, children] of branchChildrenByParentId) {
+        const parentEl = nodeElsRef.current.get(parentId);
+        if (!parentEl) continue;
+        const parentRect = parentEl.getBoundingClientRect();
+        const parentAnchorX = toLocalX(parentRect.left);
+        const parentAnchorY = toLocalY(parentRect.top + parentRect.height / 2);
+
+        const childAnchors = children
+          .map((child) => {
+            const childEl = nodeElsRef.current.get(child.id);
+            if (!childEl) return null;
+            const childRect = childEl.getBoundingClientRect();
+            return {
+              id: child.id,
+              x: toLocalX(childRect.left),
+              centerY: toLocalY(childRect.top + childRect.height / 2),
+            };
+          })
+          .filter((a): a is { id: string; x: number; centerY: number } => a !== null);
+        if (childAnchors.length === 0) continue;
+
+        const subtreeLeftEdges = collectSubtreeLeftEdges(parentId);
+        const spineX = Math.min(...subtreeLeftEdges) - BRANCH_SPINE_GUTTER;
+        const topY = Math.min(parentAnchorY, ...childAnchors.map((a) => a.centerY));
+        const bottomY = Math.max(parentAnchorY, ...childAnchors.map((a) => a.centerY));
+
+        nextLines.push({ id: `${parentId}-stem`, d: `M ${parentAnchorX} ${parentAnchorY} L ${spineX} ${parentAnchorY}` });
+        nextLines.push({ id: `${parentId}-spine`, d: `M ${spineX} ${topY} L ${spineX} ${bottomY}` });
+        for (const a of childAnchors) {
+          nextLines.push({ id: `${a.id}-tick`, d: `M ${spineX} ${a.centerY} L ${a.x} ${a.centerY}` });
+        }
+      }
+
       setLines(nextLines);
     };
     measure();
@@ -451,7 +541,7 @@ export function OrgChartTree({
       window.removeEventListener("resize", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, levels, scale, branchLayout]);
+  }, [positions, levels, scale, branchLayout, excludedFromMain]);
 
   if (positions.length === 0) {
     return <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{emptyLabel}</p>;
