@@ -36,7 +36,7 @@ export function LoginArtwork() {
   ];
 
   return (
-    <svg viewBox="0 0 560 420" role="presentation" aria-hidden focusable="false">
+    <svg viewBox="0 34 560 386" role="presentation" aria-hidden focusable="false">
       {/* main card */}
       <rect x="48" y="52" width="464" height="316" rx="18" fill="#ffffff" opacity="0.97" />
       <rect x="48" y="52" width="464" height="56" rx="18" fill="#f3eefa" />
