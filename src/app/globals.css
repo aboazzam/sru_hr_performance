@@ -2474,7 +2474,10 @@ table {
   padding: 0;
   background: var(--sru-surface, #fff);
   color: inherit;
-  display: flex;
+  /* display belongs on [open] only. A <dialog> is hidden by the UA rule
+     display:none, so setting display here overrides that and leaves the
+     drawer permanently on screen — visible before it is opened, and
+     unhidden by close(). */
   flex-direction: column;
 }
 .sru-drawer::backdrop {
@@ -2485,6 +2488,7 @@ table {
    frame, and a frozen translate would leave the drawer sitting off-screen.
    A frozen opacity is at worst slightly pale. */
 .sru-drawer[open] {
+  display: flex;
   animation: sru-drawer-in 0.16s ease-out;
 }
 @keyframes sru-drawer-in {

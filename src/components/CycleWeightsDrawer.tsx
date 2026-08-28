@@ -35,9 +35,9 @@ const labelKeys: Record<EvaluationMethod, string> = {
  * exactly 100 need to be seen together while being changed, which a table
  * cell cannot give without pushing every other column out of the way.
  *
- * Built on <dialog> so Escape-to-close and the backdrop come from the
- * browser; the drawer look is CSS on top (.sru-drawer), not a hand-rolled
- * overlay with its own focus handling.
+ * Built on <dialog> for the backdrop and the modal focus trap; the drawer
+ * look is CSS on top (.sru-drawer), not a hand-rolled overlay. Escape is
+ * wired by hand below -- it was measured NOT closing this dialog on its own.
  */
 export function CycleWeightsDrawer({
   cycleId,
@@ -138,7 +138,19 @@ export function CycleWeightsDrawer({
         {summary}
       </button>
 
-      <dialog ref={dialogRef} className="sru-drawer">
+      <dialog
+        ref={dialogRef}
+        className="sru-drawer"
+        // Escape is handled explicitly rather than left to the browser: it was
+        // measured NOT closing this dialog even with focus inside it, so the
+        // key is wired here instead of assumed.
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            dialogRef.current?.close();
+          }
+        }}
+      >
         <div className="sru-drawer-head">
           <div>
             <h2>{t("weightsDrawerTitle")}</h2>
