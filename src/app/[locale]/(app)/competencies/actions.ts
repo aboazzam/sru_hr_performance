@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { behavioralLevelOrder, type BehavioralLevel, type CompetencyType } from "@/lib/competencyFramework";
+import { behavioralLevelOrder, type BehavioralLevel } from "@/lib/competencyFramework";
 
 export type CompetencyErrorMessage =
   | "invalid_input"
@@ -17,7 +17,6 @@ export type CompetencyActionState =
   | { status: "success" }
   | { status: "error"; message: CompetencyErrorMessage };
 
-const competencyTypeSchema = z.enum(["core", "specialized"]);
 const levelsInputSchema = z.object({
   basic: z.string().trim().min(1),
   practitioner: z.string().trim().min(1),
@@ -132,6 +131,110 @@ export async function deleteCompetencyPillar(id: string): Promise<CompetencyActi
 }
 
 // ---------------------------------------------------------------------------
+// Classifications — replaces the old fixed competency_type ENUM
+// (20260829000001). Same has_dependents/CRUD shape as pillars: real
+// authorization is competency_classifications_insert/update/delete's RLS.
+// ---------------------------------------------------------------------------
+
+const classificationInputSchema = z.object({
+  nameAr: z.string().trim().min(1),
+  nameEn: z.string().trim().optional(),
+  autoApplyEverywhere: z.boolean(),
+});
+
+export async function addCompetencyClassification(
+  nameAr: string,
+  nameEn: string,
+  autoApplyEverywhere: boolean
+): Promise<CompetencyActionState> {
+  const parsed = classificationInputSchema.safeParse({ nameAr, nameEn: nameEn || undefined, autoApplyEverywhere });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, actor } = await requireActor();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: classification, error } = await supabase
+    .from("competency_classifications")
+    .insert({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, auto_apply_everywhere: parsed.data.autoApplyEverywhere })
+    .select("id")
+    .single();
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "competency_classification_added",
+    entity: "competency_classifications",
+    entity_id: classification.id,
+    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, auto_apply_everywhere: parsed.data.autoApplyEverywhere },
+  });
+
+  return { status: "success" };
+}
+
+const updateClassificationSchema = z.object({
+  id: z.string().uuid(),
+  nameAr: z.string().trim().min(1),
+  nameEn: z.string().trim().optional(),
+  autoApplyEverywhere: z.boolean(),
+});
+
+export async function updateCompetencyClassification(
+  id: string,
+  nameAr: string,
+  nameEn: string,
+  autoApplyEverywhere: boolean
+): Promise<CompetencyActionState> {
+  const parsed = updateClassificationSchema.safeParse({ id, nameAr, nameEn: nameEn || undefined, autoApplyEverywhere });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, actor } = await requireActor();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { error } = await supabase
+    .from("competency_classifications")
+    .update({ name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, auto_apply_everywhere: parsed.data.autoApplyEverywhere })
+    .eq("id", parsed.data.id);
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "competency_classification_updated",
+    entity: "competency_classifications",
+    entity_id: parsed.data.id,
+    after_data: { name_ar: parsed.data.nameAr, name_en: parsed.data.nameEn ?? null, auto_apply_everywhere: parsed.data.autoApplyEverywhere },
+  });
+
+  return { status: "success" };
+}
+
+/** Blocked while any competency still uses this classification -- the FK is RESTRICT too, but this gives a clear has_dependents message instead of a raw DB error. */
+export async function deleteCompetencyClassification(id: string): Promise<CompetencyActionState> {
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const { supabase, actor } = await requireActor();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { count } = await supabase.from("competencies").select("id", { count: "exact", head: true }).eq("classification_id", parsed.data);
+  if (count && count > 0) return { status: "error", message: "has_dependents" };
+
+  const { error } = await supabase.from("competency_classifications").delete().eq("id", parsed.data);
+  if (error) return mapError(error);
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "competency_classification_deleted",
+    entity: "competency_classifications",
+    entity_id: parsed.data,
+  });
+
+  return { status: "success" };
+}
+
+// ---------------------------------------------------------------------------
 // Domains
 // ---------------------------------------------------------------------------
 
@@ -221,7 +324,7 @@ export async function deleteCompetencyDomain(id: string): Promise<CompetencyActi
 const addCompetencySchema = z.object({
   domainId: z.string().uuid(),
   nameAr: z.string().trim().min(1),
-  type: competencyTypeSchema,
+  classificationId: z.string().uuid(),
   definitionAr: z.string().trim().min(1),
   expectedImpactAr: z.string().trim().min(1),
   jobFamilyId: z.string().uuid().optional(),
@@ -231,7 +334,7 @@ const addCompetencySchema = z.object({
 export async function addCompetency(input: {
   domainId: string;
   nameAr: string;
-  type: CompetencyType;
+  classificationId: string;
   definitionAr: string;
   expectedImpactAr: string;
   jobFamilyId?: string;
@@ -248,13 +351,10 @@ export async function addCompetency(input: {
     .insert({
       domain_id: parsed.data.domainId,
       name_ar: parsed.data.nameAr,
-      type: parsed.data.type,
+      classification_id: parsed.data.classificationId,
       definition_ar: parsed.data.definitionAr,
       expected_impact_ar: parsed.data.expectedImpactAr,
-      // Core competencies apply university-wide by design -- job_family_id
-      // only makes sense for a specialized one (see the column's own
-      // COMMENT ON COLUMN in 20260716000002).
-      job_family_id: parsed.data.type === "specialized" ? (parsed.data.jobFamilyId ?? null) : null,
+      job_family_id: parsed.data.jobFamilyId ?? null,
     })
     .select("id")
     .single();
@@ -269,7 +369,7 @@ export async function addCompetency(input: {
     action: "competency_added",
     entity: "competencies",
     entity_id: competency.id,
-    after_data: { domain_id: parsed.data.domainId, name_ar: parsed.data.nameAr, type: parsed.data.type },
+    after_data: { domain_id: parsed.data.domainId, name_ar: parsed.data.nameAr, classification_id: parsed.data.classificationId },
   });
 
   return { status: "success" };
@@ -278,7 +378,7 @@ export async function addCompetency(input: {
 const updateCompetencySchema = z.object({
   id: z.string().uuid(),
   nameAr: z.string().trim().min(1),
-  type: competencyTypeSchema,
+  classificationId: z.string().uuid(),
   definitionAr: z.string().trim().min(1),
   expectedImpactAr: z.string().trim().min(1),
   jobFamilyId: z.string().uuid().nullable(),
@@ -287,7 +387,7 @@ const updateCompetencySchema = z.object({
 export async function updateCompetency(input: {
   id: string;
   nameAr: string;
-  type: CompetencyType;
+  classificationId: string;
   definitionAr: string;
   expectedImpactAr: string;
   jobFamilyId: string | null;
@@ -302,10 +402,10 @@ export async function updateCompetency(input: {
     .from("competencies")
     .update({
       name_ar: parsed.data.nameAr,
-      type: parsed.data.type,
+      classification_id: parsed.data.classificationId,
       definition_ar: parsed.data.definitionAr,
       expected_impact_ar: parsed.data.expectedImpactAr,
-      job_family_id: parsed.data.type === "specialized" ? parsed.data.jobFamilyId : null,
+      job_family_id: parsed.data.jobFamilyId,
     })
     .eq("id", parsed.data.id);
   if (error) return mapError(error);
@@ -316,7 +416,7 @@ export async function updateCompetency(input: {
     action: "competency_updated",
     entity: "competencies",
     entity_id: parsed.data.id,
-    after_data: { name_ar: parsed.data.nameAr, type: parsed.data.type },
+    after_data: { name_ar: parsed.data.nameAr, classification_id: parsed.data.classificationId },
   });
 
   return { status: "success" };

@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { computeAutoApplyClassificationIds } from "@/lib/competencyFramework";
 import type { BehavioralLevel } from "@/lib/data/competencies";
 import { JobTitleDescriptionForm } from "@/components/JobTitleDescriptionForm";
 import { JobTitleCompetenciesManager } from "@/components/JobTitleCompetenciesManager";
@@ -89,21 +90,27 @@ export default async function CareerPathJobTitleDetailPage({ params }: { params:
     )
   );
 
+  const { data: classificationsData } = await supabase.from("competency_classifications").select("id, name_ar, name_en, auto_apply_everywhere");
+  const autoApplyClassificationIds = computeAutoApplyClassificationIds(
+    (classificationsData as unknown as Array<{ id: string; name_ar: string; name_en: string | null; auto_apply_everywhere: boolean }>) ?? []
+  );
+
   const { data: allCompetenciesData } = await supabase
     .from("competencies")
-    .select("id, name_ar, domain_id, type")
+    .select("id, name_ar, domain_id, classification_id")
     .is("deleted_at", null)
     .order("name_ar");
   const allCompetenciesRows =
-    (allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string; type: string }> | null) ?? [];
+    (allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string; classification_id: string }> | null) ?? [];
 
   const allCompetencies = allCompetenciesRows.map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
-  // "الجدارات الأساسية تظهر بشكل تلقائي" (2026-08-03): every type='core'
-  // competency is always listed on the detail page regardless of whether
-  // it's been assigned to this job title yet, same source as the new-job-title
-  // creation flow's own coreCompetencies (StagedCompetenciesPicker).
+  // "الجدارات الأساسية تظهر بشكل تلقائي" (2026-08-03): every competency whose
+  // classification is flagged auto_apply_everywhere (20260829000001, was
+  // hardcoded to type='core') is always listed on the detail page regardless
+  // of whether it's been assigned to this job title yet, same source as the
+  // new-job-title creation flow's own coreCompetencies (StagedCompetenciesPicker).
   const coreCompetencies = allCompetenciesRows
-    .filter((c) => c.type === "core")
+    .filter((c) => autoApplyClassificationIds.has(c.classification_id))
     .map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
 
   // "ضع الجدارات حسب التصنيف" (2026-08-02): the assigned list used to render

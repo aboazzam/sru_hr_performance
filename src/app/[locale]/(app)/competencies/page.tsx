@@ -4,12 +4,15 @@ import { PrintButton } from "@/components/PrintButton";
 import { AddCompetencyPillarForm } from "@/components/AddCompetencyPillarForm";
 import { AddCompetencyDomainForm } from "@/components/AddCompetencyDomainForm";
 import { AddCompetencyForm } from "@/components/AddCompetencyForm";
+import { AddCompetencyClassificationForm } from "@/components/AddCompetencyClassificationForm";
+import { CompetencyClassificationRow } from "@/components/CompetencyClassificationRow";
 import { CompetencyPillarCard } from "@/components/CompetencyPillarCard";
 import { CompetencyDomainCard } from "@/components/CompetencyDomainCard";
 import { CompetencyManageCard } from "@/components/CompetencyManageCard";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import {
   groupCompetencyFramework,
+  type CompetencyClassificationRow as CompetencyClassificationRowType,
   type CompetencyLevelRow,
   type CompetencyRow,
   type CompetencyDomainRow,
@@ -36,24 +39,32 @@ export default async function CompetenciesPage() {
   const canManage = hasVpraAccess(competencyFrameworkLevel, "prepare");
   const canDeleteStructure = hasVpraAccess(competencyFrameworkLevel, "approve");
 
-  const [{ data: pillarsData }, { data: domainsData }, { data: competenciesData }, { data: levelsData }, { data: jobFamiliesData }] =
-    await Promise.all([
-      supabase.from("competency_pillars").select("id, name_ar, name_en").order("name_ar"),
-      supabase.from("competency_domains").select("id, pillar_id, name_ar, name_en").order("name_ar"),
-      supabase
-        .from("competencies")
-        .select("id, domain_id, name_ar, type, definition_ar, expected_impact_ar, job_family_id")
-        .is("deleted_at", null)
-        .order("name_ar"),
-      supabase.from("competency_levels").select("competency_id, level, behavior_ar, behavior_en"),
-      supabase.from("job_families").select("id, name_ar").order("name_ar"),
-    ]);
+  const [
+    { data: pillarsData },
+    { data: domainsData },
+    { data: competenciesData },
+    { data: levelsData },
+    { data: jobFamiliesData },
+    { data: classificationsData },
+  ] = await Promise.all([
+    supabase.from("competency_pillars").select("id, name_ar, name_en").order("name_ar"),
+    supabase.from("competency_domains").select("id, pillar_id, name_ar, name_en").order("name_ar"),
+    supabase
+      .from("competencies")
+      .select("id, domain_id, name_ar, classification_id, definition_ar, expected_impact_ar, job_family_id")
+      .is("deleted_at", null)
+      .order("name_ar"),
+    supabase.from("competency_levels").select("competency_id, level, behavior_ar, behavior_en"),
+    supabase.from("job_families").select("id, name_ar").order("name_ar"),
+    supabase.from("competency_classifications").select("id, name_ar, name_en, auto_apply_everywhere").order("name_ar"),
+  ]);
 
   const pillars = (pillarsData ?? []) as CompetencyPillarRow[];
   const domains = (domainsData ?? []) as CompetencyDomainRow[];
   const competencies = (competenciesData ?? []) as CompetencyRow[];
   const levels = (levelsData ?? []) as CompetencyLevelRow[];
   const jobFamilies = (jobFamiliesData ?? []) as Array<{ id: string; name_ar: string }>;
+  const classifications = (classificationsData ?? []) as CompetencyClassificationRowType[];
 
   const grouped = groupCompetencyFramework(pillars, domains, competencies, levels);
 
@@ -79,11 +90,34 @@ export default async function CompetenciesPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {canManage && <AddCompetencyClassificationForm />}
           {canManage && <AddCompetencyPillarForm />}
           <PrintButton />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {canManage && (
+        <section className="no-print" style={{ marginBottom: 32 }}>
+          <h2 className="sru-title" style={{ fontSize: 16.5, marginBottom: 10 }}>
+            {t("classificationsHeading")}
+          </h2>
+          {classifications.length === 0 ? (
+            <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noClassificationsYet")}</p>
+          ) : (
+            classifications.map((c) => (
+              <CompetencyClassificationRow
+                key={c.id}
+                classificationId={c.id}
+                initialNameAr={c.name_ar}
+                initialNameEn={c.name_en}
+                initialAutoApplyEverywhere={c.auto_apply_everywhere}
+                canDelete={canDeleteStructure}
+              />
+            ))
+          )}
+        </section>
+      )}
 
       {grouped.length === 0 && (
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPillarsYet")}</p>
@@ -125,19 +159,20 @@ export default async function CompetenciesPage() {
                         key={c.id}
                         competencyId={c.id}
                         initialNameAr={c.name_ar}
-                        initialType={c.type}
+                        initialClassificationId={c.classification_id}
                         initialDefinitionAr={c.definition_ar}
                         initialExpectedImpactAr={c.expected_impact_ar}
                         initialJobFamilyId={c.job_family_id}
                         initialLevels={c.levels}
                         jobFamilies={jobFamilies}
+                        classifications={classifications}
                         canManage={canManage}
                       />
                     ))
                   )}
                   {canManage && (
                     <div className="no-print">
-                      <AddCompetencyForm domainId={domain.id} jobFamilies={jobFamilies} />
+                      <AddCompetencyForm domainId={domain.id} jobFamilies={jobFamilies} classifications={classifications} />
                     </div>
                   )}
                 </div>

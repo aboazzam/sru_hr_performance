@@ -23,7 +23,7 @@ const levels: BehavioralLevel[] = ["basic", "practitioner", "advanced", "profess
  * "Unsaved" competency picker for the create-job-title flow — the job
  * itself doesn't exist yet, so nothing here writes to the database; the
  * parent form submits the final `value` array as part of createJobTitle.
- * Starts pre-populated with the institutional (type='core') competencies,
+ * Starts pre-populated with the institutional (auto_apply_everywhere) competencies,
  * each with an empty requiredLevel forcing an explicit choice (per the
  * project owner's "وينتظرك تحدد المستوى السلوكي" instruction) — createJobTitle
  * rejects the submission server-side too if any row is missing a level.

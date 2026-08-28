@@ -8,12 +8,19 @@ export type BehavioralLevel = "basic" | "practitioner" | "advanced" | "professio
 
 export const behavioralLevelOrder: BehavioralLevel[] = ["basic", "practitioner", "advanced", "professional"];
 
-export type CompetencyType = "core" | "specialized";
-
 export interface CompetencyPillarRow {
   id: string;
   name_ar: string;
   name_en: string | null;
+}
+
+/** Admin-manageable list replacing the old fixed 'core'/'specialized' ENUM (20260829000001) -- "زر اضف تصنيف ... تصنيفات قابلة للإضافة لاحقًا". */
+export interface CompetencyClassificationRow {
+  id: string;
+  name_ar: string;
+  name_en: string | null;
+  /** When true, every competency of this classification auto-applies to every job title/employee everywhere in the app -- see computeAutoApplyClassificationIds. */
+  auto_apply_everywhere: boolean;
 }
 
 export interface CompetencyDomainRow {
@@ -27,7 +34,7 @@ export interface CompetencyRow {
   id: string;
   domain_id: string;
   name_ar: string;
-  type: CompetencyType;
+  classification_id: string;
   definition_ar: string;
   expected_impact_ar: string;
   job_family_id: string | null;
@@ -86,4 +93,17 @@ export function groupCompetencyFramework(
 /** Every one of the 4 behavioral levels has real, non-blank text -- the bar every existing (seeded) competency already meets. Used to flag a competency whose framework content is still incomplete. */
 export function isCompetencyLevelsComplete(levels: Partial<Record<BehavioralLevel, { behavior_ar: string }>>): boolean {
   return behavioralLevelOrder.every((level) => (levels[level]?.behavior_ar ?? "").trim().length > 0);
+}
+
+/**
+ * The set of classification ids that should auto-apply everywhere -- the
+ * replacement for every former `competencies.type === 'core'` check
+ * (career-path job-title creation/detail, the job-titles Excel import,
+ * employee competency scoring, 360 nomination). A classification's own
+ * `auto_apply_everywhere` flag is admin-controlled (20260829000001), so this
+ * is never hardcoded to a name -- more than one classification could carry
+ * the flag, or none could.
+ */
+export function computeAutoApplyClassificationIds(classifications: CompetencyClassificationRow[]): Set<string> {
+  return new Set(classifications.filter((c) => c.auto_apply_everywhere).map((c) => c.id));
 }

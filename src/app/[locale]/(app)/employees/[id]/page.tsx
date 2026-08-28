@@ -19,6 +19,7 @@ import {
   type EvaluationMethod,
   type MethodWeights,
 } from "@/lib/evaluationCycle";
+import { computeAutoApplyClassificationIds } from "@/lib/competencyFramework";
 import { EmployeeCompetenciesPanel } from "@/components/EmployeeCompetenciesPanel";
 import { EmployeeBauTasksPanel } from "@/components/EmployeeBauTasksPanel";
 import { Employee360NominationsPanel } from "@/components/Employee360NominationsPanel";
@@ -119,9 +120,15 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   // ---- competencies -----------------------------------------------------
   const { data: pillarData } = await supabase.from("competency_pillars").select("id, name_ar");
   const { data: domainData } = await supabase.from("competency_domains").select("id, pillar_id");
+  const { data: classificationData } = await supabase
+    .from("competency_classifications")
+    .select("id, name_ar, name_en, auto_apply_everywhere");
+  const autoApplyClassificationIds = computeAutoApplyClassificationIds(
+    (classificationData as unknown as Array<{ id: string; name_ar: string; name_en: string | null; auto_apply_everywhere: boolean }>) ?? []
+  );
   const { data: competencyData } = await supabase
     .from("competencies")
-    .select("id, name_ar, type, domain_id")
+    .select("id, name_ar, classification_id, domain_id")
     .is("deleted_at", null)
     .order("name_ar");
   const pillarNameById = new Map((pillarData ?? []).map((p) => [p.id as string, p.name_ar as string]));
@@ -132,7 +139,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     id: c.id as string,
     nameAr: c.name_ar as string,
     pillarAr: pillarByDomain.get(c.domain_id as string) ?? "—",
-    isCore: (c.type as string) === "core",
+    isCore: autoApplyClassificationIds.has(c.classification_id as string),
   }));
 
   const { data: employeeCompetencyData } = await supabase

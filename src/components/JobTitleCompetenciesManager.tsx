@@ -130,7 +130,8 @@ function CoreCompetencyRow({
 }
 
 // "الجدارات الأساسية تظهر بشكل تلقائي والمطلوب مني تحديد المستوى وإضافة
-// الجدارات الاخرى مثل التخصصية" (2026-08-03): institutional (type='core')
+// الجدارات الاخرى مثل التخصصية" (2026-08-03): institutional (classification
+// flagged auto_apply_everywhere, 20260829000001, was hardcoded to type='core')
 // competencies are common to every job title, so they're now always listed
 // here regardless of whether they've been assigned yet -- picking a level
 // for a not-yet-assigned one assigns it immediately (CoreCompetencyRow

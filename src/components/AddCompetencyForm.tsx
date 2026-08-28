@@ -4,8 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { addCompetency } from "@/app/[locale]/(app)/competencies/actions";
-import { behavioralLevelOrder, type BehavioralLevel, type CompetencyType } from "@/lib/competencyFramework";
-import { behavioralLevelLabels, competencyTypeLabels } from "@/lib/data/competencies";
+import { behavioralLevelOrder, type BehavioralLevel } from "@/lib/competencyFramework";
+import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 const inputClass =
   "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
@@ -30,23 +30,45 @@ interface JobFamilyOption {
   name_ar: string;
 }
 
-/** "Client can add competencies" (CLAUDE.md §3) -- one competency, its type/definition/impact, and all 4 behavioral levels in one submission, matching the fact that every real competency in the framework already has all 4 filled in. */
-export function AddCompetencyForm({ domainId, jobFamilies }: { domainId: string; jobFamilies: JobFamilyOption[] }) {
+interface ClassificationOption {
+  id: string;
+  name_ar: string;
+  auto_apply_everywhere: boolean;
+}
+
+/** "Client can add competencies" (CLAUDE.md §3) -- one competency, its classification/definition/impact, and all 4 behavioral levels in one submission, matching the fact that every real competency in the framework already has all 4 filled in. */
+export function AddCompetencyForm({
+  domainId,
+  jobFamilies,
+  classifications,
+}: {
+  domainId: string;
+  jobFamilies: JobFamilyOption[];
+  classifications: ClassificationOption[];
+}) {
   const t = useTranslations("CompetenciesPage");
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isPending, startTransition] = useTransition();
   const [nameAr, setNameAr] = useState("");
-  const [type, setType] = useState<CompetencyType>("core");
+  const [classificationId, setClassificationId] = useState(classifications[0]?.id ?? "");
   const [definitionAr, setDefinitionAr] = useState("");
   const [expectedImpactAr, setExpectedImpactAr] = useState("");
   const [jobFamilyId, setJobFamilyId] = useState("");
   const [levels, setLevels] = useState<Record<BehavioralLevel, string>>(emptyLevels);
   const [error, setError] = useState<string | null>(null);
 
+  const effectiveClassificationId = classifications.some((c) => c.id === classificationId) ? classificationId : classifications[0]?.id ?? "";
+  const selectedClassification = classifications.find((c) => c.id === effectiveClassificationId);
+  // A classification that auto-applies to every job title has no need for a
+  // specific job family -- mirrors the original 'core'-implies-no-job-family
+  // convention, now derived from the classification's own flag instead of a
+  // hardcoded name.
+  const showJobFamily = selectedClassification ? !selectedClassification.auto_apply_everywhere : true;
+
   function resetForm() {
     setNameAr("");
-    setType("core");
+    setClassificationId(classifications[0]?.id ?? "");
     setDefinitionAr("");
     setExpectedImpactAr("");
     setJobFamilyId("");
@@ -60,10 +82,10 @@ export function AddCompetencyForm({ domainId, jobFamilies }: { domainId: string;
       const res = await addCompetency({
         domainId,
         nameAr,
-        type,
+        classificationId: effectiveClassificationId,
         definitionAr,
         expectedImpactAr,
-        jobFamilyId: type === "specialized" && jobFamilyId ? jobFamilyId : undefined,
+        jobFamilyId: showJobFamily && jobFamilyId ? jobFamilyId : undefined,
         levels,
       });
       if (res.status === "success") {
@@ -104,13 +126,16 @@ export function AddCompetencyForm({ domainId, jobFamilies }: { domainId: string;
 
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <label className="block text-sm font-medium mb-1">{t("competencyTypeLabel")}</label>
-              <select value={type} onChange={(e) => setType(e.target.value as CompetencyType)} className={inputClass}>
-                <option value="core">{competencyTypeLabels.core}</option>
-                <option value="specialized">{competencyTypeLabels.specialized}</option>
+              <label className="block text-sm font-medium mb-1">{t("competencyClassificationLabel")}</label>
+              <select value={effectiveClassificationId} onChange={(e) => setClassificationId(e.target.value)} className={inputClass}>
+                {classifications.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name_ar}
+                  </option>
+                ))}
               </select>
             </div>
-            {type === "specialized" && (
+            {showJobFamily && (
               <div style={{ flex: 1 }}>
                 <label className="block text-sm font-medium mb-1">{t("jobFamilyLabel")}</label>
                 <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)} className={inputClass}>

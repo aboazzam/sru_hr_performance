@@ -298,21 +298,32 @@ export default async function ReportsPage() {
   let competencyLevelsCount = 0;
   let competencyScoresRecorded = 0;
   if (showCompetencyReports) {
-    const [{ count: pillarsCount }, { count: domainsCount }, { data: competenciesData }, { count: levelsCount }, { count: scoresCount }] =
-      await Promise.all([
-        supabase.from("competency_pillars").select("id", { count: "exact", head: true }),
-        supabase.from("competency_domains").select("id", { count: "exact", head: true }),
-        supabase.from("competencies").select("type").is("deleted_at", null),
-        supabase.from("competency_levels").select("id", { count: "exact", head: true }),
-        supabase.from("evaluation_scores").select("id", { count: "exact", head: true }).not("competency_id", "is", null),
-      ]);
+    const [
+      { count: pillarsCount },
+      { count: domainsCount },
+      { data: competenciesData },
+      { count: levelsCount },
+      { count: scoresCount },
+      { data: classificationsData },
+    ] = await Promise.all([
+      supabase.from("competency_pillars").select("id", { count: "exact", head: true }),
+      supabase.from("competency_domains").select("id", { count: "exact", head: true }),
+      supabase.from("competencies").select("classification_id").is("deleted_at", null),
+      supabase.from("competency_levels").select("id", { count: "exact", head: true }),
+      supabase.from("evaluation_scores").select("id", { count: "exact", head: true }).not("competency_id", "is", null),
+      supabase.from("competency_classifications").select("id, name_ar"),
+    ]);
     competencyPillarsCount = pillarsCount ?? 0;
     competencyDomainsCount = domainsCount ?? 0;
     competencyLevelsCount = levelsCount ?? 0;
     competencyScoresRecorded = scoresCount ?? 0;
+    const classificationNameById = new Map(
+      ((classificationsData ?? []) as Array<{ id: string; name_ar: string }>).map((c) => [c.id, c.name_ar])
+    );
     const typeCounts = new Map<string, number>();
-    for (const row of (competenciesData ?? []) as Array<{ type: string }>) {
-      typeCounts.set(row.type, (typeCounts.get(row.type) ?? 0) + 1);
+    for (const row of (competenciesData ?? []) as Array<{ classification_id: string }>) {
+      const name = classificationNameById.get(row.classification_id) ?? row.classification_id;
+      typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
     }
     competencyCountsByType = [...typeCounts.entries()].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count);
   }
@@ -588,12 +599,6 @@ export default async function ReportsPage() {
     </>
   );
 
-  const competencyTypeLabels: Record<string, string> = {
-    core: "المؤسسية",
-    leadership: "القيادية",
-    specialized: "التخصصية",
-  };
-
   const competencyContent = (
     <>
       <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 20 }}>{t("competencySubtitle")}</p>
@@ -633,7 +638,7 @@ export default async function ReportsPage() {
                 <tbody>
                   {competencyCountsByType.map((row) => (
                     <tr key={row.type}>
-                      <td>{competencyTypeLabels[row.type] ?? row.type}</td>
+                      <td>{row.type}</td>
                       <td>{row.count}</td>
                     </tr>
                   ))}
