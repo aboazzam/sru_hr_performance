@@ -31,7 +31,7 @@ export default async function EvaluationCyclesPage() {
   const { data } = await supabase
     .from("evaluation_cycles")
     .select(
-      "id, name_ar, name_en, cycle_type, start_date, end_date, weight_goals, weight_competencies, weight_bau, weight_feedback_360"
+      "id, name_ar, name_en, cycle_type, start_date, end_date, weight_activities, weight_competencies, weight_bau, weight_feedback_360"
     )
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
@@ -43,7 +43,7 @@ export default async function EvaluationCyclesPage() {
     cycle_type: EvaluationCycleType;
     start_date: string;
     end_date: string;
-    weight_goals: number;
+    weight_activities: number;
     weight_competencies: number;
     weight_bau: number;
     weight_feedback_360: number;
@@ -114,7 +114,7 @@ export default async function EvaluationCyclesPage() {
     endDate: cycle.end_date,
     usageCount: usageByCycle.get(cycle.id) ?? 0,
     weights: {
-      goals: Number(cycle.weight_goals),
+      activities: Number(cycle.weight_activities),
       competencies: Number(cycle.weight_competencies),
       bau: Number(cycle.weight_bau),
       feedback360: Number(cycle.weight_feedback_360),

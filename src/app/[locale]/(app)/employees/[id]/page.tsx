@@ -14,6 +14,7 @@ import {
 import { formatDateDmy } from "@/lib/dateParts";
 import {
   evaluationMethods,
+  resolveWeights,
   weightedCycleScore,
   type EvaluationMethod,
   type MethodWeights,
@@ -165,13 +166,13 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   // ---- cycles, routine tasks, evaluations -------------------------------
   const { data: cycleData } = await supabase
     .from("evaluation_cycles")
-    .select("id, name_ar, weight_goals, weight_competencies, weight_bau, weight_feedback_360")
+    .select("id, name_ar, weight_activities, weight_competencies, weight_bau, weight_feedback_360")
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
   const cycles = (cycleData ?? []) as Array<{
     id: string;
     name_ar: string;
-    weight_goals: number;
+    weight_activities: number;
     weight_competencies: number;
     weight_bau: number;
     weight_feedback_360: number;
@@ -208,14 +209,14 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     evaluationIds.length > 0
       ? await supabase
           .from("evaluation_scores")
-          .select("evaluation_id, competency_id, goal_id, bau_task_id, score")
+          .select("evaluation_id, competency_id, activity_id, bau_task_id, score")
           .in("evaluation_id", evaluationIds)
           .is("deleted_at", null)
       : { data: [] };
   const scores = (scoreData ?? []) as Array<{
     evaluation_id: string;
     competency_id: string | null;
-    goal_id: string | null;
+    activity_id: string | null;
     bau_task_id: string | null;
     score: number | null;
   }>;
@@ -265,14 +266,45 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     const real = values.filter((v): v is number => typeof v === "number" && Number.isFinite(v));
     return real.length === 0 ? null : real.reduce((sum, v) => sum + v, 0) / real.length;
   };
+  // This employee's department may weight its evaluations differently from
+  // the cycle default (20260828000001); resolveWeights decides which applies.
+  const { data: unitWeightRows } = employee.org_unit_id
+    ? await supabase
+        .from("org_unit_evaluation_weights")
+        .select("cycle_id, weight_activities, weight_competencies, weight_bau, weight_feedback_360")
+        .eq("org_unit_id", employee.org_unit_id)
+        .is("deleted_at", null)
+    : { data: [] };
+  const unitWeightsByCycle = new Map<string, MethodWeights>(
+    ((unitWeightRows ?? []) as Array<{
+      cycle_id: string;
+      weight_activities: number;
+      weight_competencies: number;
+      weight_bau: number;
+      weight_feedback_360: number;
+    }>).map((row) => [
+      row.cycle_id,
+      {
+        activities: Number(row.weight_activities),
+        competencies: Number(row.weight_competencies),
+        bau: Number(row.weight_bau),
+        feedback360: Number(row.weight_feedback_360),
+      },
+    ])
+  );
+
   const reportRows = evaluations.map((evaluation) => {
     const cycle = cycles.find((c) => c.id === evaluation.cycle_id);
-    const weights: MethodWeights = {
-      goals: Number(cycle?.weight_goals ?? 0),
+    const cycleWeights: MethodWeights = {
+      activities: Number(cycle?.weight_activities ?? 0),
       competencies: Number(cycle?.weight_competencies ?? 0),
       bau: Number(cycle?.weight_bau ?? 0),
       feedback360: Number(cycle?.weight_feedback_360 ?? 0),
     };
+    const { weights, source: weightsSource } = resolveWeights(
+      cycleWeights,
+      unitWeightsByCycle.get(evaluation.cycle_id) ?? null
+    );
     const own = scores.filter((s) => s.evaluation_id === evaluation.id);
     const cycleFeedback = feedbackRows
       .filter((row) => row.cycle_id === evaluation.cycle_id)
@@ -281,16 +313,16 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
         return typeof overall === "number" ? overall : null;
       });
     const weighted = weightedCycleScore(weights, {
-      goals: average(own.filter((s) => s.goal_id).map((s) => s.score)),
+      activities: average(own.filter((s) => s.activity_id).map((s) => s.score)),
       competencies: average(own.filter((s) => s.competency_id).map((s) => s.score)),
       bau: average(own.filter((s) => s.bau_task_id).map((s) => s.score)),
       feedback360: average(cycleFeedback),
     });
-    return { evaluation, cycle, weights, weighted };
+    return { evaluation, cycle, weights, weighted, weightsSource };
   });
 
   const methodLabel: Record<EvaluationMethod, string> = {
-    goals: tReport("methodGoals"),
+    activities: tReport("methodActivities"),
     competencies: tReport("methodCompetencies"),
     bau: tReport("methodBau"),
     feedback360: tReport("methodFeedback360"),
@@ -464,7 +496,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
           {reportRows.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{tReport("empty")}</p>
           ) : (
-            reportRows.map(({ evaluation, cycle, weights, weighted }) => (
+            reportRows.map(({ evaluation, cycle, weights, weighted, weightsSource }) => (
               <section key={evaluation.id} className="sru-card" style={{ marginBottom: 16, padding: "14px 16px" }}>
                 <h3 style={{ fontSize: 14, margin: 0 }}>
                   {cycle?.name_ar ?? "—"} — {evalTypeLabels[evaluation.eval_type]}
@@ -479,6 +511,9 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
                       .map((method) => `${methodLabel[method]} ${weights[method]}%`)
                       .join("، "),
                   })}
+                </p>
+                <p style={{ color: "var(--sru-muted)", fontSize: 11.5, margin: "0 0 8px" }}>
+                  {weightsSource === "orgUnit" ? tReport("weightsSourceOrgUnit") : tReport("weightsSourceCycle")}
                 </p>
                 {weighted.score == null ? (
                   <p style={{ color: "var(--sru-muted)", fontSize: 13, margin: 0 }}>{tReport("noScores")}</p>

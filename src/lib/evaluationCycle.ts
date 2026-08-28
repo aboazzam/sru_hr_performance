@@ -139,7 +139,7 @@ export function summariseCycleScoring(
  * ("يتم تطبيقه على جميع التقييمات في هذه الدورة"). Two employees in one cycle
  * measured on different weightings could not be compared, let alone calibrated.
  */
-export const evaluationMethods = ["goals", "competencies", "bau", "feedback360"] as const;
+export const evaluationMethods = ["activities", "bau", "competencies", "feedback360"] as const;
 export type EvaluationMethod = (typeof evaluationMethods)[number];
 export type MethodWeights = Record<EvaluationMethod, number>;
 
@@ -197,4 +197,46 @@ export function weightedCycleScore(
 
   if (appliedWeight <= 0) return { score: null, appliedWeight: 0, missing };
   return { score: weighted / appliedWeight, appliedWeight, missing };
+}
+
+/**
+ * The two families the four methods belong to (2026-08-28, requested
+ * directly): results — what the employee was assigned to do — and behaviour
+ * — how they did it.
+ *
+ * The grouping is presentation, not storage: the four leaf weights still
+ * total 100 and a group's weight is simply the sum of its own, so there is
+ * never a second number for the same fact that can drift from the first.
+ */
+export const evaluationMethodGroups = {
+  results: ["activities", "bau"],
+  behaviour: ["competencies", "feedback360"],
+} as const satisfies Record<string, readonly EvaluationMethod[]>;
+
+export type EvaluationMethodGroup = keyof typeof evaluationMethodGroups;
+export const evaluationMethodGroupKeys = Object.keys(
+  evaluationMethodGroups
+) as EvaluationMethodGroup[];
+
+export function groupWeight(weights: MethodWeights, group: EvaluationMethodGroup): number {
+  return evaluationMethodGroups[group].reduce((sum, method) => sum + (Number(weights[method]) || 0), 0);
+}
+
+/**
+ * Which distribution actually governs one employee's evaluation.
+ *
+ * A department's own weights win; the cycle's are the fallback for every
+ * department that has not set its own. Resolving in one place keeps every
+ * screen answering the question the same way — and reporting WHICH of the
+ * two applied, so a screen can say so rather than leave the reader guessing
+ * whether a number is theirs or the university default.
+ */
+export function resolveWeights(
+  cycleWeights: MethodWeights,
+  orgUnitWeights: MethodWeights | null | undefined
+): { weights: MethodWeights; source: "orgUnit" | "cycle" } {
+  if (orgUnitWeights && isValidWeights(orgUnitWeights)) {
+    return { weights: orgUnitWeights, source: "orgUnit" };
+  }
+  return { weights: cycleWeights, source: "cycle" };
 }

@@ -10,13 +10,8 @@ import {
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import {
-  evaluationMethods,
-  isValidWeights,
-  weightsTotal,
-  type EvaluationMethod,
-  type MethodWeights,
-} from "@/lib/evaluationCycle";
+import { WeightGroupFields, methodLabelKeys } from "@/components/WeightGroupFields";
+import { evaluationMethods, isValidWeights, type MethodWeights } from "@/lib/evaluationCycle";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "weightsErrorInvalid",
@@ -24,13 +19,6 @@ const errorKeys: Record<string, string> = {
   forbidden: "weightsErrorForbidden",
   has_dependents: "weightsErrorUnknown",
   unknown: "weightsErrorUnknown",
-};
-
-const labelKeys: Record<EvaluationMethod, string> = {
-  goals: "weightGoalsShort",
-  competencies: "weightCompetenciesShort",
-  bau: "weightBauShort",
-  feedback360: "weightFeedback360Short",
 };
 
 const cycleTypes = ["academic", "calendar", "fiscal"] as const;
@@ -99,7 +87,7 @@ export function CycleEditDrawer({
     adopted.cycleType !== cycle.cycleType ||
     adopted.startDate !== cycle.startDate ||
     adopted.endDate !== cycle.endDate ||
-    adopted.weights.goals !== cycle.weights.goals ||
+    adopted.weights.activities !== cycle.weights.activities ||
     adopted.weights.competencies !== cycle.weights.competencies ||
     adopted.weights.bau !== cycle.weights.bau ||
     adopted.weights.feedback360 !== cycle.weights.feedback360
@@ -122,7 +110,6 @@ export function CycleEditDrawer({
     return () => dialog.removeEventListener("close", onClose);
   }, []);
 
-  const total = weightsTotal(weights);
   const weightsValid = isValidWeights(weights);
   const datesValid = startDate !== "" && endDate !== "" && endDate > startDate;
 
@@ -138,7 +125,7 @@ export function CycleEditDrawer({
 
   const summary = evaluationMethods.map((method) => `${saved.weights[method]}%`).join(" / ");
   const title = evaluationMethods
-    .map((method) => `${t(labelKeys[method])}: ${saved.weights[method]}%`)
+    .map((method) => `${t(methodLabelKeys[method])}: ${saved.weights[method]}%`)
     .join("، ");
 
   function open() {
@@ -176,7 +163,7 @@ export function CycleEditDrawer({
       if (result.status === "success" && weightsDirty) {
         result = await updateCycleMethodWeights({
           cycleId: cycle.id,
-          goals: Number(weights.goals),
+          activities: Number(weights.activities),
           competencies: Number(weights.competencies),
           bau: Number(weights.bau),
           feedback360: Number(weights.feedback360),
@@ -323,29 +310,12 @@ export function CycleEditDrawer({
           <h3 style={{ fontSize: 13, margin: "0 0 6px" }}>{t("weightsDrawerTitle")}</h3>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 16 }}>{t("weightsDrawerNote")}</p>
 
-          {evaluationMethods.map((method) => (
-            <div className="sru-field" key={method} style={{ marginBottom: 12 }}>
-              <label htmlFor={`drawer-${cycle.id}-${method}`}>{t(labelKeys[method])}</label>
-              <input
-                id={`drawer-${cycle.id}-${method}`}
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                dir="ltr"
-                disabled={pending}
-                value={weights[method]}
-                onChange={(event) =>
-                  setWeights((current) => ({ ...current, [method]: Number(event.target.value) }))
-                }
-              />
-            </div>
-          ))}
-
-          <p style={{ fontSize: 12.5, color: weightsValid ? "var(--sru-muted)" : "#b91c1c", marginTop: 4 }}>
-            {t("weightsTotalLabel")}: <strong>{total}%</strong>
-            {weightsValid ? "" : ` — ${t("weightsInvalid")}`}
-          </p>
+          <WeightGroupFields
+            idPrefix={`drawer-${cycle.id}`}
+            values={weights}
+            onChange={setWeights}
+            disabled={pending}
+          />
 
           {status === "saved" ? (
             <p style={{ color: "var(--sru-success, #1f9d55)", fontSize: 12, marginTop: 8 }}>

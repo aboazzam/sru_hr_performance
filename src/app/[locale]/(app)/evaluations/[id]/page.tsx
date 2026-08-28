@@ -1,7 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { createClient } from "@/lib/supabase/server";
-import { evaluationMethods, weightedCycleScore, type EvaluationMethod, type MethodWeights } from "@/lib/evaluationCycle";
+import {
+  evaluationMethods,
+  resolveWeights,
+  weightedCycleScore,
+  type EvaluationMethod,
+  type MethodWeights,
+} from "@/lib/evaluationCycle";
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
@@ -27,7 +33,7 @@ export default async function EvaluationDetailPage({
   const { data: evaluation } = await supabase
     .from("evaluations")
     .select(
-      "id, employee_id, cycle_id, state, eval_type, profiles(full_name_ar, employee_number), evaluation_cycles(name_ar, weight_goals, weight_competencies, weight_bau, weight_feedback_360)"
+      "id, employee_id, cycle_id, state, eval_type, profiles(full_name_ar, employee_number, org_unit_id), evaluation_cycles(name_ar, weight_activities, weight_competencies, weight_bau, weight_feedback_360)"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -56,7 +62,7 @@ export default async function EvaluationDetailPage({
   // a separate, already-flagged follow-up).
   const cycle = evaluation.evaluation_cycles as unknown as {
     name_ar: string;
-    weight_goals: number;
+    weight_activities: number;
     weight_competencies: number;
     weight_bau: number;
     weight_feedback_360: number;
@@ -64,28 +70,11 @@ export default async function EvaluationDetailPage({
   const state = evaluation.state as EvaluationState;
   const evalType = evaluation.eval_type as EvalType;
 
-  // goals/bau_tasks are scoped by employee_id + cycle_id (not
-  // evaluation_id — those tables have no FK to evaluations); their own RLS
-  // (goalAssignment/bauTasks) is independent of evaluations' RLS, so a
-  // caller who can see this evaluation header (e.g. hr_admin/manager via
-  // 'evaluation') may still see zero rows here if they don't separately
-  // clear goalAssignment/bauTasks' own bar — not a bug, each table's RLS
-  // is evaluated on its own terms.
-  const { data: goalsData } = await supabase
-    .from("goals")
-    .select("id, custom_title_ar, weight, status, goal_library(title_ar)")
-    .eq("employee_id", evaluation.employee_id)
-    .eq("cycle_id", evaluation.cycle_id)
-    .is("deleted_at", null);
-
-  const goals = goalsData as unknown as Array<{
-    id: string;
-    custom_title_ar: string | null;
-    weight: number | null;
-    status: string;
-    goal_library: { title_ar: string } | null;
-  }> | null;
-
+  // bau_tasks are scoped by employee_id + cycle_id (not evaluation_id — that
+  // table has no FK to evaluations); its own RLS (bauTasks) is independent of
+  // evaluations' RLS, so a caller who can see this evaluation header may still
+  // see zero rows here without separately clearing bauTasks' own bar — not a
+  // bug, each table's RLS is evaluated on its own terms.
   const { data: bauTasksData } = await supabase
     .from("bau_tasks")
     .select("id, title_ar, weight, status")
@@ -99,6 +88,17 @@ export default async function EvaluationDetailPage({
     weight: number | null;
     status: string;
   }> | null;
+
+  // Activities are assigned inside an initiative, not per cycle, so they are
+  // matched by responsible employee. They became scorable in 20260828000001 —
+  // before it their weight had nothing to weigh.
+  const { data: activityData } = await supabase
+    .from("initiative_activities")
+    .select("id, title_ar")
+    .eq("responsible_profile_id", evaluation.employee_id)
+    .is("deleted_at", null)
+    .order("title_ar");
+  const activities = (activityData ?? []) as Array<{ id: string; title_ar: string }>;
 
   const { data: feedbackData } = await supabase
     .from("feedback_360")
@@ -117,28 +117,53 @@ export default async function EvaluationDetailPage({
 
   const { data: scoreData } = await supabase
     .from("evaluation_scores")
-    .select("competency_id, goal_id, bau_task_id, score")
+    .select("competency_id, goal_id, bau_task_id, activity_id, score")
     .eq("evaluation_id", evaluation.id)
     .is("deleted_at", null);
   const scores = (scoreData ?? []) as Array<{
     competency_id: string | null;
     goal_id: string | null;
     bau_task_id: string | null;
+    activity_id: string | null;
     score: number | null;
   }>;
   const scoreByCompetency = new Map(scores.filter((x) => x.competency_id).map((x) => [x.competency_id as string, x.score]));
-  const scoreByGoal = new Map(scores.filter((x) => x.goal_id).map((x) => [x.goal_id as string, x.score]));
   const scoreByBauTask = new Map(scores.filter((x) => x.bau_task_id).map((x) => [x.bau_task_id as string, x.score]));
+  const scoreByActivity = new Map(scores.filter((x) => x.activity_id).map((x) => [x.activity_id as string, x.score]));
+
+  // Which distribution governs THIS employee: their department's own if it
+  // has one, otherwise the cycle's — resolved through resolveWeights so every
+  // screen answers the question identically.
+  const employeeOrgUnitId =
+    (evaluation.profiles as unknown as { org_unit_id: string | null } | null)?.org_unit_id ?? null;
+  const { data: unitWeightRow } = employeeOrgUnitId
+    ? await supabase
+        .from("org_unit_evaluation_weights")
+        .select("weight_activities, weight_competencies, weight_bau, weight_feedback_360")
+        .eq("cycle_id", evaluation.cycle_id)
+        .eq("org_unit_id", employeeOrgUnitId)
+        .is("deleted_at", null)
+        .maybeSingle()
+    : { data: null };
 
   // The cycle-wide distribution (20260827000001), applied to this one
   // evaluation. A method with weight but nothing recorded is excluded and the
   // rest renormalised rather than counted as zero — see weightedCycleScore.
-  const weights: MethodWeights = {
-    goals: Number(cycle?.weight_goals ?? 0),
+  const cycleWeights: MethodWeights = {
+    activities: Number(cycle?.weight_activities ?? 0),
     competencies: Number(cycle?.weight_competencies ?? 0),
     bau: Number(cycle?.weight_bau ?? 0),
     feedback360: Number(cycle?.weight_feedback_360 ?? 0),
   };
+  const unitWeights: MethodWeights | null = unitWeightRow
+    ? {
+        activities: Number(unitWeightRow.weight_activities),
+        competencies: Number(unitWeightRow.weight_competencies),
+        bau: Number(unitWeightRow.weight_bau),
+        feedback360: Number(unitWeightRow.weight_feedback_360),
+      }
+    : null;
+  const { weights, source: weightsSource } = resolveWeights(cycleWeights, unitWeights);
   const average = (values: Array<number | null | undefined>) => {
     const real = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
     return real.length === 0 ? null : real.reduce((sum, value) => sum + value, 0) / real.length;
@@ -149,13 +174,13 @@ export default async function EvaluationDetailPage({
     return typeof overall === "number" ? overall : null;
   });
   const weighted = weightedCycleScore(weights, {
-    goals: average([...scoreByGoal.values()]),
+    activities: average([...scoreByActivity.values()]),
     competencies: average([...scoreByCompetency.values()]),
     bau: average([...scoreByBauTask.values()]),
     feedback360: average(feedbackScores),
   });
   const methodLabel: Record<EvaluationMethod, string> = {
-    goals: t("methodGoals"),
+    activities: t("methodActivities"),
     competencies: t("methodCompetencies"),
     bau: t("methodBau"),
     feedback360: t("method360"),
@@ -201,19 +226,15 @@ export default async function EvaluationDetailPage({
 
   const methodTabs: ProfileTab[] = [
     {
-      id: "goals",
-      label: t("methodGoals"),
+      id: "activities",
+      label: t("tabActivities"),
       content: (
         <>
-          {editButton("goals")}
+          {editButton("activities")}
           {simpleTable(
-            [t("columnTitle"), t("columnWeight"), t("columnScore")],
-            (goals ?? []).map((g) => [
-              g.custom_title_ar ?? g.goal_library?.title_ar ?? "—",
-              g.weight != null ? `${g.weight}%` : "—",
-              scoreByGoal.get(g.id) ?? "—",
-            ]),
-            t("goalsEmpty")
+            [t("columnTitle"), t("columnScore")],
+            activities.map((activity) => [activity.title_ar, scoreByActivity.get(activity.id) ?? "—"]),
+            t("activitiesEmpty")
           )}
         </>
       ),
@@ -298,6 +319,9 @@ export default async function EvaluationDetailPage({
               .map((method) => `${methodLabel[method]} ${weights[method]}%`)
               .join("، "),
           })}
+        </p>
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, margin: "0 0 10px" }}>
+          {weightsSource === "orgUnit" ? t("weightsSourceOrgUnit") : t("weightsSourceCycle")}
         </p>
         {weighted.score == null ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 13, margin: 0 }}>{t("weightedResultEmpty")}</p>
