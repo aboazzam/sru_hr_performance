@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Briefcase, Users } from "lucide-react";
+import { Briefcase, Minus, Plus, Scan, Users } from "lucide-react";
 import { getContrastTextColor } from "@/lib/color";
 
 interface OrgChartPosition {
@@ -29,20 +29,21 @@ interface ConnectorLine {
   d: string;
 }
 
-// 2026-07-27: rebuilt from a row-per-level (horizontal) layout to a
-// column-per-level (vertical) one -- real feedback: a level with many
-// positions (e.g. C4) spread the whole chart out horizontally far enough
-// that "a worker can't see the chart" without heavy horizontal scrolling.
-// Siblings now stack vertically within their own level's column instead,
-// so canvas WIDTH only grows with tree DEPTH (level count), not breadth --
-// a wide level just makes the chart taller, which scrolls far more
-// naturally on a normal page than horizontal overflow does.
-// 2026-08-21: raised from 132 to 156 when the Latin name became a fourth
-// line inside a node. Measured: a node carrying one grows to ~167px, which
-// overflowed a 132px slot — today no two such nodes are adjacent so nothing
-// overlapped, but that was luck of the data, not spacing.
-const SLOT_HEIGHT = 156;
-const LEVEL_WIDTH = 260;
+// 2026-08-28: rebuilt AGAIN, this time from the column-per-level (vertical)
+// layout back to the classic top-down pyramid (root at top, each level a
+// horizontal row below it) -- direct request for a "hierarchical, screen-
+// sized" chart, since the vertical rebuild (2026-07-27) traded the original
+// horizontal-overflow problem for a vertical one: a 49-position tree grew
+// to ~5000px tall, needing constant scrolling just to see its shape either
+// way. What actually fixes BOTH directions at once is auto-fit scaling
+// (below), not another axis swap alone -- so this keeps the natural,
+// universally-recognized top-down org-chart shape and wraps it in a
+// bounded, auto-scaled viewport instead of ever growing the page itself.
+const SLOT_WIDTH = 226; // horizontal spacing per sibling slot -- node width (190px) is set in globals.css
+const LEVEL_HEIGHT = 188; // vertical spacing per depth row
+const MIN_SCALE = 0.28;
+const MAX_SCALE = 2;
+const ZOOM_STEP = 0.18;
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
@@ -68,10 +69,10 @@ const THEME_NODE_COLORS: NodeColor[] = [
  * slots even when they'd otherwise render at the same tree depth — the fix
  * for the 2026-07-25 report ("مدير رأس المال البشري يتبع مباشرة الرئيس
  * التنفيذي وليس نائب الرئيس"): two of CEO's children coincidentally shared
- * one slot before this existed. This slot value now drives VERTICAL
- * position (each level is a column, siblings stack top-to-bottom) rather
- * than horizontal, per the 2026-07-27 layout rebuild below, but the
- * algorithm itself is orientation-agnostic and unchanged.
+ * one slot before this existed. This slot value drives horizontal position
+ * (each level is a row, siblings spread left-to-right) — the algorithm
+ * itself is orientation-agnostic and has survived two layout rebuilds
+ * unchanged.
  */
 function computeSlots(positions: OrgChartPosition[]): { slotOf: Map<string, number>; leafCount: number } {
   const positionById = new Map(positions.map((p) => [p.id, p]));
@@ -110,19 +111,18 @@ function computeSlots(positions: OrgChartPosition[]): { slotOf: Map<string, numb
  * The org-structure setup wizard's "second output" (2026-07-24): a
  * colorful, professional org-chart tree, complementing the plain editable
  * positions list already on this page and the staffing table on
- * `/admin/org-structure/staffing`. Every position renders in the COLUMN
- * belonging to its own level (not its tree depth), root on the right,
- * depth increasing to the left (RTL flow) — rebuilt 2026-07-27 from an
- * earlier row-per-level layout (see the CSS comment in globals.css for that
- * history) after real feedback that a level with many positions (e.g. C4)
- * stretched the whole chart out horizontally far enough to be unreadable
- * without heavy scrolling. Siblings now stack vertically within their own
- * level's column instead via `computeSlots` (unchanged tree-layout pass,
- * now driving vertical position) — a wide level just makes the chart
- * taller, which a normal page scrolls far more gracefully than horizontal
- * overflow. Connector lines (drawn via a measured SVG overlay, so real box
- * heights/wrapping stay accurate) always run as a clean elbow with no
- * ambiguity about which position reports to which parent.
+ * `/admin/org-structure/staffing`. Root renders at the TOP, each level a
+ * horizontal row below it (mirrored for RTL: a root's first-visited child
+ * renders at the chart's RIGHT edge), siblings spread left-to-right within
+ * their row via `computeSlots`. The whole tree is auto-scaled to fit inside
+ * a bounded viewport (below) instead of letting the page grow indefinitely
+ * in either direction — the actual fix for the "a worker can't see the
+ * chart" complaints this component has already been rebuilt twice to chase
+ * on a single axis at a time. Manual +/- zoom and a "fit" reset are offered
+ * for anyone who wants to read a compressed chart's fine print. Connector
+ * lines (drawn via a measured SVG overlay, so real box heights/wrapping
+ * stay accurate) always run as a clean elbow with no ambiguity about which
+ * position reports to which parent.
  */
 export function OrgChartTree({
   positions,
@@ -131,6 +131,9 @@ export function OrgChartTree({
   jobTitleByPosition,
   emptyLabel,
   vacantLabel,
+  zoomOutLabel,
+  zoomInLabel,
+  fitToScreenLabel,
 }: {
   positions: OrgChartPosition[];
   levels: OrgChartLevel[];
@@ -139,10 +142,19 @@ export function OrgChartTree({
   jobTitleByPosition: Record<string, string>;
   emptyLabel: string;
   vacantLabel: string;
+  zoomOutLabel: string;
+  zoomInLabel: string;
+  fitToScreenLabel: string;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const nodeElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const [lines, setLines] = useState<ConnectorLine[]>([]);
+  const [fitScale, setFitScale] = useState(1);
+  // null = automatic (always fit the viewport); a number = the user zoomed
+  // manually, which also switches the wrapper to scroll instead of clip.
+  const [manualScale, setManualScale] = useState<number | null>(null);
+  const scale = manualScale ?? fitScale;
 
   const sortedLevels = useMemo(() => levels.slice().sort((a, b) => a.level_order - b.level_order), [levels]);
 
@@ -159,124 +171,188 @@ export function OrgChartTree({
 
   const positionById = useMemo(() => new Map(positions.map((p) => [p.id, p])), [positions]);
 
-  // Column index per level (0 = root/level_order 1, increasing with depth).
-  // Physical x is assigned in reverse below so the root renders at the
-  // RIGHT edge of the canvas and depth grows to the left -- matching this
-  // app's RTL reading direction instead of a raw LTR pixel layout.
-  const columnIndexByLevelId = useMemo(() => {
+  // Row index per level (0 = root/level_order 1, increasing with depth).
+  const rowIndexByLevelId = useMemo(() => {
     const occupiedLevels = sortedLevels.filter((l) => positions.some((p) => p.level_id === l.id));
     return new Map(occupiedLevels.map((l, index) => [l.id, index]));
   }, [sortedLevels, positions]);
-  const columnCount = Math.max(columnIndexByLevelId.size, 1);
+  const rowCount = Math.max(rowIndexByLevelId.size, 1);
 
   const { slotOf, leafCount } = useMemo(() => computeSlots(positions), [positions]);
 
-  const canvasWidth = columnCount * LEVEL_WIDTH;
-  const canvasHeight = Math.max(leafCount, 1) * SLOT_HEIGHT;
+  // Natural (unscaled) canvas size, purely data-driven — LEVEL_HEIGHT is
+  // sized generously for real content (see the constant's own history), so
+  // this doesn't need a DOM-measured second pass just to compute the fit
+  // ratio; only the connector lines need real measured box edges below.
+  const naturalWidth = Math.max(leafCount, 1) * SLOT_WIDTH;
+  const naturalHeight = rowCount * LEVEL_HEIGHT;
 
-  function columnLeft(levelId: string) {
-    const columnIndex = columnIndexByLevelId.get(levelId) ?? 0;
-    return (columnCount - 1 - columnIndex) * LEVEL_WIDTH;
+  function slotLeft(slot: number) {
+    // Mirrored for RTL: slot 0 (the first-visited child) renders at the
+    // chart's right edge, matching this app's right-to-left reading flow.
+    return (Math.max(leafCount, 1) - 1 - slot) * SLOT_WIDTH + SLOT_WIDTH / 2;
   }
 
-  const measure = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    const nextLines: ConnectorLine[] = [];
-    for (const p of positions) {
-      if (!p.parent_id) continue;
-      const parent = positionById.get(p.parent_id);
-      const childEl = nodeElsRef.current.get(p.id);
-      const parentEl = nodeElsRef.current.get(p.parent_id);
-      if (!parent || !childEl || !parentEl) continue;
-      const childRect = childEl.getBoundingClientRect();
-      const parentRect = parentEl.getBoundingClientRect();
-      // Root renders on the right, children to its left (RTL flow), so a
-      // connector leaves the parent's LEFT edge and arrives at the child's
-      // RIGHT edge -- the transposed equivalent of the old top-to-bottom
-      // elbow, still a single mid-point-split elbow regardless of how many
-      // columns a skip-level link spans.
-      const x1 = parentRect.left - containerRect.left;
-      const y1 = parentRect.top + parentRect.height / 2 - containerRect.top;
-      const x2 = childRect.right - containerRect.left;
-      const y2 = childRect.top + childRect.height / 2 - containerRect.top;
-      const midX = (x1 + x2) / 2;
-      nextLines.push({ id: p.id, d: `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}` });
-    }
-    setLines(nextLines);
-  };
+  function rowTop(levelId: string) {
+    const rowIndex = rowIndexByLevelId.get(levelId) ?? 0;
+    return rowIndex * LEVEL_HEIGHT + LEVEL_HEIGHT / 2;
+  }
 
+  // Auto-fit: recompute whenever the data shape changes or the viewport
+  // itself resizes (window resize, sidebar toggle, ...). Deliberately does
+  // NOT depend on `scale` itself — it only ever WRITES to `fitScale`, never
+  // reads it, so there is no feedback loop to guard against here.
   useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const updateFitScale = () => {
+      const { clientWidth, clientHeight } = wrapper;
+      if (clientWidth === 0 || clientHeight === 0) return;
+      const next = Math.min(1, clientWidth / naturalWidth, clientHeight / naturalHeight);
+      setFitScale(Math.max(MIN_SCALE, next));
+    };
+    updateFitScale();
+    const observer = new ResizeObserver(updateFitScale);
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, [naturalWidth, naturalHeight]);
+
+  // Connector lines: measured from the real rendered boxes (so text-wrap-
+  // driven height differences stay accurate), then converted from on-screen
+  // pixels back to the canvas's own unscaled local coordinate system by
+  // dividing out the current `scale` — the canvas is visually scaled via a
+  // CSS transform, but its children's `left`/`top` styles (and therefore
+  // this SVG's own coordinate space) are always expressed pre-scale.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const measure = () => {
+      const canvasRect = canvas.getBoundingClientRect();
+      const nextLines: ConnectorLine[] = [];
+      for (const p of positions) {
+        if (!p.parent_id) continue;
+        const parent = positionById.get(p.parent_id);
+        const childEl = nodeElsRef.current.get(p.id);
+        const parentEl = nodeElsRef.current.get(p.parent_id);
+        if (!parent || !childEl || !parentEl) continue;
+        const childRect = childEl.getBoundingClientRect();
+        const parentRect = parentEl.getBoundingClientRect();
+        const toLocalX = (clientX: number) => (clientX - canvasRect.left) / scale;
+        const toLocalY = (clientY: number) => (clientY - canvasRect.top) / scale;
+        // Classic top-down elbow: leaves the parent's BOTTOM edge, arrives
+        // at the child's TOP edge, split at the midpoint row between them.
+        const x1 = toLocalX(parentRect.left + parentRect.width / 2);
+        const y1 = toLocalY(parentRect.bottom);
+        const x2 = toLocalX(childRect.left + childRect.width / 2);
+        const y2 = toLocalY(childRect.top);
+        const midY = (y1 + y2) / 2;
+        nextLines.push({ id: p.id, d: `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}` });
+      }
+      setLines(nextLines);
+    };
     measure();
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(() => measure());
-    observer.observe(container);
+    const observer = new ResizeObserver(measure);
+    observer.observe(canvas);
     window.addEventListener("resize", measure);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-    // Re-measure whenever the actual data changes shape; `measure` itself is
-    // stable in spirit (recreated each render) but not a dependency here to
-    // avoid dropping the resize/observer setup on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, levels]);
+  }, [positions, levels, scale]);
 
   if (positions.length === 0) {
     return <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{emptyLabel}</p>;
   }
 
+  // Functional updater form (reading `prev`, not the closed-over `scale`)
+  // so rapid successive clicks accumulate correctly -- found live while
+  // verifying: three quick zoom-in clicks all computed off the SAME
+  // pre-click `scale` before React had a chance to re-render between them,
+  // so only one step's worth of zoom ever landed no matter how many clicks.
+  const zoomIn = () =>
+    setManualScale((prev) => Math.min(MAX_SCALE, Number(((prev ?? fitScale) + ZOOM_STEP).toFixed(2))));
+  const zoomOut = () =>
+    setManualScale((prev) => Math.max(MIN_SCALE, Number(((prev ?? fitScale) - ZOOM_STEP).toFixed(2))));
+  const resetToFit = () => setManualScale(null);
+  const isManualZoom = manualScale !== null;
+
   return (
-    <div ref={containerRef} className="sru-orgchart-wrapper">
-      <div className="sru-orgchart-canvas" style={{ width: canvasWidth, height: canvasHeight }}>
-        <svg className="sru-orgchart-lines">
-          {lines.map((line) => (
-            <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
-          ))}
-        </svg>
-        {positions.map((p) => {
-          const slot = slotOf.get(p.id) ?? 0;
-          const color = colorByLevelId.get(p.level_id)!;
-          const assignees = assigneesByPosition[p.id] ?? [];
-          const jobTitle = jobTitleByPosition[p.id];
-          return (
-            <div
-              key={p.id}
-              ref={(el) => {
-                if (el) nodeElsRef.current.set(p.id, el);
-                else nodeElsRef.current.delete(p.id);
-              }}
-              className="sru-orgchart-node"
-              style={{
-                position: "absolute",
-                left: columnLeft(p.level_id) + LEVEL_WIDTH / 2,
-                top: slot * SLOT_HEIGHT + SLOT_HEIGHT / 2,
-                transform: "translate(-50%, -50%)",
-                background: color.bg,
-                color: color.fg,
-              }}
-            >
-              <strong>{p.name_ar}</strong>
-              {/* Not the shared `.sru-name-en`: that one is muted grey and
-                  end-aligned, both wrong on a filled, centred node — this
-                  inherits the node's own text colour like the two lines
-                  below it already do. */}
-              {p.name_en && <span className="sru-orgchart-node-nameen">{p.name_en}</span>}
-              {jobTitle && (
-                <span className="sru-orgchart-node-jobtitle">
-                  <Briefcase size={11} />
-                  {jobTitle}
-                </span>
-              )}
-              <span className="sru-orgchart-node-assignees">
-                <Users size={12} />
-                {assignees.length > 0 ? assignees.join("، ") : vacantLabel}
-              </span>
-            </div>
-          );
-        })}
+    <div>
+      <div className="sru-orgchart-zoombar">
+        <button type="button" className="sru-icon-action" onClick={zoomOut} aria-label={zoomOutLabel} title={zoomOutLabel}>
+          <Minus size={14} />
+        </button>
+        <span className="sru-orgchart-zoomlevel">{Math.round(scale * 100)}%</span>
+        <button type="button" className="sru-icon-action" onClick={zoomIn} aria-label={zoomInLabel} title={zoomInLabel}>
+          <Plus size={14} />
+        </button>
+        <button
+          type="button"
+          className="sru-icon-action"
+          onClick={resetToFit}
+          disabled={!isManualZoom}
+          aria-label={fitToScreenLabel}
+          title={fitToScreenLabel}
+        >
+          <Scan size={14} />
+        </button>
+      </div>
+      <div ref={wrapperRef} className="sru-orgchart-wrapper">
+        <div className="sru-orgchart-scalebox" style={{ width: naturalWidth * scale, height: naturalHeight * scale }}>
+          <div
+            ref={canvasRef}
+            className="sru-orgchart-canvas"
+            style={{ width: naturalWidth, height: naturalHeight, transform: `scale(${scale})` }}
+          >
+            <svg className="sru-orgchart-lines">
+              {lines.map((line) => (
+                <path key={line.id} d={line.d} fill="none" stroke="var(--sru-border)" strokeWidth={2} />
+              ))}
+            </svg>
+            {positions.map((p) => {
+              const slot = slotOf.get(p.id) ?? 0;
+              const color = colorByLevelId.get(p.level_id)!;
+              const assignees = assigneesByPosition[p.id] ?? [];
+              const jobTitle = jobTitleByPosition[p.id];
+              return (
+                <div
+                  key={p.id}
+                  ref={(el) => {
+                    if (el) nodeElsRef.current.set(p.id, el);
+                    else nodeElsRef.current.delete(p.id);
+                  }}
+                  className="sru-orgchart-node"
+                  style={{
+                    position: "absolute",
+                    left: slotLeft(slot),
+                    top: rowTop(p.level_id),
+                    transform: "translate(-50%, -50%)",
+                    background: color.bg,
+                    color: color.fg,
+                  }}
+                >
+                  <strong>{p.name_ar}</strong>
+                  {/* Not the shared `.sru-name-en`: that one is muted grey and
+                      end-aligned, both wrong on a filled, centred node — this
+                      inherits the node's own text colour like the two lines
+                      below it already do. */}
+                  {p.name_en && <span className="sru-orgchart-node-nameen">{p.name_en}</span>}
+                  {jobTitle && (
+                    <span className="sru-orgchart-node-jobtitle">
+                      <Briefcase size={11} />
+                      {jobTitle}
+                    </span>
+                  )}
+                  <span className="sru-orgchart-node-assignees">
+                    <Users size={12} />
+                    {assignees.length > 0 ? assignees.join("، ") : vacantLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ import {
   type MethodWeights,
 } from "@/lib/evaluationCycle";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import { CycleWeightsDrawer } from "@/components/CycleWeightsDrawer";
+import { CycleEditDrawer } from "@/components/CycleEditDrawer";
 import { formatDateDmy } from "@/lib/dateParts";
 
 const errorKeys: Record<string, string> = {
@@ -167,12 +167,7 @@ export function EvaluationCycleRow({
         <span className="pill">{cycleStatusLabels[status]}</span>
       </td>
       <td>
-        <CycleWeightsDrawer
-          cycleId={cycle.id}
-          cycleName={cycle.nameAr}
-          initial={cycle.weights}
-          canEdit={canManage}
-        />
+        <CycleEditDrawer cycle={cycle} canEdit={canManage} typeLabels={typeLabels} />
       </td>
       <td className="sru-en">{cycle.usageCount}</td>
 
