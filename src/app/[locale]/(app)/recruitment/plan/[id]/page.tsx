@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { BackLink } from "@/components/BackLink";
+import { RecruitmentPlanWindowsCard } from "@/components/RecruitmentPlanWindowsCard";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 import { RecruitmentPlanExportMenu } from "@/components/RecruitmentPlanExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { RecruitmentPlanHeaderActions } from "@/components/RecruitmentPlanHeaderActions";
@@ -51,6 +54,10 @@ export default async function RecruitmentPlanDetailPage({
   // HR's own tier — VPRA's "submit/recommend upward" — which is what
   // separates consolidating a plan from merely raising a request.
   const canConsolidate = hasVpraAccess(level, "recommend");
+  // ضبط زمن الخطة تحريرٌ لها، فحدُّه هو حدّ `recruitment_plans_update`
+  // نفسه — و RLS هي البوابة الفعلية على أي حال؛ هذا يخفي النموذج فقط
+  // عمّن سيُردّ حفظه.
+  const canEditWindows = hasVpraAccess(level, "prepare");
 
   if (!canView) {
     return (
@@ -68,13 +75,17 @@ export default async function RecruitmentPlanDetailPage({
   const { data: plan } = await supabase
     .from("recruitment_plans")
     .select(
-      "id, name_ar, plan_year, status, notes, approved_at, approved_budget, finance_note, finance_reviewed_at, hr_recommendation, submitted_at"
+      "id, name_ar, plan_year, status, notes, approved_at, approved_budget, finance_note, finance_reviewed_at, hr_recommendation, submitted_at, requests_open_at, requests_close_at, plan_start_date, plan_end_date"
     )
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (!plan) notFound();
+
+  // اليوم بتوقيت العرض المضبوط في النظام لا بتوقيت الخادم: حالة النافذة
+  // تُقاس بيوم المنظمة، وحسابه في المتصفح كان سيختلف بين رسم الخادم ورسمه.
+  const today = todayInTimezone(await getDisplayTimezone(supabase));
 
   const { data: itemData } = await supabase
     .from("recruitment_plan_items")
@@ -210,6 +221,21 @@ export default async function RecruitmentPlanDetailPage({
         <div style={{ marginTop: 14 }}>
           <PlanWorkflowActions planId={plan.id} status={plan.status} permissions={permissions} />
         </div>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <RecruitmentPlanWindowsCard
+          planId={plan.id}
+          today={today}
+          locale={locale}
+          canEdit={canEditWindows}
+          initial={{
+            requestsOpenAt: plan.requests_open_at,
+            requestsCloseAt: plan.requests_close_at,
+            planStartDate: plan.plan_start_date,
+            planEndDate: plan.plan_end_date,
+          }}
+        />
       </div>
 
       <div className="sru-card" style={{ marginTop: 16 }}>

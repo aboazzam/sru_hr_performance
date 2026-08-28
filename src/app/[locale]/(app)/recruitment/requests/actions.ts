@@ -33,6 +33,9 @@ import {
 } from "@/lib/recruitmentWorkflow";
 import { requestTransitionNotification } from "@/lib/notificationTemplates";
 import { notify, profilesWithAccess } from "@/lib/notify";
+import { isRaisedOutOfPlan } from "@/lib/recruitmentPlanWindows";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 
 export type RecruitmentRequestErrorMessage =
   | "invalid_input"
@@ -173,6 +176,30 @@ export type CreateRecruitmentRequestInput = z.input<typeof createSchema>;
  * therefore cannot raise a request for another department, and cannot forge
  * authorship — both enforced by Postgres, both verified adversarially.
  */
+/**
+ * أخارج الخطة رُفع هذا الطلب؟
+ *
+ * تُحسب في الخادم لحظة الرفع فقط، ولا تُقبل من العميل بحال — كحال كل ما
+ * يقرّر مصير الطلب في هذا الملف. تُقرأ الخطط بعميل المستخدم نفسه، فما لا
+ * يراه لا يُحتسب له؛ وهذا مقصود: من لا يرى أي خطة فطلبه خارجها فعلًا.
+ *
+ * اليوم يُقاس بتوقيت العرض المضبوط في النظام لا بتوقيت الخادم، فنافذةٌ
+ * تُغلق «اليوم» تُغلق بحساب الرياض لا بحساب لندن.
+ */
+async function classifyAgainstPlanWindow(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<boolean | null> {
+  const { data: plans, error } = await supabase
+    .from("recruitment_plans")
+    .select("id, status, requests_open_at, requests_close_at")
+    .is("deleted_at", null);
+  // تعذّرت القراءة: يُترك التصنيف فارغًا بدل تثبيت وسمٍ قد يكون خطأ.
+  if (error) return null;
+
+  const today = todayInTimezone(await getDisplayTimezone(supabase));
+  return isRaisedOutOfPlan(plans ?? [], today);
+}
+
 export async function createRecruitmentRequest(
   input: CreateRecruitmentRequestInput
 ): Promise<RecruitmentRequestActionState> {
@@ -190,6 +217,9 @@ export async function createRecruitmentRequest(
 
   const data = parsed.data;
   const initialStatus = data.submit ? "under_hr_review" : "draft";
+  // المسودة لم تصل أحدًا بعد، فلا معنى لقياسها على نافذة: تبقى NULL
+  // وتُصنَّف لحظة رفعها في `transitionRecruitmentRequest`.
+  const outOfPlan = data.submit ? await classifyAgainstPlanWindow(supabase) : null;
   const { data: created, error } = await supabase
     .from("recruitment_requests")
     .insert({
@@ -209,6 +239,7 @@ export async function createRecruitmentRequest(
       estimated_cost_by_requester: data.estimatedCostByRequester ?? null,
       strategic_project_ref: data.strategicProjectRef ?? null,
       status: initialStatus,
+      out_of_plan: outOfPlan,
     })
     .select("id")
     .single();
@@ -498,7 +529,7 @@ export async function transitionRecruitmentRequest(input: {
 
   const { data: current } = await supabase
     .from("recruitment_requests")
-    .select("id, status, plan_id, requested_by, job_title_id, custom_job_title")
+    .select("id, status, plan_id, requested_by, job_title_id, custom_job_title, out_of_plan")
     .eq("id", parsed.data.requestId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -511,12 +542,22 @@ export async function transitionRecruitmentRequest(input: {
   });
   if (!verdict.allowed) return { status: "error", message: verdict.refusal };
 
+  // أول وصولٍ للموارد البشرية هو لحظة التصنيف: هنا يصير للطلب وجودٌ عند
+  // غير صاحبه، فيُقاس على نافذة الاستقبال. يُحسب مرة واحدة ولا يُعاد
+  // (`out_of_plan == null` وحدها)، فرجوع الطلب للتعديل ثم رفعه ثانيةً لا
+  // يغيّر كيف نشأ — ولا يُحوّل تأخُّرُ المراجعة طلبًا داخل الخطة إلى خارجها.
+  const outOfPlan =
+    parsed.data.toStatus === "under_hr_review" && current.out_of_plan == null
+      ? await classifyAgainstPlanWindow(supabase)
+      : undefined;
+
   const { data: updated, error } = await supabase
     .from("recruitment_requests")
     .update({
       status: parsed.data.toStatus,
       decision_note: parsed.data.note ?? null,
       updated_at: new Date().toISOString(),
+      ...(outOfPlan == null ? {} : { out_of_plan: outOfPlan }),
     })
     .eq("id", parsed.data.requestId)
     // Optimistic concurrency: if someone else moved the row between our read

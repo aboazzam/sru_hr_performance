@@ -1,6 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/BackLink";
+import { isRaisedOutOfPlan } from "@/lib/recruitmentPlanWindows";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 import { CreateRecruitmentRequestForm } from "@/components/CreateRecruitmentRequestForm";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { type BehavioralLevel } from "@/lib/data/competencies";
@@ -71,6 +74,19 @@ export default async function NewRecruitmentRequestPage() {
     });
   }
 
+  // يُقال للمُقدِّم قبل أن يكتب، لا بعد أن يرسل: الطلب المرفوع خارج نافذة
+  // الاستقبال يُسجَّل «خارج الخطة»، وهو تصنيفٌ يبقى معه. القراءة بعميل
+  // المستخدم نفسه، فما لا يراه من خطط لا يُحتسب له — ومن لا يرى خطةً فطلبه
+  // خارجها فعلًا.
+  const { data: openPlans } = await supabase
+    .from("recruitment_plans")
+    .select("id, status, requests_open_at, requests_close_at")
+    .is("deleted_at", null);
+  const outOfPlanNow = isRaisedOutOfPlan(
+    openPlans ?? [],
+    todayInTimezone(await getDisplayTimezone(supabase))
+  );
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <div style={{ marginBottom: 10 }}>
@@ -82,6 +98,15 @@ export default async function NewRecruitmentRequestPage() {
       </h1>
       <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("newRequestSubtitle")}</p>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
+
+      {canRaise && (
+        <p
+          className="pill"
+          style={{ display: "inline-block", marginTop: 4 }}
+        >
+          {t(outOfPlanNow ? "intakeClosedNotice" : "intakeOpenNotice")}
+        </p>
+      )}
 
       <div style={{ marginTop: 20 }}>
         {!canRaise ? (

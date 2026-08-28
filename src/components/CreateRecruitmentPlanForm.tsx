@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { CalendarRange, Plus } from "lucide-react";
+import { DateFieldDmy } from "@/components/DateFieldDmy";
 import {
   createRecruitmentPlan,
   type RecruitmentPlanActionState,
@@ -39,6 +40,19 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
   const [nameAr, setNameAr] = useState("");
   const [planYear, setPlanYear] = useState(String(defaultYear));
   const [notes, setNotes] = useState("");
+  // زمنان مستقلان: نافذة استقبال الطلبات، ثم فترة الخطة نفسها. كلاهما
+  // اختياري — خطةٌ تُنشأ اليوم قد لا تكون نافذتها قد تقرّرت بعد.
+  const [requestsOpenAt, setRequestsOpenAt] = useState("");
+  const [requestsCloseAt, setRequestsCloseAt] = useState("");
+  const [planStartDate, setPlanStartDate] = useState("");
+  const [planEndDate, setPlanEndDate] = useState("");
+
+  // مدًى مقلوب يرفضه الخادم وقاعدة البيانات؛ يُقال هنا قبل الإرسال لأن
+  // «تعذّر إتمام العملية» بعد الضغط لا يدلّ على الحقل الذي أخطأ.
+  const intakeReversed =
+    requestsOpenAt !== "" && requestsCloseAt !== "" && requestsCloseAt < requestsOpenAt;
+  const periodReversed =
+    planStartDate !== "" && planEndDate !== "" && planEndDate < planStartDate;
 
   function open() {
     // A failure message from a previous attempt must not greet the next one.
@@ -48,11 +62,20 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
 
   function submit() {
     startTransition(async () => {
-      const result = await createRecruitmentPlan(nameAr, Number(planYear), notes);
+      const result = await createRecruitmentPlan(nameAr, Number(planYear), notes, {
+        requestsOpenAt,
+        requestsCloseAt,
+        planStartDate,
+        planEndDate,
+      });
       setState(result);
       if (result.status === "success") {
         setNameAr("");
         setNotes("");
+        setRequestsOpenAt("");
+        setRequestsCloseAt("");
+        setPlanStartDate("");
+        setPlanEndDate("");
         dialogRef.current?.close();
         router.refresh();
       }
@@ -105,17 +128,38 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
               required
             />
           </label>
+          <label className="sru-field">
+            <span>{t("fieldRequestsOpenAt")}</span>
+            <DateFieldDmy value={requestsOpenAt} onChange={setRequestsOpenAt} ariaLabel={t("fieldRequestsOpenAt")} />
+          </label>
+          <label className="sru-field">
+            <span>{t("fieldRequestsCloseAt")}</span>
+            <DateFieldDmy value={requestsCloseAt} onChange={setRequestsCloseAt} ariaLabel={t("fieldRequestsCloseAt")} />
+          </label>
+          <label className="sru-field">
+            <span>{t("fieldPlanStartDate")}</span>
+            <DateFieldDmy value={planStartDate} onChange={setPlanStartDate} ariaLabel={t("fieldPlanStartDate")} />
+          </label>
+          <label className="sru-field">
+            <span>{t("fieldPlanEndDate")}</span>
+            <DateFieldDmy value={planEndDate} onChange={setPlanEndDate} ariaLabel={t("fieldPlanEndDate")} />
+          </label>
           <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
             <span>{t("fieldNotes")}</span>
             <input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
+          {(intakeReversed || periodReversed) && (
+            <p role="alert" className="text-sm text-red-600" style={{ gridColumn: "1 / -1", margin: 0 }}>
+              {t(intakeReversed ? "errorIntakeWindowReversed" : "errorPlanPeriodReversed")}
+            </p>
+          )}
         </div>
 
         <div className="sru-form-submitrow">
           <button
             type="button"
             className="sru-btn sru-btn-primary"
-            disabled={pending || nameAr.trim() === "" || planYear.trim() === ""}
+            disabled={pending || nameAr.trim() === "" || planYear.trim() === "" || intakeReversed || periodReversed}
             onClick={submit}
           >
             {pending ? t("creating") : t("createPlanButton")}

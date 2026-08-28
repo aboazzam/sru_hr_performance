@@ -33,6 +33,12 @@ export interface RecruitmentRequestRowData {
   estimated_cost_by_requester: number | null;
   estimated_cost_by_hr: number | null;
   plan_id: string | null;
+  /**
+   * وسمٌ مخزَّن لا مشتق: يسجّل أن الطلب رُفع خارج نافذة الاستقبال، وهي
+   * حقيقةٌ عن لحظة رفعه لا عن حاله اليوم. `null` تعني مسودةً لم تُرفع
+   * بعد، أو طلبًا سابقًا لهذه الخاصية — وكلاهما لا يُوسَم بشيء.
+   */
+  out_of_plan: boolean | null;
 }
 
 const reasonLabelKeys: Record<string, string> = {
@@ -183,6 +189,15 @@ export function RecruitmentRequestRow({
             status={request.status}
             permissions={permissions}
           />
+        </td>
+        <td>
+          {request.out_of_plan == null ? (
+            "—"
+          ) : request.out_of_plan ? (
+            <span className="pill" title={t("outOfPlanTitle")}>{t("outOfPlanBadge")}</span>
+          ) : (
+            <span className="pill">{t("inPlanBadge")}</span>
+          )}
         </td>
         <td className="sru-col-actions">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

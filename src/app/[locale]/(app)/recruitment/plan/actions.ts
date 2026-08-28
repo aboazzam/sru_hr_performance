@@ -48,7 +48,15 @@ function mapError(error: { code?: string; message: string }): RecruitmentPlanAct
   return { status: "error", message: "unknown" };
 }
 
-async function auditLog(actorId: string, action: string, entityId: string | null, after: unknown) {
+// `before` اختياري: أكثر الإجراءات هنا إنشاءٌ لا سابق له، أما تعديل
+// النوافذ فتغييرُ قيمٍ قائمة، ولا يُقرأ أثره إلا بمعرفة ما كان قبله.
+async function auditLog(
+  actorId: string,
+  action: string,
+  entityId: string | null,
+  after: unknown,
+  before?: unknown
+) {
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
     actor_id: actorId,
@@ -56,14 +64,53 @@ async function auditLog(actorId: string, action: string, entityId: string | null
     entity: "recruitment_plans",
     entity_id: entityId,
     after_data: after as Record<string, unknown>,
+    before_data: (before ?? null) as Record<string, unknown> | null,
   });
 }
 
-const createPlanSchema = z.object({
-  nameAr: z.string().trim().min(1),
-  planYear: z.number().int().min(2020).max(2100),
-  notes: z.string().trim().optional(),
-});
+/**
+ * YYYY-MM-DD كما يخزّنه عمود `date`، أو لا شيء.
+ *
+ * `z.iso.date()` لا مجرّد نمطٍ نصّي: فهو يرفض «2026-02-30» و«2026-13-01»
+ * أيضًا، لا الشكلَ وحده — والتاريخ المستحيل يجب أن يُردّ قبل أن تردّه قاعدة
+ * البيانات برسالةٍ خام.
+ */
+const planDate = z.iso.date().nullish();
+
+/**
+ * نافذة مقلوبة يرفضها قيدٌ في قاعدة البيانات أصلًا
+ * (`recruitment_plans_intake_window_valid`)، ويُرفض هنا كذلك ليصل للمستخدم
+ * سببٌ مفهوم بدل خطأ قاعدة بيانات خام.
+ */
+function orderedOrMissing(from: string | null | undefined, to: string | null | undefined): boolean {
+  return from == null || to == null || to >= from;
+}
+
+const planWindowFields = {
+  requestsOpenAt: planDate,
+  requestsCloseAt: planDate,
+  planStartDate: planDate,
+  planEndDate: planDate,
+};
+
+const planWindowRefinements = <T extends {
+  requestsOpenAt?: string | null;
+  requestsCloseAt?: string | null;
+  planStartDate?: string | null;
+  planEndDate?: string | null;
+}>(schema: z.ZodType<T>) =>
+  schema
+    .refine((v) => orderedOrMissing(v.requestsOpenAt, v.requestsCloseAt))
+    .refine((v) => orderedOrMissing(v.planStartDate, v.planEndDate));
+
+const createPlanSchema = planWindowRefinements(
+  z.object({
+    nameAr: z.string().trim().min(1),
+    planYear: z.number().int().min(2020).max(2100),
+    notes: z.string().trim().optional(),
+    ...planWindowFields,
+  })
+);
 
 /**
  * Creates a `recruitment_plans` row (status defaults to 'draft' at the DB
@@ -74,12 +121,30 @@ const createPlanSchema = z.object({
  * unique index surfaces as a clear "duplicate" message rather than a
  * generic failure.
  */
+/** التواريخ الأربعة كما تصل من النموذج؛ الغائب منها يعني «بلا تاريخ». */
+export interface RecruitmentPlanWindowInput {
+  requestsOpenAt?: string | null;
+  requestsCloseAt?: string | null;
+  planStartDate?: string | null;
+  planEndDate?: string | null;
+}
+
 export async function createRecruitmentPlan(
   nameAr: string,
   planYear: number,
-  notes: string
+  notes: string,
+  windows: RecruitmentPlanWindowInput = {}
 ): Promise<RecruitmentPlanActionState> {
-  const parsed = createPlanSchema.safeParse({ nameAr, planYear, notes: notes || undefined });
+  const parsed = createPlanSchema.safeParse({
+    nameAr,
+    planYear,
+    notes: notes || undefined,
+    // نصٌّ فارغ من حقلٍ لم يُملأ يعني «لا تاريخ»، لا تاريخًا فاسدًا.
+    requestsOpenAt: windows.requestsOpenAt || null,
+    requestsCloseAt: windows.requestsCloseAt || null,
+    planStartDate: windows.planStartDate || null,
+    planEndDate: windows.planEndDate || null,
+  });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
   const supabase = await createClient();
@@ -100,6 +165,10 @@ export async function createRecruitmentPlan(
       name_ar: parsed.data.nameAr,
       plan_year: parsed.data.planYear,
       notes: parsed.data.notes ?? null,
+      requests_open_at: parsed.data.requestsOpenAt ?? null,
+      requests_close_at: parsed.data.requestsCloseAt ?? null,
+      plan_start_date: parsed.data.planStartDate ?? null,
+      plan_end_date: parsed.data.planEndDate ?? null,
       created_by: profile?.id ?? null,
     })
     .select("id")
@@ -111,6 +180,74 @@ export async function createRecruitmentPlan(
     name_ar: parsed.data.nameAr,
     plan_year: parsed.data.planYear,
   });
+  return { status: "success" };
+}
+
+const updateWindowsSchema = planWindowRefinements(
+  z.object({
+    planId: z.string().uuid(),
+    ...planWindowFields,
+  })
+);
+
+/**
+ * يضبط زمنَي الخطة: نافذة استقبال الطلبات، وفترة الخطة.
+ *
+ * إجراءٌ مستقل لا حقلٌ في نموذج الإنشاء وحده، لأن خطة 2027 القائمة أُنشئت
+ * قبل وجود هذه الأعمدة فلا سبيل لضبط نوافذها إلا بتحريرها بعد الإنشاء —
+ * ولأن تصحيح تاريخٍ أُدخل خطأً حاجةٌ دائمة لا استثناء.
+ *
+ * الصلاحية من RLS وحدها: `recruitment_plans_update` تشترط
+ * `recruitmentPlan >= prepare`، وهي نفسها بوابة تحرير الخطة اليوم. لا
+ * بوابة ثانية هنا، فالكتابة تمرّ بعميل المستخدم نفسه.
+ *
+ * يُكتب الأربعة دائمًا: النموذج يرسل حالته كاملةً، فمسحُ تاريخٍ فعلٌ
+ * مقصود لا حقلٌ غائب.
+ */
+export async function updateRecruitmentPlanWindows(
+  input: { planId: string } & RecruitmentPlanWindowInput
+): Promise<RecruitmentPlanActionState> {
+  const parsed = updateWindowsSchema.safeParse({
+    planId: input.planId,
+    requestsOpenAt: input.requestsOpenAt || null,
+    requestsCloseAt: input.requestsCloseAt || null,
+    planStartDate: input.planStartDate || null,
+    planEndDate: input.planEndDate || null,
+  });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: before } = await supabase
+    .from("recruitment_plans")
+    .select("id, requests_open_at, requests_close_at, plan_start_date, plan_end_date")
+    .eq("id", parsed.data.planId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!before) return { status: "error", message: "not_found" };
+
+  const after = {
+    requests_open_at: parsed.data.requestsOpenAt ?? null,
+    requests_close_at: parsed.data.requestsCloseAt ?? null,
+    plan_start_date: parsed.data.planStartDate ?? null,
+    plan_end_date: parsed.data.planEndDate ?? null,
+  };
+
+  const { data: updated, error } = await supabase
+    .from("recruitment_plans")
+    .update(after)
+    .eq("id", parsed.data.planId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return mapError(error);
+  // صفر صفوف يعني أن RLS ردّت التحديث، لا أن شيئًا لم يتغيّر.
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  await auditLog(actor.id, "recruitment_plan_windows_updated", parsed.data.planId, after, before);
   return { status: "success" };
 }
 
