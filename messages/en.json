@@ -2133,6 +2133,8 @@
     "cancel": "Cancel",
     "auditTab": "Audit log",
     "compareTab": "Compare with another plan",
+    "exportMenu": "Export",
+    "exportPdf": "PDF",
     "exportExcel": "Export Excel",
     "exportCsv": "Export CSV",
     "printView": "Print view"
