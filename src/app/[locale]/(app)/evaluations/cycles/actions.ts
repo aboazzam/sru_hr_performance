@@ -196,6 +196,24 @@ export async function deleteEvaluationCycle(cycleId: string): Promise<Evaluation
   return { status: "success" };
 }
 
+/**
+ * Whether the caller may set evaluation weights at all.
+ *
+ * The per-department table enforces this in RLS; the cycle-level default
+ * cannot, because its table's UPDATE policy also covers the cycle name and
+ * dates. Reading the caller's own permissions here keeps both answers to
+ * "who sets the weighting?" the same one.
+ */
+async function hasEvaluationWeightsApprove(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<boolean> {
+  const { data } = await supabase.rpc("get_my_permissions");
+  const rows = (data ?? []) as { process_area: string; vpra_level: string }[];
+  return rows.some(
+    (row) => row.process_area === "evaluationWeights" && row.vpra_level === "approve"
+  );
+}
+
 const weightsSchema = z
   .object({
     cycleId: z.string().uuid(),
@@ -240,6 +258,13 @@ export async function updateCycleMethodWeights(input: {
     data: { user: actor },
   } = await supabase.auth.getUser();
   if (!actor) return { status: "error", message: "unauthenticated" };
+
+  // evaluation_cycles_update also governs the cycle's name and dates, so it
+  // is deliberately NOT narrowed to the weights area — the weights are gated
+  // here instead. Two gates, and the narrower one decides.
+  if (!(await hasEvaluationWeightsApprove(supabase))) {
+    return { status: "error", message: "forbidden" };
+  }
 
   const { data: before } = await supabase
     .from("evaluation_cycles")

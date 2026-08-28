@@ -48,6 +48,7 @@ export type ProcessArea =
   | "identity"
   | "systemSettings"
   | "strategicPlanning"
+  | "evaluationWeights"
   | "performanceReports"
   | "competencyReports"
   | "bauTasksReports"
@@ -77,6 +78,7 @@ export const processAreas: ProcessArea[] = [
   "identity",
   "systemSettings",
   "strategicPlanning",
+  "evaluationWeights",
   "performanceReports",
   "competencyReports",
   "bauTasksReports",
@@ -114,6 +116,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   identity: "الهوية",
   systemSettings: "إعدادات النظام",
   strategicPlanning: "التخطيط الاستراتيجي",
+  evaluationWeights: "أوزان التقييم",
   performanceReports: "تقارير الأداء",
   competencyReports: "تقارير الجدارات",
   bauTasksReports: "تقارير الأعمال اليومية",
@@ -184,6 +187,7 @@ export const processAreaSections: ProcessAreaSection[] = [
       "goalsLibrary",
       "goalAssignment",
       "strategicPlanning",
+      "evaluationWeights",
       "bauTasks",
       "competencyFramework",
       "defaultTemplates",

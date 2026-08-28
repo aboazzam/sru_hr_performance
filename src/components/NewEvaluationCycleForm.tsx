@@ -2,7 +2,7 @@
 
 import { useActionState, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { CalendarRange, Tag, Scale } from "lucide-react";
+import { CalendarRange, Tag } from "lucide-react";
 import {
   createEvaluationCycle,
   type CreateEvaluationCycleState,
@@ -15,8 +15,6 @@ import {
   type CycleDurationPreset,
 } from "@/lib/cyclePeriod";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import { WeightGroupFields } from "@/components/WeightGroupFields";
-import { isValidWeights, type EvaluationMethod, type MethodWeights } from "@/lib/evaluationCycle";
 import type { Locale } from "@/i18n/config";
 
 type ErrorMessage = Extract<CreateEvaluationCycleState, { status: "error" }>["message"];
@@ -58,23 +56,6 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // The distribution belongs here, not only on the cycle screen afterwards:
-  // it governs every evaluation in the cycle, so creation is the moment it
-  // is actually a decision. 25 each is the DB default, so the form opens on
-  // a valid total rather than an error.
-  const [weights, setWeights] = useState<MethodWeights>({
-    activities: 25,
-    competencies: 25,
-    bau: 25,
-    feedback360: 25,
-  });
-  const weightsValid = isValidWeights(weights);
-  const weightFieldNames: Record<EvaluationMethod, string> = {
-    activities: "weightActivities",
-    competencies: "weightCompetencies",
-    bau: "weightBau",
-    feedback360: "weightFeedback360",
-  };
 
   function applyStartDate(value: string) {
     setStartDate(value);
@@ -231,24 +212,6 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="sru-formsection">
-        <div className="sru-formsection-head">
-          <span className="sru-formsection-badge">
-            <Scale size={17} aria-hidden />
-          </span>
-          <div>
-            <h3>{t("sectionWeightsTitle")}</h3>
-            <span>{t("sectionWeightsSubtitle")}</span>
-          </div>
-        </div>
-
-        <WeightGroupFields
-          idPrefix="new-cycle"
-          values={weights}
-          onChange={setWeights}
-          fieldNames={weightFieldNames}
-        />
-      </section>
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">
           {t(errorMessageKeys[state.message])}
@@ -261,7 +224,7 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
             kept here instead of being quietly lost. */}
         <button
           type="submit"
-          disabled={pending || startDate === "" || endDate === "" || !weightsValid}
+          disabled={pending || startDate === "" || endDate === ""}
           className="sru-btn sru-btn-primary"
         >
           {pending ? t("submitting") : t("submit")}

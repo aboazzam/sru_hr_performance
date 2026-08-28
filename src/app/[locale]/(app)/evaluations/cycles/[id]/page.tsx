@@ -68,11 +68,14 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
     : { data: null };
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
-  const evaluationLevel =
-    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
-      (row) => row.process_area === "evaluation"
-    )?.vpra_level ?? "none";
-  const canEditWeights = hasVpraAccess(evaluationLevel, "approve");
+  const permissions = (permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[];
+  const weightsLevel =
+    permissions.find((row) => row.process_area === "evaluationWeights")?.vpra_level ?? "none";
+  // Weights got their own process area on 2026-08-28 so that "who sets the
+  // weighting" can be granted and withdrawn on its own, instead of riding on
+  // whoever can approve an evaluation.
+  const canViewWeights = hasVpraAccess(weightsLevel, "view");
+  const canEditWeights = hasVpraAccess(weightsLevel, "approve");
 
   const { data: roleCodes } = await supabase.rpc("get_my_role_codes");
   const myRoles = (roleCodes ?? []) as RoleCode[];
@@ -246,7 +249,7 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
         </>
       ),
     },
-    {
+    ...(canViewWeights ? [{
       id: "weights",
       label: t("subTabWeights"),
       content: (
@@ -265,7 +268,7 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
           />
         </>
       ),
-    },
+    }] : []),
   ];
 
   return (

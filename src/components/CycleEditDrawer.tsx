@@ -5,20 +5,17 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { X, Pencil } from "lucide-react";
 import {
-  updateCycleMethodWeights,
   updateEvaluationCycle,
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import { WeightGroupFields, methodLabelKeys } from "@/components/WeightGroupFields";
-import { evaluationMethods, isValidWeights, type MethodWeights } from "@/lib/evaluationCycle";
 
 const errorKeys: Record<string, string> = {
-  invalid_input: "weightsErrorInvalid",
+  invalid_input: "manageErrorInvalid",
   unauthenticated: "manageErrorUnauthenticated",
-  forbidden: "weightsErrorForbidden",
-  has_dependents: "weightsErrorUnknown",
-  unknown: "weightsErrorUnknown",
+  forbidden: "manageErrorForbidden",
+  has_dependents: "manageErrorHasDependents",
+  unknown: "manageErrorUnknown",
 };
 
 const cycleTypes = ["academic", "calendar", "fiscal"] as const;
@@ -36,21 +33,20 @@ export interface CycleEditDrawerCycle {
   cycleType: string;
   startDate: string;
   endDate: string;
-  weights: MethodWeights;
 }
 
 /**
- * One panel for everything about a cycle: its own details and its method
- * weights.
+ * The cycle's own details, edited in a side panel rather than in the table
+ * row — a cell cannot hold a date picker and a type select without pushing
+ * every other column aside.
  *
- * The weights already lived here; the cycle's details were editable only in
- * the table row itself, which meant editing a name pushed date pickers into
- * narrow cells and shoved every other column aside. Both now happen in the
- * same place, and one Save writes whichever of the two actually changed.
+ * The method weights used to live here too. They moved out on 2026-08-28:
+ * weights are set per department now, so they belong on the cycle's weights
+ * tab (the default, plus one row per department), not in the dialog for
+ * renaming a cycle.
  *
- * Built on <dialog> for the backdrop and the modal focus trap; the drawer
- * look is CSS on top (.sru-drawer), not a hand-rolled overlay. Escape is
- * wired by hand below -- it was measured NOT closing this dialog on its own.
+ * Built on <dialog> for the backdrop and the modal focus trap. Escape is
+ * wired by hand below — it was measured NOT closing this dialog on its own.
  */
 export function CycleEditDrawer({
   cycle,
@@ -71,26 +67,21 @@ export function CycleEditDrawer({
   const [cycleType, setCycleType] = useState(cycle.cycleType);
   const [startDate, setStartDate] = useState(cycle.startDate);
   const [endDate, setEndDate] = useState(cycle.endDate);
-  const [weights, setWeights] = useState<MethodWeights>(cycle.weights);
 
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // A save elsewhere (the cycle's own screen) re-renders this row with new
-  // props; adopt them rather than keeping a stale baseline that would make
-  // Save look enabled for a change already stored.
+  // A save elsewhere re-renders this row with new props; adopt them rather
+  // than keeping a stale baseline that would make Save look enabled for a
+  // change already stored.
   const [adopted, setAdopted] = useState(cycle);
   if (
     adopted.nameAr !== cycle.nameAr ||
     adopted.nameEn !== cycle.nameEn ||
     adopted.cycleType !== cycle.cycleType ||
     adopted.startDate !== cycle.startDate ||
-    adopted.endDate !== cycle.endDate ||
-    adopted.weights.activities !== cycle.weights.activities ||
-    adopted.weights.competencies !== cycle.weights.competencies ||
-    adopted.weights.bau !== cycle.weights.bau ||
-    adopted.weights.feedback360 !== cycle.weights.feedback360
+    adopted.endDate !== cycle.endDate
   ) {
     setAdopted(cycle);
     setSaved(cycle);
@@ -99,7 +90,6 @@ export function CycleEditDrawer({
     setCycleType(cycle.cycleType);
     setStartDate(cycle.startDate);
     setEndDate(cycle.endDate);
-    setWeights(cycle.weights);
   }
 
   useEffect(() => {
@@ -110,23 +100,13 @@ export function CycleEditDrawer({
     return () => dialog.removeEventListener("close", onClose);
   }, []);
 
-  const weightsValid = isValidWeights(weights);
   const datesValid = startDate !== "" && endDate !== "" && endDate > startDate;
-
-  const detailsDirty =
+  const dirty =
     nameAr !== saved.nameAr ||
     nameEn !== (saved.nameEn ?? "") ||
     cycleType !== saved.cycleType ||
     startDate !== saved.startDate ||
     endDate !== saved.endDate;
-  const weightsDirty = evaluationMethods.some(
-    (method) => Number(weights[method]) !== Number(saved.weights[method])
-  );
-
-  const summary = evaluationMethods.map((method) => `${saved.weights[method]}%`).join(" / ");
-  const title = evaluationMethods
-    .map((method) => `${t(methodLabelKeys[method])}: ${saved.weights[method]}%`)
-    .join("، ");
 
   function open() {
     setNameAr(saved.nameAr);
@@ -134,7 +114,6 @@ export function CycleEditDrawer({
     setCycleType(saved.cycleType);
     setStartDate(saved.startDate);
     setEndDate(saved.endDate);
-    setWeights(saved.weights);
     setStatus("idle");
     setErrorCode(null);
     dialogRef.current?.showModal();
@@ -144,32 +123,14 @@ export function CycleEditDrawer({
     setStatus("idle");
     setErrorCode(null);
     startTransition(async () => {
-      // Only what actually changed is written, so saving a renamed cycle does
-      // not also rewrite its weights (and vice versa) — and the audit log
-      // records the one real change rather than two.
-      let result: EvaluationCycleActionState = { status: "success" };
-
-      if (detailsDirty) {
-        result = await updateEvaluationCycle({
-          cycleId: cycle.id,
-          nameAr,
-          nameEn: nameEn.trim() === "" ? null : nameEn.trim(),
-          cycleType,
-          startDate,
-          endDate,
-        });
-      }
-
-      if (result.status === "success" && weightsDirty) {
-        result = await updateCycleMethodWeights({
-          cycleId: cycle.id,
-          activities: Number(weights.activities),
-          competencies: Number(weights.competencies),
-          bau: Number(weights.bau),
-          feedback360: Number(weights.feedback360),
-        });
-      }
-
+      const result: EvaluationCycleActionState = await updateEvaluationCycle({
+        cycleId: cycle.id,
+        nameAr,
+        nameEn: nameEn.trim() === "" ? null : nameEn.trim(),
+        cycleType,
+        startDate,
+        endDate,
+      });
       if (result.status === "success") {
         const next: CycleEditDrawerCycle = {
           id: cycle.id,
@@ -178,7 +139,6 @@ export function CycleEditDrawer({
           cycleType,
           startDate,
           endDate,
-          weights,
         };
         setSaved(next);
         setAdopted(next);
@@ -191,27 +151,18 @@ export function CycleEditDrawer({
     });
   }
 
-  if (!canEdit) {
-    return (
-      <span style={{ fontSize: 11.5, whiteSpace: "nowrap" }} title={title}>
-        {summary}
-      </span>
-    );
-  }
-
-  const canSave = (detailsDirty || weightsDirty) && weightsValid && datesValid && !pending;
+  if (!canEdit) return null;
 
   return (
     <>
       <button
         type="button"
         onClick={open}
-        className="sru-weights-trigger"
+        className="sru-icon-action"
         title={t("cycleEditTitle")}
         aria-label={t("cycleEditTitle")}
       >
-        <Pencil size={12} aria-hidden style={{ marginInlineEnd: 5, verticalAlign: "-1px" }} />
-        {summary}
+        <Pencil size={15} aria-hidden />
       </button>
 
       <dialog
@@ -240,8 +191,6 @@ export function CycleEditDrawer({
         </div>
 
         <div className="sru-drawer-body">
-          <h3 style={{ fontSize: 13, margin: "0 0 10px" }}>{t("cycleDetailsHeading")}</h3>
-
           <div className="sru-field" style={{ marginBottom: 12 }}>
             <label htmlFor={`drawer-${cycle.id}-nameAr`}>{t("columnName")}</label>
             <input
@@ -305,18 +254,6 @@ export function CycleEditDrawer({
             </p>
           ) : null}
 
-          <hr style={{ border: 0, borderTop: "1px solid var(--sru-border)", margin: "18px 0" }} />
-
-          <h3 style={{ fontSize: 13, margin: "0 0 6px" }}>{t("weightsDrawerTitle")}</h3>
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 16 }}>{t("weightsDrawerNote")}</p>
-
-          <WeightGroupFields
-            idPrefix={`drawer-${cycle.id}`}
-            values={weights}
-            onChange={setWeights}
-            disabled={pending}
-          />
-
           {status === "saved" ? (
             <p style={{ color: "var(--sru-success, #1f9d55)", fontSize: 12, marginTop: 8 }}>
               {t("cycleSaved")}
@@ -324,13 +261,18 @@ export function CycleEditDrawer({
           ) : null}
           {status === "error" ? (
             <p role="alert" style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>
-              {t(errorKeys[errorCode ?? "unknown"] ?? "weightsErrorUnknown")}
+              {t(errorKeys[errorCode ?? "unknown"] ?? "manageErrorUnknown")}
             </p>
           ) : null}
         </div>
 
         <div className="sru-drawer-foot">
-          <button type="button" className="sru-btn sru-btn-primary" disabled={!canSave} onClick={save}>
+          <button
+            type="button"
+            className="sru-btn sru-btn-primary"
+            disabled={!dirty || !datesValid || pending}
+            onClick={save}
+          >
             {pending ? t("weightsSaving") : t("cycleSave")}
           </button>
           <button type="button" className="sru-btn" onClick={() => dialogRef.current?.close()}>

@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { isValidWeights } from "@/lib/evaluationCycle";
 import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/config";
 
@@ -16,27 +15,10 @@ const createEvaluationCycleSchema = z
     nameEn: z.string().trim().optional(),
     startDate: z.string().min(1),
     endDate: z.string().min(1),
-    weightActivities: z.coerce.number().min(0).max(100),
-    weightCompetencies: z.coerce.number().min(0).max(100),
-    weightBau: z.coerce.number().min(0).max(100),
-    weightFeedback360: z.coerce.number().min(0).max(100),
   })
   .refine((data) => data.endDate > data.startDate, {
     message: "end date must be after start date",
-  })
-  // The distribution is decided when the cycle is created, not afterwards —
-  // it governs every evaluation in the cycle, so a cycle should never exist
-  // without one that its own DB CHECK would accept.
-  .refine(
-    (data) =>
-      isValidWeights({
-        activities: data.weightActivities,
-        competencies: data.weightCompetencies,
-        bau: data.weightBau,
-        feedback360: data.weightFeedback360,
-      }),
-    { message: "weights must total 100" }
-  );
+  });
 
 export type CreateEvaluationCycleState =
   | {
@@ -67,10 +49,6 @@ export async function createEvaluationCycle(
     nameEn: formData.get("nameEn") || undefined,
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
-    weightActivities: formData.get("weightActivities"),
-    weightCompetencies: formData.get("weightCompetencies"),
-    weightBau: formData.get("weightBau"),
-    weightFeedback360: formData.get("weightFeedback360"),
   });
 
   if (!parsed.success) {
@@ -94,10 +72,6 @@ export async function createEvaluationCycle(
     name_en: nameEn || null,
     start_date: startDate,
     end_date: endDate,
-    weight_activities: parsed.data.weightActivities,
-    weight_competencies: parsed.data.weightCompetencies,
-    weight_bau: parsed.data.weightBau,
-    weight_feedback_360: parsed.data.weightFeedback360,
   });
 
   if (error) {
