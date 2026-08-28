@@ -1209,7 +1209,14 @@
     "weightsSaved": "Distribution saved.",
     "weightsErrorInvalid": "Invalid values.",
     "weightsErrorForbidden": "You do not have permission to change the distribution.",
-    "weightsErrorUnknown": "Could not save the distribution."
+    "weightsErrorUnknown": "Could not save the distribution.",
+    "cycleEditTitle": "Edit cycle and weight distribution",
+    "cycleDrawerTitle": "Edit evaluation cycle",
+    "cycleDetailsHeading": "Cycle details",
+    "cycleNameEnLabel": "Cycle name (English)",
+    "cycleDatesInvalid": "The end date must be after the start date.",
+    "cycleSave": "Save",
+    "cycleSaved": "Changes saved."
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
