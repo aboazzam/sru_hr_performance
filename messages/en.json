@@ -1241,7 +1241,6 @@
     "columnStart": "Start",
     "columnEnd": "End",
     "columnWeights": "Weight distribution",
-    "weightGoalsShort": "Strategic targets",
     "weightCompetenciesShort": "Competencies",
     "weightBauShort": "Routine tasks",
     "weightFeedback360Short": "360 feedback",
@@ -1262,7 +1261,23 @@
     "cycleNameEnLabel": "Cycle name (English)",
     "cycleDatesInvalid": "The end date must be after the start date.",
     "cycleSave": "Save",
-    "cycleSaved": "Changes saved."
+    "cycleSaved": "Changes saved.",
+    "weightActivitiesShort": "Assigned activities",
+    "groupResults": "Results",
+    "groupBehaviour": "Behaviour",
+    "groupResultsNote": "What the employee was assigned: activities and routine tasks.",
+    "groupBehaviourNote": "How they worked: their competencies and what those around them see.",
+    "cycleDefaultWeightsHeading": "Cycle distribution (default)",
+    "unitsHeading": "Department weights",
+    "unitsNote": "Each department has its own distribution. A department without one follows the cycle distribution above, marked “cycle default”.",
+    "unitsSearchPlaceholder": "Search by department name...",
+    "unitsEmpty": "No department has staff yet.",
+    "unitsNoMatches": "No matching departments.",
+    "unitEmployeeCount": "{count} staff",
+    "unitOwnWeights": "Own distribution",
+    "unitInheritedWeights": "Cycle default",
+    "unitEditButton": "Edit",
+    "unitResetButton": "Back to the cycle distribution"
   },
   "NewEvaluationCyclePage": {
     "title": "Add Evaluation Cycle",
@@ -1296,12 +1311,12 @@
     "periodInvalidRange": "The end date must be after the start date.",
     "sectionWeightsTitle": "Evaluation method weights",
     "sectionWeightsSubtitle": "Each method's share of the cycle score — it applies to every evaluation in this cycle and must total 100%.",
-    "weightGoalsLabel": "Strategic targets (%)",
     "weightCompetenciesLabel": "Competencies (%)",
     "weightBauLabel": "Routine tasks (%)",
     "weightFeedback360Label": "360 feedback (%)",
     "weightsTotalLabel": "Total",
-    "weightsInvalid": "The total must be exactly 100%."
+    "weightsInvalid": "The total must be exactly 100%.",
+    "weightActivitiesLabel": "Assigned activities (%)"
   },
   "MyProfilePage": {
     "title": "My Profile",
@@ -1455,7 +1470,6 @@
     "errorForbidden": "You don't have permission to advance this evaluation in its current state.",
     "errorUnknown": "An unexpected error occurred.",
     "editEvaluation": "Edit evaluation",
-    "methodGoals": "Strategic targets",
     "methodCompetencies": "Competencies",
     "methodBau": "Routine tasks",
     "method360": "360 feedback",
@@ -1466,9 +1480,14 @@
     "columnRelation": "Source",
     "columnComment": "Comment",
     "weightedResultHeading": "Weighted result",
-    "weightedResultNote": "Using the cycle distribution: {distribution}.",
+    "weightedResultNote": "Distribution applied: {distribution}.",
     "weightedResultEmpty": "Nothing has been scored yet, so there is no weighted result.",
-    "weightedResultPartial": "Partial result: computed over {applied}% of the cycle weight only. No scores recorded for: {methods}."
+    "weightedResultPartial": "Partial result: computed over {applied}% of the cycle weight only. No scores recorded for: {methods}.",
+    "methodActivities": "Assigned activities",
+    "weightsSourceOrgUnit": "Using the employee's department distribution.",
+    "weightsSourceCycle": "Using the cycle distribution (their department has none of its own).",
+    "tabActivities": "Assigned activities",
+    "activitiesEmpty": "This employee has no assigned activities in this cycle."
   },
   "EvaluationScoresPage": {
     "title": "Enter Scores",
@@ -1488,7 +1507,9 @@
     "errorForbidden": "You don't have permission to enter scores for this evaluation.",
     "errorUnknown": "An unexpected error occurred.",
     "bauHeading": "Routine tasks",
-    "bauEmpty": "This employee has no routine tasks in this cycle."
+    "bauEmpty": "This employee has no routine tasks in this cycle.",
+    "activitiesHeading": "Assigned activities",
+    "activitiesEmpty": "This employee has no assigned activities."
   },
   "Feedback360Page": {
     "title": "360 Feedback",
@@ -2984,7 +3005,6 @@
     "columnType": "Evaluation type",
     "columnState": "Approval stage",
     "subTabWeights": "Weight distribution",
-    "methodGoals": "Strategic targets",
     "methodCompetencies": "Competencies",
     "methodBau": "Routine tasks",
     "methodFeedback360": "360 feedback",
@@ -2994,7 +3014,8 @@
     "weightsSaved": "Distribution saved.",
     "weightsError": "Could not save the distribution.",
     "weightsInvalid": "The weights must total exactly 100%.",
-    "weightsReadOnly": "View only — you do not have permission to change the distribution."
+    "weightsReadOnly": "View only — you do not have permission to change the distribution.",
+    "methodActivities": "Assigned activities"
   },
   "EmployeeCompetenciesTab": {
     "note": "This employee's competencies and required levels. Every institutional competency is always listed so a level can be set for each, and others can be added. This is the person's own record, separate from the job title's competencies shared by everyone holding it.",
@@ -3077,17 +3098,19 @@
     "empty": "This employee has no evaluations yet.",
     "noScores": "Nothing has been scored in this evaluation yet.",
     "stateLabel": "State",
-    "distribution": "Using the cycle distribution: {distribution}.",
+    "distribution": "Distribution applied: {distribution}.",
     "partial": "Partial result: computed over {applied}% of the cycle weight only. No scores recorded for: {methods}.",
     "openEvaluation": "Open evaluation",
-    "methodGoals": "Strategic targets",
     "methodCompetencies": "Competencies",
     "methodBau": "Routine tasks",
     "methodFeedback360": "360 feedback",
     "statCompetencies": "Competencies set",
     "statBauTasks": "Routine tasks",
     "statActivities": "Assigned activities",
-    "statFeedback": "360 submitted / nominated"
+    "statFeedback": "360 submitted / nominated",
+    "methodActivities": "Assigned activities",
+    "weightsSourceOrgUnit": "Using the employee's department distribution.",
+    "weightsSourceCycle": "Using the cycle distribution (their department has none of its own)."
   },
   "AppErrorBoundary": {
     "title": "Something went wrong",

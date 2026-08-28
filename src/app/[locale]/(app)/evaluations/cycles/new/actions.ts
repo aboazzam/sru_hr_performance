@@ -16,7 +16,7 @@ const createEvaluationCycleSchema = z
     nameEn: z.string().trim().optional(),
     startDate: z.string().min(1),
     endDate: z.string().min(1),
-    weightGoals: z.coerce.number().min(0).max(100),
+    weightActivities: z.coerce.number().min(0).max(100),
     weightCompetencies: z.coerce.number().min(0).max(100),
     weightBau: z.coerce.number().min(0).max(100),
     weightFeedback360: z.coerce.number().min(0).max(100),
@@ -30,7 +30,7 @@ const createEvaluationCycleSchema = z
   .refine(
     (data) =>
       isValidWeights({
-        goals: data.weightGoals,
+        activities: data.weightActivities,
         competencies: data.weightCompetencies,
         bau: data.weightBau,
         feedback360: data.weightFeedback360,
@@ -67,7 +67,7 @@ export async function createEvaluationCycle(
     nameEn: formData.get("nameEn") || undefined,
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
-    weightGoals: formData.get("weightGoals"),
+    weightActivities: formData.get("weightActivities"),
     weightCompetencies: formData.get("weightCompetencies"),
     weightBau: formData.get("weightBau"),
     weightFeedback360: formData.get("weightFeedback360"),
@@ -94,7 +94,7 @@ export async function createEvaluationCycle(
     name_en: nameEn || null,
     start_date: startDate,
     end_date: endDate,
-    weight_goals: parsed.data.weightGoals,
+    weight_activities: parsed.data.weightActivities,
     weight_competencies: parsed.data.weightCompetencies,
     weight_bau: parsed.data.weightBau,
     weight_feedback_360: parsed.data.weightFeedback360,

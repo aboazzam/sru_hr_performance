@@ -1241,7 +1241,6 @@
     "columnStart": "البداية",
     "columnEnd": "النهاية",
     "columnWeights": "توزيع الأوزان",
-    "weightGoalsShort": "مستهدفات الاستراتيجية",
     "weightCompetenciesShort": "الجدارات",
     "weightBauShort": "المهام التشغيلية",
     "weightFeedback360Short": "تقييم 360",
@@ -1262,7 +1261,23 @@
     "cycleNameEnLabel": "اسم الدورة (إنجليزي)",
     "cycleDatesInvalid": "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.",
     "cycleSave": "حفظ",
-    "cycleSaved": "تم حفظ التعديلات."
+    "cycleSaved": "تم حفظ التعديلات.",
+    "weightActivitiesShort": "الأنشطة المكلَّف بها",
+    "groupResults": "النتائج",
+    "groupBehaviour": "السلوك",
+    "groupResultsNote": "ما كُلّف به الموظف من أنشطة ومهام تشغيلية.",
+    "groupBehaviourNote": "كيف أدّى عمله: جداراته وما يراه من حوله.",
+    "cycleDefaultWeightsHeading": "توزيع الدورة (الافتراضي)",
+    "unitsHeading": "أوزان الإدارات",
+    "unitsNote": "لكل إدارة توزيعها الخاص. والإدارة التي لم يُحدَّد لها توزيع تعتمد توزيع الدورة أعلاه، ويظهر أمامها «افتراضي الدورة».",
+    "unitsSearchPlaceholder": "ابحث باسم الإدارة...",
+    "unitsEmpty": "لا توجد إدارات لها موظفون بعد.",
+    "unitsNoMatches": "لا توجد إدارات مطابقة.",
+    "unitEmployeeCount": "{count} موظف",
+    "unitOwnWeights": "توزيع خاص",
+    "unitInheritedWeights": "افتراضي الدورة",
+    "unitEditButton": "تعديل",
+    "unitResetButton": "العودة إلى توزيع الدورة"
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
@@ -1296,12 +1311,12 @@
     "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
     "sectionWeightsTitle": "توزيع أوزان طرق التقييم",
     "sectionWeightsSubtitle": "نصيب كل طريقة من درجة الدورة — يسري على كل تقييمات هذه الدورة، ومجموعه 100%.",
-    "weightGoalsLabel": "مستهدفات الاستراتيجية (%)",
     "weightCompetenciesLabel": "الجدارات (%)",
     "weightBauLabel": "المهام التشغيلية (%)",
     "weightFeedback360Label": "تقييم 360 (%)",
     "weightsTotalLabel": "المجموع",
-    "weightsInvalid": "يجب أن يكون المجموع 100% بالضبط."
+    "weightsInvalid": "يجب أن يكون المجموع 100% بالضبط.",
+    "weightActivitiesLabel": "الأنشطة المكلَّف بها (%)"
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",
@@ -1455,7 +1470,6 @@
     "errorForbidden": "ليست لديك صلاحية الانتقال بهذا التقييم في حالته الحالية.",
     "errorUnknown": "حدث خطأ غير متوقع.",
     "editEvaluation": "تحرير التقييم",
-    "methodGoals": "مستهدفات الاستراتيجية",
     "methodCompetencies": "الجدارات",
     "methodBau": "المهام التشغيلية",
     "method360": "تقييم 360",
@@ -1466,9 +1480,14 @@
     "columnRelation": "المصدر",
     "columnComment": "الملاحظة",
     "weightedResultHeading": "نتيجة التقييم الموزونة",
-    "weightedResultNote": "وفق توزيع الدورة: {distribution}.",
+    "weightedResultNote": "التوزيع المطبَّق: {distribution}.",
     "weightedResultEmpty": "لم تُسجَّل أي درجة بعد، فلا نتيجة موزونة.",
-    "weightedResultPartial": "نتيجة جزئية: احتُسبت على {applied}% من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}."
+    "weightedResultPartial": "نتيجة جزئية: احتُسبت على {applied}% من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}.",
+    "methodActivities": "الأنشطة المكلَّف بها",
+    "weightsSourceOrgUnit": "وفق توزيع إدارة الموظف.",
+    "weightsSourceCycle": "وفق توزيع الدورة (لا توزيع خاص بإدارة الموظف).",
+    "tabActivities": "الأنشطة المكلَّف بها",
+    "activitiesEmpty": "لا توجد أنشطة مكلَّف بها هذا الموظف في هذه الدورة."
   },
   "EvaluationScoresPage": {
     "title": "إدخال الدرجات",
@@ -1488,7 +1507,9 @@
     "errorForbidden": "ليست لديك صلاحية إدخال الدرجات لهذا التقييم.",
     "errorUnknown": "حدث خطأ غير متوقع.",
     "bauHeading": "المهام التشغيلية",
-    "bauEmpty": "لا توجد مهام تشغيلية لهذا الموظف في هذه الدورة."
+    "bauEmpty": "لا توجد مهام تشغيلية لهذا الموظف في هذه الدورة.",
+    "activitiesHeading": "الأنشطة المكلَّف بها",
+    "activitiesEmpty": "لا توجد أنشطة مكلَّف بها هذا الموظف."
   },
   "Feedback360Page": {
     "title": "تقييم 360",
@@ -2984,7 +3005,6 @@
     "columnType": "نوع التقييم",
     "columnState": "مرحلة الاعتماد",
     "subTabWeights": "توزيع الأوزان",
-    "methodGoals": "مستهدفات الاستراتيجية",
     "methodCompetencies": "الجدارات",
     "methodBau": "المهام التشغيلية",
     "methodFeedback360": "تقييم 360",
@@ -2994,7 +3014,8 @@
     "weightsSaved": "تم حفظ التوزيع.",
     "weightsError": "تعذر حفظ التوزيع.",
     "weightsInvalid": "يجب أن يكون مجموع الأوزان ١٠٠٪ بالضبط.",
-    "weightsReadOnly": "للاطلاع فقط — لا تملك صلاحية تعديل توزيع الأوزان."
+    "weightsReadOnly": "للاطلاع فقط — لا تملك صلاحية تعديل توزيع الأوزان.",
+    "methodActivities": "الأنشطة المكلَّف بها"
   },
   "EmployeeCompetenciesTab": {
     "note": "جدارات هذا الموظف ومستوياتها المطلوبة. تظهر الجدارات المؤسسية كلها دائمًا لتحديد مستوى كل منها، ويمكن إضافة جدارات أخرى. هذا سجل الموظف نفسه، مستقل عن جدارات المسمى الوظيفي المشتركة بين كل من يحمله.",
@@ -3077,17 +3098,19 @@
     "empty": "لا توجد تقييمات لهذا الموظف بعد.",
     "noScores": "لم تُسجَّل أي درجة في هذا التقييم بعد.",
     "stateLabel": "الحالة",
-    "distribution": "وفق توزيع الدورة: {distribution}.",
+    "distribution": "التوزيع المطبَّق: {distribution}.",
     "partial": "نتيجة جزئية: احتُسبت على {applied}% من وزن الدورة فقط. لم تُسجَّل درجات في: {methods}.",
     "openEvaluation": "فتح التقييم",
-    "methodGoals": "مستهدفات الاستراتيجية",
     "methodCompetencies": "الجدارات",
     "methodBau": "المهام التشغيلية",
     "methodFeedback360": "تقييم 360",
     "statCompetencies": "جدارات محدَّدة",
     "statBauTasks": "مهام تشغيلية",
     "statActivities": "أنشطة مسندة",
-    "statFeedback": "إفادات 360 / المرشَّحون"
+    "statFeedback": "إفادات 360 / المرشَّحون",
+    "methodActivities": "الأنشطة المكلَّف بها",
+    "weightsSourceOrgUnit": "وفق توزيع إدارة الموظف.",
+    "weightsSourceCycle": "وفق توزيع الدورة (لا توزيع خاص بإدارة الموظف)."
   },
   "AppErrorBoundary": {
     "title": "حدث خطأ غير متوقع",

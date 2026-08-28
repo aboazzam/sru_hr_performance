@@ -199,7 +199,7 @@ export async function deleteEvaluationCycle(cycleId: string): Promise<Evaluation
 const weightsSchema = z
   .object({
     cycleId: z.string().uuid(),
-    goals: z.number().min(0).max(100),
+    activities: z.number().min(0).max(100),
     competencies: z.number().min(0).max(100),
     bau: z.number().min(0).max(100),
     feedback360: z.number().min(0).max(100),
@@ -207,7 +207,7 @@ const weightsSchema = z
   .refine(
     (data) =>
       isValidWeights({
-        goals: data.goals,
+        activities: data.activities,
         competencies: data.competencies,
         bau: data.bau,
         feedback360: data.feedback360,
@@ -227,7 +227,7 @@ const weightsSchema = z
  */
 export async function updateCycleMethodWeights(input: {
   cycleId: string;
-  goals: number;
+  activities: number;
   competencies: number;
   bau: number;
   feedback360: number;
@@ -243,13 +243,13 @@ export async function updateCycleMethodWeights(input: {
 
   const { data: before } = await supabase
     .from("evaluation_cycles")
-    .select("weight_goals, weight_competencies, weight_bau, weight_feedback_360")
+    .select("weight_activities, weight_competencies, weight_bau, weight_feedback_360")
     .eq("id", parsed.data.cycleId)
     .is("deleted_at", null)
     .maybeSingle();
 
   const after = {
-    weight_goals: parsed.data.goals,
+    weight_activities: parsed.data.activities,
     weight_competencies: parsed.data.competencies,
     weight_bau: parsed.data.bau,
     weight_feedback_360: parsed.data.feedback360,
@@ -273,6 +273,142 @@ export async function updateCycleMethodWeights(input: {
     entity_id: parsed.data.cycleId,
     before_data: before ?? null,
     after_data: after,
+  });
+
+  return { status: "success" };
+}
+
+const orgUnitWeightsSchema = z
+  .object({
+    cycleId: z.string().uuid(),
+    orgUnitId: z.string().uuid(),
+    activities: z.number().min(0).max(100),
+    bau: z.number().min(0).max(100),
+    competencies: z.number().min(0).max(100),
+    feedback360: z.number().min(0).max(100),
+  })
+  .refine(
+    (data) =>
+      isValidWeights({
+        activities: data.activities,
+        bau: data.bau,
+        competencies: data.competencies,
+        feedback360: data.feedback360,
+      }),
+    { message: "weights must total 100" }
+  );
+
+/**
+ * Sets one department's own distribution inside one cycle.
+ *
+ * The permission does not move with the weight: writing still requires
+ * `check_vpra('evaluation','approve', org_unit_id)` — the same level the
+ * cycle's own weights require — so a department does not gain the right to
+ * weight itself. What the third argument adds is that an approver scoped to
+ * a unit writes that unit's row and no other, which is exactly what the
+ * per-department split needs.
+ *
+ * `org_unit_evaluation_weights` uses a PARTIAL unique index
+ * (`WHERE deleted_at IS NULL`), which PostgREST's `on_conflict` inference
+ * cannot target — hence select-then-insert-or-update rather than upsert,
+ * the same pattern this schema already needs in four other places.
+ */
+export async function updateOrgUnitWeights(input: {
+  cycleId: string;
+  orgUnitId: string;
+  activities: number;
+  bau: number;
+  competencies: number;
+  feedback360: number;
+}): Promise<EvaluationCycleActionState> {
+  const parsed = orgUnitWeightsSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const payload = {
+    weight_activities: parsed.data.activities,
+    weight_bau: parsed.data.bau,
+    weight_competencies: parsed.data.competencies,
+    weight_feedback_360: parsed.data.feedback360,
+  };
+
+  const { data: existing } = await supabase
+    .from("org_unit_evaluation_weights")
+    .select("id, weight_activities, weight_bau, weight_competencies, weight_feedback_360")
+    .eq("cycle_id", parsed.data.cycleId)
+    .eq("org_unit_id", parsed.data.orgUnitId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (existing) {
+    const { data: updated, error } = await supabase
+      .from("org_unit_evaluation_weights")
+      .update(payload)
+      .eq("id", existing.id)
+      .select("id");
+    if (error) return mapError(error);
+    if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+  } else {
+    const { error } = await supabase.from("org_unit_evaluation_weights").insert({
+      cycle_id: parsed.data.cycleId,
+      org_unit_id: parsed.data.orgUnitId,
+      created_by: actor.id,
+      ...payload,
+    });
+    if (error) return mapError(error);
+  }
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_unit_weights_updated",
+    entity: "org_unit_evaluation_weights",
+    entity_id: parsed.data.orgUnitId,
+    before_data: existing ?? null,
+    after_data: { cycle_id: parsed.data.cycleId, ...payload },
+  });
+
+  return { status: "success" };
+}
+
+/** Clears a department's own distribution, so it falls back to the cycle's. */
+export async function clearOrgUnitWeights(
+  cycleId: string,
+  orgUnitId: string
+): Promise<EvaluationCycleActionState> {
+  const parsed = z
+    .object({ cycleId: z.string().uuid(), orgUnitId: z.string().uuid() })
+    .safeParse({ cycleId, orgUnitId });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { status: "error", message: "unauthenticated" };
+
+  const { data: updated, error } = await supabase
+    .from("org_unit_evaluation_weights")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("cycle_id", parsed.data.cycleId)
+    .eq("org_unit_id", parsed.data.orgUnitId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) return mapError(error);
+  if (!updated || updated.length === 0) return { status: "error", message: "forbidden" };
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "org_unit_weights_cleared",
+    entity: "org_unit_evaluation_weights",
+    entity_id: parsed.data.orgUnitId,
+    before_data: { cycle_id: parsed.data.cycleId },
   });
 
   return { status: "success" };

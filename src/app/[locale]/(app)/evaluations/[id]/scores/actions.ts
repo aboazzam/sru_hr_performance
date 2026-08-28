@@ -81,11 +81,12 @@ export async function saveEvaluationScores(
     .select("id")
     .is("deleted_at", null);
 
-  const { data: goals } = await supabase
-    .from("goals")
+  // Activities replaced strategic targets as the "results" subject
+  // (20260828000001): the weight is named for what it actually weighs.
+  const { data: activities } = await supabase
+    .from("initiative_activities")
     .select("id")
-    .eq("employee_id", evaluation.employee_id)
-    .eq("cycle_id", evaluation.cycle_id)
+    .eq("responsible_profile_id", evaluation.employee_id)
     .is("deleted_at", null);
 
   // Routine tasks became scorable in 20260827000002 -- until then the cycle
@@ -97,7 +98,7 @@ export async function saveEvaluationScores(
     .eq("cycle_id", evaluation.cycle_id)
     .is("deleted_at", null);
 
-  type Row = { subjectColumn: "competency_id" | "goal_id" | "bau_task_id"; subjectId: string; score: string | null; comment: string | null };
+  type Row = { subjectColumn: "competency_id" | "activity_id" | "bau_task_id"; subjectId: string; score: string | null; comment: string | null };
   const rows: Row[] = [];
 
   for (const competency of competencies ?? []) {
@@ -114,15 +115,15 @@ export async function saveEvaluationScores(
     });
   }
 
-  for (const goal of goals ?? []) {
-    const scoreParsed = scoreFieldSchema.safeParse(formData.get(`score_goal_${goal.id}`)?.toString());
-    const comment = formData.get(`comment_goal_${goal.id}`)?.toString().trim();
+  for (const activity of activities ?? []) {
+    const scoreParsed = scoreFieldSchema.safeParse(formData.get(`score_activity_${activity.id}`)?.toString());
+    const comment = formData.get(`comment_activity_${activity.id}`)?.toString().trim();
     if (!scoreParsed.success) {
       return { status: "error", message: "invalid_input" };
     }
     rows.push({
-      subjectColumn: "goal_id",
-      subjectId: goal.id,
+      subjectColumn: "activity_id",
+      subjectId: activity.id,
       score: scoreParsed.data,
       comment: comment || null,
     });
@@ -143,7 +144,7 @@ export async function saveEvaluationScores(
   }
 
   let touchedCompetencies = 0;
-  let touchedGoals = 0;
+  let touchedActivities = 0;
   let touchedBauTasks = 0;
 
   for (const row of rows) {
@@ -179,7 +180,7 @@ export async function saveEvaluationScores(
     }
 
     if (row.subjectColumn === "competency_id") touchedCompetencies++;
-    else if (row.subjectColumn === "goal_id") touchedGoals++;
+    else if (row.subjectColumn === "activity_id") touchedActivities++;
     else touchedBauTasks++;
   }
 
@@ -191,7 +192,7 @@ export async function saveEvaluationScores(
     entity_id: parsedId.data,
     after_data: {
       competencies_saved: touchedCompetencies,
-      goals_saved: touchedGoals,
+      activities_saved: touchedActivities,
       bau_tasks_saved: touchedBauTasks,
     },
   });

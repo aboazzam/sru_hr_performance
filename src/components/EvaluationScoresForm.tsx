@@ -28,18 +28,18 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
 export function EvaluationScoresForm({
   evaluationId,
   competencies,
-  goals,
+  activities,
   bauTasks = [],
   showCompetencies = true,
-  showGoals = true,
+  showActivities = true,
   showBau = true,
 }: {
   evaluationId: string;
   competencies: ScoredSubject[];
-  goals: ScoredSubject[];
+  activities: ScoredSubject[];
   bauTasks?: ScoredSubject[];
   showCompetencies?: boolean;
-  showGoals?: boolean;
+  showActivities?: boolean;
   showBau?: boolean;
 }) {
   const t = useTranslations("EvaluationScoresPage");
@@ -53,7 +53,7 @@ export function EvaluationScoresForm({
   const commentInputClass =
     "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
-  function renderRows(prefix: "competency" | "goal" | "bau", subjects: ScoredSubject[]) {
+  function renderRows(prefix: "competency" | "activity" | "bau", subjects: ScoredSubject[]) {
     return subjects.map((subject) => (
       <tr key={subject.id}>
         <td>{subject.nameAr ?? subject.titleAr}</td>
@@ -120,13 +120,13 @@ export function EvaluationScoresForm({
       </div>
       ) : null}
 
-      {showGoals ? (
+      {showActivities ? (
       <div>
         <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
-          {t("goalsHeading")}
+          {t("activitiesHeading")}
         </h2>
-        {goals.length === 0 ? (
-          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("goalsEmpty")}</p>
+        {activities.length === 0 ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("activitiesEmpty")}</p>
         ) : (
           <div className="sru-card">
             <div className="table-scroll">
@@ -138,7 +138,7 @@ export function EvaluationScoresForm({
                     <th>{t("columnComment")}</th>
                   </tr>
                 </thead>
-                <tbody>{renderRows("goal", goals)}</tbody>
+                <tbody>{renderRows("activity", activities)}</tbody>
               </table>
             </div>
           </div>

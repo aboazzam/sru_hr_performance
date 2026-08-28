@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cycleStatus, cycleStatusLabels, cycleStatuses, todayInTimezone, totalCycleUsage, cycleDependentTables, summariseCycleScoring, isValidWeights, weightedCycleScore, type MethodWeights } from "./evaluationCycle";
+import { cycleStatus, cycleStatusLabels, cycleStatuses, todayInTimezone, totalCycleUsage, cycleDependentTables, summariseCycleScoring, isValidWeights, weightedCycleScore, evaluationMethods, evaluationMethodGroups, evaluationMethodGroupKeys, groupWeight, resolveWeights, type MethodWeights } from "./evaluationCycle";
 
 describe("cycleStatus", () => {
   it("classifies a cycle by its own dates", () => {
@@ -124,25 +124,25 @@ describe("summariseCycleScoring", () => {
 });
 
 describe("method weights", () => {
-  const even: MethodWeights = { goals: 25, competencies: 25, bau: 25, feedback360: 25 };
+  const even: MethodWeights = { activities: 25, competencies: 25, bau: 25, feedback360: 25 };
 
   it("accepts a distribution totalling 100", () => {
     expect(isValidWeights(even)).toBe(true);
-    expect(isValidWeights({ goals: 40, competencies: 30, bau: 20, feedback360: 10 })).toBe(true);
+    expect(isValidWeights({ activities: 40, competencies: 30, bau: 20, feedback360: 10 })).toBe(true);
   });
 
   it("rejects a distribution that does not total 100", () => {
-    expect(isValidWeights({ goals: 40, competencies: 30, bau: 20, feedback360: 20 })).toBe(false);
-    expect(isValidWeights({ goals: 0, competencies: 0, bau: 0, feedback360: 0 })).toBe(false);
+    expect(isValidWeights({ activities: 40, competencies: 30, bau: 20, feedback360: 20 })).toBe(false);
+    expect(isValidWeights({ activities: 0, competencies: 0, bau: 0, feedback360: 0 })).toBe(false);
   });
 
   it("rejects an out-of-range weight even when the total works out", () => {
-    expect(isValidWeights({ goals: 110, competencies: 0, bau: 0, feedback360: -10 })).toBe(false);
+    expect(isValidWeights({ activities: 110, competencies: 0, bau: 0, feedback360: -10 })).toBe(false);
   });
 
   it("weights the methods that have scores", () => {
-    const result = weightedCycleScore({ goals: 50, competencies: 50, bau: 0, feedback360: 0 }, {
-      goals: 80,
+    const result = weightedCycleScore({ activities: 50, competencies: 50, bau: 0, feedback360: 0 }, {
+      activities: 80,
       competencies: 60,
     });
     expect(result.score).toBe(70);
@@ -152,8 +152,8 @@ describe("method weights", () => {
 
   it("renormalises over what exists instead of scoring a missing method as zero", () => {
     const result = weightedCycleScore(
-      { goals: 40, competencies: 30, bau: 20, feedback360: 10 },
-      { goals: 90, competencies: 70 }
+      { activities: 40, competencies: 30, bau: 20, feedback360: 10 },
+      { activities: 90, competencies: 70 }
     );
     // (90*40 + 70*30) / 70 — not /100, which would have read as 79.
     expect(result.score).toBeCloseTo(81.4285, 3);
@@ -168,11 +168,48 @@ describe("method weights", () => {
   });
 
   it("ignores a method carrying no weight, scored or not", () => {
-    const result = weightedCycleScore({ goals: 100, competencies: 0, bau: 0, feedback360: 0 }, {
-      goals: 50,
+    const result = weightedCycleScore({ activities: 100, competencies: 0, bau: 0, feedback360: 0 }, {
+      activities: 50,
       competencies: 100,
     });
     expect(result.score).toBe(50);
     expect(result.missing).toEqual([]);
+  });
+});
+
+describe("method groups and per-department resolution", () => {
+  const even: MethodWeights = { activities: 25, bau: 25, competencies: 25, feedback360: 25 };
+
+  it("groups the four methods into results and behaviour", () => {
+    expect(evaluationMethodGroups.results).toEqual(["activities", "bau"]);
+    expect(evaluationMethodGroups.behaviour).toEqual(["competencies", "feedback360"]);
+  });
+
+  it("covers every method exactly once across the groups", () => {
+    const covered = evaluationMethodGroupKeys.flatMap((group) => [...evaluationMethodGroups[group]]);
+    expect([...covered].sort()).toEqual([...evaluationMethods].sort());
+    expect(new Set(covered).size).toBe(evaluationMethods.length);
+  });
+
+  it("sums a group from its own leaves rather than storing it", () => {
+    const weights: MethodWeights = { activities: 40, bau: 20, competencies: 30, feedback360: 10 };
+    expect(groupWeight(weights, "results")).toBe(60);
+    expect(groupWeight(weights, "behaviour")).toBe(40);
+    expect(groupWeight(weights, "results") + groupWeight(weights, "behaviour")).toBe(100);
+  });
+
+  it("prefers the department's own distribution over the cycle's", () => {
+    const own: MethodWeights = { activities: 70, bau: 10, competencies: 10, feedback360: 10 };
+    expect(resolveWeights(even, own)).toEqual({ weights: own, source: "orgUnit" });
+  });
+
+  it("falls back to the cycle when the department has none", () => {
+    expect(resolveWeights(even, null)).toEqual({ weights: even, source: "cycle" });
+    expect(resolveWeights(even, undefined).source).toBe("cycle");
+  });
+
+  it("falls back rather than applying a department distribution that does not total 100", () => {
+    const broken: MethodWeights = { activities: 70, bau: 10, competencies: 10, feedback360: 40 };
+    expect(resolveWeights(even, broken)).toEqual({ weights: even, source: "cycle" });
   });
 });

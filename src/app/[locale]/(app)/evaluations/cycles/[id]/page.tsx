@@ -7,6 +7,8 @@ import { RowLink } from "@/components/RowLink";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { formatDateDmy } from "@/lib/dateParts";
 import { CycleMethodWeightsForm } from "@/components/CycleMethodWeightsForm";
+import { OrgUnitWeightsManager, type OrgUnitWeightsRow } from "@/components/OrgUnitWeightsManager";
+import type { MethodWeights } from "@/lib/evaluationCycle";
 
 import {
   canAdvanceEvaluationState,
@@ -51,7 +53,7 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
   const { data: cycle } = await supabase
     .from("evaluation_cycles")
     .select(
-      "id, name_ar, name_en, start_date, end_date, weight_goals, weight_competencies, weight_bau, weight_feedback_360"
+      "id, name_ar, name_en, start_date, end_date, weight_activities, weight_competencies, weight_bau, weight_feedback_360"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -116,6 +118,61 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
       ? await supabase.from("evaluation_scores").select("evaluation_id").in("evaluation_id", shownIds).is("deleted_at", null)
       : { data: [] };
   const scoredIds = new Set(((scoreRows ?? []) as { evaluation_id: string }[]).map((r) => r.evaluation_id));
+
+  const cycleWeights: MethodWeights = {
+    activities: Number(cycle.weight_activities),
+    competencies: Number(cycle.weight_competencies),
+    bau: Number(cycle.weight_bau),
+    feedback360: Number(cycle.weight_feedback_360),
+  };
+
+  // Departments listed are the ones this actually governs: those with staff,
+  // plus any that already carries its own distribution (so a unit whose last
+  // employee moved out does not silently drop its settings from view).
+  const { data: staffRows } = await supabase
+    .from("profiles")
+    .select("org_unit_id")
+    .not("org_unit_id", "is", null)
+    .is("deleted_at", null);
+  const employeeCountByUnit = new Map<string, number>();
+  for (const row of (staffRows ?? []) as { org_unit_id: string }[]) {
+    employeeCountByUnit.set(row.org_unit_id, (employeeCountByUnit.get(row.org_unit_id) ?? 0) + 1);
+  }
+
+  const { data: unitWeightRows } = await supabase
+    .from("org_unit_evaluation_weights")
+    .select("org_unit_id, weight_activities, weight_competencies, weight_bau, weight_feedback_360")
+    .eq("cycle_id", cycle.id)
+    .is("deleted_at", null);
+  const ownWeightsByUnit = new Map<string, MethodWeights>();
+  for (const row of (unitWeightRows ?? []) as Array<{
+    org_unit_id: string;
+    weight_activities: number;
+    weight_competencies: number;
+    weight_bau: number;
+    weight_feedback_360: number;
+  }>) {
+    ownWeightsByUnit.set(row.org_unit_id, {
+      activities: Number(row.weight_activities),
+      competencies: Number(row.weight_competencies),
+      bau: Number(row.weight_bau),
+      feedback360: Number(row.weight_feedback_360),
+    });
+  }
+
+  const relevantUnitIds = [...new Set([...employeeCountByUnit.keys(), ...ownWeightsByUnit.keys()])];
+  const { data: unitRows } =
+    relevantUnitIds.length > 0
+      ? await supabase.from("org_units").select("id, name_ar").in("id", relevantUnitIds).is("deleted_at", null)
+      : { data: [] };
+  const orgUnitWeightRows: OrgUnitWeightsRow[] = ((unitRows ?? []) as Array<{ id: string; name_ar: string }>)
+    .map((unit) => ({
+      orgUnitId: unit.id,
+      nameAr: unit.name_ar,
+      employeeCount: employeeCountByUnit.get(unit.id) ?? 0,
+      own: ownWeightsByUnit.get(unit.id) ?? null,
+    }))
+    .sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"));
 
   function table(rows: EvaluationRow[], emptyMessage: string) {
     if (rows.length === 0) return <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{emptyMessage}</p>;
@@ -193,16 +250,20 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
       id: "weights",
       label: t("subTabWeights"),
       content: (
-        <CycleMethodWeightsForm
-          cycleId={cycle.id}
-          canEdit={canEditWeights}
-          initial={{
-            goals: Number(cycle.weight_goals),
-            competencies: Number(cycle.weight_competencies),
-            bau: Number(cycle.weight_bau),
-            feedback360: Number(cycle.weight_feedback_360),
-          }}
-        />
+        <>
+          <h3 style={{ fontSize: 14, margin: "0 0 6px" }}>{tCycles("cycleDefaultWeightsHeading")}</h3>
+          <CycleMethodWeightsForm cycleId={cycle.id} canEdit={canEditWeights} initial={cycleWeights} />
+
+          <hr style={{ border: 0, borderTop: "1px solid var(--sru-border)", margin: "26px 0 18px" }} />
+
+          <h3 style={{ fontSize: 14, margin: "0 0 6px" }}>{tCycles("unitsHeading")}</h3>
+          <OrgUnitWeightsManager
+            cycleId={cycle.id}
+            cycleWeights={cycleWeights}
+            rows={orgUnitWeightRows}
+            canEdit={canEditWeights}
+          />
+        </>
       ),
     },
   ];

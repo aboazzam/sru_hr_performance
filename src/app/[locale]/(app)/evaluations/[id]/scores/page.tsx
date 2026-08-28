@@ -16,8 +16,8 @@ export default async function EvaluationScoresPage({
   // (2026-08-25). Absent or unrecognised, everything is shown — the direct
   // link to this page keeps behaving as it always did.
   const { method } = await searchParams;
-  const showCompetencies = method !== "goals" && method !== "bau";
-  const showGoals = method !== "competencies" && method !== "bau";
+  const showCompetencies = method !== "activities" && method !== "bau";
+  const showActivities = method !== "competencies" && method !== "bau";
   const showBau = method === undefined || method === "bau";
   const t = await getTranslations("EvaluationScoresPage");
   const supabase = await createClient();
@@ -57,18 +57,14 @@ export default async function EvaluationScoresPage({
     .is("deleted_at", null)
     .order("name_ar");
 
-  const { data: goalsData } = await supabase
-    .from("goals")
-    .select("id, custom_title_ar, goal_library(title_ar)")
-    .eq("employee_id", evaluation.employee_id)
-    .eq("cycle_id", evaluation.cycle_id)
-    .is("deleted_at", null);
+  const { data: activityData } = await supabase
+    .from("initiative_activities")
+    .select("id, title_ar")
+    .eq("responsible_profile_id", evaluation.employee_id)
+    .is("deleted_at", null)
+    .order("title_ar");
 
-  const goals = (goalsData ?? []) as unknown as Array<{
-    id: string;
-    custom_title_ar: string | null;
-    goal_library: { title_ar: string } | null;
-  }>;
+  const activities = (activityData ?? []) as Array<{ id: string; title_ar: string }>;
 
   // Routine tasks became scorable in 20260827000002; before it, a cycle could
   // weight them but nothing could hold the score.
@@ -82,18 +78,18 @@ export default async function EvaluationScoresPage({
 
   const { data: existingScores } = await supabase
     .from("evaluation_scores")
-    .select("competency_id, goal_id, bau_task_id, score, comment")
+    .select("competency_id, activity_id, bau_task_id, score, comment")
     .eq("evaluation_id", evaluation.id)
     .is("deleted_at", null);
 
   const scoresByCompetency = new Map<string, { score: number | null; comment: string | null }>();
-  const scoresByGoal = new Map<string, { score: number | null; comment: string | null }>();
+  const scoresByActivity = new Map<string, { score: number | null; comment: string | null }>();
   const scoresByBauTask = new Map<string, { score: number | null; comment: string | null }>();
   for (const row of existingScores ?? []) {
     if (row.competency_id) {
       scoresByCompetency.set(row.competency_id, { score: row.score, comment: row.comment });
-    } else if (row.goal_id) {
-      scoresByGoal.set(row.goal_id, { score: row.score, comment: row.comment });
+    } else if (row.activity_id) {
+      scoresByActivity.set(row.activity_id, { score: row.score, comment: row.comment });
     } else if (row.bau_task_id) {
       scoresByBauTask.set(row.bau_task_id, { score: row.score, comment: row.comment });
     }
@@ -117,11 +113,11 @@ export default async function EvaluationScoresPage({
           initialScore: scoresByCompetency.get(c.id)?.score ?? null,
           initialComment: scoresByCompetency.get(c.id)?.comment ?? null,
         }))}
-        goals={(showGoals ? goals : []).map((g) => ({
-          id: g.id,
-          titleAr: g.custom_title_ar ?? g.goal_library?.title_ar ?? "—",
-          initialScore: scoresByGoal.get(g.id)?.score ?? null,
-          initialComment: scoresByGoal.get(g.id)?.comment ?? null,
+        activities={(showActivities ? activities : []).map((activity) => ({
+          id: activity.id,
+          titleAr: activity.title_ar,
+          initialScore: scoresByActivity.get(activity.id)?.score ?? null,
+          initialComment: scoresByActivity.get(activity.id)?.comment ?? null,
         }))}
         bauTasks={(showBau ? bauTasks : []).map((task) => ({
           id: task.id,
@@ -130,7 +126,7 @@ export default async function EvaluationScoresPage({
           initialComment: scoresByBauTask.get(task.id)?.comment ?? null,
         }))}
         showCompetencies={showCompetencies}
-        showGoals={showGoals}
+        showActivities={showActivities}
         showBau={showBau}
       />
     </div>

@@ -15,13 +15,8 @@ import {
   type CycleDurationPreset,
 } from "@/lib/cyclePeriod";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
-import {
-  evaluationMethods,
-  isValidWeights,
-  weightsTotal,
-  type EvaluationMethod,
-  type MethodWeights,
-} from "@/lib/evaluationCycle";
+import { WeightGroupFields } from "@/components/WeightGroupFields";
+import { isValidWeights, type EvaluationMethod, type MethodWeights } from "@/lib/evaluationCycle";
 import type { Locale } from "@/i18n/config";
 
 type ErrorMessage = Extract<CreateEvaluationCycleState, { status: "error" }>["message"];
@@ -68,24 +63,17 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
   // is actually a decision. 25 each is the DB default, so the form opens on
   // a valid total rather than an error.
   const [weights, setWeights] = useState<MethodWeights>({
-    goals: 25,
+    activities: 25,
     competencies: 25,
     bau: 25,
     feedback360: 25,
   });
-  const weightsSum = weightsTotal(weights);
   const weightsValid = isValidWeights(weights);
   const weightFieldNames: Record<EvaluationMethod, string> = {
-    goals: "weightGoals",
+    activities: "weightActivities",
     competencies: "weightCompetencies",
     bau: "weightBau",
     feedback360: "weightFeedback360",
-  };
-  const weightLabelKeys: Record<EvaluationMethod, string> = {
-    goals: "weightGoalsLabel",
-    competencies: "weightCompetenciesLabel",
-    bau: "weightBauLabel",
-    feedback360: "weightFeedback360Label",
   };
 
   function applyStartDate(value: string) {
@@ -254,32 +242,12 @@ export function NewEvaluationCycleForm({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <div className="sru-formgrid">
-          {evaluationMethods.map((method) => (
-            <div className="sru-field" key={method}>
-              <label htmlFor={`new-cycle-${method}`}>{t(weightLabelKeys[method])}</label>
-              <input
-                id={`new-cycle-${method}`}
-                name={weightFieldNames[method]}
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                dir="ltr"
-                value={weights[method]}
-                onChange={(event) =>
-                  setWeights((current) => ({ ...current, [method]: Number(event.target.value) }))
-                }
-              />
-            </div>
-          ))}
-          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
-            <p style={{ fontSize: 11.5, color: weightsValid ? "var(--sru-muted)" : "#b91c1c" }}>
-              {t("weightsTotalLabel")}: {weightsSum}%
-              {weightsValid ? "" : ` — ${t("weightsInvalid")}`}
-            </p>
-          </div>
-        </div>
+        <WeightGroupFields
+          idPrefix="new-cycle"
+          values={weights}
+          onChange={setWeights}
+          fieldNames={weightFieldNames}
+        />
       </section>
       {state?.status === "error" && (
         <p role="alert" className="sru-auth-alert error">
