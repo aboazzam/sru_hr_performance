@@ -2647,3 +2647,45 @@ table {
   border-color: var(--sru-border);
   background: var(--sru-purple-light, #f3eefa);
 }
+
+/* ===== Small button + bare back link (2026-08-18) =====
+   طلبان مباشران على ترويسة خطة التوظيف: «اعمل تصغيرًا للأزرار بنسبة 75%»،
+   و«اجعل العودة لقائمة الخطط تكون لوحده في أعلى اليمين وبدون خلفية بنفسجية
+   لكن معه سهم الى اليمين قبلها».
+
+   `.sru-btn-sm` is three quarters of `.sru-btn` in both axes — 13px → 9.75px
+   type, 9px/18px → 6.75px/13.5px padding — rather than a `transform: scale()`,
+   which would shrink the glyphs without reflowing the row and would leave the
+   original box still occupying its old space.
+
+   The 13px baseline is what `.sru-btn` ACTUALLY renders at, measured in the
+   browser rather than taken from sru-ui.css's own `font-size: 14px`, which
+   this file already overrides higher up. Three quarters of the declared value
+   would have been about 81% of the real one.
+
+   Additive here, never in sru-ui.css: the kit is not edited (§7). */
+.sru-btn-sm {
+  font-size: 9.75px;
+  padding: 6.75px 13.5px;
+}
+
+/* A way back should not compete with the page's own actions, so no fill and
+   no border — it reads as navigation, which is what it is. The arrow points
+   RIGHT because in RTL that is the direction "back" travels; ArrowRight is
+   the literal glyph, not a mirrored ArrowLeft. */
+.sru-backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sru-muted);
+  text-decoration: none;
+}
+.sru-backlink:hover {
+  color: var(--sru-purple);
+  text-decoration: underline;
+}

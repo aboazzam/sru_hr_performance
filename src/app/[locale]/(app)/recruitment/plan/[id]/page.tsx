@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
+import { ArrowRight } from "lucide-react";
+import { RecruitmentPlanExportMenu } from "@/components/RecruitmentPlanExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { RecruitmentPlanHeaderActions } from "@/components/RecruitmentPlanHeaderActions";
 import { AddRecruitmentPlanItemForm } from "@/components/AddRecruitmentPlanItemForm";
@@ -159,6 +161,17 @@ export default async function RecruitmentPlanDetailPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      {/* الرجوع وحده أعلى اليمين بلا خلفية، وسهمٌ قبله — asked for directly.
+          In RTL the arrow points RIGHT: that is the direction "back" travels
+          when the text runs right-to-left, so ArrowRight is the correct glyph,
+          not a mirrored ArrowLeft. */}
+      <div style={{ marginBottom: 10 }}>
+        <Link href="/recruitment/plan" className="sru-backlink">
+          <ArrowRight size={15} aria-hidden />
+          {t("backToPlans")}
+        </Link>
+      </div>
+
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
           <h1 className="sru-title" style={{ fontSize: 20 }}>
@@ -171,40 +184,28 @@ export default async function RecruitmentPlanDetailPage({
             })}
           </p>
         </div>
+        {/* Every button here is `sru-btn-sm` — three quarters of the normal
+            size, asked for once the row had grown to seven buttons. */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {/* The finance reviewer's own screen belongs with the page's other
-              top-level destinations, not buried among the HR item actions far
-              down the page — asked for directly, after reaching it meant
-              scrolling past the whole item table. */}
           {canReviewBudget && (
-            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn sru-btn-primary">
+            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn sru-btn-primary sru-btn-sm">
               {t("financeReviewScreen")}
             </Link>
           )}
           {canConsolidate && plan.status === "draft" && (
-            <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn sru-btn-primary">
+            <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn sru-btn-primary sru-btn-sm">
               {t("consolidateRequests")}
             </Link>
           )}
-          {/* Export goes through a Route Handler under /api (not a [locale]
-              route), so it is a plain <a>, not the locale-aware <Link>. */}
-          <a href={`/api/recruitment/plan/${plan.id}/export?format=xlsx`} className="sru-btn sru-btn-primary">
-            {t("exportExcel")}
-          </a>
-          <a href={`/api/recruitment/plan/${plan.id}/export?format=csv`} className="sru-btn sru-btn-primary">
-            {t("exportCsv")}
-          </a>
-          <Link href={`/recruitment/plan/${plan.id}/print`} className="sru-btn sru-btn-primary">
-            {t("printView")}
-          </Link>
-          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn sru-btn-primary">
+          {/* Excel, CSV and PDF folded into one menu; the separate
+              "عرض للطباعة" button is gone, its destination now the menu's PDF
+              entry, so nothing was lost with it. */}
+          <RecruitmentPlanExportMenu planId={plan.id} />
+          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn sru-btn-primary sru-btn-sm">
             {t("compareTab")}
           </Link>
-          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn sru-btn-primary">
+          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn sru-btn-primary sru-btn-sm">
             {t("auditTab")}
-          </Link>
-          <Link href="/recruitment/plan" className="sru-btn sru-btn-primary">
-            {t("backToPlans")}
           </Link>
         </div>
       </div>
