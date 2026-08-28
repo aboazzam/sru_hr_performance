@@ -265,7 +265,7 @@
     "success": "Saved successfully.",
     "importTriggerButton": "Import from Excel",
     "closeButton": "Close",
-    "downloadTemplate": "Download Template File",
+    "downloadTemplateButton": "Download Empty Template",
     "importHeading": "Import from Excel",
     "importNote": "An Excel file with a \"الهيكل التنظيمي\" sheet — imports levels, positions, and staffing (by employee number, for employees that already exist).",
     "chooseFileButton": "Choose File",
