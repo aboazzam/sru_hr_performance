@@ -1212,7 +1212,14 @@
     "weightsSaved": "تم حفظ التوزيع.",
     "weightsErrorInvalid": "القيم غير صحيحة.",
     "weightsErrorForbidden": "لا تملك صلاحية تعديل توزيع الأوزان.",
-    "weightsErrorUnknown": "تعذر حفظ التوزيع."
+    "weightsErrorUnknown": "تعذر حفظ التوزيع.",
+    "cycleEditTitle": "تعديل الدورة وتوزيع الأوزان",
+    "cycleDrawerTitle": "تعديل دورة التقييم",
+    "cycleDetailsHeading": "بيانات الدورة",
+    "cycleNameEnLabel": "اسم الدورة (إنجليزي)",
+    "cycleDatesInvalid": "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.",
+    "cycleSave": "حفظ",
+    "cycleSaved": "تم حفظ التعديلات."
   },
   "NewEvaluationCyclePage": {
     "title": "إضافة دورة تقييم",
