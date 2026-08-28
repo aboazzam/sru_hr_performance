@@ -57,9 +57,49 @@ function isBranchContainer(nameAr: string): boolean {
   return nameAr.startsWith("الإدارة التنفيذية") || nameAr.startsWith("النائب المساعد");
 }
 
-const BRANCH_SLOT_WIDTH = 168; // horizontal spacing per sibling slot within one branch's own vertical list
-const BRANCH_ROW_HEIGHT = 68; // vertical spacing per depth row within one branch's own vertical list
+// 2026-08-28, second pass: "ما تحت الادارة التنفيذية للخدمات المشتركة
+// والادارة التنفيذية لتقنية المعلومات والادارة التنفيذية لتطوير الاعمال
+// تكون رأسية" -- the first version of the branch list spread SIBLINGS
+// horizontally (a small mini-pyramid via computeSlots), which is wrong for
+// a container with several FLAT children and no further nesting (e.g. the
+// 6 plain departments under "الخدمات المشتركة"): that case rendered as a
+// wide ROW, not a vertical list, defeating the whole point. A branch list
+// is now a genuine single column: every descendant gets its own
+// sequential row in depth-first order (so N flat siblings become N
+// stacked rows, not N side-by-side ones), with only a small per-depth
+// indent to show real nesting (e.g. "مركز التدريب" under "إدارة التدريب
+// والاستشارات") -- not a second horizontal spread.
+// 2026-08-28, third pass: a fixed BRANCH_ROW_HEIGHT (46px) overlapped real
+// branch nodes live -- their actual rendered height varies with how much
+// name_ar/name_en/job title/assignees text wraps at the branch tier's
+// narrower 152px width (a real production node reached 105px, more than
+// double the guessed constant), so several stacked siblings collided.
+// Fixed the same way this component already treats connector lines: each
+// row's real DOM height is measured (see the effect below) instead of
+// assumed, and rows stack via a running cumulative offset.
+const BRANCH_ROW_GAP = 10; // vertical gap between successive rows in one branch's own vertical list
+const BRANCH_ROW_HEIGHT_FALLBACK = 92; // used only until a branch item's real height is measured (first paint)
+const BRANCH_INDENT = 22; // horizontal shift per nesting depth within a branch (small -- this is a list, not a second pyramid)
 const BRANCH_TOP_GAP = 26; // gap between a container's own row band and its branch list's first row
+
+// 2026-08-29: "الخطوط العلائقية تحتاج الى اعادة ضبط" -- confirmed live
+// against real production data before touching anything: the classic
+// top-down elbow (parent center-bottom -> midpoint -> child center-top)
+// draws every one of a branch's children as its OWN line back to the
+// SAME shared parent point, but a vertical list stacks those children in
+// one column -- so any child past the first has its line's final descent
+// pass straight through every sibling box sitting between it and the
+// parent (measured live: 47 of 56 real connector paths crossed an
+// unrelated box). Fixed with a real tree "spine + tick" connector for any
+// parent-children group where the children are branch-list items: one
+// shared vertical spine drawn in the INDENT GUTTER (outside every box's
+// left edge at that depth, never through a box body), one short stem from
+// the parent into the spine, and one short horizontal tick per child from
+// the spine into its own left edge -- the same convention a file-tree or
+// git-log graph uses, and it needs no per-depth special-casing since it's
+// driven purely by grouping on `parent_id`, same as the elbow style it
+// replaces for this one relationship.
+const BRANCH_SPINE_GUTTER = 12; // spine offset from a branch child's own left edge -- stays inside BRANCH_INDENT (22) so it never lands under the next-deeper level's box
 
 // Derived tints/shades of the two SRU identity hues (purple + blue) only —
 // CLAUDE.md §7 forbids colors outside the SRU palette, so "colorful" here
@@ -123,25 +163,33 @@ function computeSlots(positions: OrgChartPosition[]): { slotOf: Map<string, numb
   return { slotOf, leafCount: nextLeaf };
 }
 
-/** BFS depth of every descendant of `rootId` within `positions` (root itself excluded, depth 1 = direct child). */
-function computeDepths(positions: OrgChartPosition[], rootId: string): Map<string, number> {
+/**
+ * Lays out one branch container's real subtree as a plain vertical list:
+ * a depth-first walk visiting every descendant, each getting its own
+ * sequential row (so several flat siblings become several stacked rows,
+ * never a side-by-side spread), with a small per-depth horizontal indent
+ * to show real nesting -- the fix for the first version's mistake of
+ * spreading siblings horizontally like a second, smaller pyramid.
+ */
+function layoutBranchList(subtree: OrgChartPosition[], containerId: string): Map<string, { rowIndex: number; depth: number }> {
   const childrenByParentId = new Map<string, OrgChartPosition[]>();
-  for (const p of positions) {
+  for (const p of subtree) {
     if (!p.parent_id) continue;
     const list = childrenByParentId.get(p.parent_id);
     if (list) list.push(p);
     else childrenByParentId.set(p.parent_id, [p]);
   }
-  const depthOf = new Map<string, number>();
-  const queue: Array<{ id: string; depth: number }> = [{ id: rootId, depth: 0 }];
-  while (queue.length > 0) {
-    const { id, depth } = queue.shift()!;
-    for (const child of childrenByParentId.get(id) ?? []) {
-      depthOf.set(child.id, depth + 1);
-      queue.push({ id: child.id, depth: depth + 1 });
+  const result = new Map<string, { rowIndex: number; depth: number }>();
+  let nextRow = 0;
+  function visit(nodeId: string, depth: number) {
+    for (const child of childrenByParentId.get(nodeId) ?? []) {
+      result.set(child.id, { rowIndex: nextRow, depth });
+      nextRow += 1;
+      visit(child.id, depth + 1);
     }
   }
-  return depthOf;
+  visit(containerId, 1);
+  return result;
 }
 
 /**
@@ -152,12 +200,14 @@ function computeDepths(positions: OrgChartPosition[], rootId: string): Map<strin
  * horizontal row below it (mirrored for RTL: a root's first-visited child
  * renders at the chart's RIGHT edge), siblings spread left-to-right within
  * their row via `computeSlots`. Below any "branch container" (an
- * الإدارة التنفيذية/النائب المساعد position), the SAME algorithm runs a
- * second time scoped to just that container's own subtree, laid out as a
- * compact vertical list anchored beneath it — matching the official chart's
- * own convention of drawing department-level detail as a simple stack
- * rather than forcing it into the main pyramid's shared rank rows. The
- * whole tree (pyramid + every branch list) is auto-scaled to fit inside a
+ * الإدارة التنفيذية/النائب المساعد position), everything is laid out again
+ * by `layoutBranchList` as a plain vertical LIST instead — a depth-first
+ * walk giving every descendant its own stacked row (so several flat
+ * siblings become several stacked rows, never a side-by-side spread) with
+ * only a small per-depth indent for real nesting — matching the official
+ * chart's own convention of drawing department-level detail as a simple
+ * stack rather than forcing it into the main pyramid's shared rank rows.
+ * The whole tree (pyramid + every branch list) is auto-scaled to fit inside a
  * bounded viewport instead of letting the page grow indefinitely in either
  * direction. Manual +/- zoom and a "fit" reset are offered for anyone who
  * wants to read a compressed chart's fine print. Connector lines (drawn via
@@ -198,6 +248,9 @@ export function OrgChartTree({
   // manually, which also switches the wrapper to scroll instead of clip.
   const [manualScale, setManualScale] = useState<number | null>(null);
   const scale = manualScale ?? fitScale;
+  // Real (unscaled) rendered height per branch-list item, keyed by position
+  // id -- filled in by the measurement effect below.
+  const [branchNodeHeights, setBranchNodeHeights] = useState<Map<string, number>>(new Map());
 
   const sortedLevels = useMemo(() => levels.slice().sort((a, b) => a.level_order - b.level_order), [levels]);
 
@@ -251,31 +304,27 @@ export function OrgChartTree({
   }, [sortedLevels, mainPositions]);
   const rowCount = Math.max(rowIndexByLevelId.size, 1);
 
-  const { slotOf } = useMemo(() => computeSlots(mainPositions), [mainPositions]);
+  const { slotOf, leafCount } = useMemo(() => computeSlots(mainPositions), [mainPositions]);
 
-  // A branch container's own fan-out can need far more than one plain
-  // SLOT_WIDTH (e.g. 3 children, two of which have their own children,
-  // needing ~420px of spread) — found live while verifying against the
-  // real production tree: two ADJACENT executive-management branches'
-  // fan-outs genuinely overlapped when every main-grid leaf used the same
-  // fixed SLOT_WIDTH regardless of what sat beneath it. Each leaf of the
-  // main pyramid (mainPositions' own leaves after excluding branch
-  // descendants — a branch container counts as one, since its real
-  // children were pulled out) now reserves either SLOT_WIDTH or its own
-  // branch's real fan-out width, whichever is larger, and slot positions
-  // are placed by CUMULATIVE (variable-width) spacing instead of a flat
-  // `slot * SLOT_WIDTH` multiplication.
-  const mainChildrenByParentId = useMemo(() => {
-    const map = new Map<string, OrgChartPosition[]>();
-    for (const p of mainPositions) {
-      if (!p.parent_id) continue;
-      const list = map.get(p.parent_id);
-      if (list) list.push(p);
-      else map.set(p.parent_id, [p]);
-    }
-    return map;
-  }, [mainPositions]);
-  const branchContainerIds = useMemo(() => new Set(branchContainers.map((c) => c.id)), [branchContainers]);
+  // Natural (unscaled) canvas width — a branch list only ever needs a
+  // small per-depth indent now (see `layoutBranchList`), never a wide
+  // fan-out, so the main pyramid's own fixed per-slot spacing is enough on
+  // its own (unlike the first version of this feature, which spread a
+  // branch's siblings horizontally and needed a much more involved
+  // variable-width scheme to avoid adjacent branches colliding).
+  const naturalWidth = Math.max(leafCount, 1) * SLOT_WIDTH;
+
+  function slotLeft(slot: number) {
+    // Mirrored for RTL: slot 0 (the first-visited child) renders at the
+    // chart's right edge, matching this app's right-to-left reading flow.
+    return (Math.max(leafCount, 1) - 1 - slot) * SLOT_WIDTH + SLOT_WIDTH / 2;
+  }
+
+  function rowTop(levelId: string) {
+    const rowIndex = rowIndexByLevelId.get(levelId) ?? 0;
+    return rowIndex * LEVEL_HEIGHT + LEVEL_HEIGHT / 2;
+  }
+
   const branchSubtreeCache = useMemo(() => {
     const cache = new Map<string, OrgChartPosition[]>();
     for (const container of branchContainers) {
@@ -286,52 +335,6 @@ export function OrgChartTree({
     }
     return cache;
   }, [branchContainers, positions, excludedFromMain]);
-  const branchLeafCountById = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const [containerId, subtree] of branchSubtreeCache) {
-      map.set(containerId, computeSlots(subtree).leafCount);
-    }
-    return map;
-  }, [branchSubtreeCache]);
-
-  const { leafCenters, naturalWidth } = useMemo(() => {
-    const leaves = mainPositions.filter((p) => !mainChildrenByParentId.has(p.id));
-    const leavesInOrder = leaves.slice().sort((a, b) => (slotOf.get(a.id) ?? 0) - (slotOf.get(b.id) ?? 0));
-    const centers: number[] = [];
-    let cursor = 0;
-    for (const leaf of leavesInOrder) {
-      const branchLeafCount = branchContainerIds.has(leaf.id) ? branchLeafCountById.get(leaf.id) ?? 1 : 1;
-      const width = Math.max(SLOT_WIDTH, branchLeafCount * BRANCH_SLOT_WIDTH);
-      centers.push(cursor + width / 2);
-      cursor += width;
-    }
-    return { leafCenters: centers, naturalWidth: Math.max(cursor, SLOT_WIDTH) };
-  }, [mainPositions, mainChildrenByParentId, slotOf, branchContainerIds, branchLeafCountById]);
-
-  // Continuous position for any slot value (leaves get an exact integer,
-  // internal nodes get the fractional average of their children) —
-  // interpolated between the two nearest leaf centers so it degrades to the
-  // exact same result as the old fixed `slot * SLOT_WIDTH` formula whenever
-  // every leaf happens to need the same width.
-  function slotX(slot: number) {
-    if (leafCenters.length === 0) return 0;
-    const clamped = Math.min(Math.max(slot, 0), leafCenters.length - 1);
-    const lower = Math.floor(clamped);
-    const upper = Math.min(lower + 1, leafCenters.length - 1);
-    const fraction = clamped - lower;
-    return leafCenters[lower] + fraction * (leafCenters[upper] - leafCenters[lower]);
-  }
-
-  function slotLeft(slot: number) {
-    // Mirrored for RTL: slot 0 (the first-visited child) renders at the
-    // chart's right edge, matching this app's right-to-left reading flow.
-    return naturalWidth - slotX(slot);
-  }
-
-  function rowTop(levelId: string) {
-    const rowIndex = rowIndexByLevelId.get(levelId) ?? 0;
-    return rowIndex * LEVEL_HEIGHT + LEVEL_HEIGHT / 2;
-  }
 
   // Per-branch-container local layout: its own descendants, positioned
   // relative to the container's own already-known main-pyramid coordinates.
@@ -344,30 +347,62 @@ export function OrgChartTree({
       const containerRowBottom = rowTop(container.level_id) + LEVEL_HEIGHT / 2;
 
       const subtree = branchSubtreeCache.get(container.id) ?? [container];
-      const { slotOf: localSlotOf } = computeSlots(subtree);
-      const depthOf = computeDepths(subtree, container.id);
-      const containerLocalSlot = localSlotOf.get(container.id) ?? 0;
+      const rows = layoutBranchList(subtree, container.id);
+      // Sorted by rowIndex so the running cumulative offset below advances
+      // in the same depth-first order layoutBranchList assigned.
+      const orderedRows = Array.from(rows.entries()).sort((a, b) => a[1].rowIndex - b[1].rowIndex);
 
-      for (const p of subtree) {
-        if (p.id === container.id) continue;
-        const localSlot = localSlotOf.get(p.id) ?? 0;
-        const depth = depthOf.get(p.id) ?? 1;
-        // Mirrored the same way slotLeft() mirrors the main pyramid, so a
-        // branch's first-visited child also renders toward the right.
-        const left = containerLeft - (localSlot - containerLocalSlot) * BRANCH_SLOT_WIDTH;
-        const top = containerRowBottom + BRANCH_TOP_GAP + (depth - 1) * BRANCH_ROW_HEIGHT + BRANCH_ROW_HEIGHT / 2;
-        byPositionId.set(p.id, { left, top });
-        maxBranchBottom = Math.max(maxBranchBottom, top + BRANCH_ROW_HEIGHT / 2);
+      let cursorTop = containerRowBottom + BRANCH_TOP_GAP;
+      for (const [positionId, { depth }] of orderedRows) {
+        // Indent GROWS with depth, matching how the main pyramid already
+        // treats "deeper" as "further left" — real nesting stays visually
+        // distinct without turning this list back into a second pyramid.
+        const left = containerLeft - depth * BRANCH_INDENT;
+        const height = branchNodeHeights.get(positionId) ?? BRANCH_ROW_HEIGHT_FALLBACK;
+        const top = cursorTop + height / 2;
+        byPositionId.set(positionId, { left, top });
+        cursorTop += height + BRANCH_ROW_GAP;
+        maxBranchBottom = Math.max(maxBranchBottom, cursorTop);
       }
     }
     return { byPositionId, maxBranchBottom };
-  }, [branchContainers, branchSubtreeCache, slotOf, naturalWidth, leafCenters, rowIndexByLevelId]);
+    // `rowTop`/`slotLeft` are plain functions of state already listed here
+    // (`rowIndexByLevelId`, `slotOf`/`leafCount`) — they're recreated every
+    // render, so listing them too would just make this memo pointless.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchContainers, branchSubtreeCache, slotOf, leafCount, rowIndexByLevelId, branchNodeHeights]);
 
-  // Natural (unscaled) canvas HEIGHT — `naturalWidth` is already computed
-  // above (`leafCenters`) since branch-container widths have to be known
-  // before the main pyramid's own horizontal spacing can be. Height also
-  // accounts for the tallest branch list, which can extend past the main
-  // pyramid's own deepest row.
+  // Branch-list row heights are MEASURED, not guessed -- mirrors the
+  // connector-line effect's own "read the real box" approach just below.
+  // Runs after every commit; only actually updates state (and therefore
+  // triggers a second layout pass) when a measured height genuinely
+  // differs, so this converges in at most one extra render: `offsetHeight`
+  // depends on a node's fixed 152px width and its text content, neither of
+  // which changes when `branchLayout` recomputes `top` from a new height.
+  useLayoutEffect(() => {
+    // Named + invoked, matching the connector-line effect just below — this
+    // measure-then-conditionally-update shape is what useLayoutEffect
+    // exists for, but the project's lint rule only recognizes it once the
+    // setState call is inside its own named function rather than the
+    // effect's top-level body.
+    const measure = () => {
+      if (excludedFromMain.size === 0) return;
+      let changed = branchNodeHeights.size !== excludedFromMain.size;
+      const next = new Map<string, number>();
+      for (const id of excludedFromMain) {
+        const el = nodeElsRef.current.get(id);
+        const height = el ? el.offsetHeight : branchNodeHeights.get(id) ?? BRANCH_ROW_HEIGHT_FALLBACK;
+        next.set(id, height);
+        if (branchNodeHeights.get(id) !== height) changed = true;
+      }
+      if (changed) setBranchNodeHeights(next);
+    };
+    measure();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludedFromMain, branchLayout]);
+
+  // Natural (unscaled) canvas HEIGHT. Also accounts for the tallest branch
+  // list, which can extend past the main pyramid's own deepest row.
   const naturalHeight = Math.max(rowCount * LEVEL_HEIGHT, branchLayout.maxBranchBottom + LEVEL_HEIGHT / 4);
 
   // Auto-fit: recompute whenever the data shape changes or the viewport
@@ -398,23 +433,38 @@ export function OrgChartTree({
   // over the FULL `positions` list (not just the main pyramid's own), so
   // branch-list connectors come for free — this loop only ever needs a
   // position's registered element and its parent's, regardless of which
-  // layout placed either of them.
+  // layout placed either of them. Two distinct connector shapes: the main
+  // pyramid keeps its classic top-down elbow (each row has room to itself),
+  // while any parent whose children are branch-list items gets a shared
+  // spine + tick tree connector instead (see BRANCH_SPINE_GUTTER above) —
+  // required once children stack in one column, since an elbow back to a
+  // shared parent point would cross through whichever sibling sits between
+  // a deeper child and that parent.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const measure = () => {
       const canvasRect = canvas.getBoundingClientRect();
+      const toLocalX = (clientX: number) => (clientX - canvasRect.left) / scale;
+      const toLocalY = (clientY: number) => (clientY - canvasRect.top) / scale;
       const nextLines: ConnectorLine[] = [];
+
+      const branchChildrenByParentId = new Map<string, OrgChartPosition[]>();
       for (const p of positions) {
-        if (!p.parent_id) continue;
+        if (!p.parent_id || !excludedFromMain.has(p.id)) continue;
+        const list = branchChildrenByParentId.get(p.parent_id);
+        if (list) list.push(p);
+        else branchChildrenByParentId.set(p.parent_id, [p]);
+      }
+
+      for (const p of positions) {
+        if (!p.parent_id || excludedFromMain.has(p.id)) continue; // branch children are drawn per-parent-group below
         const parent = positionById.get(p.parent_id);
         const childEl = nodeElsRef.current.get(p.id);
         const parentEl = nodeElsRef.current.get(p.parent_id);
         if (!parent || !childEl || !parentEl) continue;
         const childRect = childEl.getBoundingClientRect();
         const parentRect = parentEl.getBoundingClientRect();
-        const toLocalX = (clientX: number) => (clientX - canvasRect.left) / scale;
-        const toLocalY = (clientY: number) => (clientY - canvasRect.top) / scale;
         // Classic top-down elbow: leaves the parent's BOTTOM edge, arrives
         // at the child's TOP edge, split at the midpoint row between them.
         const x1 = toLocalX(parentRect.left + parentRect.width / 2);
@@ -424,6 +474,62 @@ export function OrgChartTree({
         const midY = (y1 + y2) / 2;
         nextLines.push({ id: p.id, d: `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}` });
       }
+
+      // A shallower group's spine must clear every box in its FULL
+      // descendant subtree, not just its immediate children — a depth-1
+      // sibling that itself has depth-2 children (e.g. "إدارة التدريب
+      // والاستشارات" under "تطوير الأعمال") sits at a Y this group's spine
+      // must still pass through, so a gutter sized only for the immediate
+      // children's indent isn't enough clearance once that nested subtree's
+      // (wider, further-left) boxes fall inside the same Y range — measured
+      // live: this was still 2 real crossings before this walk was added.
+      function collectSubtreeLeftEdges(rootId: string): number[] {
+        const edges: number[] = [];
+        const queue = [rootId];
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          for (const child of branchChildrenByParentId.get(current) ?? []) {
+            const el = nodeElsRef.current.get(child.id);
+            if (el) edges.push(toLocalX(el.getBoundingClientRect().left));
+            queue.push(child.id);
+          }
+        }
+        return edges;
+      }
+
+      for (const [parentId, children] of branchChildrenByParentId) {
+        const parentEl = nodeElsRef.current.get(parentId);
+        if (!parentEl) continue;
+        const parentRect = parentEl.getBoundingClientRect();
+        const parentAnchorX = toLocalX(parentRect.left);
+        const parentAnchorY = toLocalY(parentRect.top + parentRect.height / 2);
+
+        const childAnchors = children
+          .map((child) => {
+            const childEl = nodeElsRef.current.get(child.id);
+            if (!childEl) return null;
+            const childRect = childEl.getBoundingClientRect();
+            return {
+              id: child.id,
+              x: toLocalX(childRect.left),
+              centerY: toLocalY(childRect.top + childRect.height / 2),
+            };
+          })
+          .filter((a): a is { id: string; x: number; centerY: number } => a !== null);
+        if (childAnchors.length === 0) continue;
+
+        const subtreeLeftEdges = collectSubtreeLeftEdges(parentId);
+        const spineX = Math.min(...subtreeLeftEdges) - BRANCH_SPINE_GUTTER;
+        const topY = Math.min(parentAnchorY, ...childAnchors.map((a) => a.centerY));
+        const bottomY = Math.max(parentAnchorY, ...childAnchors.map((a) => a.centerY));
+
+        nextLines.push({ id: `${parentId}-stem`, d: `M ${parentAnchorX} ${parentAnchorY} L ${spineX} ${parentAnchorY}` });
+        nextLines.push({ id: `${parentId}-spine`, d: `M ${spineX} ${topY} L ${spineX} ${bottomY}` });
+        for (const a of childAnchors) {
+          nextLines.push({ id: `${a.id}-tick`, d: `M ${spineX} ${a.centerY} L ${a.x} ${a.centerY}` });
+        }
+      }
+
       setLines(nextLines);
     };
     measure();
@@ -435,7 +541,7 @@ export function OrgChartTree({
       window.removeEventListener("resize", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, levels, scale, branchLayout]);
+  }, [positions, levels, scale, branchLayout, excludedFromMain]);
 
   if (positions.length === 0) {
     return <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{emptyLabel}</p>;

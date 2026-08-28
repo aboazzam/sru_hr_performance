@@ -99,6 +99,19 @@ export const navItems: NavItem[] = [
   // 2026-08-04: "vacancies" moved out of this flat list into the new
   // "التوظيف" group below ("والثالث اسمه الشواغر — وهذا تضع فيه الجزء
   // الجاهز من شواغر"); the page itself is unchanged.
+  //
+  // 2026-08-28: "competencies" moved OUT of the "طرق التقييم" (evaluationMethods)
+  // group and back to a standalone top-level item ("ضع موديول الجدارات على
+  // السايدبار") -- the project owner's own reasoning: the "الأنشطة" that
+  // group used to bundle already live in الخطة الاستراتيجية/الخطة التنفيذية,
+  // and "المهام التشغيلية" (bau-tasks) is a department-manager concern, so
+  // grouping competencies alongside them under one collapsed sidebar row no
+  // longer made sense for something the project owner wants directly
+  // visible. Same access gate as before (competencyFramework>=view); the
+  // page itself no longer renders a GroupTabs bar, matching every other
+  // top-level item here (reports/employees/career-path/etc., none of which
+  // render one either).
+  { segment: "competencies", labelKey: "competencies", icon: Award, access: [{ processArea: "competencyFramework", minLevel: "view" }] },
 ];
 
 export interface NavGroup {
@@ -215,7 +228,7 @@ export const navGroups: NavGroup[] = [
     icon: ClipboardList,
     children: [
       { segment: "evaluations", labelKey: "performance", icon: ClipboardList, access: [{ processArea: "evaluation", minLevel: "view" }] },
-      { segment: "competencies", labelKey: "competencies", icon: Award, access: [{ processArea: "competencyFramework", minLevel: "view" }] },
+      // "competencies" moved out to the top-level navItems above (2026-08-28).
       { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: [{ processArea: "bauTasks", minLevel: "prepare" }] },
       { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: [{ processArea: "evaluation", minLevel: "prepare" }] },
     ],

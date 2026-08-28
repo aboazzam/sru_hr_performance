@@ -28,8 +28,10 @@ describe("navItems (top-level, ungrouped)", () => {
     // OUT of this flat list into the new "الخطة الاستراتيجية" group (see
     // navGroups below) per the explicit "اجمعها كلها في موديول واحد" request.
     // 2026-08-04: "vacancies" moved OUT into the new "التوظيف" group, 6 left.
-    expect(navItems).toHaveLength(6);
-    expect(new Set(navItems.map((i) => i.segment)).size).toBe(6);
+    // 2026-08-28: "competencies" moved back IN from the evaluationMethods
+    // group ("ضع موديول الجدارات على السايدبار"), 7 again.
+    expect(navItems).toHaveLength(7);
+    expect(new Set(navItems.map((i) => i.segment)).size).toBe(7);
   });
 
   it("has exactly one home item (empty segment)", () => {
@@ -180,9 +182,9 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     ]);
   });
 
-  it("the evaluationMethods group has the four requested children", () => {
+  it("the evaluationMethods group has three children (competencies moved to the top-level sidebar 2026-08-28)", () => {
     const methods = navGroups.find((g) => g.groupKey === "evaluationMethods")!;
-    expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "competencies", "bau-tasks", "feedback-360"]);
+    expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "bau-tasks", "feedback-360"]);
   });
 
   it("the evaluationResults group has just recommendations (reports never returns to this group)", () => {
@@ -231,6 +233,10 @@ describe("visibleNavItems", () => {
     expect(segments).not.toContain("vacancies");
     // Ungated (2026-07-25): reports is a personalized dashboard reachable by everyone.
     expect(segments).toContain("reports");
+    // "competencies" moved back to the top-level sidebar (2026-08-28) -- an
+    // employee's real `competencyFramework=view` grant surfaces it here now,
+    // not inside a group.
+    expect(segments).toContain("competencies");
 
     // goals/library, kpis, and kpis/strategic-goals moved into the
     // strategicPlan group (2026-07-28) -- see the visibleNavGroups tests
@@ -290,7 +296,9 @@ describe("visibleNavGroups", () => {
     expect(segments).toContain("evaluations");
     expect(segments).toContain("feedback-360");
     expect(segments).toContain("bau-tasks");
-    expect(segments).toContain("competencies");
+    // "competencies" moved out of this group entirely (2026-08-28) -- its
+    // own competencyFramework=view grant is asserted at the top level instead.
+    expect(segments).not.toContain("competencies");
 
     // administration group: no orgStructure/userManagement grant at all -> fully hidden.
     expect(groups.find((g) => g.groupKey === "administration")).toBeUndefined();
