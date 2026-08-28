@@ -533,7 +533,8 @@ dialog.sru-modal::backdrop {
   border-bottom-color: var(--sru-purple);
 }
 
-/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25 twice, 2026-07-27) =====
+/* ===== Org chart tree (OrgChartTree.tsx, 2026-07-24; rebuilt 2026-07-25 twice,
+   2026-07-27, 2026-08-28) =====
    Real feedback (2026-07-25): the original nested-<ul> pure-CSS connector
    technique assumed every child sits exactly one row below its parent --
    broken once a position can link to ANY higher level (skip-level linking,
@@ -550,24 +551,68 @@ dialog.sru-modal::backdrop {
    Real feedback (2026-07-27): with real data, a level holding many
    positions (e.g. C4) still stretched that ROW -- and therefore the whole
    chart -- out horizontally far enough to need constant scrolling just to
-   see the shape of the tree. Rebuilt again: each LEVEL is now a COLUMN
-   (root on the right, depth increasing to the left, matching RTL flow),
-   with `computeSlots`'s same slot value now driving vertical position
-   instead -- siblings stack top-to-bottom within their column. A wide
-   level now only makes the chart taller, which a normal page scrolls far
-   more gracefully than horizontal overflow. `white-space: nowrap` is
-   dropped in favor of a fixed max-width with wrapping, so a long position
-   name grows a node vertically (bounded, predictable) instead of widening
-   it indefinitely (which would have broken the fixed per-column x
-   position this layout depends on). */
+   see the shape of the tree. Rebuilt: each LEVEL became a COLUMN (root on
+   the right, depth increasing to the left), trading the horizontal overflow
+   problem for a vertical one instead (a 49-position tree grew ~5000px tall).
+   Real feedback (2026-08-28): "اقترح لي عدة اقتراحات لاعادة رسم الهيكل
+   التنظيمي بشكل هرمي بحجم الشاشة" -- rebuilt again to the classic top-down
+   pyramid (root at top, each level a horizontal row below it, mirrored for
+   RTL so a root's first child renders at the right edge), this time wrapped
+   in a BOUNDED, auto-scaled viewport instead of chasing one overflow axis
+   at a time: `.sru-orgchart-wrapper` has a fixed (clamped) height, and the
+   component computes a `scale` that shrinks the whole tree to fit inside it
+   — the actual fix for "a worker can't see the chart", not another axis
+   swap. `.sru-orgchart-scalebox` exists solely so the SCALED, not the
+   natural, footprint drives the wrapper's flex-centering/scroll box model —
+   a plain CSS `transform: scale()` on `.sru-orgchart-canvas` alone would
+   leave the wrapper still sized (and scrollable) to the tree's full natural
+   extent, defeating the fit. Manual zoom (+/-/fit) switches the wrapper from
+   `overflow: hidden` (auto-fit: nothing should ever need scrolling) to
+   `overflow: auto` (manual: the user asked to see more detail than fits).
+   `white-space: nowrap` stays dropped in favor of a fixed max-width with
+   wrapping, so a long position name grows a node vertically (bounded,
+   predictable) instead of widening it indefinitely. */
+.sru-orgchart-zoombar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.sru-orgchart-zoomlevel {
+  min-width: 42px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-muted);
+  font-variant-numeric: tabular-nums;
+}
 .sru-orgchart-wrapper {
+  /* `overflow: auto` unconditionally, in BOTH auto-fit and manual-zoom
+     modes — real feedback caught live while verifying this feature: a very
+     wide real tree (49 positions) still exceeds even MIN_SCALE (the
+     legibility floor below which shrinking further would make the text
+     useless), so auto-fit can't always eliminate scrolling entirely. What
+     it must never do is silently CLIP that remainder behind
+     `overflow: hidden` — a flex `justify-content: center` layout combined
+     with hidden overflow was found to bleed the excess symmetrically off
+     both edges with no way to reach it at all. Plain block layout + `auto`
+     scrolls to whatever doesn't fit instead, same as manual zoom already
+     needed. */
   position: relative;
-  overflow-x: auto;
+  height: clamp(420px, 68vh, 860px);
+  overflow: auto;
   padding: 12px;
 }
-.sru-orgchart-canvas {
+.sru-orgchart-scalebox {
   position: relative;
   margin: 0 auto;
+}
+.sru-orgchart-canvas {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform-origin: top right;
 }
 .sru-orgchart-lines {
   position: absolute;
