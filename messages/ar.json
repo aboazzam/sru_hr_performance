@@ -265,7 +265,7 @@
     "success": "تم الحفظ بنجاح.",
     "importTriggerButton": "استيراد من إكسل",
     "closeButton": "إغلاق",
-    "downloadTemplate": "تنزيل نموذج الملف",
+    "downloadTemplateButton": "تحميل نموذج فارغ",
     "importHeading": "استيراد من إكسل",
     "importNote": "ملف إكسل فيه ورقة \"الهيكل التنظيمي\" — يستورد المستويات والمناصب والتسكين (بالرقم الوظيفي لموظفين موجودين بالفعل).",
     "chooseFileButton": "اختيار ملف",
