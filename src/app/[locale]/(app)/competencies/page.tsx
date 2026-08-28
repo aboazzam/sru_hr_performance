@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { PrintButton } from "@/components/PrintButton";
-import { GroupTabs } from "@/components/layout/GroupTabs";
 import { AddCompetencyPillarForm } from "@/components/AddCompetencyPillarForm";
 import { AddCompetencyDomainForm } from "@/components/AddCompetencyDomainForm";
 import { AddCompetencyForm } from "@/components/AddCompetencyForm";
@@ -60,7 +59,6 @@ export default async function CompetenciesPage() {
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
-      <GroupTabs groupKey="evaluationMethods" current="competencies" />
       <div
         className="no-print"
         style={{
