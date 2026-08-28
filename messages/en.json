@@ -93,7 +93,6 @@
   },
   "LoginPage": {
     "title": "Performance Evaluation System",
-    "subtitle": "Sulaiman Alrajhi University",
     "identifierLabel": "Email or Username",
     "identifierPlaceholder": "Enter your email or username",
     "passwordLabel": "Password",
@@ -108,7 +107,10 @@
     "hidePassword": "Hide password",
     "welcomeTitle": "Welcome to the performance system",
     "welcomeLead": "Sign in to continue to your workspace at Sulaiman Alrajhi University.",
-    "inviteNote": "Access is by invitation only. If you do not have an account, contact Human Capital."
+    "inviteNote": "Access is by invitation only. If you do not have an account, contact Human Capital.",
+    "programName": "Performance Management Program",
+    "logoAlt": "Sulaiman Alrajhi University logo",
+    "switchLanguage": "Switch to {language}"
   },
   "ForgotPasswordPage": {
     "title": "Forgot Password",
