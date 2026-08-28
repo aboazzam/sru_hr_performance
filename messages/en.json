@@ -3045,5 +3045,11 @@
     "statBauTasks": "Routine tasks",
     "statActivities": "Assigned activities",
     "statFeedback": "360 submitted / nominated"
+  },
+  "AppErrorBoundary": {
+    "title": "Something went wrong",
+    "description": "The app ran into a problem completing this action. If reloading doesn't help, contact Human Capital Management.",
+    "reloadButton": "Reload page",
+    "retryButton": "Try again"
   }
 }
