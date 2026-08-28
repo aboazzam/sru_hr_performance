@@ -2199,7 +2199,21 @@
     "exportPdf": "PDF",
     "exportExcel": "تصدير Excel",
     "exportCsv": "تصدير CSV",
-    "printView": "عرض للطباعة"
+    "printView": "عرض للطباعة",
+    "fieldRequestsOpenAt": "بداية استقبال الطلبات",
+    "fieldRequestsCloseAt": "آخر موعد لاستقبال الطلبات",
+    "fieldPlanStartDate": "بداية فترة الخطة",
+    "fieldPlanEndDate": "نهاية فترة الخطة",
+    "errorIntakeWindowReversed": "آخر موعد لاستقبال الطلبات لا يصح أن يسبق بدايته.",
+    "errorPlanPeriodReversed": "نهاية فترة الخطة لا تصح أن تسبق بدايتها.",
+    "windowsHeading": "زمن الخطة",
+    "windowsIntakeLabel": "نافذة استقبال الطلبات",
+    "windowsPeriodLabel": "فترة الخطة",
+    "windowsNotSet": "لم تُضبط بعد",
+    "windowsSaveButton": "حفظ الزمن",
+    "windowsSaved": "حُفظ زمن الخطة.",
+    "windowsEditHint": "ما يُرفع من طلبات داخل نافذة الاستقبال يُدرج في هذه الخطة؛ وما يُرفع بعد إغلاقها أو بعد إقرار الخطة يُسجَّل طلبًا خارج الخطة.",
+    "windowsReadOnly": "للاطلاع فقط — لا تملك صلاحية تعديل زمن الخطة."
   },
   "AnnouncedJobsPage": {
     "title": "الوظائف المعلن عنها",
@@ -2362,7 +2376,13 @@
     "printedOn": "تاريخ الطباعة: {date}",
     "competencyLevelPlaceholder": "اختر المستوى المطلوب…",
     "competencyLevelFor": "المستوى المطلوب لجدارة {name}",
-    "competencyLevelsMissing": "حدّد المستوى المطلوب لكل جدارة مختارة ({count} بلا مستوى)."
+    "competencyLevelsMissing": "حدّد المستوى المطلوب لكل جدارة مختارة ({count} بلا مستوى).",
+    "outOfPlanBadge": "خارج الخطة",
+    "outOfPlanTitle": "رُفع بعد إغلاق نافذة استقبال الطلبات أو بعد إقرار الخطة.",
+    "columnPlanWindow": "الخطة",
+    "inPlanBadge": "ضمن الخطة",
+    "intakeClosedNotice": "نافذة استقبال الطلبات مغلقة حاليًا — سيُسجَّل هذا الطلب طلبَ احتياجٍ خارج الخطة.",
+    "intakeOpenNotice": "نافذة استقبال الطلبات مفتوحة، فما تُقدّمه الآن يُدرج ضمن الخطة عند اعتماده."
   },
   "RecruitmentConsolidatePage": {
     "title": "دمج طلبات الاحتياج في الخطة",

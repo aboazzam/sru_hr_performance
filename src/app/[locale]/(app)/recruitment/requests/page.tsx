@@ -24,7 +24,7 @@ import { type CompetencyDraft, type CompetencyOption } from "@/components/Compet
 // The reason/contract/gender label maps moved into RecruitmentRequestRow with
 // the cells that render them, and now read from the message catalogue like the
 // rest of that component.
-const TABLE_COLUMN_COUNT = 10;
+const TABLE_COLUMN_COUNT = 11;
 
 export default async function RecruitmentRequestsPage() {
   const t = await getTranslations("RecruitmentRequestsPage");
@@ -50,7 +50,7 @@ export default async function RecruitmentRequestsPage() {
           // `qualifications` is not shown as a column, but the inline editor
           // sends every field `updateRecruitmentRequest` takes — it has to
           // arrive here so saving an edit cannot blank it out.
-          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, created_at"
+          "id, status, org_unit_id, job_title_id, custom_job_title, headcount, request_reason, contract_type, gender, proposed_quarter, qualifications, estimated_cost_by_requester, estimated_cost_by_hr, plan_id, out_of_plan, created_at"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })

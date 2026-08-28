@@ -2199,7 +2199,21 @@
     "exportPdf": "PDF",
     "exportExcel": "Export Excel",
     "exportCsv": "Export CSV",
-    "printView": "Print view"
+    "printView": "Print view",
+    "fieldRequestsOpenAt": "Request intake opens",
+    "fieldRequestsCloseAt": "Request intake closes",
+    "fieldPlanStartDate": "Plan period starts",
+    "fieldPlanEndDate": "Plan period ends",
+    "errorIntakeWindowReversed": "Intake cannot close before it opens.",
+    "errorPlanPeriodReversed": "The plan period cannot end before it starts.",
+    "windowsHeading": "Plan timing",
+    "windowsIntakeLabel": "Request intake window",
+    "windowsPeriodLabel": "Plan period",
+    "windowsNotSet": "Not set yet",
+    "windowsSaveButton": "Save timing",
+    "windowsSaved": "Plan timing saved.",
+    "windowsEditHint": "Requests raised inside the intake window join this plan; those raised after it closes, or after the plan is approved, are recorded as out-of-plan requests.",
+    "windowsReadOnly": "View only — you may not edit this plan’s timing."
   },
   "AnnouncedJobsPage": {
     "title": "Advertised Jobs",
@@ -2362,7 +2376,13 @@
     "printedOn": "Printed on: {date}",
     "competencyLevelPlaceholder": "Choose the required level…",
     "competencyLevelFor": "Required level for {name}",
-    "competencyLevelsMissing": "Choose a required level for every selected competency ({count} without one)."
+    "competencyLevelsMissing": "Choose a required level for every selected competency ({count} without one).",
+    "outOfPlanBadge": "Out of plan",
+    "outOfPlanTitle": "Raised after the intake window closed, or after the plan was approved.",
+    "columnPlanWindow": "Plan",
+    "inPlanBadge": "In plan",
+    "intakeClosedNotice": "The request intake window is currently closed — this request will be recorded as an out-of-plan request.",
+    "intakeOpenNotice": "The intake window is open, so what you submit now joins the plan once approved."
   },
   "RecruitmentConsolidatePage": {
     "title": "Consolidate demand requests into the plan",

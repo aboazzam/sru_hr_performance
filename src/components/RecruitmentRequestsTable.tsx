@@ -262,6 +262,7 @@ export function RecruitmentRequestsTable({
                     <th>{t("columnQuarter")}</th>
                     <th>{t("columnCost")}</th>
                     <th>{t("columnStatus")}</th>
+                    <th>{t("columnPlanWindow")}</th>
                     <th className="sru-col-actions">{t("columnActions")}</th>
                   </tr>
                 </thead>
