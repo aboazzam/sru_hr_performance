@@ -68,7 +68,7 @@ export default async function RecruitmentPlanPage() {
               float or explicit alignment needed. */}
           {canPrepare && (
             <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <CreateRecruitmentPlanForm defaultYear={new Date().getFullYear()} />
+              <CreateRecruitmentPlanForm />
             </div>
           )}
 

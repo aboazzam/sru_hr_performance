@@ -31,14 +31,13 @@ const errorKeys: Record<string, string> = {
  * The form clears and the dialog closes on success, so the next "new plan"
  * starts empty instead of showing the previous one's text.
  */
-export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number }) {
+export function CreateRecruitmentPlanForm() {
   const t = useTranslations("RecruitmentPlanPage");
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<RecruitmentPlanActionState | null>(null);
   const [nameAr, setNameAr] = useState("");
-  const [planYear, setPlanYear] = useState(String(defaultYear));
   const [notes, setNotes] = useState("");
   // زمنان مستقلان: نافذة استقبال الطلبات، ثم فترة الخطة نفسها. كلاهما
   // اختياري — خطةٌ تُنشأ اليوم قد لا تكون نافذتها قد تقرّرت بعد.
@@ -62,7 +61,8 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
 
   function submit() {
     startTransition(async () => {
-      const result = await createRecruitmentPlan(nameAr, Number(planYear), notes, {
+      // لا سنة تُرسَل: الخادم يشتقّها من بداية الفترة.
+      const result = await createRecruitmentPlan(nameAr, notes, {
         requestsOpenAt,
         requestsCloseAt,
         planStartDate,
@@ -112,22 +112,11 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
         </div>
 
         <div className="sru-formgrid">
-          <label className="sru-field">
+          <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
             <span>{t("fieldPlanName")}</span>
             <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
           </label>
-          <label className="sru-field">
-            <span>{t("fieldPlanYear")}</span>
-            <input
-              type="number"
-              min={2020}
-              max={2100}
-              dir="ltr"
-              value={planYear}
-              onChange={(e) => setPlanYear(e.target.value)}
-              required
-            />
-          </label>
+
           <label className="sru-field">
             <span>{t("fieldRequestsOpenAt")}</span>
             <DateFieldDmy value={requestsOpenAt} onChange={setRequestsOpenAt} ariaLabel={t("fieldRequestsOpenAt")} />
@@ -137,7 +126,7 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
             <DateFieldDmy value={requestsCloseAt} onChange={setRequestsCloseAt} ariaLabel={t("fieldRequestsCloseAt")} />
           </label>
           <label className="sru-field">
-            <span>{t("fieldPlanStartDate")}</span>
+            <span>{t("fieldPlanStartDateRequired")}</span>
             <DateFieldDmy value={planStartDate} onChange={setPlanStartDate} ariaLabel={t("fieldPlanStartDate")} />
           </label>
           <label className="sru-field">
@@ -148,6 +137,11 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
             <span>{t("fieldNotes")}</span>
             <input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
+          {planStartDate === "" && (
+            <p style={{ gridColumn: "1 / -1", margin: 0, color: "var(--sru-muted)", fontSize: 12 }}>
+              {t("planStartRequiredHint")}
+            </p>
+          )}
           {(intakeReversed || periodReversed) && (
             <p role="alert" className="text-sm text-red-600" style={{ gridColumn: "1 / -1", margin: 0 }}>
               {t(intakeReversed ? "errorIntakeWindowReversed" : "errorPlanPeriodReversed")}
@@ -159,7 +153,7 @@ export function CreateRecruitmentPlanForm({ defaultYear }: { defaultYear: number
           <button
             type="button"
             className="sru-btn sru-btn-primary"
-            disabled={pending || nameAr.trim() === "" || planYear.trim() === "" || intakeReversed || periodReversed}
+            disabled={pending || nameAr.trim() === "" || planStartDate === "" || intakeReversed || periodReversed}
             onClick={submit}
           >
             {pending ? t("creating") : t("createPlanButton")}

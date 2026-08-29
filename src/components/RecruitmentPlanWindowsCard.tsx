@@ -22,6 +22,10 @@ const errorKeys: Record<string, string> = {
   unauthenticated: "errorUnauthenticated",
   forbidden: "errorForbidden",
   not_found: "errorNotFound",
+  // صار بلوغه ممكنًا حين تبعت السنةُ بدايةَ الفترة: نقلُ فترة خطة إلى سنة
+  // تشغلها خطة أخرى يصطدم بالفهرس الفريد. ظهر حيًّا بوصفه «خطأ غير متوقع»
+  // لأن هذه الخريطة لم تكن تعرفه، فلم يفهم القارئ ما المانع.
+  duplicate: "errorDuplicateYear",
   unknown: "errorUnknown",
 };
 
