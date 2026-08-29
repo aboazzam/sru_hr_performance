@@ -32,6 +32,7 @@ const errorMessageKeys: Record<string, string> = {
  */
 export function CompetencyPillarCard({
   pillarId,
+  orderNumber,
   initialNameAr,
   initialNameEn,
   canManage,
@@ -39,6 +40,8 @@ export function CompetencyPillarCard({
   children,
 }: {
   pillarId: string;
+  /** 1-based position among the pillars on this page -- shown as a numbered badge so pillars/domains read as an ordered list, not a flat set (2026-08-29: "اضف ترقيم"). */
+  orderNumber: number;
   initialNameAr: string;
   initialNameEn: string | null;
   canManage: boolean;
@@ -93,6 +96,9 @@ export function CompetencyPillarCard({
     <section className="sru-card" style={{ padding: 18, marginBottom: 24 }}>
       {isEditing ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          <span className="sru-order-badge sru-order-badge-pillar" aria-hidden>
+            {orderNumber}
+          </span>
           <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 240, fontWeight: 700 }} autoFocus />
           <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 220 }} />
           <div className="sru-icon-action-group">
@@ -111,6 +117,9 @@ export function CompetencyPillarCard({
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          <span className="sru-order-badge sru-order-badge-pillar" aria-hidden>
+            {orderNumber}
+          </span>
           <h2 className="sru-title" style={{ fontSize: 16.5 }}>
             {initialNameAr}
           </h2>
