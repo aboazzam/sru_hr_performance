@@ -329,11 +329,23 @@ table.admin-matrix {
   min-width: 640px;
 }
 
+/* ===== توسيط محتوى الجداول (2026-08-29) =====
+   بطلب مباشر: «سنتر المحتوى في العمود ليتلاءم التنسيق ويجي الكلام تحت
+   بعضه، واعمل هذا التنسيق في كامل التطبيق».
+
+   والسبب أعمق من الذوق: `.sru-en` تضبط `direction: ltr` على خلايا الأرقام
+   (sru-ui.css)، فتُحاذى الخليةُ إلى يسارها بينما تُحاذى ترويستُها إلى يمين
+   الجدول — فيقف «3» في طرفٍ و«العدد المطلوب» في الطرف الآخر من العمود
+   نفسه. وهذا ما ظهر في البلاغ. والتوسيط يحلّه لأنه لا يتأثّر بالاتجاه:
+   الرقم اللاتيني والترويسة العربية يلتقيان في منتصف العمود.
+
+   على `.admin-matrix` وحدها — وهي جدول البيانات المشترك في التطبيق
+   (٥٠ ملفًا) — لا على `table` مطلقًا، لئلا يطال جداول لا تتبع هذا النمط. */
 .admin-matrix th {
   font-size: 11.5px;
   font-weight: 700;
   color: var(--sru-muted);
-  text-align: start;
+  text-align: center;
   padding: 0 10px 10px;
   border-bottom: 1px solid var(--sru-border);
 }
@@ -342,6 +354,7 @@ table.admin-matrix {
   padding: 10px;
   border-bottom: 1px solid var(--sru-border);
   vertical-align: middle;
+  text-align: center;
 }
 
 .admin-matrix tr:last-child td {
