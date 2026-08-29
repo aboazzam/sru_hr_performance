@@ -1586,7 +1586,10 @@ tr.sru-row-link:focus-within > td {
 .sru-datefield-placeholder {
   color: var(--sru-muted);
 }
-.sru-datefield-clear {
+/* كان اسمه `clear` حين كان يمسح التاريخ. صار قلمَ تحرير، فتغيّر اسمه معه:
+   صنفٌ يسمّي فعلًا لم يعد يفعله أسوأ من صنف بلا اسم. ولا يستقبل ضغطًا
+   بنفسه — الحقل كله زرٌّ يفتح التقويم — فلا مؤشر يد ولا حالة تحويم خاصة. */
+.sru-datefield-edit {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1595,8 +1598,7 @@ tr.sru-row-link:focus-within > td {
   border-radius: 0;
   color: var(--sru-muted);
 }
-.sru-datefield-clear:hover {
-  background: var(--sru-purple-light);
+.sru-datefield-trigger:hover .sru-datefield-edit {
   color: var(--sru-purple);
 }
 /* Fixed, not absolute, and placed from measured coordinates: inside a
