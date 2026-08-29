@@ -6,6 +6,7 @@ import {
   isRaisedOutOfPlan,
   planAcceptsRequests,
   planPeriodState,
+  planListStatusLabel,
 } from "./recruitmentPlanWindows";
 
 const plan = (over: Partial<Parameters<typeof planAcceptsRequests>[0]> = {}) => ({
@@ -137,5 +138,43 @@ describe("describeDateRange", () => {
     expect(describeDateRange("2026-08-01", null, id)).toBe("من 2026-08-01");
     expect(describeDateRange(null, "2026-09-30", id)).toBe("حتى 2026-09-30");
     expect(describeDateRange("2026-08-01", "2026-09-30", id)).toBe("2026-08-01 — 2026-09-30");
+  });
+});
+
+describe("planListStatusLabel", () => {
+  const FALLBACK = "مسودة";
+
+  it("says «استقبال الطلبات» while the window is open", () => {
+    expect(planListStatusLabel("draft", "open", FALLBACK)).toBe("استقبال الطلبات");
+    // ولو تقدّمت الخطة في مسارها الداخلي، فالباب مفتوح والقارئ يريد أن يعرف.
+    expect(planListStatusLabel("consolidated", "open", FALLBACK)).toBe("استقبال الطلبات");
+    expect(planListStatusLabel("finance_review", "open", FALLBACK)).toBe("استقبال الطلبات");
+  });
+
+  it("says «قيد المراجعة» once the window has closed and nothing is approved", () => {
+    expect(planListStatusLabel("draft", "closed", FALLBACK)).toBe("قيد المراجعة");
+    expect(planListStatusLabel("submitted", "closed", FALLBACK)).toBe("قيد المراجعة");
+    expect(planListStatusLabel("finance_review", "closed", FALLBACK)).toBe("قيد المراجعة");
+  });
+
+  it("says «معتمدة» once approved, whatever the window is doing", () => {
+    for (const intake of ["open", "closed", "before", "not_configured"] as const) {
+      expect(planListStatusLabel("approved", intake, FALLBACK)).toBe("معتمدة");
+    }
+  });
+
+  it("keeps the four states the three rules do not describe", () => {
+    // طمسُها تحت «قيد المراجعة» يُضيع خبرًا يحتاجه القارئ.
+    expect(planListStatusLabel("rejected", "closed", FALLBACK)).toBe("مرفوضة");
+    expect(planListStatusLabel("returned_for_revision", "closed", FALLBACK)).toBe("معادة للتعديل");
+    expect(planListStatusLabel("ready_for_execution", "closed", FALLBACK)).toBe("جاهزة للتنفيذ");
+    // ولا تنقلب بانفتاح النافذة أيضًا.
+    expect(planListStatusLabel("rejected", "open", FALLBACK)).toBe("مرفوضة");
+    expect(planListStatusLabel("returned_for_revision", "open", FALLBACK)).toBe("معادة للتعديل");
+  });
+
+  it("falls back to the stored label when the window says nothing yet", () => {
+    expect(planListStatusLabel("draft", "not_configured", FALLBACK)).toBe(FALLBACK);
+    expect(planListStatusLabel("draft", "before", FALLBACK)).toBe(FALLBACK);
   });
 });

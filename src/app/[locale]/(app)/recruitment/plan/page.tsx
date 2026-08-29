@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { CreateRecruitmentPlanForm } from "@/components/CreateRecruitmentPlanForm";
 import { RecruitmentPlanRow } from "@/components/RecruitmentPlanRow";
+import { intakeWindowState } from "@/lib/recruitmentPlanWindows";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { sortPlansForList } from "@/lib/recruitmentPlanList";
 
@@ -22,13 +25,17 @@ export default async function RecruitmentPlanPage() {
     ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
       (row) => row.process_area === "recruitmentPlan"
     )?.vpra_level ?? "none";
+  // اليوم بتوقيت العرض المضبوط في النظام لا بتوقيت الخادم ولا المتصفح:
+  // حالة النافذة تُقاس بيوم المنظمة، وحسابها في العميل يجعلها تختلف بين
+  // رسم الخادم ورسمه.
+  const today = todayInTimezone(await getDisplayTimezone(supabase));
   const canView = hasVpraAccess(level, "view");
   const canPrepare = hasVpraAccess(level, "prepare");
 
   const { data: planRows } = canView
     ? await supabase
         .from("recruitment_plans")
-        .select("id, name_ar, plan_year, status, notes, finance_reviewed_at")
+        .select("id, name_ar, plan_year, status, notes, finance_reviewed_at, requests_open_at, requests_close_at")
         .is("deleted_at", null)
         .order("plan_year", { ascending: false })
     : { data: null };
@@ -98,6 +105,7 @@ export default async function RecruitmentPlanPage() {
                         notes={plan.notes}
                         planYear={plan.plan_year}
                         status={plan.status}
+                        intakeState={intakeWindowState(plan.requests_open_at, plan.requests_close_at, today)}
                         financeReviewed={plan.finance_reviewed_at !== null}
                         headcount={headcountByPlan.get(plan.id) ?? 0}
                       />
