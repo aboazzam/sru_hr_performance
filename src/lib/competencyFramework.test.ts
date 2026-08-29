@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupCompetencyFramework, isCompetencyLevelsComplete } from "./competencyFramework";
+import { computeAutoApplyClassificationIds, groupCompetencyFramework, isCompetencyLevelsComplete } from "./competencyFramework";
 
 describe("groupCompetencyFramework", () => {
   it("nests domains under their pillar and competencies under their domain", () => {
@@ -11,7 +11,7 @@ describe("groupCompetencyFramework", () => {
           id: "c1",
           domain_id: "d1",
           name_ar: "الامتثال",
-          type: "core",
+          classification_id: "cls-core",
           definition_ar: "...",
           expected_impact_ar: "...",
           job_family_id: null,
@@ -46,7 +46,7 @@ describe("groupCompetencyFramework", () => {
           id: "orphan",
           domain_id: "missing-domain",
           name_ar: "x",
-          type: "core",
+          classification_id: "cls-core",
           definition_ar: "",
           expected_impact_ar: "",
           job_family_id: null,
@@ -55,6 +55,29 @@ describe("groupCompetencyFramework", () => {
       []
     );
     expect(result[0].domains[0].competencies).toEqual([]);
+  });
+});
+
+describe("computeAutoApplyClassificationIds", () => {
+  it("returns only the ids of classifications flagged auto_apply_everywhere", () => {
+    const ids = computeAutoApplyClassificationIds([
+      { id: "a", name_ar: "أساسية", name_en: null, auto_apply_everywhere: true },
+      { id: "b", name_ar: "تخصصية", name_en: null, auto_apply_everywhere: false },
+      { id: "c", name_ar: "مؤسسية", name_en: null, auto_apply_everywhere: false },
+    ]);
+    expect(ids).toEqual(new Set(["a"]));
+  });
+
+  it("is not hardcoded to any particular name -- more than one classification can auto-apply", () => {
+    const ids = computeAutoApplyClassificationIds([
+      { id: "a", name_ar: "أساسية", name_en: null, auto_apply_everywhere: true },
+      { id: "c", name_ar: "مؤسسية", name_en: null, auto_apply_everywhere: true },
+    ]);
+    expect(ids).toEqual(new Set(["a", "c"]));
+  });
+
+  it("returns an empty set when nothing is flagged", () => {
+    expect(computeAutoApplyClassificationIds([{ id: "b", name_ar: "تخصصية", name_en: null, auto_apply_everywhere: false }])).toEqual(new Set());
   });
 });
 

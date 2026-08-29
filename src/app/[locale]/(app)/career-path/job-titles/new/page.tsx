@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
+import { computeAutoApplyClassificationIds } from "@/lib/competencyFramework";
 import { CreateJobTitleForm } from "@/components/CreateJobTitleForm";
 import type { Locale } from "@/i18n/config";
 
@@ -40,15 +41,21 @@ export default async function CreateJobTitlePage({ params }: { params: Promise<{
     )
   );
 
+  const { data: classificationsData } = await supabase.from("competency_classifications").select("id, name_ar, name_en, auto_apply_everywhere");
+  const autoApplyClassificationIds = computeAutoApplyClassificationIds(
+    (classificationsData as unknown as Array<{ id: string; name_ar: string; name_en: string | null; auto_apply_everywhere: boolean }>) ?? []
+  );
+
   const { data: allCompetenciesData } = await supabase
     .from("competencies")
-    .select("id, name_ar, domain_id, type")
+    .select("id, name_ar, domain_id, classification_id")
     .is("deleted_at", null)
     .order("name_ar");
-  const allCompetenciesRows = (allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string; type: string }>) ?? [];
+  const allCompetenciesRows =
+    (allCompetenciesData as unknown as Array<{ id: string; name_ar: string; domain_id: string; classification_id: string }>) ?? [];
   const allCompetencies = allCompetenciesRows.map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
   const coreCompetencies = allCompetenciesRows
-    .filter((c) => c.type === "core")
+    .filter((c) => autoApplyClassificationIds.has(c.classification_id))
     .map((c) => ({ id: c.id, nameAr: c.name_ar, pillarAr: domainPillar.get(c.domain_id) ?? "—" }));
 
   const { data: allJobTitlesData } = await supabase

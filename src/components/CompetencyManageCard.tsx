@@ -5,8 +5,8 @@ import { Pencil, Archive, Check, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { updateCompetency, updateCompetencyLevels, archiveCompetency } from "@/app/[locale]/(app)/competencies/actions";
-import { behavioralLevelOrder, isCompetencyLevelsComplete, type BehavioralLevel, type CompetencyType } from "@/lib/competencyFramework";
-import { behavioralLevelLabels, competencyTypeLabels } from "@/lib/data/competencies";
+import { behavioralLevelOrder, isCompetencyLevelsComplete, type BehavioralLevel } from "@/lib/competencyFramework";
+import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 const inputClass =
   "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
@@ -25,25 +25,33 @@ interface JobFamilyOption {
   name_ar: string;
 }
 
+interface ClassificationOption {
+  id: string;
+  name_ar: string;
+  auto_apply_everywhere: boolean;
+}
+
 export function CompetencyManageCard({
   competencyId,
   initialNameAr,
-  initialType,
+  initialClassificationId,
   initialDefinitionAr,
   initialExpectedImpactAr,
   initialJobFamilyId,
   initialLevels,
   jobFamilies,
+  classifications,
   canManage,
 }: {
   competencyId: string;
   initialNameAr: string;
-  initialType: CompetencyType;
+  initialClassificationId: string;
   initialDefinitionAr: string;
   initialExpectedImpactAr: string;
   initialJobFamilyId: string | null;
   initialLevels: Partial<Record<BehavioralLevel, { behavior_ar: string }>>;
   jobFamilies: JobFamilyOption[];
+  classifications: ClassificationOption[];
   canManage: boolean;
 }) {
   const t = useTranslations("CompetenciesPage");
@@ -52,7 +60,7 @@ export function CompetencyManageCard({
   const [isArchiving, startArchiving] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [nameAr, setNameAr] = useState(initialNameAr);
-  const [type, setType] = useState<CompetencyType>(initialType);
+  const [classificationId, setClassificationId] = useState(initialClassificationId);
   const [definitionAr, setDefinitionAr] = useState(initialDefinitionAr);
   const [expectedImpactAr, setExpectedImpactAr] = useState(initialExpectedImpactAr);
   const [jobFamilyId, setJobFamilyId] = useState(initialJobFamilyId ?? "");
@@ -64,11 +72,14 @@ export function CompetencyManageCard({
   const [error, setError] = useState<string | null>(null);
 
   const isComplete = isCompetencyLevelsComplete(initialLevels);
+  const initialClassification = classifications.find((c) => c.id === initialClassificationId);
+  const selectedClassification = classifications.find((c) => c.id === classificationId) ?? initialClassification;
+  const showJobFamily = selectedClassification ? !selectedClassification.auto_apply_everywhere : true;
 
   function handleEdit() {
     setError(null);
     setNameAr(initialNameAr);
-    setType(initialType);
+    setClassificationId(initialClassificationId);
     setDefinitionAr(initialDefinitionAr);
     setExpectedImpactAr(initialExpectedImpactAr);
     setJobFamilyId(initialJobFamilyId ?? "");
@@ -89,10 +100,10 @@ export function CompetencyManageCard({
       const fieldsRes = await updateCompetency({
         id: competencyId,
         nameAr,
-        type,
+        classificationId,
         definitionAr,
         expectedImpactAr,
-        jobFamilyId: type === "specialized" && jobFamilyId ? jobFamilyId : null,
+        jobFamilyId: showJobFamily && jobFamilyId ? jobFamilyId : null,
       });
       if (fieldsRes.status !== "success") {
         setError(fieldsRes.message);
@@ -123,9 +134,7 @@ export function CompetencyManageCard({
       <details className="sru-card competency-card">
         <summary>
           <span>{initialNameAr}</span>
-          <span className="sru-chip" style={initialType === "specialized" ? { background: "var(--sru-blue-light)", color: "var(--sru-blue)" } : undefined}>
-            {competencyTypeLabels[initialType]}
-          </span>
+          <span className="sru-chip">{initialClassification?.name_ar ?? "—"}</span>
           {!isComplete && (
             <span className="sru-chip" style={{ background: "#fef3c7", color: "#92400e" }}>
               {t("incompleteLevelsBadge")}
@@ -185,13 +194,16 @@ export function CompetencyManageCard({
 
         <div style={{ display: "flex", gap: 10 }}>
           <div style={{ flex: 1 }}>
-            <label className="block text-sm font-medium mb-1">{t("competencyTypeLabel")}</label>
-            <select value={type} onChange={(e) => setType(e.target.value as CompetencyType)} className={inputClass}>
-              <option value="core">{competencyTypeLabels.core}</option>
-              <option value="specialized">{competencyTypeLabels.specialized}</option>
+            <label className="block text-sm font-medium mb-1">{t("competencyClassificationLabel")}</label>
+            <select value={classificationId} onChange={(e) => setClassificationId(e.target.value)} className={inputClass}>
+              {classifications.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name_ar}
+                </option>
+              ))}
             </select>
           </div>
-          {type === "specialized" && (
+          {showJobFamily && (
             <div style={{ flex: 1 }}>
               <label className="block text-sm font-medium mb-1">{t("jobFamilyLabel")}</label>
               <select value={jobFamilyId} onChange={(e) => setJobFamilyId(e.target.value)} className={inputClass}>

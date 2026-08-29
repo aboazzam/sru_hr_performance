@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { JOB_TITLE_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
+import { computeAutoApplyClassificationIds } from "@/lib/competencyFramework";
 
 export type JobTitlesImportResult =
   | {
@@ -78,10 +79,11 @@ const BATCH_SIZE = 50;
  * expose (name_ar/name_en/family/grade/category/qualification/description),
  * plus (2026-08-04 follow-up, per direct feedback that the first version
  * "لم يتطرق الى الجدارات" — didn't address competencies) one OPTIONAL extra
- * column per real INSTITUTIONAL (type='core') competency, named after that
- * competency's own name_ar, holding a required_level label (أساسي/ممارس/
- * متقدم/محترف). Deliberately scoped to core competencies only, not
- * specialized ones — the same 11 apply to every job title (matching
+ * column per real INSTITUTIONAL (classification.auto_apply_everywhere=true,
+ * was hardcoded to type='core' before 20260829000001) competency, named
+ * after that competency's own name_ar, holding a required_level label
+ * (أساسي/ممارس/متقدم/محترف). Deliberately scoped to auto-applying
+ * competencies only, not others — the same 11 apply to every job title (matching
  * `JobTitleCompetenciesManager`'s own core-vs-specialized split), so a fixed
  * column set works, whereas specialized competencies vary per pillar/domain
  * and would need a fundamentally different sheet shape (e.g. one row per
@@ -160,8 +162,19 @@ export async function importJobTitlesExcel(
 
   // Core competencies whose columns (if present in the sheet) carry a
   // required_level per job title — see the function-level doc comment.
-  const { data: coreCompetenciesData } = await supabase.from("competencies").select("id, name_ar").eq("type", "core");
-  const coreCompetencyColumns = (coreCompetenciesData ?? []).filter((c) => cols.has(c.name_ar));
+  // "Core" is now whichever classification(s) are flagged
+  // auto_apply_everywhere (20260829000001), not a hardcoded 'core' string.
+  const { data: classificationsData } = await supabase.from("competency_classifications").select("id, name_ar, name_en, auto_apply_everywhere");
+  const autoApplyClassificationIds = computeAutoApplyClassificationIds(
+    (classificationsData as Array<{ id: string; name_ar: string; name_en: string | null; auto_apply_everywhere: boolean }>) ?? []
+  );
+  const { data: coreCompetenciesData } = await supabase
+    .from("competencies")
+    .select("id, name_ar, classification_id")
+    .is("deleted_at", null);
+  const coreCompetencyColumns = ((coreCompetenciesData ?? []) as Array<{ id: string; name_ar: string; classification_id: string }>).filter(
+    (c) => autoApplyClassificationIds.has(c.classification_id) && cols.has(c.name_ar)
+  );
 
   interface ParsedRow {
     rowNumber: number;
