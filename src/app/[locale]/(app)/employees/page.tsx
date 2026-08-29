@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Plus, UserCog } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
@@ -247,6 +247,7 @@ export default async function EmployeesPage({
           justifyContent: "space-between",
           gap: 16,
           marginBottom: 8,
+          flexWrap: "wrap",
         }}
       >
         <div>
@@ -257,10 +258,14 @@ export default async function EmployeesPage({
             {t("subtitle")}
           </p>
         </div>
-        <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {/* The same sru-actionbar the competencies/initiatives screens use, not
+            a copy of it, so this row never drifts from theirs (2026-08-29
+            request: "عدل السايل في الموظفين ليكون مثل الجدارات"). */}
+        <div className="sru-actionbar no-print">
           {canManageAccounts && (
             <>
               <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
+                <UserCog size={14} aria-hidden />
                 {t("assignSupervisor")}
               </Link>
               <ImportOrgStructureExcelForm
@@ -272,6 +277,7 @@ export default async function EmployeesPage({
           )}
           {hasVpraAccess(employeeDataLevel, "prepare") && (
             <Link href="/employees/new" className="sru-btn sru-btn-primary">
+              <Plus size={14} aria-hidden />
               {t("addEmployee")}
             </Link>
           )}
