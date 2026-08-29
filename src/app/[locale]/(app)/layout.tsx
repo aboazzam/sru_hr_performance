@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { PrintBranding } from "@/components/PrintBranding";
 import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 
 /**
@@ -94,6 +95,12 @@ export default async function AppShellLayout({
 
   return (
     <div className="sru-app-shell">
+      {/* Mounted once here (not per-page) so every screen under (app)/ carries
+          the same print letterhead automatically — 2026-08-30: "اعتمد
+          النموذج المرفق للتصدير على بي دي اف في جميع شاشات التطبيق واجعلها
+          موحدة". `position: fixed` (see globals.css) makes placement in the
+          tree irrelevant to where it renders on the printed page. */}
+      <PrintBranding />
       <TopBar locale={safeLocale} userName={userName} notifications={notifications ?? []} />
       <div className="sru-app-body">
         <Sidebar permissions={permissions} />
