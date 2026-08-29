@@ -74,7 +74,7 @@ export default async function CareerPathJobTitlesPage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="sru-actionbar no-print">
           <Link href="/career-path/job-titles/new" className="sru-btn sru-btn-primary">
             {t("createNew")}
           </Link>

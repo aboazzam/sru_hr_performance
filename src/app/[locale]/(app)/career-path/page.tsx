@@ -152,7 +152,7 @@ export default async function CareerPathPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="sru-actionbar no-print">
           <Link href="/career-path/job-titles" className="sru-btn">
             {t("manageJobTitles")}
           </Link>

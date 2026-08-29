@@ -54,7 +54,7 @@ export default async function RewardsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="sru-actionbar no-print">
           <Link href="/promotions/history" className="sru-btn sru-btn-primary">
             {t("approvalHistory")}
           </Link>

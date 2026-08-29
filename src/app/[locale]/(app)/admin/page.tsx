@@ -155,7 +155,9 @@ export default async function AdminPage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <PrintButton />
+        <div className="sru-actionbar no-print">
+          <PrintButton />
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

@@ -1943,6 +1943,10 @@ tr.sru-row-link:focus-within > td {
   font-size: calc(14px * 0.6);
   padding: 6px 12px;
   line-height: 1.7;
+  /* The kit button carries no border while .sru-btn carries a transparent
+     1px one, which left the print button 2px shorter than the rest of the
+     bar (measured live: 26px vs 28px). */
+  border: 1px solid transparent;
 }
 
 /* Filters under the tab strip: status / owning department / strategic goal.
