@@ -90,7 +90,10 @@ export default async function CompetenciesPage() {
             {t("subtitle", { pillars: pillars.length, domains: domains.length, competencies: competencies.length })}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        {/* Same sru-actionbar class المبادرات/الخطة use, not a copy of it, so this
+            row never drifts from theirs (2026-08-29 request: "بالشكل واللون
+            والحجم كما في الصورة المتعلقة بالمبادرات"). */}
+        <div className="sru-actionbar no-print">
           {canManage && <AddCompetencyClassificationForm />}
           {canManage && <AddCompetencyPillarForm />}
           {canManage && <ImportCompetenciesExcelForm />}

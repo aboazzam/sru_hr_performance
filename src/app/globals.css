@@ -1521,11 +1521,15 @@ tr.sru-row-link:focus-within > td {
   gap: 8px;
   flex-wrap: wrap;
 }
-/* الأبناء المباشرون وحدهم. الحوارات (`<dialog>`) تُصيَّر داخل الشريط
-   نفسه، فالمحدِّد النسبي كان يصغّر أزرارها هي أيضًا — «إضافة البند» و«إلغاء»
-   و«التالي» — وهي أزرار نموذج لا أزرار شريط. ظهر ذلك بالقياس الحي عند ضمّ
-   أزرار خطة التوظيف إلى الشريط. */
-.sru-actionbar > .sru-btn {
+/* الأبناء المباشرون، وأزرار قوائم التصدير (`ExportMenu`/`*ExportMenu`) التي
+   يغلّفها `.sru-user-menu` لأجل تموضع القائمة المنسدلة -- ذلك الغلاف وحده
+   مسموح بينهما وإلا بقي زر "تصدير" على حجمه الكامل بجانب بقية الشريط
+   المصغَّر (وُجد حيًّا في شاشة الجدارات: 13px مقابل 8.4px للباقي). الحوارات
+   (`<dialog>`) تُصيَّر داخل الشريط نفسه، فالمحدِّد النسبي كان يصغّر أزرارها هي
+   أيضًا — «إضافة البند» و«إلغاء» و«التالي» — وهي أزرار نموذج لا أزرار شريط.
+   ظهر ذلك بالقياس الحي عند ضمّ أزرار خطة التوظيف إلى الشريط. */
+.sru-actionbar > .sru-btn,
+.sru-actionbar > .sru-user-menu > .sru-btn {
   font-size: calc(14px * 0.6);
   padding: 6px 12px;
   display: inline-flex;
@@ -1540,10 +1544,12 @@ tr.sru-row-link:focus-within > td {
   border: 1px solid transparent;
   text-decoration: none;
 }
-.sru-actionbar > .sru-btn:hover:not(:disabled) {
+.sru-actionbar > .sru-btn:hover:not(:disabled),
+.sru-actionbar > .sru-user-menu > .sru-btn:hover:not(:disabled) {
   background: var(--sru-purple-dark);
 }
-.sru-actionbar > .sru-btn svg {
+.sru-actionbar > .sru-btn svg,
+.sru-actionbar > .sru-user-menu > .sru-btn svg {
   width: 13px;
   height: 13px;
 }
