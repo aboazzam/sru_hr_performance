@@ -2802,3 +2802,86 @@ table {
   padding: 0 6px;
   font-size: 10.5px;
 }
+
+/* ===== طباعة إطار الجدارات (2026-08-29) =====
+   الشاشة تحتاج فراغاً مريحاً للعين واللمس، لكن ٩ جدارات فقط كانت تملأ ورقة
+   A4 كاملة عند الطباعة -- بلا داعٍ، فالورقة لا تُقرأ باللمس ولا تحتاج
+   المسافات نفسها. مقيَّدة بـ .competencies-print-page (المضافة على
+   الحاوية الجذرية في page.tsx) حتى لا تمس طباعة أي صفحة أخرى، و`!important`
+   ضرورية هنا لأن أغلب القياسات على الشاشة مضبوطة كـ inline style، التي لا
+   يغلبها إلا `!important` بصرف النظر عن التخصيصية. العنوان والفرعي والفاصل
+   والتصنيفات مستثناة أصلاً بـ .no-print فلا حاجة لتصغيرها هنا. */
+@media print {
+  .competencies-print-page {
+    padding: 4mm 6mm !important;
+  }
+  .competencies-print-page .competency-pillar-card {
+    padding: 5px 8px !important;
+    margin-bottom: 6px !important;
+  }
+  .competencies-print-page .competency-pillar-head {
+    margin-bottom: 4px !important;
+    gap: 5px !important;
+  }
+  .competencies-print-page .competency-pillar-head h2 {
+    font-size: 11px !important;
+  }
+  .competencies-print-page .competency-domain-block {
+    padding-top: 3px !important;
+    margin-top: 5px !important;
+  }
+  .competencies-print-page .competency-domain-head {
+    margin-bottom: 3px !important;
+    gap: 4px !important;
+  }
+  .competencies-print-page .competency-domain-head h3 {
+    font-size: 9.5px !important;
+  }
+  .competencies-print-page .competency-list {
+    gap: 2px !important;
+  }
+  .competencies-print-page .competency-card {
+    padding: 4px 6px !important;
+  }
+  .competencies-print-page .competency-card summary {
+    font-size: 8.5px !important;
+    gap: 5px !important;
+  }
+  .competencies-print-page .competency-card[open] summary {
+    margin-bottom: 5px !important;
+  }
+  .competencies-print-page .competency-body {
+    gap: 4px !important;
+    padding-top: 4px !important;
+  }
+  .competencies-print-page .competency-level h4 {
+    font-size: 8px !important;
+    margin-bottom: 2px !important;
+  }
+  .competencies-print-page .competency-level ul {
+    font-size: 8px !important;
+    gap: 1px !important;
+    padding-inline-start: 12px !important;
+  }
+  .competencies-print-page .sru-chip {
+    font-size: 7.5px !important;
+    padding: 1px 5px !important;
+  }
+  .competencies-print-page .sru-order-badge-pillar {
+    width: 15px !important;
+    height: 15px !important;
+    font-size: 8px !important;
+  }
+  .competencies-print-page .sru-order-badge-domain {
+    min-width: 13px !important;
+    height: 13px !important;
+    font-size: 7px !important;
+    padding: 0 3px !important;
+  }
+  .competencies-print-page .sru-order-badge-competency {
+    min-width: 12px !important;
+    height: 12px !important;
+    font-size: 6.5px !important;
+    padding: 0 3px !important;
+  }
+}

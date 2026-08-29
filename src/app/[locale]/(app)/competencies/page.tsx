@@ -70,7 +70,7 @@ export default async function CompetenciesPage() {
   const grouped = groupCompetencyFramework(pillars, domains, competencies, levels);
 
   return (
-    <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+    <div className="sru-container competencies-print-page" style={{ padding: "32px 22px 60px" }}>
       <div
         className="no-print"
         style={{
@@ -157,7 +157,7 @@ export default async function CompetenciesPage() {
                 canManage={canManage}
                 canDelete={canDeleteStructure}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className="competency-list" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {domain.competencies.length === 0 ? (
                     <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noCompetenciesYet")}</p>
                   ) : (

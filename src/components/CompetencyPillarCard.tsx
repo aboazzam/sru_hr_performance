@@ -93,7 +93,7 @@ export function CompetencyPillarCard({
   }
 
   return (
-    <section className="sru-card" style={{ padding: 18, marginBottom: 24 }}>
+    <section className="sru-card competency-pillar-card" style={{ padding: 18, marginBottom: 24 }}>
       {isEditing ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
           <span className="sru-order-badge sru-order-badge-pillar" aria-hidden>
@@ -116,7 +116,7 @@ export function CompetencyPillarCard({
           )}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+        <div className="competency-pillar-head" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
           <span className="sru-order-badge sru-order-badge-pillar" aria-hidden>
             {orderNumber}
           </span>
