@@ -194,9 +194,24 @@ export async function inviteEmployee(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user: actor },
-  } = await supabase.auth.getUser();
+  // A token that was valid when the page loaded can expire by the time the
+  // form is submitted, and refreshing a genuinely stale one makes this THROW
+  // rather than return {user: null} (see src/proxy.ts's matching fix) --
+  // confirmed as the real cause of a reported blank page on this exact form
+  // (2026-08): the page loads fine on a still-valid session, but submitting
+  // later hits this for the first time and crashes with no error boundary
+  // able to catch it (an uncaught throw inside a Server Action, not a
+  // render). Treated exactly like "not signed in": the existing
+  // unauthenticated state already gives a normal, actionable message.
+  let actor = null;
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    actor = authUser;
+  } catch {
+    actor = null;
+  }
 
   if (!actor) {
     return { status: "error", message: "unauthenticated" };
