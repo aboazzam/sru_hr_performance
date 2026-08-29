@@ -2767,3 +2767,27 @@ table {
   background: var(--sru-purple);
   color: #fff;
 }
+
+/* شارة ترقيم دائرية صغيرة تسبق عنوان المحور/المجال (2026-08-29: "اضف
+   ترقيم") -- تجعل القائمة الهرمية مقروءة كترتيب لا كمجموعة مسطّحة. حجمان
+   فقط (محور أكبر قليلًا من مجال) بدرجة اللون نفسها. */
+.sru-order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--sru-purple-light, #f3eefa);
+  color: var(--sru-purple);
+  font-weight: 700;
+}
+.sru-order-badge-pillar {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+.sru-order-badge-domain {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+}

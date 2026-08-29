@@ -128,10 +128,11 @@ export default async function CompetenciesPage() {
         <p style={{ color: "var(--sru-muted)", fontSize: 14 }}>{t("noPillarsYet")}</p>
       )}
 
-      {grouped.map((pillar) => (
+      {grouped.map((pillar, pillarIndex) => (
         <CompetencyPillarCard
           key={pillar.id}
           pillarId={pillar.id}
+          orderNumber={pillarIndex + 1}
           initialNameAr={pillar.name_ar}
           initialNameEn={pillar.name_en}
           canManage={canManage}
@@ -146,10 +147,11 @@ export default async function CompetenciesPage() {
           {pillar.domains.length === 0 ? (
             <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noDomainsYet")}</p>
           ) : (
-            pillar.domains.map((domain) => (
+            pillar.domains.map((domain, domainIndex) => (
               <CompetencyDomainCard
                 key={domain.id}
                 domainId={domain.id}
+                orderNumber={domainIndex + 1}
                 initialNameAr={domain.name_ar}
                 initialNameEn={domain.name_en}
                 canManage={canManage}
