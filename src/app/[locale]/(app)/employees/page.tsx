@@ -263,7 +263,11 @@ export default async function EmployeesPage({
               <Link href="/employees/assign-supervisor" className="sru-btn sru-btn-primary">
                 {t("assignSupervisor")}
               </Link>
-              <ImportOrgStructureExcelForm templateHref="/templates/sru-employees-import-template.xlsx" note={t("importNoteEmployeesOnly")} />
+              <ImportOrgStructureExcelForm
+                templateHref="/templates/sru-employees-import-template.xlsx"
+                note={t("importNoteEmployeesOnly")}
+                triggerVariant="primary"
+              />
             </>
           )}
           {hasVpraAccess(employeeDataLevel, "prepare") && (

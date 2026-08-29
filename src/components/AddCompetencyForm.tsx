@@ -100,7 +100,7 @@ export function AddCompetencyForm({
 
   return (
     <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn" style={{ fontSize: 12.5, padding: "6px 12px" }}>
+      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
         {t("addCompetencyTriggerButton")}
       </button>
 

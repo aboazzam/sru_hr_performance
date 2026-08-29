@@ -65,3 +65,17 @@ export const ORG_STRUCTURE_IMPORT_COLUMNS = {
   structParentCode: "رمز التبعية",
   structHolderNumber: "الرقم الوظيفي لمن يشغل المنصب",
 } as const;
+
+export const COMPETENCY_IMPORT_COLUMNS = {
+  pillar: "المحور",
+  domain: "المجال",
+  nameAr: "اسم الجدارة",
+  classification: "التصنيف",
+  jobFamily: "العائلة الوظيفية",
+  definition: "التعريف",
+  expectedImpact: "الأثر المرجو",
+  basic: "أساسي",
+  practitioner: "ممارس",
+  advanced: "متقدم",
+  professional: "محترف",
+} as const;

@@ -33,9 +33,11 @@ const errorMessageKeys: Record<string, string> = {
 export function ImportOrgStructureExcelForm({
   templateHref = "/templates/sru-org-structure-import-template.xlsx",
   note,
+  triggerVariant,
 }: {
   templateHref?: string;
   note?: string;
+  triggerVariant?: "primary" | "secondary";
 } = {}) {
   const t = useTranslations("OrgStructurePage");
 
@@ -69,6 +71,7 @@ export function ImportOrgStructureExcelForm({
       fields={fields}
       action={importOrgStructureExcel}
       pendingLabel={t("importing")}
+      triggerVariant={triggerVariant}
     >
       {(state: ImportResult | null) => <OrgStructureImportOutcome state={state} />}
     </ExcelImportDialog>
