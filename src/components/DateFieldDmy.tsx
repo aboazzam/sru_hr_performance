@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
-import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import {
   daysInMonth,
   formatDateDmy,
@@ -175,25 +175,15 @@ export function DateFieldDmy({
         <span className={parts ? undefined : "sru-datefield-placeholder"}>
           {parts ? formatDateDmy(current, locale) : locale === "en" ? "Choose a date" : "اختر التاريخ"}
         </span>
+        {/* قلمٌ لا علامة ×، بطلب مباشر: «استبدل علامة x بأيقونة التحرير».
+            و«يُحرِّر» فعلًا لا يمسح — العلامة السابقة كانت تمسح التاريخ،
+            فلو حملت شكل قلم لصارت فخًّا: من يضغط قلمًا ينتظر التعديل لا
+            الحذف. فهو الآن دلالةٌ على أن الحقل قابل للتحرير، والضغط عليه
+            يفتح التقويم كالضغط على الحقل نفسه. والمسح انتقل إلى ذيل
+            التقويم زرًّا مكتوبًا باسمه، فما عاد فعلًا يُستدَلّ عليه برمز. */}
         {parts && !disabled && (
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={locale === "en" ? "Clear the date" : "مسح التاريخ"}
-            className="sru-datefield-clear"
-            onClick={(e) => {
-              e.stopPropagation();
-              emit("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.stopPropagation();
-                emit("");
-              }
-            }}
-          >
-            <X size={13} aria-hidden />
+          <span className="sru-datefield-edit" aria-hidden>
+            <Pencil size={13} />
           </span>
         )}
       </button>
@@ -298,6 +288,20 @@ export function DateFieldDmy({
             >
               {locale === "en" ? "Today" : "اليوم"}
             </button>
+            {/* المسح هنا لا في الحقل: زرٌّ باسمه لا رمزٌ يُخمَّن، ولا يظهر
+                إلا حين يكون ثمّة تاريخ يُمسح. */}
+            {current !== "" && (
+              <button
+                type="button"
+                className="sru-datefield-quick"
+                onClick={() => {
+                  emit("");
+                  setOpen(false);
+                }}
+              >
+                {locale === "en" ? "Clear" : "مسح التاريخ"}
+              </button>
+            )}
             <button type="button" className="sru-datefield-quick" onClick={() => setOpen(false)}>
               {locale === "en" ? "Close" : "إغلاق"}
             </button>
