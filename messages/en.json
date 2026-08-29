@@ -2224,7 +2224,9 @@
     "windowsSaveButton": "Save timing",
     "windowsSaved": "Plan timing saved.",
     "windowsEditHint": "Requests raised inside the intake window join this plan; those raised after it closes, or after the plan is approved, are recorded as out-of-plan requests.",
-    "windowsReadOnly": "View only — you may not edit this plan’s timing."
+    "windowsReadOnly": "View only — you may not edit this plan’s timing.",
+    "fieldPlanStartDateRequired": "Plan period starts *",
+    "planStartRequiredHint": "The plan year comes from its start date, so it must be set."
   },
   "AnnouncedJobsPage": {
     "title": "Advertised Jobs",

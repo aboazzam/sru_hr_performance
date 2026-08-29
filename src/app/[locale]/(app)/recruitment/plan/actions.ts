@@ -103,12 +103,30 @@ const planWindowRefinements = <T extends {
     .refine((v) => orderedOrMissing(v.requestsOpenAt, v.requestsCloseAt))
     .refine((v) => orderedOrMissing(v.planStartDate, v.planEndDate));
 
+/**
+ * سنة الخطة تُشتق من بداية فترتها ولا تُطلب من المستخدم.
+ *
+ * بطلب مباشر: «طالما أن فيه موعد بداية الخطة ونهايتها فما له داعٍ ذكر
+ * السنة». وهو صحيح: حقلان يقولان الشيء نفسه يفتحان باب تناقضهما — خطةٌ
+ * سنتها 2027 وفترتها تبدأ 2028 لا معنى لها، ولا شيء كان يمنعها.
+ *
+ * ولا تُشتق في المتصفح ثم تُرسل: العمود تحته فهرس فريد (خطة واحدة لكل
+ * سنة)، وقيمةٌ يقرّرها العميل تحت قيدٍ كهذا تُصدَّق ولا تُؤتمن. الخادم
+ * يقرؤها من التاريخ نفسه الذي حُفظ.
+ *
+ * ولهذا صارت `planStartDate` إلزامية وحدها: هي حاملة السنة. أما نهاية
+ * الفترة ونافذة الاستقبال فتبقى اختيارية كما كانت.
+ */
+function planYearFrom(startDate: string): number {
+  return Number(startDate.slice(0, 4));
+}
+
 const createPlanSchema = planWindowRefinements(
   z.object({
     nameAr: z.string().trim().min(1),
-    planYear: z.number().int().min(2020).max(2100),
     notes: z.string().trim().optional(),
     ...planWindowFields,
+    planStartDate: z.iso.date(),
   })
 );
 
@@ -131,13 +149,11 @@ export interface RecruitmentPlanWindowInput {
 
 export async function createRecruitmentPlan(
   nameAr: string,
-  planYear: number,
   notes: string,
   windows: RecruitmentPlanWindowInput = {}
 ): Promise<RecruitmentPlanActionState> {
   const parsed = createPlanSchema.safeParse({
     nameAr,
-    planYear,
     notes: notes || undefined,
     // نصٌّ فارغ من حقلٍ لم يُملأ يعني «لا تاريخ»، لا تاريخًا فاسدًا.
     requestsOpenAt: windows.requestsOpenAt || null,
@@ -163,7 +179,7 @@ export async function createRecruitmentPlan(
     .from("recruitment_plans")
     .insert({
       name_ar: parsed.data.nameAr,
-      plan_year: parsed.data.planYear,
+      plan_year: planYearFrom(parsed.data.planStartDate),
       notes: parsed.data.notes ?? null,
       requests_open_at: parsed.data.requestsOpenAt ?? null,
       requests_close_at: parsed.data.requestsCloseAt ?? null,
@@ -178,7 +194,7 @@ export async function createRecruitmentPlan(
 
   await auditLog(actor.id, "recruitment_plan_created", plan.id, {
     name_ar: parsed.data.nameAr,
-    plan_year: parsed.data.planYear,
+    plan_year: planYearFrom(parsed.data.planStartDate),
   });
   return { status: "success" };
 }
@@ -187,6 +203,9 @@ const updateWindowsSchema = planWindowRefinements(
   z.object({
     planId: z.string().uuid(),
     ...planWindowFields,
+    // إلزامية هنا كما في الإنشاء: منها تُشتق سنة الخطة، ومسحُها كان
+    // سيترك `plan_year` معلّقًا على تاريخٍ لم يعد له وجود.
+    planStartDate: z.iso.date(),
   })
 );
 
@@ -224,17 +243,21 @@ export async function updateRecruitmentPlanWindows(
 
   const { data: before } = await supabase
     .from("recruitment_plans")
-    .select("id, requests_open_at, requests_close_at, plan_start_date, plan_end_date")
+    .select("id, plan_year, requests_open_at, requests_close_at, plan_start_date, plan_end_date")
     .eq("id", parsed.data.planId)
     .is("deleted_at", null)
     .maybeSingle();
   if (!before) return { status: "error", message: "not_found" };
 
+  // السنة تتبع بداية الفترة، وإلا لبقيت خطةٌ نُقلت فترتها إلى 2028 تُعرض
+  // وتُرتَّب وتُصدَّر بوصفها خطة 2027. تُشتق في الخادم من التاريخ المحفوظ
+  // نفسه، لا تُقبل من العميل — الفهرس الفريد يقوم عليها.
   const after = {
     requests_open_at: parsed.data.requestsOpenAt ?? null,
     requests_close_at: parsed.data.requestsCloseAt ?? null,
-    plan_start_date: parsed.data.planStartDate ?? null,
+    plan_start_date: parsed.data.planStartDate,
     plan_end_date: parsed.data.planEndDate ?? null,
+    plan_year: planYearFrom(parsed.data.planStartDate),
   };
 
   const { data: updated, error } = await supabase
