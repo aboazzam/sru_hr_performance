@@ -1,5 +1,10 @@
 import { planStatusLabel, planFinanceReviewedLabel, type PlanStatus } from "@/lib/recruitmentWorkflow";
-import { planListStatusLabel, type IntakeWindowState } from "@/lib/recruitmentPlanWindows";
+import {
+  planListStatusLabel,
+  INTAKE_CLOSED_LABEL,
+  INTAKE_CLOSED_STEP_LABEL,
+  type IntakeWindowState,
+} from "@/lib/recruitmentPlanWindows";
 
 /**
  * شريط تقدّم دورة الخطة. Shows the happy path only — the six states a plan
@@ -60,7 +65,12 @@ export function PlanProgressBar({
     // «استقبال الطلبات» بينما يقول الشريط تحتها «مسودة» عن الحال نفسه.
     // وما عداها يبقى باسمه: الشريط مسارٌ ثابت يقارن به المرء خطتين، ولو
     // تغيّرت أسماء خطواته كلها بحسب نافذة كل خطة لما صلح للمقارنة.
-    if (isCurrent) return planListStatusLabel(status, intakeState, planStatusLabel(step));
+    if (isCurrent) {
+      const unified = planListStatusLabel(status, intakeState, planStatusLabel(step));
+      // «قيد المراجعة» صحيحةٌ في القائمة والترويسة، لكنها تلتبس هنا بخطوة
+      // «قيد المراجعة المالية» التي تقف على الصفّ نفسه.
+      return unified === INTAKE_CLOSED_LABEL ? INTAKE_CLOSED_STEP_LABEL : unified;
+    }
     return planStatusLabel(step);
   }
 

@@ -7,6 +7,8 @@ import {
   planAcceptsRequests,
   planPeriodState,
   planListStatusLabel,
+  INTAKE_CLOSED_LABEL,
+  INTAKE_CLOSED_STEP_LABEL,
 } from "./recruitmentPlanWindows";
 
 const plan = (over: Partial<Parameters<typeof planAcceptsRequests>[0]> = {}) => ({
@@ -176,5 +178,18 @@ describe("planListStatusLabel", () => {
   it("falls back to the stored label when the window says nothing yet", () => {
     expect(planListStatusLabel("draft", "not_configured", FALLBACK)).toBe(FALLBACK);
     expect(planListStatusLabel("draft", "before", FALLBACK)).toBe(FALLBACK);
+  });
+});
+
+describe("intake-closed labels", () => {
+  it("keeps «قيد المراجعة» as the plan's own status wording", () => {
+    expect(planListStatusLabel("draft", "closed", "مسودة")).toBe(INTAKE_CLOSED_LABEL);
+    expect(INTAKE_CLOSED_LABEL).toBe("قيد المراجعة");
+  });
+
+  it("offers a distinct wording for the step bar, which already has a review step", () => {
+    // «قيد المراجعة» بجوار «قيد المراجعة المالية» على صفٍّ واحد تُقرأ تكرارًا.
+    expect(INTAKE_CLOSED_STEP_LABEL).not.toBe(INTAKE_CLOSED_LABEL);
+    expect(INTAKE_CLOSED_STEP_LABEL).toBe("انتهى الاستقبال");
   });
 });
