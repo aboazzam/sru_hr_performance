@@ -60,6 +60,7 @@ export function ExcelImportDialog({
   action,
   pendingLabel,
   extraFields,
+  triggerVariant = "secondary",
   children,
 }: {
   triggerLabel: string;
@@ -74,6 +75,8 @@ export function ExcelImportDialog({
   pendingLabel: string;
   /** Hidden values the importer needs (a plan id, say). */
   extraFields?: Record<string, string>;
+  /** "primary" fills the trigger with the same purple as the page's other header actions (e.g. "+ إضافة ..."), so the import button doesn't read as a lesser, outline-only action beside them. Defaults to "secondary" (outline) so every existing caller is unaffected. */
+  triggerVariant?: "primary" | "secondary";
   /** Renders the importer's own result. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see `action`.
   children?: (state: any) => ReactNode;
@@ -159,7 +162,7 @@ export function ExcelImportDialog({
 
   return (
     <>
-      <button type="button" onClick={open} className="sru-btn">
+      <button type="button" onClick={open} className={`sru-btn${triggerVariant === "primary" ? " sru-btn-primary" : ""}`}>
         <ArrowDownToLine size={15} aria-hidden style={{ marginInlineEnd: 6 }} />
         {triggerLabel}
       </button>

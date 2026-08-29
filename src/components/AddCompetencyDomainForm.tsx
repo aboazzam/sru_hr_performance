@@ -43,7 +43,7 @@ export function AddCompetencyDomainForm({ pillarId }: { pillarId: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn" style={{ fontSize: 12.5, padding: "6px 12px" }}>
+      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
         {t("addDomainTriggerButton")}
       </button>
 
