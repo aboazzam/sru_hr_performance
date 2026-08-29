@@ -1404,32 +1404,45 @@ th.sru-en {
   }
 }
 
-/* ===== شعار وتذييل مطبوعان قابلان لإعادة الاستخدام (2026-08-29) =====
-   `<PrintBranding/>` يُدرَج في أي صفحة قابلة للطباعة؛ `position: fixed`
-   يكرّره على كل صفحة مطبوعة في Chrome، بلا أي كود جافاسكربت لكل صفحة على
-   حدة. مقصودان مصغَّرَين ومركزَّين لا بعرض الصفحة كاملًا كما في هوية
-   الخطاب الرسمي -- الشريط الكامل يحتاج ارتفاعًا أكبر بكثير بنفس النسبة،
-   وهو ما كان يستلزم توسيع هامش @page عالميًا (`sru-print.css`، غير قابل
-   للتعديل) فيؤثر على كثافة كل صفحة أخرى مُصمَّمة طباعتها مسبقًا. الحجم
-   هنا يبقى ضمن الهامش الحالي (16mm) في كل الاتجاهات، فإدراج هذا المكوّن
-   في أي صفحة لا يغيّر شيئًا في طباعة أي صفحة أخرى. */
+/* ===== شعار وتذييل مطبوعان موحَّدان على كل صفحات التطبيق (2026-08-30) =====
+   `<PrintBranding/>` يُركَّب مرة واحدة في (app)/layout.tsx لا في كل صفحة على
+   حدة؛ `position: fixed` يكرّره على كل صفحة مطبوعة في Chrome بلا أي كود
+   إضافي، فكل شاشة في التطبيق تحصل على الهوية نفسها تلقائيًا.
+
+   الشعار مثبَّت في الزاوية اليمنى العلوية الفعلية (`right`، لا `left`/توسيط
+   كما في الإصدار الأول) ليطابق موضعه الحقيقي في ورق الخطاب الرسمي، بصرف
+   النظر عن اتجاه الصفحة (RTL/LTR) -- فهو عنصر ورقي ثابت الموضع لا عنصر
+   داخل تدفق النص. شريط التذييل بعد اقتصاصه (خط فاصل + شريط أرجواني مصمت
+   فقط، بلا الفراغ الأبيض الواسع الذي كان بينهما في صورة المصدر) صار نسبته
+   أفقية جدًا فتمتد تلقائيًا على كامل عرض منطقة المحتوى بارتفاع صغير، دون
+   حاجة لتغيير هامش @page (`sru-print.css`، غير قابل للتعديل) -- فإضافة
+   الشعار/التذييل لا تمس كثافة طباعة أي صفحة، بما فيها صفحة الجدارات التي
+   صُمِّمت كثافتها خصيصًا قبل هذا التغيير. */
 @media print {
   .sru-print-header {
     position: fixed;
     top: 3mm;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 16mm;
     height: 9mm;
     width: auto;
     z-index: 1000;
   }
   .sru-print-footer {
+    /* `left: 16mm; right: 16mm; width: auto` looked correct on paper but
+       measured wrong live: for a fixed-position replaced element (`<img>`),
+       Chrome computes `width: auto` from the image's own intrinsic size
+       scaled to the `height: auto` constraint, then honors only `right`,
+       ignoring `left` entirely -- confirmed by measuring the box overflow
+       past the LEFT viewport edge by exactly the image's own excess width.
+       An explicit width sidesteps that: A4 (210mm) minus the 16mm margin on
+       each side (`sru-print.css`) is exactly 178mm, so this pins both edges
+       without depending on the browser's auto-width-between-two-insets
+       behavior for a replaced element. */
     position: fixed;
     bottom: 3mm;
-    left: 50%;
-    transform: translateX(-50%);
-    height: 8mm;
-    width: auto;
+    right: 16mm;
+    width: 178mm;
+    height: auto;
     z-index: 1000;
   }
 }
