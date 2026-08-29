@@ -1,16 +1,18 @@
-"use client";
-
-import { Link } from "@/i18n/navigation";
-import { RowLink } from "@/components/RowLink";
-import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
-
-/** One plan in the list — the whole row opens it (see {@link RowLink}). */
+"use client";
+
+import { Link } from "@/i18n/navigation";
+import { RowLink } from "@/components/RowLink";
+import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
+import { planListStatusLabel, type IntakeWindowState } from "@/lib/recruitmentPlanWindows";
+
+/** One plan in the list — the whole row opens it (see {@link RowLink}). */
 export function RecruitmentPlanRow({
   planId,
   nameAr,
   notes,
   planYear,
   status,
+  intakeState,
   financeReviewed,
   headcount,
 }: {
@@ -19,6 +21,8 @@ export function RecruitmentPlanRow({
   notes: string | null;
   planYear: number;
   status: string;
+  /** حالة نافذة الاستقبال اليوم — تُحسب في الخادم بتوقيت العرض. */
+  intakeState: IntakeWindowState;
   /** Finance has stamped its review — changes what `finance_review` reads as. */
   financeReviewed: boolean;
   headcount: number;
@@ -37,7 +41,9 @@ export function RecruitmentPlanRow({
       </td>
       <td className="sru-en">{planYear}</td>
       <td>
-        <span className="pill">{planStatusLabelFor(status, { financeReviewed })}</span>
+        <span className="pill">
+          {planListStatusLabel(status, intakeState, planStatusLabelFor(status, { financeReviewed }))}
+        </span>
       </td>
       <td className="sru-en">{headcount}</td>
     </RowLink>
