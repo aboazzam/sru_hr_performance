@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { orgUnitTypes } from "@/lib/orgUnitTypes";
+import { orgUnitKinds } from "@/lib/orgUnitTypes";
 
 export type OrgUnitActionState =
   | { status: "success" }
@@ -76,7 +76,7 @@ export async function createOrgUnit(input: {
   nameAr: string;
   nameEn?: string | null;
   unitCode?: string | null;
-  type: string;
+  kind: string;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -84,7 +84,7 @@ export async function createOrgUnit(input: {
       nameAr: z.string().trim().min(1),
       nameEn: z.string().trim().nullable().optional(),
       unitCode: z.string().trim().nullable().optional(),
-      type: z.enum(orgUnitTypes),
+      kind: z.enum(orgUnitKinds),
       parentId: z.string().uuid().nullable(),
     })
     .safeParse(input);
@@ -102,7 +102,7 @@ export async function createOrgUnit(input: {
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn?.trim() || null,
       unit_code: parsed.data.unitCode?.trim() || null,
-      type: parsed.data.type,
+      kind: parsed.data.kind,
       parent_id: parsed.data.parentId,
     })
     .select("id");
@@ -117,7 +117,7 @@ export async function createOrgUnit(input: {
     entity_id: inserted[0].id,
     after_data: {
       name_ar: parsed.data.nameAr,
-      type: parsed.data.type,
+      kind: parsed.data.kind,
       parent_id: parsed.data.parentId,
     },
   });
@@ -139,7 +139,7 @@ export async function updateOrgUnit(input: {
   nameAr: string;
   nameEn?: string | null;
   unitCode?: string | null;
-  type: string;
+  kind: string;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -148,7 +148,7 @@ export async function updateOrgUnit(input: {
       nameAr: z.string().trim().min(1),
       nameEn: z.string().trim().nullable().optional(),
       unitCode: z.string().trim().nullable().optional(),
-      type: z.enum(orgUnitTypes),
+      kind: z.enum(orgUnitKinds),
       parentId: z.string().uuid().nullable(),
     })
     .refine((data) => data.parentId !== data.id, { message: "a unit cannot be its own parent" })
@@ -181,7 +181,7 @@ export async function updateOrgUnit(input: {
 
   const { data: before } = await supabase
     .from("org_units")
-    .select("name_ar, name_en, unit_code, type, parent_id")
+    .select("name_ar, name_en, unit_code, kind, parent_id")
     .eq("id", parsed.data.id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -190,7 +190,7 @@ export async function updateOrgUnit(input: {
     name_ar: parsed.data.nameAr,
     name_en: parsed.data.nameEn?.trim() || null,
     unit_code: parsed.data.unitCode?.trim() || null,
-    type: parsed.data.type,
+    kind: parsed.data.kind,
     parent_id: parsed.data.parentId,
   };
 

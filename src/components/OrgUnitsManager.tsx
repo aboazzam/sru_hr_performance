@@ -12,7 +12,7 @@ import {
   type OrgUnitActionState,
 } from "@/app/[locale]/(app)/org-units/actions";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
-import { orgUnitTypes } from "@/lib/orgUnitTypes";
+import { orgUnitKinds } from "@/lib/orgUnitTypes";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -31,7 +31,7 @@ export interface OrgUnitRow {
   nameAr: string;
   nameEn: string | null;
   unitCode: string | null;
-  type: string;
+  kind: string;
   parentId: string | null;
 }
 
@@ -73,7 +73,7 @@ function UnitRow({
   const [nameAr, setNameAr] = useState(node.nameAr);
   const [nameEn, setNameEn] = useState(node.nameEn ?? "");
   const [unitCode, setUnitCode] = useState(node.unitCode ?? "");
-  const [type, setType] = useState(node.type);
+  const [kind, setKind] = useState(node.kind);
   const [parentId, setParentId] = useState(node.parentId ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -99,7 +99,7 @@ function UnitRow({
     nameAr !== node.nameAr ||
     nameEn !== (node.nameEn ?? "") ||
     unitCode !== (node.unitCode ?? "") ||
-    type !== node.type ||
+    kind !== node.kind ||
     parentId !== (node.parentId ?? "");
 
   function run(fn: () => Promise<OrgUnitActionState>, close = false) {
@@ -148,11 +148,11 @@ function UnitRow({
               <input id={`unit-${node.id}-code`} value={unitCode} dir="ltr" onChange={(e) => setUnitCode(e.target.value)} />
             </div>
             <div className="sru-field" style={{ width: 150 }}>
-              <label htmlFor={`unit-${node.id}-type`}>{t("fieldType")}</label>
-              <select id={`unit-${node.id}-type`} value={type} onChange={(e) => setType(e.target.value)}>
-                {orgUnitTypes.map((value) => (
+              <label htmlFor={`unit-${node.id}-kind`}>{t("fieldKind")}</label>
+              <select id={`unit-${node.id}-kind`} value={kind} onChange={(e) => setKind(e.target.value)}>
+                {orgUnitKinds.map((value) => (
                   <option key={value} value={value}>
-                    {t(`type_${value}`)}
+                    {t(`kind_${value}`)}
                   </option>
                 ))}
               </select>
@@ -182,7 +182,7 @@ function UnitRow({
                       nameAr,
                       nameEn: nameEn.trim() === "" ? null : nameEn,
                       unitCode: unitCode.trim() === "" ? null : unitCode,
-                      type,
+                      kind,
                       parentId: parentId === "" ? null : parentId,
                     }),
                   true
@@ -201,7 +201,7 @@ function UnitRow({
                 setNameAr(node.nameAr);
                 setNameEn(node.nameEn ?? "");
                 setUnitCode(node.unitCode ?? "");
-                setType(node.type);
+                setKind(node.kind);
                 setParentId(node.parentId ?? "");
                 setError(null);
                 setEditing(false);
@@ -217,7 +217,7 @@ function UnitRow({
               {node.nameEn ? <span className="sru-name-en">{node.nameEn}</span> : null}
             </span>
             <span className="pill" style={{ fontSize: 11 }}>
-              {t(`type_${node.type}`)}
+              {t(`kind_${node.kind}`)}
             </span>
             {node.unitCode ? (
               <span className="sru-en" style={{ fontSize: 11, color: "var(--sru-muted)" }}>
@@ -288,7 +288,7 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
   const [newNameAr, setNewNameAr] = useState("");
   const [newNameEn, setNewNameEn] = useState("");
   const [newCode, setNewCode] = useState("");
-  const [newType, setNewType] = useState<string>("administrative");
+  const [newKind, setNewKind] = useState<string>("department");
   const [newParent, setNewParent] = useState("");
 
   const refresh = () => router.refresh();
@@ -311,7 +311,7 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
         nameAr: newNameAr,
         nameEn: newNameEn.trim() === "" ? null : newNameEn,
         unitCode: newCode.trim() === "" ? null : newCode,
-        type: newType,
+        kind: newKind,
         parentId: newParent === "" ? null : newParent,
       });
       if (result.status === "success") {
@@ -359,11 +359,11 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
               <input id="new-unit-code" value={newCode} dir="ltr" onChange={(e) => setNewCode(e.target.value)} />
             </div>
             <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-type">{t("fieldType")}</label>
-              <select id="new-unit-type" value={newType} onChange={(e) => setNewType(e.target.value)}>
-                {orgUnitTypes.map((value) => (
+              <label htmlFor="new-unit-kind">{t("fieldKind")}</label>
+              <select id="new-unit-kind" value={newKind} onChange={(e) => setNewKind(e.target.value)}>
+                {orgUnitKinds.map((value) => (
                   <option key={value} value={value}>
-                    {t(`type_${value}`)}
+                    {t(`kind_${value}`)}
                   </option>
                 ))}
               </select>

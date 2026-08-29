@@ -22,7 +22,7 @@ export default async function OrgUnitsPage() {
 
   const { data } = await supabase
     .from("org_units")
-    .select("id, name_ar, name_en, unit_code, type, parent_id")
+    .select("id, name_ar, name_en, unit_code, kind, parent_id")
     .is("deleted_at", null)
     .order("name_ar");
 
@@ -32,7 +32,7 @@ export default async function OrgUnitsPage() {
       name_ar: string;
       name_en: string | null;
       unit_code: string | null;
-      type: string;
+      kind: string;
       parent_id: string | null;
     }>
   ).map((row) => ({
@@ -40,7 +40,7 @@ export default async function OrgUnitsPage() {
     nameAr: row.name_ar,
     nameEn: row.name_en,
     unitCode: row.unit_code,
-    type: row.type,
+    kind: row.kind,
     parentId: row.parent_id,
   }));
 
