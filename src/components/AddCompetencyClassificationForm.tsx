@@ -4,9 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { addCompetencyClassification } from "@/app/[locale]/(app)/competencies/actions";
-
-const inputClass =
-  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+import { AddFormDialog } from "@/components/AddFormDialog";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "errorInvalid",
@@ -16,7 +14,12 @@ const errorMessageKeys: Record<string, string> = {
   unknown: "errorUnknown",
 };
 
-/** "زر اضف تصنيف ... تصنيفات قابلة للإضافة لاحقًا" -- same trigger+dialog pattern as AddCompetencyPillarForm, plus the auto-apply toggle. */
+/**
+ * "زر اضف تصنيف ... تصنيفات قابلة للإضافة لاحقًا" -- on the shared
+ * AddFormDialog (2026-08-29), so this header-level trigger matches the
+ * page's other primary actions (تصدير/استيراد/محور) exactly, per direct
+ * feedback asking every button to share one shape/color/size.
+ */
 export function AddCompetencyClassificationForm() {
   const t = useTranslations("CompetenciesPage");
   const router = useRouter();
@@ -27,8 +30,7 @@ export function AddCompetencyClassificationForm() {
   const [autoApplyEverywhere, setAutoApplyEverywhere] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleAdd() {
     setError(null);
     startTransition(async () => {
       const res = await addCompetencyClassification(nameAr, nameEn, autoApplyEverywhere);
@@ -45,48 +47,39 @@ export function AddCompetencyClassificationForm() {
   }
 
   return (
-    <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
-        {t("addClassificationTriggerButton")}
-      </button>
-
-      <dialog
-        ref={dialogRef}
-        className="sru-modal"
-        onClick={(e) => {
-          if (e.target === dialogRef.current) dialogRef.current?.close();
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("addClassificationHeading")}</h3>
-          <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
-            ×
-          </button>
+    <AddFormDialog
+      dialogRef={dialogRef}
+      triggerLabel={t("addClassificationTriggerButton")}
+      heading={t("addClassificationHeading")}
+      closeLabel={t("closeButton")}
+    >
+      <div className="sru-formgrid">
+        <div className="sru-field">
+          <label>{t("classificationNameArLabel")}</label>
+          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" />
         </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("classificationNameArLabel")}</label>
-            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("classificationNameEnLabel")}</label>
-            <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />
-          </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-            <input type="checkbox" checked={autoApplyEverywhere} onChange={(e) => setAutoApplyEverywhere(e.target.checked)} />
-            {t("autoApplyEverywhereLabel")}
-          </label>
-          <p style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{t("autoApplyEverywhereNote")}</p>
-          {error && (
-            <p role="alert" className="text-sm text-red-600">
-              {t(errorMessageKeys[error] ?? "errorUnknown")}
-            </p>
-          )}
-          <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary" style={{ alignSelf: "flex-start" }}>
-            {t("addClassificationButton")}
-          </button>
-        </form>
-      </dialog>
-    </>
+        <div className="sru-field">
+          <label>{t("classificationNameEnLabel")}</label>
+          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" style={{ textAlign: "left" }} />
+        </div>
+      </div>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginTop: 10 }}>
+        <input type="checkbox" checked={autoApplyEverywhere} onChange={(e) => setAutoApplyEverywhere(e.target.checked)} />
+        {t("autoApplyEverywhereLabel")}
+      </label>
+      <p style={{ fontSize: 11.5, color: "var(--sru-muted)" }}>{t("autoApplyEverywhereNote")}</p>
+
+      {error && (
+        <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>
+          {t(errorMessageKeys[error] ?? "errorUnknown")}
+        </p>
+      )}
+
+      <div className="sru-form-submitrow">
+        <button type="button" disabled={isPending || !nameAr.trim()} onClick={handleAdd} className="sru-btn sru-btn-primary">
+          {t("addClassificationButton")}
+        </button>
+      </div>
+    </AddFormDialog>
   );
 }

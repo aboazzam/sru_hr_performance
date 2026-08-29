@@ -87,7 +87,7 @@ export default async function CompetenciesPage() {
             {t("title")}
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
-            {t("subtitle")}
+            {t("subtitle", { pillars: pillars.length, domains: domains.length, competencies: competencies.length })}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

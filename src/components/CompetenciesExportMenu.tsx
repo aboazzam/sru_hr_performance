@@ -50,6 +50,7 @@ export function CompetenciesExportMenu() {
         confirm: t("exportConfirmButton"),
         close: t("closeButton"),
       }}
+      triggerVariant="primary"
     />
   );
 }
