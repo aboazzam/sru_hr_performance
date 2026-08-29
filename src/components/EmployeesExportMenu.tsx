@@ -72,7 +72,7 @@ export function EmployeesExportMenu() {
       <div className="sru-user-menu no-print" ref={rootRef}>
         <button
           type="button"
-          className="sru-print-btn"
+          className="sru-btn sru-btn-primary"
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { PrintButton } from "@/components/PrintButton";
+import { CompetenciesExportMenu } from "@/components/CompetenciesExportMenu";
+import { ImportCompetenciesExcelForm } from "@/components/ImportCompetenciesExcelForm";
 import { AddCompetencyPillarForm } from "@/components/AddCompetencyPillarForm";
 import { AddCompetencyDomainForm } from "@/components/AddCompetencyDomainForm";
 import { AddCompetencyForm } from "@/components/AddCompetencyForm";
@@ -89,10 +90,11 @@ export default async function CompetenciesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {canManage && <AddCompetencyClassificationForm />}
           {canManage && <AddCompetencyPillarForm />}
-          <PrintButton />
+          {canManage && <ImportCompetenciesExcelForm />}
+          <CompetenciesExportMenu />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
