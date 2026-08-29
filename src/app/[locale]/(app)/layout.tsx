@@ -25,9 +25,25 @@ export default async function AppShellLayout({
   const safeLocale = isLocale(locale) ? locale : "ar";
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // A refresh token that's gone stale (expired, or already invalidated by
+  // src/proxy.ts's own refresh moments earlier in the same request) makes
+  // this throw rather than return {user: null} — confirmed live in
+  // production stderr ("AuthApiError: Invalid Refresh Token: Refresh Token
+  // Not Found"). Uncaught, that crashes THIS layout's render with no
+  // error.tsx above it to catch it (error.tsx only catches errors from what
+  // a layout renders, never the layout segment itself) — a blank page with
+  // no recovery, reported live on /employees/new (2026-08). Treated exactly
+  // like "not signed in" instead: the real cause (a broken session) gets
+  // the same graceful redirect to /login this gate already had.
+  let user = null;
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  } catch {
+    user = null;
+  }
 
   if (!user) {
     redirect({ href: "/login", locale: safeLocale });

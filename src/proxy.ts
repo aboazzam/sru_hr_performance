@@ -38,7 +38,23 @@ export async function proxy(request: NextRequest) {
 
   // getUser() (not getSession()) — contacts the Auth server so the token
   // refresh actually happens here, not just a read of a possibly-stale cookie.
-  await supabase.auth.getUser();
+  //
+  // A refresh token that's gone stale (expired, already rotated by a
+  // concurrent request, or invalidated elsewhere) makes the underlying
+  // GoTrue client THROW rather than return {error} — confirmed live in
+  // production stderr ("AuthApiError: Invalid Refresh Token: Refresh Token
+  // Not Found"). Uncaught, that crashes this entire middleware for EVERY
+  // route the matcher covers, before Next.js's own page rendering — and any
+  // error.tsx boundary — ever runs. This was the real cause of a reported
+  // blank page on /employees/new that no error boundary could catch (2026-08).
+  // A failed refresh here just means the request continues unauthenticated;
+  // the downstream (app)/layout.tsx auth gate already redirects to /login
+  // for that case, so swallowing this is safe.
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // See comment above.
+  }
 
   return response;
 }
