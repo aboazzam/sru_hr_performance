@@ -114,12 +114,6 @@ export default async function EmployeesPage({
     );
   }
 
-  // Role display: a linked account's role lives in `user_roles` (keyed by
-  // auth_user_id); an invited-but-not-yet-accepted profile's role lives in
-  // `pending_role_assignments` (keyed by profile_id) until
-  // link_profile_to_auth_user() promotes it. Both are gated by
-  // userManagement>=view/approve respectively, so a caller without that
-  // grant simply gets empty results here.
   const allVisibleRows = [...approvedEmployees, ...pendingEmployees, ...myPendingOrRejected];
 
   // The "view" icon (2026-08-27): a grant on employeeData, or actually having
@@ -134,44 +128,39 @@ export default async function EmployeesPage({
   const hasSubordinates =
     myProfileIdForIcon != null && allVisibleRows.some((row) => row.supervisor_id === myProfileIdForIcon);
   const canViewDetails = hasVpraAccess(employeeDataLevel, "view") || hasSubordinates;
-  const authUserIds = allVisibleRows.map((e) => e.auth_user_id).filter((id): id is string => !!id);
-  const pendingProfileIds = allVisibleRows.filter((e) => !e.auth_user_id).map((e) => e.id);
+  // Role display: `roles_select` requires userManagement>=view
+  // UNCONDITIONALLY, with no self-role exemption — since 2026-07-25's
+  // "الغاء تاب الصلاحيات والهوية من hr_admin" removed hr_admin's own
+  // userManagement grant, and no other real seeded role (manager,
+  // employees_coordinator, strategy_admin, plain employee) has ever held
+  // one, a direct `user_roles`/`pending_role_assignments` embed of
+  // `roles(name_ar)` silently nulls out for nearly every real caller —
+  // confirmed live 2026-08-30: the column showed "بلا دور" for every real
+  // account tested despite each genuinely holding a role. Fixed with
+  // `get_role_names_for_employees()` (migration 20260830000001), a narrow
+  // SECURITY DEFINER RPC (matching `get_my_role_codes()`'s own established
+  // pattern) rather than widening `roles_select`/`user_roles_select`
+  // directly — those expose who holds administrative power, a materially
+  // different sensitivity than the reference tables already given an "OR
+  // employeeData" RLS branch for the same class of problem. No extra VPRA
+  // gate needed: the RPC only ever resolves role names for whichever
+  // profile ids this page's own already-RLS-scoped queries returned.
+  const allProfileIds = allVisibleRows.map((e) => e.id);
+  const { data: roleRows } =
+    allProfileIds.length > 0
+      ? await supabase.rpc("get_role_names_for_employees", { p_profile_ids: allProfileIds })
+      : { data: [] as { profile_id: string; role_names: string[] | null; is_pending: boolean }[] };
 
-  const [{ data: userRolesData }, { data: pendingRolesData }] = await Promise.all([
-    authUserIds.length > 0
-      ? supabase.from("user_roles").select("user_id, roles(name_ar)").in("user_id", authUserIds)
-      : Promise.resolve({ data: [] as { user_id: string; roles: { name_ar: string } | null }[] }),
-    pendingProfileIds.length > 0
-      ? supabase.from("pending_role_assignments").select("profile_id, roles(name_ar)").in("profile_id", pendingProfileIds)
-      : Promise.resolve({ data: [] as { profile_id: string; roles: { name_ar: string } | null }[] }),
-  ]);
-
-  // A user can hold the SAME role via several org-unit-scoped rows (one per
-  // granted unit) — de-duplicated by name here (a Set) so the role shows
-  // once regardless of how many org units it was granted across.
-  const rolesByAuthUserId = new Map<string, Set<string>>();
-  for (const row of (userRolesData ?? []) as unknown as { user_id: string; roles: { name_ar: string } | null }[]) {
-    if (!row.roles) continue;
-    const set = rolesByAuthUserId.get(row.user_id) ?? new Set<string>();
-    set.add(row.roles.name_ar);
-    rolesByAuthUserId.set(row.user_id, set);
+  const rolesByProfileId = new Map<string, { names: string[]; isPending: boolean }>();
+  for (const row of (roleRows ?? []) as { profile_id: string; role_names: string[] | null; is_pending: boolean }[]) {
+    if (!row.role_names || row.role_names.length === 0) continue;
+    rolesByProfileId.set(row.profile_id, { names: row.role_names, isPending: row.is_pending });
   }
 
-  const pendingRolesByProfileId = new Map<string, Set<string>>();
-  for (const row of (pendingRolesData ?? []) as unknown as { profile_id: string; roles: { name_ar: string } | null }[]) {
-    if (!row.roles) continue;
-    const set = pendingRolesByProfileId.get(row.profile_id) ?? new Set<string>();
-    set.add(row.roles.name_ar);
-    pendingRolesByProfileId.set(row.profile_id, set);
-  }
-
-  function roleLabel(employee: { id: string; auth_user_id: string | null }): string {
-    if (employee.auth_user_id) {
-      const roles = rolesByAuthUserId.get(employee.auth_user_id);
-      return roles && roles.size > 0 ? [...roles].join("، ") : t("roleNone");
-    }
-    const pending = pendingRolesByProfileId.get(employee.id);
-    return pending && pending.size > 0 ? t("rolePending", { role: [...pending].join("، ") }) : t("roleNone");
+  function roleLabel(employee: { id: string }): string {
+    const entry = rolesByProfileId.get(employee.id);
+    if (!entry) return t("roleNone");
+    return entry.isPending ? t("rolePending", { role: entry.names.join("، ") }) : entry.names.join("، ");
   }
 
   // 2026-07-25: "تكون مقسمة على شكل سكاشن لكل قسم او ادارة" — the approved
