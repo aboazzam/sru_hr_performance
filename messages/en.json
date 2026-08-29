@@ -1266,7 +1266,7 @@
     "weightsErrorInvalid": "Invalid values.",
     "weightsErrorForbidden": "You do not have permission to change the distribution.",
     "weightsErrorUnknown": "Could not save the distribution.",
-    "cycleEditTitle": "Edit cycle and weight distribution",
+    "cycleEditTitle": "Edit cycle details",
     "cycleDrawerTitle": "Edit evaluation cycle",
     "cycleDetailsHeading": "Cycle details",
     "cycleNameEnLabel": "Cycle name (English)",
@@ -1319,15 +1319,7 @@
     "durationCustom": "Custom duration",
     "periodSummaryMonths": "Duration: {months, plural, one {# month} other {# months}} ({days, plural, one {# day} other {# days}}).",
     "periodSummaryDays": "Duration: {days, plural, one {# day} other {# days}}.",
-    "periodInvalidRange": "The end date must be after the start date.",
-    "sectionWeightsTitle": "Evaluation method weights",
-    "sectionWeightsSubtitle": "Each method's share of the cycle score — it applies to every evaluation in this cycle and must total 100%.",
-    "weightCompetenciesLabel": "Competencies (%)",
-    "weightBauLabel": "Routine tasks (%)",
-    "weightFeedback360Label": "360 feedback (%)",
-    "weightsTotalLabel": "Total",
-    "weightsInvalid": "The total must be exactly 100%.",
-    "weightActivitiesLabel": "Assigned activities (%)"
+    "periodInvalidRange": "The end date must be after the start date."
   },
   "MyProfilePage": {
     "title": "My Profile",

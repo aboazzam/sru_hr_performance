@@ -1266,7 +1266,7 @@
     "weightsErrorInvalid": "القيم غير صحيحة.",
     "weightsErrorForbidden": "لا تملك صلاحية تعديل توزيع الأوزان.",
     "weightsErrorUnknown": "تعذر حفظ التوزيع.",
-    "cycleEditTitle": "تعديل الدورة وتوزيع الأوزان",
+    "cycleEditTitle": "تعديل بيانات الدورة",
     "cycleDrawerTitle": "تعديل دورة التقييم",
     "cycleDetailsHeading": "بيانات الدورة",
     "cycleNameEnLabel": "اسم الدورة (إنجليزي)",
@@ -1319,15 +1319,7 @@
     "durationCustom": "مدة مخصصة",
     "periodSummaryMonths": "المدة: {months, plural, few {# أشهر} many {# شهرًا} other {# شهر}} ({days, plural, few {# أيام} many {# يومًا} other {# يوم}}).",
     "periodSummaryDays": "المدة: {days, plural, few {# أيام} many {# يومًا} other {# يوم}}.",
-    "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
-    "sectionWeightsTitle": "توزيع أوزان طرق التقييم",
-    "sectionWeightsSubtitle": "نصيب كل طريقة من درجة الدورة — يسري على كل تقييمات هذه الدورة، ومجموعه 100%.",
-    "weightCompetenciesLabel": "الجدارات (%)",
-    "weightBauLabel": "المهام التشغيلية (%)",
-    "weightFeedback360Label": "تقييم 360 (%)",
-    "weightsTotalLabel": "المجموع",
-    "weightsInvalid": "يجب أن يكون المجموع 100% بالضبط.",
-    "weightActivitiesLabel": "الأنشطة المكلَّف بها (%)"
+    "periodInvalidRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية."
   },
   "MyProfilePage": {
     "title": "الملف الشخصي",
