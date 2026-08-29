@@ -7,6 +7,7 @@ import { PlanDistributionCard } from "@/components/PlanDistributionCard";
 import { ImportPlanItemsExcelForm } from "@/components/ImportPlanItemsExcelForm";
 import { RecruitmentPlanWindowsCard } from "@/components/RecruitmentPlanWindowsCard";
 import { getDisplayTimezone } from "@/lib/systemSettings";
+import { intakeWindowState, planListStatusLabel } from "@/lib/recruitmentPlanWindows";
 import { todayInTimezone } from "@/lib/evaluationCycle";
 import { RecruitmentPlanExportMenu } from "@/components/RecruitmentPlanExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
@@ -186,7 +187,14 @@ export default async function RecruitmentPlanDetailPage({
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>
             {t("planMeta", {
               year: plan.plan_year,
-              status: planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null }),
+              // نفس قاعدة القائمة حرفيًّا: خطةٌ تقرأ «استقبال الطلبات» في
+              // القائمة كانت تقرأ «مسودة» هنا، فيتناقض الموضعان في وصف
+              // شيء واحد.
+              status: planListStatusLabel(
+                plan.status,
+                intakeWindowState(plan.requests_open_at, plan.requests_close_at, today),
+                planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })
+              ),
             })}
           </p>
         </div>
@@ -221,7 +229,11 @@ export default async function RecruitmentPlanDetailPage({
       <GroupTabs groupKey="recruitment" current="recruitment/plan" />
 
       <div className="sru-card" style={{ marginTop: 20 }}>
-        <PlanProgressBar status={plan.status} financeReviewed={plan.finance_reviewed_at !== null} />
+        <PlanProgressBar
+          status={plan.status}
+          financeReviewed={plan.finance_reviewed_at !== null}
+          intakeState={intakeWindowState(plan.requests_open_at, plan.requests_close_at, today)}
+        />
         <div style={{ marginTop: 14 }}>
           <PlanWorkflowActions planId={plan.id} status={plan.status} permissions={permissions} />
         </div>

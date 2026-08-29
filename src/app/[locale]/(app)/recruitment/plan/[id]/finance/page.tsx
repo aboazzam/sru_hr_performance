@@ -6,6 +6,9 @@ import { PlanProgressBar } from "@/components/PlanProgressBar";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
 import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
+import { intakeWindowState } from "@/lib/recruitmentPlanWindows";
+import { getDisplayTimezone } from "@/lib/systemSettings";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 import type { RecruitmentPermissions } from "@/lib/recruitmentWorkflow";
 import type { Locale } from "@/i18n/config";
 
@@ -31,7 +34,7 @@ export default async function PlanFinanceReviewPage({
   const { data: plan } = await supabase
     .from("recruitment_plans")
     .select(
-      "id, name_ar, plan_year, status, approved_budget, finance_note, finance_reviewed_at, hr_recommendation"
+      "id, name_ar, plan_year, status, approved_budget, finance_note, finance_reviewed_at, hr_recommendation, requests_open_at, requests_close_at"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -91,6 +94,11 @@ export default async function PlanFinanceReviewPage({
               <PlanProgressBar
                 status={plan.status}
                 financeReviewed={plan.finance_reviewed_at !== null}
+                intakeState={intakeWindowState(
+                  plan.requests_open_at,
+                  plan.requests_close_at,
+                  todayInTimezone(await getDisplayTimezone(supabase))
+                )}
               />
             </div>
 
