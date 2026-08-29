@@ -53,7 +53,12 @@ export function RecruitmentPlanHeaderActions({
   }
 
   return (
-    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+    /* شذرة لا <div>: هذا المكوّن يسكن `sru-actionbar`، وهي تنسّق أبناءها
+       المباشرين وحدهم — فالغلاف كان يجعل الزر حفيدًا، فيبقى بحجمه الكبير
+       بينما ينكمش جاره «إضافة بند جديد». والغلاف كان فوق ذلك صفَّ flex
+       داخل صفِّ flex بلا داع. الرسائل أدناه تصير أبناءً مباشرين أيضًا،
+       والشريط أصلًا `align-items:center` و`gap` و`flex-wrap`. */
+    <>
       {/* Primary, like "add a new item" beside it: both add items to the plan
           and are equally the point of that row. One filled and one outlined
           read as a main action and a lesser one, which is not the case. */}
@@ -72,6 +77,6 @@ export function RecruitmentPlanHeaderActions({
           {t("importDone", { created: state.createdCount, skipped: state.skippedCount ?? 0 })}
         </span>
       )}
-    </div>
+    </>
   );
 }
