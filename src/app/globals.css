@@ -2719,3 +2719,41 @@ table {
   color: var(--sru-purple);
   text-decoration: underline;
 }
+
+/* ===== Shape toggle on the distribution cards (2026-08-29) =====
+   بطلب مباشر: «في نفس الكرت زر يسمح للمستخدم بتغيير الشكل».
+
+   ثلاثة أزرار متجاورة لا زرٌّ واحد يتنقّل: المجموعة تُظهر الشكل الحالي
+   والبدائل معًا، أما الزر المتنقّل فيخفي إلى أين سينقلك. وهي صغيرة
+   (٢٤ بكسل) لتسكن ترويسة بطاقة عرضها ٢٨٠ بكسل بلا زحام.
+
+   إضافية هنا لا في sru-ui.css: كتاب الهوية لا يُعدَّل (§7). */
+.sru-shape-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid var(--sru-border);
+}
+.sru-shape-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  color: var(--sru-muted);
+}
+.sru-shape-btn + .sru-shape-btn {
+  border-inline-start: 1px solid var(--sru-border);
+}
+.sru-shape-btn:hover {
+  color: var(--sru-purple);
+  background: var(--sru-purple-light, #f3eefa);
+}
+/* الحالة الفعّالة تُقرأ باللون والتعبئة معًا لا باللون وحده. */
+.sru-shape-btn.is-active {
+  background: var(--sru-purple);
+  color: #fff;
+}

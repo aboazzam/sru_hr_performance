@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { BackLink } from "@/components/BackLink";
+import { PlanDistributionCard } from "@/components/PlanDistributionCard";
 import { RecruitmentPlanWindowsCard } from "@/components/RecruitmentPlanWindowsCard";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { todayInTimezone } from "@/lib/evaluationCycle";
@@ -331,29 +332,12 @@ export default async function RecruitmentPlanDetailPage({
             { heading: t("byContractType"), rows: byContract },
             { heading: t("byQuarter"), rows: byQuarter },
           ].map((group) => (
-            <div className="sru-card" key={group.heading}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{group.heading}</h3>
-              <table className="admin-matrix" style={{ fontSize: 11.5 }}>
-                <thead>
-                  <tr>
-                    <th>{t("distributionGroup")}</th>
-                    <th>{t("distributionHeadcount")}</th>
-                    <th>{t("distributionShare")}</th>
-                    <th>{t("distributionAnnual")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.rows.map((row) => (
-                    <tr key={row.key}>
-                      <td>{row.label}</td>
-                      <td className="sru-en">{formatNumber(row.headcount)}</td>
-                      <td className="sru-en">{Math.round(row.headcountPercentage)}%</td>
-                      <td className="sru-en">{formatNumber(row.annualCost)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PlanDistributionCard
+              key={group.heading}
+              heading={group.heading}
+              rows={group.rows}
+              locale={locale}
+            />
           ))}
         </div>
       )}
