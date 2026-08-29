@@ -8,6 +8,8 @@ import { computeRecruitmentPlanTotals } from "@/lib/recruitmentPlan";
 import { computeBudgetVariance } from "@/lib/recruitmentPlanAnalytics";
 import { planStatusLabelFor } from "@/lib/recruitmentWorkflow";
 import { getDisplayTimezone } from "@/lib/systemSettings";
+import { intakeWindowState, planListStatusLabel } from "@/lib/recruitmentPlanWindows";
+import { todayInTimezone } from "@/lib/evaluationCycle";
 import type { Locale } from "@/i18n/config";
 
 // صفحة طباعة الخطة (PDF عبر طباعة المتصفح).
@@ -41,7 +43,7 @@ export default async function PlanPrintPage({
   const { data: plan } = await supabase
     .from("recruitment_plans")
     .select(
-      "id, name_ar, plan_year, status, notes, approved_budget, hr_recommendation, finance_note, finance_reviewed_at, approval_note, approved_at"
+      "id, name_ar, plan_year, status, notes, approved_budget, hr_recommendation, finance_note, finance_reviewed_at, approval_note, approved_at, requests_open_at, requests_close_at"
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -113,7 +115,11 @@ export default async function PlanPrintPage({
           <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>{t("documentTitle")}</h1>
           <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--sru-muted)" }}>
             {plan.name_ar} — {plan.plan_year} —{" "}
-            {planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })}
+            {planListStatusLabel(
+              plan.status,
+              intakeWindowState(plan.requests_open_at, plan.requests_close_at, todayInTimezone(timeZone)),
+              planStatusLabelFor(plan.status, { financeReviewed: plan.finance_reviewed_at !== null })
+            )}
           </p>
         </div>
         <Image src="/sru-logo.png" alt="جامعة سليمان الراجحي" width={110} height={40} style={{ height: 40, width: "auto" }} />

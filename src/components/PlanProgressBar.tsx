@@ -1,4 +1,5 @@
 import { planStatusLabel, planFinanceReviewedLabel, type PlanStatus } from "@/lib/recruitmentWorkflow";
+import { planListStatusLabel, type IntakeWindowState } from "@/lib/recruitmentPlanWindows";
 
 /**
  * شريط تقدّم دورة الخطة. Shows the happy path only — the six states a plan
@@ -23,10 +24,16 @@ const HAPPY_PATH: PlanStatus[] = [
 export function PlanProgressBar({
   status,
   financeReviewed = false,
+  intakeState,
 }: {
   status: string;
   /** `finance_reviewed_at` is set — finance is done with this plan. */
   financeReviewed?: boolean;
+  /**
+   * حالة نافذة الاستقبال اليوم. تُسمّى بها الخطوةُ الحالية وحدها، فتقرأ
+   * الترويسةُ والشريطُ والقائمةُ الشيءَ نفسه.
+   */
+  intakeState: IntakeWindowState;
 }) {
   const offPath = status === "returned_for_revision" || status === "rejected";
   const currentIndex = HAPPY_PATH.indexOf(status as PlanStatus);
@@ -41,10 +48,20 @@ export function PlanProgressBar({
    * will be, which is what an unreached step should say.
    */
   function stepLabel(step: PlanStatus, index: number): string {
-    if (step !== "finance_review") return planStatusLabel(step);
-    const past = !offPath && index < currentIndex;
-    const doneNow = !offPath && index === currentIndex && financeReviewed;
-    return past || doneNow ? planFinanceReviewedLabel : planStatusLabel(step);
+    const isCurrent = !offPath && index === currentIndex;
+
+    if (step === "finance_review") {
+      const past = !offPath && index < currentIndex;
+      const doneNow = isCurrent && financeReviewed;
+      if (past || doneNow) return planFinanceReviewedLabel;
+    }
+
+    // الخطوة الحالية وحدها تحمل التسمية الموحّدة، فلا تقول الترويسة
+    // «استقبال الطلبات» بينما يقول الشريط تحتها «مسودة» عن الحال نفسه.
+    // وما عداها يبقى باسمه: الشريط مسارٌ ثابت يقارن به المرء خطتين، ولو
+    // تغيّرت أسماء خطواته كلها بحسب نافذة كل خطة لما صلح للمقارنة.
+    if (isCurrent) return planListStatusLabel(status, intakeState, planStatusLabel(step));
+    return planStatusLabel(step);
   }
 
   return (
