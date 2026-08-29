@@ -33,6 +33,7 @@ import {
   TrendingUp,
   Megaphone,
   Globe,
+  Building2,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -168,10 +169,11 @@ export const navGroups: NavGroup[] = [
       // بها") -- each now lives ONLY as a tab inside the per-plan detail
       // page (`/kpis/plans/[id]`), which can't be represented as a static
       // NavItem segment here (GroupTabs has no notion of the current plan
-      // id). Their standalone routes (`kpis/strategic-identity`,
-      // `kpis/strategic-goals`, `goals/library`) still exist and are still
-      // linked to directly from other screens (e.g. the manage-KPIs flow),
-      // just no longer as a top-level tab in this group.
+      // id). `kpis/strategic-identity` and `kpis/strategic-goals` still
+      // exist as standalone routes reached from other screens (the
+      // manage-KPIs flow); `goals/library` was deleted outright on
+      // 2026-08-29 — nothing had linked to it since this tab was removed,
+      // so it was a page no one could reach.
       //
       // 2026-08-20: "الأهداف المسندة" (`kpis`) moved OUT of this group into
       // the new "الخطة التنفيذية" module below, per the explicit "تنقل تاب
@@ -207,6 +209,12 @@ export const navGroups: NavGroup[] = [
     icon: ShieldCheck,
     children: [
       { segment: "admin/org-structure", labelKey: "orgStructure", icon: Network, access: [{ processArea: "orgStructure", minLevel: "view" }] },
+      // 2026-08-29: the org units screen joins this group between the org
+      // chart and staffing, per direct request. It reads the org_units table
+      // itself now (it used to render a copy transcribed into the source
+      // tree), so it belongs beside the structure screens rather than
+      // floating unreachable with no nav entry at all.
+      { segment: "org-units", labelKey: "orgUnits", icon: Building2, access: [{ processArea: "employeeData", minLevel: "view" }] },
       { segment: "admin/org-structure/staffing", labelKey: "staffing", icon: UserCog, access: [{ processArea: "staffing", minLevel: "view" }] },
       { segment: "admin", labelKey: "permissions", icon: KeyRound, access: [{ processArea: "userManagement", minLevel: "view" }] },
       { segment: "admin/identity", labelKey: "identity", icon: Palette, access: [{ processArea: "identity", minLevel: "view" }] },
