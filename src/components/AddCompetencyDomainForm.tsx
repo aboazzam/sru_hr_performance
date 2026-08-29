@@ -4,9 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { addCompetencyDomain } from "@/app/[locale]/(app)/competencies/actions";
-
-const inputClass =
-  "w-full px-3 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
+import { AddFormDialog } from "@/components/AddFormDialog";
 
 const errorMessageKeys: Record<string, string> = {
   invalid_input: "errorInvalid",
@@ -25,8 +23,7 @@ export function AddCompetencyDomainForm({ pillarId }: { pillarId: string }) {
   const [nameEn, setNameEn] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleAdd() {
     setError(null);
     startTransition(async () => {
       const res = await addCompetencyDomain(pillarId, nameAr, nameEn);
@@ -42,43 +39,35 @@ export function AddCompetencyDomainForm({ pillarId }: { pillarId: string }) {
   }
 
   return (
-    <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className="sru-btn">
-        {t("addDomainTriggerButton")}
-      </button>
-
-      <dialog
-        ref={dialogRef}
-        className="sru-modal"
-        onClick={(e) => {
-          if (e.target === dialogRef.current) dialogRef.current?.close();
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("addDomainHeading")}</h3>
-          <button type="button" onClick={() => dialogRef.current?.close()} className="sru-modal-close" aria-label={t("closeButton")}>
-            ×
-          </button>
+    <AddFormDialog
+      dialogRef={dialogRef}
+      triggerLabel={t("addDomainTriggerButton")}
+      heading={t("addDomainHeading")}
+      closeLabel={t("closeButton")}
+      triggerClassName="sru-btn"
+    >
+      <div className="sru-formgrid">
+        <div className="sru-field">
+          <label>{t("domainNameArLabel")}</label>
+          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" />
         </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("domainNameArLabel")}</label>
-            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("domainNameEnLabel")}</label>
-            <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} />
-          </div>
-          {error && (
-            <p role="alert" className="text-sm text-red-600">
-              {t(errorMessageKeys[error] ?? "errorUnknown")}
-            </p>
-          )}
-          <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary" style={{ alignSelf: "flex-start" }}>
-            {t("addDomainButton")}
-          </button>
-        </form>
-      </dialog>
-    </>
+        <div className="sru-field">
+          <label>{t("domainNameEnLabel")}</label>
+          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" style={{ textAlign: "left" }} />
+        </div>
+      </div>
+
+      {error && (
+        <p role="alert" className="sru-auth-alert error" style={{ marginTop: 8 }}>
+          {t(errorMessageKeys[error] ?? "errorUnknown")}
+        </p>
+      )}
+
+      <div className="sru-form-submitrow">
+        <button type="button" disabled={isPending || !nameAr.trim()} onClick={handleAdd} className="sru-btn sru-btn-primary">
+          {t("addDomainButton")}
+        </button>
+      </div>
+    </AddFormDialog>
   );
 }

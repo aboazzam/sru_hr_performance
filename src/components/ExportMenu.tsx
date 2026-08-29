@@ -28,6 +28,7 @@ export function ExportMenu({
   buildHref,
   filenameBase,
   labels,
+  triggerVariant = "secondary",
 }: {
   columns: ExportColumnOption[];
   /** Preselected keys; omit to start with everything ticked. */
@@ -44,6 +45,8 @@ export function ExportMenu({
     confirm: string;
     close: string;
   };
+  /** "primary" fills the trigger with the same purple as the page's other header actions -- opt-in per caller so a page that placed this button deliberately as an outline/secondary action is unaffected. */
+  triggerVariant?: "primary" | "secondary";
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -88,7 +91,7 @@ export function ExportMenu({
       <div className="sru-user-menu no-print" ref={rootRef}>
         <button
           type="button"
-          className="sru-btn"
+          className={`sru-btn${triggerVariant === "primary" ? " sru-btn-primary" : ""}`}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
