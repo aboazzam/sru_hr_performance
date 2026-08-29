@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { CalendarRange, Plus } from "lucide-react";
+import { CalendarRange, ClipboardList, Inbox, Plus } from "lucide-react";
 import { DateFieldDmy } from "@/components/DateFieldDmy";
 import {
   createRecruitmentPlan,
@@ -111,43 +111,84 @@ export function CreateRecruitmentPlanForm() {
           </button>
         </div>
 
-        <div className="sru-formgrid">
-          <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
-            <span>{t("fieldPlanName")}</span>
-            <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
-          </label>
+        <section className="sru-formsection">
+          <div className="sru-formsection-head">
+            <span className="sru-formsection-badge">
+              <ClipboardList size={16} aria-hidden />
+            </span>
+            <h3 style={{ margin: 0, fontSize: 14 }}>{t("sectionPlanBasics")}</h3>
+          </div>
+          <div className="sru-formgrid">
+            <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
+              <span>{t("fieldPlanName")}</span>
+              <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
+            </label>
+            <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
+              <span>{t("fieldNotes")}</span>
+              <input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </label>
+          </div>
+        </section>
 
-          <label className="sru-field">
-            <span>{t("fieldRequestsOpenAt")}</span>
-            <DateFieldDmy value={requestsOpenAt} onChange={setRequestsOpenAt} ariaLabel={t("fieldRequestsOpenAt")} />
-          </label>
-          <label className="sru-field">
-            <span>{t("fieldRequestsCloseAt")}</span>
-            <DateFieldDmy value={requestsCloseAt} onChange={setRequestsCloseAt} ariaLabel={t("fieldRequestsCloseAt")} />
-          </label>
-          <label className="sru-field">
-            <span>{t("fieldPlanStartDateRequired")}</span>
-            <DateFieldDmy value={planStartDate} onChange={setPlanStartDate} ariaLabel={t("fieldPlanStartDate")} />
-          </label>
-          <label className="sru-field">
-            <span>{t("fieldPlanEndDate")}</span>
-            <DateFieldDmy value={planEndDate} onChange={setPlanEndDate} ariaLabel={t("fieldPlanEndDate")} />
-          </label>
-          <label className="sru-field" style={{ gridColumn: "1 / -1" }}>
-            <span>{t("fieldNotes")}</span>
-            <input value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </label>
-          {planStartDate === "" && (
-            <p style={{ gridColumn: "1 / -1", margin: 0, color: "var(--sru-muted)", fontSize: 12 }}>
-              {t("planStartRequiredHint")}
-            </p>
-          )}
-          {(intakeReversed || periodReversed) && (
-            <p role="alert" className="text-sm text-red-600" style={{ gridColumn: "1 / -1", margin: 0 }}>
-              {t(intakeReversed ? "errorIntakeWindowReversed" : "errorPlanPeriodReversed")}
-            </p>
-          )}
-        </div>
+        <section className="sru-formsection">
+          <div className="sru-formsection-head">
+            <span className="sru-formsection-badge">
+              <Inbox size={16} aria-hidden />
+            </span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: 14 }}>{t("sectionIntakeWindow")}</h3>
+              <p style={{ margin: "2px 0 0", color: "var(--sru-muted)", fontSize: 11.5 }}>
+                {t("sectionIntakeWindowNote")}
+              </p>
+            </div>
+          </div>
+          <div className="sru-formgrid">
+            <label className="sru-field">
+              <span>{t("fieldRequestsOpenAt")}</span>
+              <DateFieldDmy value={requestsOpenAt} onChange={setRequestsOpenAt} ariaLabel={t("fieldRequestsOpenAt")} />
+            </label>
+            <label className="sru-field">
+              <span>{t("fieldRequestsCloseAt")}</span>
+              <DateFieldDmy value={requestsCloseAt} onChange={setRequestsCloseAt} ariaLabel={t("fieldRequestsCloseAt")} />
+            </label>
+            {intakeReversed && (
+              <p role="alert" className="text-sm text-red-600" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                {t("errorIntakeWindowReversed")}
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className="sru-formsection">
+          <div className="sru-formsection-head">
+            <span className="sru-formsection-badge">
+              <CalendarRange size={16} aria-hidden />
+            </span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: 14 }}>{t("sectionPlanPeriod")}</h3>
+              {/* التلميح تحت مجموعته لا في ذيل النموذج: هو يشرح لماذا هذا
+                  الحقل تحديدًا إلزامي. */}
+              <p style={{ margin: "2px 0 0", color: "var(--sru-muted)", fontSize: 11.5 }}>
+                {t("planStartRequiredHint")}
+              </p>
+            </div>
+          </div>
+          <div className="sru-formgrid">
+            <label className="sru-field">
+              <span>{t("fieldPlanStartDateRequired")}</span>
+              <DateFieldDmy value={planStartDate} onChange={setPlanStartDate} ariaLabel={t("fieldPlanStartDate")} />
+            </label>
+            <label className="sru-field">
+              <span>{t("fieldPlanEndDate")}</span>
+              <DateFieldDmy value={planEndDate} onChange={setPlanEndDate} ariaLabel={t("fieldPlanEndDate")} />
+            </label>
+            {periodReversed && (
+              <p role="alert" className="text-sm text-red-600" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                {t("errorPlanPeriodReversed")}
+              </p>
+            )}
+          </div>
+        </section>
 
         <div className="sru-form-submitrow">
           <button
