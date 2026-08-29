@@ -55,7 +55,7 @@ export function RecruitmentPlanExportMenu({ planId }: { planId: string }) {
     <div className="sru-user-menu no-print" ref={rootRef}>
       <button
         type="button"
-        className="sru-btn sru-btn-primary sru-btn-sm"
+        className="sru-btn sru-btn-primary"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}

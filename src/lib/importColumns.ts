@@ -79,3 +79,19 @@ export const COMPETENCY_IMPORT_COLUMNS = {
   advanced: "متقدم",
   professional: "محترف",
 } as const;
+
+/**
+ * بنود خطة التوظيف. الوحدة التنظيمية وحدها إلزامية في قاعدة البيانات
+ * (`org_unit_id NOT NULL`)، لكن المسمى الوظيفي يُعامَل مفتاحًا معها لأن
+ * البند يُعرَّف بهما معًا — راجع مفتاح التكرار في `import-actions`.
+ */
+export const PLAN_ITEM_IMPORT_COLUMNS = {
+  orgUnit: "الوحدة التنظيمية",
+  jobTitle: "المسمى الوظيفي",
+  jobFamily: "العائلة الوظيفية",
+  headcount: "العدد المطلوب",
+  targetQuarter: "الربع المستهدف",
+  priority: "الأولوية",
+  monthlyCost: "التكلفة الشهرية التقديرية",
+  justification: "المبرر",
+} as const;

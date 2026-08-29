@@ -2250,7 +2250,21 @@
     "sectionPlanBasics": "بيانات الخطة",
     "sectionIntakeWindow": "نافذة استقبال الطلبات",
     "sectionIntakeWindowNote": "المدة التي يجوز فيها للإدارات رفع طلبات الاحتياج.",
-    "sectionPlanPeriod": "فترة الخطة"
+    "sectionPlanPeriod": "فترة الخطة",
+    "importItemsTrigger": "استيراد من إكسل",
+    "importItemsHeading": "استيراد بنود الخطة من إكسل",
+    "importItemsNote": "صف لكل بند: الوحدة التنظيمية والمسمى الوظيفي والعدد والربع والأولوية والتكلفة الشهرية. الوحدة التنظيمية وحدها إلزامية.",
+    "importItemsSuccess": "تم الاستيراد: {created} بندًا جديدًا، و{updated} محدَّثًا، و{skipped} متجاوَزًا.",
+    "importFieldJobFamily": "العائلة الوظيفية",
+    "importFieldJustification": "المبرر",
+    "importWarnings": "صفوف لم تُستورَد ({count})",
+    "importing": "جارٍ الاستيراد…",
+    "downloadTemplateButton": "تحميل نموذج فارغ",
+    "importErrorInvalid": "الملف غير صالح أو تنقصه الأعمدة المطلوبة.",
+    "importErrorForbidden": "لا تملك صلاحية الاستيراد.",
+    "importErrorNotDraft": "لا يمكن الاستيراد إلا إلى خطة في حالة مسودة.",
+    "importErrorNotFound": "الخطة غير موجودة.",
+    "importErrorUnknown": "تعذّر إتمام الاستيراد."
   },
   "AnnouncedJobsPage": {
     "title": "الوظائف المعلن عنها",
