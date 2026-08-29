@@ -1354,6 +1354,24 @@ html[dir="ltr"] .sru-back-arrow {
     overflow: visible !important;
     display: block !important;
   }
+
+  /* Real print output (2026-08-30) showed page content starting flush
+     against the fixed print-branding header (see PrintBranding.tsx /
+     .sru-print-header/-footer below) — no gap at all, even though the
+     header is offset `top: 3mm` and `sru-print.css`'s own `@page {margin:
+     16mm}` should already clear it. Not chasing the exact cause (a
+     fixed-position element's containing block during print, vs. whatever
+     margin the print dialog's own "Margins" setting actually applied that
+     day — both plausible, neither reliably testable here): reserving the
+     space with real content padding works regardless of which it is,
+     since normal document flow spacing isn't affected by either. Applied
+     once on `main` so every page gets clearance without its own print CSS
+     — pages with their own scoped print padding (e.g.
+     `.competencies-print-page`) simply add theirs on top of this. */
+  .sru-app-shell main {
+    padding-top: 16mm !important;
+    padding-bottom: 16mm !important;
+  }
 }
 
 /* ===== .sru-en inside a table cell (2026-08-07) =====
