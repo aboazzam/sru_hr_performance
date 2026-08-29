@@ -2241,7 +2241,11 @@
     "windowsEditHint": "ما يُرفع من طلبات داخل نافذة الاستقبال يُدرج في هذه الخطة؛ وما يُرفع بعد إغلاقها أو بعد إقرار الخطة يُسجَّل طلبًا خارج الخطة.",
     "windowsReadOnly": "للاطلاع فقط — لا تملك صلاحية تعديل زمن الخطة.",
     "fieldPlanStartDateRequired": "بداية فترة الخطة *",
-    "planStartRequiredHint": "سنة الخطة تُؤخذ من بداية فترتها، فلا بدّ من تحديدها."
+    "planStartRequiredHint": "سنة الخطة تُؤخذ من بداية فترتها، فلا بدّ من تحديدها.",
+    "sectionPlanBasics": "بيانات الخطة",
+    "sectionIntakeWindow": "نافذة استقبال الطلبات",
+    "sectionIntakeWindowNote": "المدة التي يجوز فيها للإدارات رفع طلبات الاحتياج.",
+    "sectionPlanPeriod": "فترة الخطة"
   },
   "AnnouncedJobsPage": {
     "title": "الوظائف المعلن عنها",
