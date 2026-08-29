@@ -87,7 +87,7 @@ export function CompetencyDomainCard({
   }
 
   return (
-    <div style={{ borderTop: "1px solid var(--sru-border)", paddingTop: 16, marginTop: 16 }}>
+    <div className="competency-domain-block" style={{ borderTop: "1px solid var(--sru-border)", paddingTop: 16, marginTop: 16 }}>
       {isEditing ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <span className="sru-order-badge sru-order-badge-domain" aria-hidden>
@@ -110,7 +110,7 @@ export function CompetencyDomainCard({
           )}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+        <div className="competency-domain-head" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <span className="sru-order-badge sru-order-badge-domain" aria-hidden>
             {orderLabel}
           </span>
