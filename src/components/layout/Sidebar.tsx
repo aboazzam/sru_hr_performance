@@ -21,11 +21,18 @@ import type { ProcessArea, VpraLevel } from "@/lib/vpra";
 // visible child — its siblings appear as a tab bar at the top of the page
 // itself (GroupTabs.tsx), not nested in this sidebar, per the explicit
 // "العناوين الفرعية تكون على شكل تابات في أعلى الصفحة" instruction.
-export function Sidebar({ permissions }: { permissions: Partial<Record<ProcessArea, VpraLevel>> }) {
+export function Sidebar({
+  permissions,
+  hasSubordinates = false,
+}: {
+  permissions: Partial<Record<ProcessArea, VpraLevel>>;
+  hasSubordinates?: boolean;
+}) {
   const t = useTranslations("NavBar");
   const pathname = usePathname();
-  const items = visibleNavItems(navItems, permissions);
-  const groups = visibleNavGroups(navGroups, permissions);
+  const context = { hasSubordinates };
+  const items = visibleNavItems(navItems, permissions, context);
+  const groups = visibleNavGroups(navGroups, permissions, context);
 
   return (
     <nav className="sru-sidebar">

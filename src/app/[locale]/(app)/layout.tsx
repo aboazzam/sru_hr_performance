@@ -82,6 +82,12 @@ export default async function AppShellLayout({
     ])
   ) as Partial<Record<ProcessArea, VpraLevel>>;
 
+  // has_any_subordinates() (20260830000002) — the Employees sidebar tab's
+  // narrower `employeeDataSubordinates` branch only counts when the caller
+  // genuinely has at least one real report; otherwise it would just open to
+  // nothing useful for them (2026-08-30 request).
+  const { data: hasSubordinates } = await supabase.rpc("has_any_subordinates");
+
   // The caller's own notifications for the TopBar bell. `notifications_select`
   // (20260807000006) restricts this to the caller's own rows with no
   // oversight branch at all, so no filter is needed (or possible) here.
@@ -103,7 +109,7 @@ export default async function AppShellLayout({
       <PrintBranding />
       <TopBar locale={safeLocale} userName={userName} notifications={notifications ?? []} />
       <div className="sru-app-body">
-        <Sidebar permissions={permissions} />
+        <Sidebar permissions={permissions} hasSubordinates={hasSubordinates ?? false} />
         <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
       </div>
     </div>
