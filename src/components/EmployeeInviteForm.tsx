@@ -80,6 +80,25 @@ export function EmployeeInviteForm({
   const [mode, setMode] = useState<"none" | "invite" | "direct">(canManageUsers ? "invite" : "none");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const modeBlockRef = useRef<HTMLDivElement>(null);
+  const isFirstModeRender = useRef(true);
+
+  // Switching to "بيانات فقط" hides the password + role/scope sections below
+  // this block, which can shrink the form enough that a scrolled-down admin
+  // ends up looking at blank space past the new (shorter) page end -- no
+  // crash, no error, just an empty-looking viewport (reported live 2026-08:
+  // "بيانات فقط" ("data only") specifically, since it hides the most
+  // content). Re-anchoring the viewport on the mode toggle itself whenever
+  // it changes keeps the visible area centered on what the admin just did,
+  // regardless of whether the mode grew or shrank the form. Skipped on the
+  // very first render so mounting the form doesn't itself cause a jump.
+  useEffect(() => {
+    if (isFirstModeRender.current) {
+      isFirstModeRender.current = false;
+      return;
+    }
+    modeBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [mode]);
 
   // "Adjust state during rendering" (not inside the effect below) so this
   // doesn't trip react-hooks/set-state-in-effect — React's own documented
@@ -275,7 +294,7 @@ export function EmployeeInviteForm({
           </div>
         </div>
         <div className="sru-formgrid">
-          <div className="sru-field sru-scope-block">
+          <div className="sru-field sru-scope-block" ref={modeBlockRef}>
             <label>{t("accountModeLabel")}</label>
             <div className="sru-scope-chip-row">
               <label className="sru-scope-chip">
