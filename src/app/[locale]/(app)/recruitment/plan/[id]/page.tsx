@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import { BackLink } from "@/components/BackLink";
 import { PlanDistributionCard } from "@/components/PlanDistributionCard";
+import { ImportPlanItemsExcelForm } from "@/components/ImportPlanItemsExcelForm";
 import { RecruitmentPlanWindowsCard } from "@/components/RecruitmentPlanWindowsCard";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { todayInTimezone } from "@/lib/evaluationCycle";
@@ -189,16 +190,18 @@ export default async function RecruitmentPlanDetailPage({
             })}
           </p>
         </div>
-        {/* Every button here is `sru-btn-sm` — three quarters of the normal
-            size, asked for once the row had grown to seven buttons. */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {/* `sru-actionbar` — نفس شريط أزرار المبادرات، بطلب مباشر: «غيّر
+            الستايل الخاص بالأزرار المرفقة لتكون مثل الأزرار في المبادرات».
+            الصنف نفسه لا نسخةٌ منه، فيبقى الشريطان متطابقين إن تغيّر أحدهما.
+            وهو يتكفّل بالحجم والتعبئة، فلم تعد `sru-btn-sm` لازمة هنا. */}
+        <div className="sru-actionbar no-print">
           {canReviewBudget && (
-            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn sru-btn-primary sru-btn-sm">
+            <Link href={`/recruitment/plan/${plan.id}/finance`} className="sru-btn">
               {t("financeReviewScreen")}
             </Link>
           )}
           {canConsolidate && plan.status === "draft" && (
-            <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn sru-btn-primary sru-btn-sm">
+            <Link href={`/recruitment/plan/${plan.id}/consolidate`} className="sru-btn">
               {t("consolidateRequests")}
             </Link>
           )}
@@ -206,10 +209,10 @@ export default async function RecruitmentPlanDetailPage({
               "عرض للطباعة" button is gone, its destination now the menu's PDF
               entry, so nothing was lost with it. */}
           <RecruitmentPlanExportMenu planId={plan.id} />
-          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn sru-btn-primary sru-btn-sm">
+          <Link href={`/recruitment/plan/${plan.id}/compare`} className="sru-btn">
             {t("compareTab")}
           </Link>
-          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn sru-btn-primary sru-btn-sm">
+          <Link href={`/recruitment/plan/${plan.id}/audit`} className="sru-btn">
             {t("auditTab")}
           </Link>
         </div>
@@ -396,13 +399,17 @@ export default async function RecruitmentPlanDetailPage({
           Both are primary: each adds items to the plan, and one filled next
           to one outlined would rank them when they are peers. */}
       {canPrepare && (
-        <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="sru-actionbar no-print" style={{ marginTop: 16 }}>
           <RecruitmentPlanHeaderActions planId={plan.id} canPrepare={canPrepare} />
           <AddRecruitmentPlanItemForm
             planId={plan.id}
             orgUnits={orgUnits ?? []}
             jobTitles={jobTitles ?? []}
           />
+          {/* الاستيراد ثالثُ طرق ملء الخطة، فمكانه بجوار الطريقتين لا تحتهما.
+              ويظهر للمسودة وحدها: الإجراء نفسه يرفض غيرها، فعرضه على خطة
+              معتمَدة وعدٌ لا يُوفى. */}
+          {plan.status === "draft" && <ImportPlanItemsExcelForm planId={plan.id} />}
         </div>
       )}
     </div>

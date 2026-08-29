@@ -2250,7 +2250,21 @@
     "sectionPlanBasics": "Plan details",
     "sectionIntakeWindow": "Request intake window",
     "sectionIntakeWindowNote": "The period during which departments may raise demand requests.",
-    "sectionPlanPeriod": "Plan period"
+    "sectionPlanPeriod": "Plan period",
+    "importItemsTrigger": "Import from Excel",
+    "importItemsHeading": "Import plan items from Excel",
+    "importItemsNote": "One row per item: org unit, job title, headcount, quarter, priority and monthly cost. Only the org unit is required.",
+    "importItemsSuccess": "Imported: {created} new, {updated} updated, {skipped} skipped.",
+    "importFieldJobFamily": "Job family",
+    "importFieldJustification": "Justification",
+    "importWarnings": "Rows not imported ({count})",
+    "importing": "Importing…",
+    "downloadTemplateButton": "Download empty template",
+    "importErrorInvalid": "The file is invalid or is missing required columns.",
+    "importErrorForbidden": "You do not have permission to import.",
+    "importErrorNotDraft": "Import is only possible into a plan that is still a draft.",
+    "importErrorNotFound": "Plan not found.",
+    "importErrorUnknown": "The import could not be completed."
   },
   "AnnouncedJobsPage": {
     "title": "Advertised Jobs",
