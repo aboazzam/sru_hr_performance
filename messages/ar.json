@@ -60,7 +60,8 @@
     "recruitmentPortalExternal": "بوابة التوظيف الخارجي",
     "executivePlan": "الخطة التشغيلية",
     "executivePlans": "قائمة الخطط التشغيلية",
-    "initiativeAssignments": "إسناد المبادرات"
+    "initiativeAssignments": "إسناد المبادرات",
+    "orgUnits": "الوحدات التنظيمية"
   },
   "PrintButton": {
     "print": "طباعة"
@@ -241,7 +242,40 @@
   },
   "OrgUnitsPage": {
     "title": "الهيكل التنظيمي",
-    "subtitle": "جامعة سليمان الراجحي — الإصدار 2.0، بتاريخ 28/5/2025."
+    "subtitle": "الوحدات التنظيمية للجامعة وتبعية كل وحدة. يمكن إضافة وحدة أو تعديل مسماها أو نقل تبعيتها أو حذفها.",
+    "empty": "لا توجد وحدات تنظيمية.",
+    "searchPlaceholder": "ابحث باسم الوحدة...",
+    "noMatches": "لا توجد وحدات مطابقة.",
+    "unitCount": "{count} وحدة",
+    "addUnit": "إضافة وحدة",
+    "addSubtitle": "أضف وحدة تنظيمية جديدة وحدّد تبعيتها.",
+    "fieldNameAr": "الاسم (عربي)",
+    "fieldNameEn": "الاسم (إنجليزي)",
+    "fieldCode": "الرمز",
+    "fieldType": "التصنيف",
+    "fieldParent": "التبعية",
+    "parentNone": "— بلا تبعية (وحدة جذر) —",
+    "editButton": "تعديل",
+    "saveButton": "حفظ",
+    "cancelButton": "إلغاء",
+    "deleteButton": "حذف الوحدة",
+    "deleteConfirm": "هل تريد حذف هذه الوحدة التنظيمية؟",
+    "closeButton": "إغلاق",
+    "type_governance": "حوكمة",
+    "type_support": "دعم",
+    "type_academic": "أكاديمي",
+    "type_administrative": "إداري",
+    "type_business_development": "تطوير أعمال",
+    "errorInvalidInput": "البيانات غير صحيحة.",
+    "errorUnauthenticated": "انتهت الجلسة، سجّل الدخول مجددًا.",
+    "errorForbidden": "لا تملك صلاحية تعديل الوحدات التنظيمية.",
+    "errorCycle": "لا يمكن جعل الوحدة تابعة لوحدة من فروعها.",
+    "errorHasDependents": "لا يمكن حذف الوحدة وهي مرتبطة بموظفين أو وحدات فرعية أو سجلات أخرى.",
+    "errorUnknown": "تعذر إتمام العملية.",
+    "errorDuplicateCode": "يوجد وحدة بهذا الرمز بالفعل.",
+    "errorDuplicateName": "يوجد وحدة بهذا الاسم تحت التبعية نفسها.",
+    "errorSecondRoot": "لا يمكن أن توجد أكثر من وحدة جذر واحدة — اختر تبعية لهذه الوحدة.",
+    "parentPlaceholder": "اختر التبعية..."
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",
@@ -3188,5 +3222,6 @@
     "description": "واجه التطبيق مشكلة أثناء تنفيذ هذا الإجراء. إذا استمرت المشكلة بعد إعادة التحميل، تواصل مع إدارة رأس المال البشري.",
     "reloadButton": "إعادة تحميل الصفحة",
     "retryButton": "إعادة المحاولة"
-  }
+  },
+  "Navigation": {}
 }

@@ -60,7 +60,8 @@
     "recruitmentPortalExternal": "External Portal",
     "executivePlan": "Operational Plan",
     "executivePlans": "Operational Plans",
-    "initiativeAssignments": "Initiative Assignments"
+    "initiativeAssignments": "Initiative Assignments",
+    "orgUnits": "Org units"
   },
   "PrintButton": {
     "print": "Print"
@@ -241,7 +242,40 @@
   },
   "OrgUnitsPage": {
     "title": "Organizational Structure",
-    "subtitle": "Sulaiman Alrajhi University — Version 2.0, dated 28/5/2025."
+    "subtitle": "The university's organizational units and where each one reports. Units can be added, renamed, moved, or removed.",
+    "empty": "No organizational units.",
+    "searchPlaceholder": "Search by unit name...",
+    "noMatches": "No matching units.",
+    "unitCount": "{count} units",
+    "addUnit": "Add unit",
+    "addSubtitle": "Add an organizational unit and choose where it reports.",
+    "fieldNameAr": "Name (Arabic)",
+    "fieldNameEn": "Name (English)",
+    "fieldCode": "Code",
+    "fieldType": "Category",
+    "fieldParent": "Reports to",
+    "parentNone": "— No parent (root unit) —",
+    "editButton": "Edit",
+    "saveButton": "Save",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete unit",
+    "deleteConfirm": "Delete this organizational unit?",
+    "closeButton": "Close",
+    "type_governance": "Governance",
+    "type_support": "Support",
+    "type_academic": "Academic",
+    "type_administrative": "Administrative",
+    "type_business_development": "Business development",
+    "errorInvalidInput": "Invalid input.",
+    "errorUnauthenticated": "Your session expired, sign in again.",
+    "errorForbidden": "You do not have permission to change organizational units.",
+    "errorCycle": "A unit cannot report to one of its own sub-units.",
+    "errorHasDependents": "This unit cannot be removed while employees, sub-units, or other records point at it.",
+    "errorUnknown": "Could not complete the operation.",
+    "errorDuplicateCode": "A unit with this code already exists.",
+    "errorDuplicateName": "A unit with this name already exists under the same parent.",
+    "errorSecondRoot": "There can only be one root unit — choose a parent for this one.",
+    "parentPlaceholder": "Select a parent..."
   },
   "AdminPage": {
     "title": "Users & Permissions",
@@ -3188,5 +3222,6 @@
     "description": "The app ran into a problem completing this action. If reloading doesn't help, contact Human Capital Management.",
     "reloadButton": "Reload page",
     "retryButton": "Try again"
-  }
+  },
+  "Navigation": {}
 }
