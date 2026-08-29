@@ -26,7 +26,7 @@ const errorMessageKeys: Record<string, string> = {
  */
 export function CompetencyDomainCard({
   domainId,
-  orderNumber,
+  orderLabel,
   initialNameAr,
   initialNameEn,
   canManage,
@@ -34,8 +34,8 @@ export function CompetencyDomainCard({
   children,
 }: {
   domainId: string;
-  /** 1-based position among this pillar's domains -- restarts at 1 per pillar, same numbered-list intent as CompetencyPillarCard's own badge (2026-08-29: "اضف ترقيم"). */
-  orderNumber: number;
+  /** Dotted sub-number relative to the pillar, e.g. "1.2" for the 2nd domain of the 1st pillar (2026-08-29: "اجعل المجالات ارقام فرعية كأن تكتب 1.1"). */
+  orderLabel: string;
   initialNameAr: string;
   initialNameEn: string | null;
   canManage: boolean;
@@ -91,7 +91,7 @@ export function CompetencyDomainCard({
       {isEditing ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <span className="sru-order-badge sru-order-badge-domain" aria-hidden>
-            {orderNumber}
+            {orderLabel}
           </span>
           <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} style={{ maxWidth: 220, fontSize: 13, fontWeight: 700 }} autoFocus />
           <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" className={inputClass} style={{ maxWidth: 200, fontSize: 13 }} />
@@ -112,7 +112,7 @@ export function CompetencyDomainCard({
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <span className="sru-order-badge sru-order-badge-domain" aria-hidden>
-            {orderNumber}
+            {orderLabel}
           </span>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--sru-blue)" }}>{initialNameAr}</h3>
           {canManage && (
