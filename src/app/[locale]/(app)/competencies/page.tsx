@@ -10,6 +10,7 @@ import { CompetencyClassificationRow } from "@/components/CompetencyClassificati
 import { CompetencyPillarCard } from "@/components/CompetencyPillarCard";
 import { CompetencyDomainCard } from "@/components/CompetencyDomainCard";
 import { CompetencyManageCard } from "@/components/CompetencyManageCard";
+import { PrintBranding } from "@/components/PrintBranding";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import {
   groupCompetencyFramework,
@@ -71,6 +72,7 @@ export default async function CompetenciesPage() {
 
   return (
     <div className="sru-container competencies-print-page" style={{ padding: "32px 22px 60px" }}>
+      <PrintBranding />
       <div
         className="no-print"
         style={{
