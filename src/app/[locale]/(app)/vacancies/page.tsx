@@ -114,7 +114,7 @@ export default async function VacanciesPage() {
             `vacancies`, which needs `approve`, so they're hidden below that
             bar rather than offered and then rejected by Postgres. */}
         {canCreate && (
-          <div className="no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="sru-actionbar no-print">
             <ImportVacanciesExcelForm />
             <Link href="/vacancies/new" className="sru-btn sru-btn-primary">
               {t("newVacancy")}

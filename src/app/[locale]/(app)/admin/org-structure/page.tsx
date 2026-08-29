@@ -181,7 +181,7 @@ export default async function OrgStructurePage() {
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         {canBuild && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="sru-actionbar no-print">
             {levels.length > 0 && (
               <>
                 <AddOrgStructureLevelForm />

@@ -93,7 +93,7 @@ export default async function PlanPrintPage({
         <BackLink href={`/recruitment/plan/${id}`}>{t("backToPlan")}</BackLink>
       </div>
 
-      <div className="no-print" style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+      <div className="sru-actionbar no-print" style={{ marginBottom: 18 }}>
         {/* The shared PrintButton reads its own label from the `PrintButton`
             message namespace — used unchanged by 8 other screens, so it takes
             no props. */}

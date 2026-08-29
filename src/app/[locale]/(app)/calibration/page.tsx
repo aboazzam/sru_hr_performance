@@ -66,11 +66,13 @@ export default async function CalibrationSessionsPage() {
             {t("subtitle")}
           </p>
         </div>
-        {canCreate && (
-          <Link href="/calibration/new" className="sru-btn sru-btn-primary">
-            {t("newSession")}
-          </Link>
-        )}
+        <div className="sru-actionbar no-print">
+          {canCreate && (
+            <Link href="/calibration/new" className="sru-btn sru-btn-primary">
+              {t("newSession")}
+            </Link>
+          )}
+        </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 
