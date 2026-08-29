@@ -52,9 +52,7 @@ export default async function OrgChartPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div className="sru-actionbar no-print">
-          <PrintButton />
-        </div>
+        <PrintButton />
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
 

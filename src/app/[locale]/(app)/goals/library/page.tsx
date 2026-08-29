@@ -180,7 +180,7 @@ export default async function GoalLibraryPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div className="sru-actionbar no-print">
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/goals/assign" className="sru-btn sru-btn-primary">
             {t("assignGoal")}
           </Link>
