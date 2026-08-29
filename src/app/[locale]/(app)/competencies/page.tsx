@@ -151,7 +151,7 @@ export default async function CompetenciesPage() {
               <CompetencyDomainCard
                 key={domain.id}
                 domainId={domain.id}
-                orderNumber={domainIndex + 1}
+                orderLabel={`${pillarIndex + 1}.${domainIndex + 1}`}
                 initialNameAr={domain.name_ar}
                 initialNameEn={domain.name_en}
                 canManage={canManage}
@@ -161,10 +161,11 @@ export default async function CompetenciesPage() {
                   {domain.competencies.length === 0 ? (
                     <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("noCompetenciesYet")}</p>
                   ) : (
-                    domain.competencies.map((c) => (
+                    domain.competencies.map((c, competencyIndex) => (
                       <CompetencyManageCard
                         key={c.id}
                         competencyId={c.id}
+                        orderLabel={`${pillarIndex + 1}.${domainIndex + 1}.${competencyIndex + 1}`}
                         initialNameAr={c.name_ar}
                         initialClassificationId={c.classification_id}
                         initialDefinitionAr={c.definition_ar}

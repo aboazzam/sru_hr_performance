@@ -33,6 +33,7 @@ interface ClassificationOption {
 
 export function CompetencyManageCard({
   competencyId,
+  orderLabel,
   initialNameAr,
   initialClassificationId,
   initialDefinitionAr,
@@ -44,6 +45,8 @@ export function CompetencyManageCard({
   canManage,
 }: {
   competencyId: string;
+  /** Dotted sub-number relative to the pillar and domain, e.g. "1.2.3" for the 3rd competency of the 2nd domain of the 1st pillar (2026-08-29: "وفي الجدارات 1.1.1"). */
+  orderLabel: string;
   initialNameAr: string;
   initialClassificationId: string;
   initialDefinitionAr: string;
@@ -133,7 +136,12 @@ export function CompetencyManageCard({
     return (
       <details className="sru-card competency-card">
         <summary>
-          <span>{initialNameAr}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span className="sru-order-badge sru-order-badge-competency" aria-hidden>
+              {orderLabel}
+            </span>
+            <span>{initialNameAr}</span>
+          </span>
           <span className="sru-chip">{initialClassification?.name_ar ?? "—"}</span>
           {!isComplete && (
             <span className="sru-chip" style={{ background: "#fef3c7", color: "#92400e" }}>
@@ -187,6 +195,9 @@ export function CompetencyManageCard({
   return (
     <div className="sru-card" style={{ padding: 16, marginBottom: 10 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <span className="sru-order-badge sru-order-badge-competency" style={{ alignSelf: "flex-start" }} aria-hidden>
+          {orderLabel}
+        </span>
         <div>
           <label className="block text-sm font-medium mb-1">{t("competencyNameArLabel")}</label>
           <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className={inputClass} />
