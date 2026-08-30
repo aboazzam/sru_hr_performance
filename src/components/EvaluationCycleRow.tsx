@@ -9,8 +9,7 @@ import {
   deleteEvaluationCycle,
   type EvaluationCycleActionState,
 } from "@/app/[locale]/(app)/evaluations/cycles/actions";
-import { cycleStatus, cycleStatusLabels, evaluationMethods, type MethodWeights } from "@/lib/evaluationCycle";
-import { methodLabelKeys } from "@/components/WeightGroupFields";
+import { cycleStatus, cycleStatusLabels } from "@/lib/evaluationCycle";
 import { CycleEditDrawer } from "@/components/CycleEditDrawer";
 import { formatDateDmy } from "@/lib/dateParts";
 
@@ -38,7 +37,6 @@ export interface EvaluationCycleRowData {
   startDate: string;
   endDate: string;
   usageCount: number;
-  weights: MethodWeights;
 }
 
 /**
@@ -70,14 +68,6 @@ export function EvaluationCycleRow({
 
   const status = cycleStatus(cycle.startDate, cycle.endDate, today);
 
-  // The cycle distribution is read-only here: it is the fallback for any
-  // department that has not set its own, and both are edited on the cycle's
-  // weights tab where the departments are listed beside it.
-  const weightsSummary = evaluationMethods.map((m) => `${cycle.weights[m]}%`).join(" / ");
-  const weightsTitle = evaluationMethods
-    .map((m) => `${t(methodLabelKeys[m])}: ${cycle.weights[m]}%`)
-    .join("، ");
-
   function run(fn: () => Promise<EvaluationCycleActionState>) {
     setState(null);
     startTransition(async () => {
@@ -105,9 +95,6 @@ export function EvaluationCycleRow({
 
       <td>
         <span className="pill">{cycleStatusLabels[status]}</span>
-      </td>
-      <td style={{ fontSize: 11.5, whiteSpace: "nowrap" }} title={weightsTitle}>
-        {weightsSummary}
       </td>
       <td className="sru-en">{cycle.usageCount}</td>
 

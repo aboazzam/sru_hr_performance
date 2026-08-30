@@ -8,7 +8,7 @@ import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { formatDateDmy } from "@/lib/dateParts";
 import { CycleMethodWeightsForm } from "@/components/CycleMethodWeightsForm";
 import { OrgUnitWeightsManager, type OrgUnitWeightsRow } from "@/components/OrgUnitWeightsManager";
-import type { MethodWeights } from "@/lib/evaluationCycle";
+import { summariseCycleScoring, type MethodWeights } from "@/lib/evaluationCycle";
 
 import {
   canAdvanceEvaluationState,
@@ -121,6 +121,30 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
       ? await supabase.from("evaluation_scores").select("evaluation_id").in("evaluation_id", shownIds).is("deleted_at", null)
       : { data: [] };
   const scoredIds = new Set(((scoreRows ?? []) as { evaluation_id: string }[]).map((r) => r.evaluation_id));
+
+  // Cycle-wide indicators (moved here from the cycles list on 2026-08-30 —
+  // they answer "how is THIS cycle doing", which only means something once
+  // you are inside it). RLS-scoped like everything else: a caller only ever
+  // counts evaluations/scores they can genuinely see.
+  const { data: allCycleEvaluations } = await supabase
+    .from("evaluations")
+    .select("id, cycle_id")
+    .eq("cycle_id", id)
+    .is("deleted_at", null);
+  const allCycleEvaluationIds = ((allCycleEvaluations ?? []) as { id: string }[]).map((e) => e.id);
+  const { data: allCycleScores } =
+    allCycleEvaluationIds.length > 0
+      ? await supabase
+          .from("evaluation_scores")
+          .select("evaluation_id, score")
+          .in("evaluation_id", allCycleEvaluationIds)
+          .is("deleted_at", null)
+      : { data: [] };
+  const cycleScoringSummary = summariseCycleScoring(
+    (allCycleEvaluations ?? []) as { id: string; cycle_id: string }[],
+    (allCycleScores ?? []) as { evaluation_id: string; score: number | null }[]
+  ).get(cycle.id) ?? { total: 0, scored: 0, remaining: 0, averageScore: null };
+  const digits = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US";
 
   const cycleWeights: MethodWeights = {
     activities: Number(cycle.weight_activities),
@@ -283,7 +307,42 @@ export default async function EvaluationCyclePage({ params }: { params: Promise<
         {tCycles("columnStart")}: {formatDateDmy(cycle.start_date, locale)} — {tCycles("columnEnd")}:{" "}
         {formatDateDmy(cycle.end_date, locale)}
       </p>
-      <div className="sru-diag" style={{ margin: "8px 0 28px" }} />
+
+      {/* Cycle indicators, moved here from the cycles list (2026-08-30
+          request): they describe THIS cycle, so they belong at the top of
+          its own page, not below a table listing every cycle. */}
+      <section style={{ marginTop: 18 }}>
+        <h2 className="sru-title" style={{ fontSize: 15 }}>
+          {tCycles("metricsHeading")}
+        </h2>
+        <p style={{ color: "var(--sru-muted)", fontSize: 12, margin: "4px 0 12px", lineHeight: 1.8 }}>
+          {tCycles("metricsNote")}
+        </p>
+        <div className="sru-card">
+          <div className="sru-home-mine">
+            <span className="sru-home-tile">
+              <span className="sru-home-tile-label">{tCycles("metricScored")}</span>
+              <strong>{cycleScoringSummary.scored.toLocaleString(digits)}</strong>
+            </span>
+            <span className="sru-home-tile">
+              <span className="sru-home-tile-label">{tCycles("metricRemaining")}</span>
+              <strong>{cycleScoringSummary.remaining.toLocaleString(digits)}</strong>
+            </span>
+            <span className="sru-home-tile">
+              <span className="sru-home-tile-label">{tCycles("metricAverage")}</span>
+              {/* Never 0 when nothing was scored — an untouched cycle must
+                  not read as a cycle that scored zero. */}
+              <strong>
+                {cycleScoringSummary.averageScore == null
+                  ? tCycles("metricNoAverage")
+                  : `${cycleScoringSummary.averageScore.toLocaleString(digits)}%`}
+              </strong>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div className="sru-diag" style={{ margin: "20px 0 28px" }} />
 
       <ProfileTabs tabs={tabs} />
     </div>
