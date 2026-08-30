@@ -241,7 +241,7 @@
     "importErrorUnknown": "Something went wrong during the import."
   },
   "OrgUnitsPage": {
-    "title": "Organizational Structure",
+    "title": "Org units",
     "subtitle": "The university's organizational units and where each one reports. Units can be added, renamed, moved, or removed.",
     "empty": "No organizational units.",
     "searchPlaceholder": "Search by unit name...",
