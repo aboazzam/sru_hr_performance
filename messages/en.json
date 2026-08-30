@@ -309,7 +309,22 @@
     "classErrorInvalid": "A name is required.",
     "classErrorDuplicate": "A classification with this name already exists.",
     "classErrorInUse": "Cannot delete: units still use it.",
-    "exportColumn_type": "Administration type"
+    "exportColumn_type": "Administration type",
+    "fieldLevel": "Level",
+    "levelNone": "— no level —",
+    "exportColumn_level": "Level",
+    "positionsButton": "Positions",
+    "positionsHeading": "Unit positions",
+    "positionsNote": "These are the org chart's own positions, so anything added here appears there. A position may report to one in another unit — a dean reports to the president, and the vice-dean to the dean.",
+    "positionsEmpty": "No positions are linked to this unit yet.",
+    "positionAdd": "Add position",
+    "positionNameAr": "Position name",
+    "positionNameEn": "English name",
+    "positionParent": "Reports to",
+    "positionParentNone": "— no parent (root) —",
+    "positionDeleteConfirm": "Delete this position?",
+    "posErrorDuplicate": "A position with this name already exists.",
+    "posErrorHasDependents": "Cannot delete: positions or staffing depend on it."
   },
   "AdminPage": {
     "title": "Users & Permissions",

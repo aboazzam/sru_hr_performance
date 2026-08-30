@@ -5,6 +5,7 @@ import { ImportOrgUnitsExcelForm } from "@/components/ImportOrgUnitsExcelForm";
 import { OrgUnitsManager, type OrgUnitRow } from "@/components/OrgUnitsManager";
 import { OrgUnitClassificationsManager } from "@/components/OrgUnitClassificationsManager";
 import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
+import type { UnitPosition, PositionOption } from "@/components/OrgUnitPositionsManager";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -26,10 +27,11 @@ export default async function OrgUnitsPage() {
   // PostgREST embed: they are also rendered on their own (the "manage
   // classifications" panel needs every value, including ones no unit uses
   // yet), and an embed would only return the ones already in use.
-  const [{ data }, { data: kindRows }, { data: typeRows }] = await Promise.all([
+  const [{ data }, { data: kindRows }, { data: typeRows }, { data: levelRows }, { data: positionRows }] =
+    await Promise.all([
     supabase
       .from("org_units")
-      .select("id, name_ar, name_en, unit_code, kind_id, type_id, parent_id")
+      .select("id, name_ar, name_en, unit_code, kind_id, type_id, level_id, parent_id")
       .is("deleted_at", null)
       .order("name_ar"),
     supabase
@@ -42,6 +44,19 @@ export default async function OrgUnitsPage() {
       .select("id, code, name_ar, name_en, display_order")
       .is("deleted_at", null)
       .order("display_order"),
+    supabase
+      .from("org_structure_levels")
+      .select("id, name_ar, level_order")
+      .is("deleted_at", null)
+      .order("level_order"),
+    // The chart's own positions: a unit may hold several, and their parent
+    // may sit in a different unit (a dean reports to the president), so the
+    // whole list is needed, not just this page's units.
+    supabase
+      .from("org_structure_positions")
+      .select("id, name_ar, name_en, level_id, parent_id, org_unit_id")
+      .is("deleted_at", null)
+      .order("name_ar"),
   ]);
 
   const units = (data ?? []) as Array<{
@@ -51,8 +66,45 @@ export default async function OrgUnitsPage() {
     unit_code: string | null;
     kind_id: string;
     type_id: string | null;
+    level_id: string | null;
     parent_id: string | null;
   }>;
+
+  const levels = ((levelRows ?? []) as Array<{ id: string; name_ar: string }>).map((row) => ({
+    id: row.id,
+    nameAr: row.name_ar,
+  }));
+  const levelName = new Map(levels.map((level) => [level.id, level.nameAr]));
+  const unitName = new Map(units.map((unit) => [unit.id, unit.name_ar]));
+
+  const positions = (positionRows ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    level_id: string;
+    parent_id: string | null;
+    org_unit_id: string | null;
+  }>;
+
+  const positionsByUnit: Record<string, UnitPosition[]> = {};
+  for (const position of positions) {
+    if (!position.org_unit_id) continue;
+    const list = positionsByUnit[position.org_unit_id] ?? [];
+    list.push({
+      id: position.id,
+      nameAr: position.name_ar,
+      nameEn: position.name_en,
+      levelId: position.level_id,
+      parentId: position.parent_id,
+      orgUnitId: position.org_unit_id,
+    });
+    positionsByUnit[position.org_unit_id] = list;
+  }
+  const allPositions: PositionOption[] = positions.map((position) => ({
+    id: position.id,
+    nameAr: position.name_ar,
+    unitNameAr: position.org_unit_id ? unitName.get(position.org_unit_id) ?? null : null,
+  }));
 
   type ClassRow = { id: string; code: string; name_ar: string; name_en: string | null; display_order: number };
   const toClassification = (list: ClassRow[], column: "kind_id" | "type_id"): OrgUnitClassification[] =>
@@ -82,6 +134,8 @@ export default async function OrgUnitsPage() {
     kindNameAr: kindById.get(row.kind_id)?.nameAr ?? "",
     typeId: row.type_id,
     typeNameAr: row.type_id ? typeById.get(row.type_id)?.nameAr ?? null : null,
+    levelId: row.level_id,
+    levelNameAr: row.level_id ? levelName.get(row.level_id) ?? null : null,
     parentId: row.parent_id,
   }));
 
@@ -91,6 +145,14 @@ export default async function OrgUnitsPage() {
       (row) => row.process_area === "employeeData"
     )?.vpra_level ?? "none";
   const canEdit = hasVpraAccess(employeeDataLevel, "approve");
+  // Positions live in org_structure_positions, whose RLS is gated on
+  // orgStructure -- a different permission from the units themselves, so it
+  // is read separately rather than assumed to follow employeeData.
+  const orgStructureLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "orgStructure"
+    )?.vpra_level ?? "none";
+  const canEditPositions = hasVpraAccess(orgStructureLevel, "recommend");
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -125,7 +187,16 @@ export default async function OrgUnitsPage() {
       {rows.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
-        <OrgUnitsManager rows={rows} kinds={kinds} types={types} canEdit={canEdit} />
+        <OrgUnitsManager
+          rows={rows}
+          kinds={kinds}
+          types={types}
+          levels={levels}
+          positionsByUnit={positionsByUnit}
+          allPositions={allPositions}
+          canEditPositions={canEditPositions}
+          canEdit={canEdit}
+        />
       )}
     </div>
   );

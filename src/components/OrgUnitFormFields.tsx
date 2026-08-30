@@ -9,6 +9,7 @@ export interface OrgUnitFormValue {
   unitCode: string;
   kindId: string;
   typeId: string;
+  levelId: string;
   parentId: string;
 }
 
@@ -28,6 +29,7 @@ export function OrgUnitFormFields({
   onChange,
   kinds,
   types,
+  levels,
   parentOptions,
   /** Editing a unit may clear its parent only if it is already the root. */
   allowNoParent,
@@ -37,6 +39,7 @@ export function OrgUnitFormFields({
   onChange: (next: OrgUnitFormValue) => void;
   kinds: OrgUnitClassification[];
   types: OrgUnitClassification[];
+  levels: Array<{ id: string; nameAr: string }>;
   parentOptions: Array<{ id: string; nameAr: string }>;
   allowNoParent: boolean;
 }) {
@@ -93,6 +96,22 @@ export function OrgUnitFormFields({
             {types.map((type) => (
               <option key={type.id} value={type.id}>
                 {type.nameAr}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="sru-field">
+          <label htmlFor={`${idPrefix}-level`}>{t("fieldLevel")}</label>
+          {/* The same levels the org chart uses, not a second list: a unit and
+              its position in the chart have to mean the same thing by
+              "level". Optional, and empty on every unit today because the
+              existing levels are rank tiers, not tree depth, so nothing can
+              derive it. */}
+          <select id={`${idPrefix}-level`} value={value.levelId} onChange={(e) => set({ levelId: e.target.value })}>
+            <option value="">{t("levelNone")}</option>
+            {levels.map((level) => (
+              <option key={level.id} value={level.id}>
+                {level.nameAr}
               </option>
             ))}
           </select>
