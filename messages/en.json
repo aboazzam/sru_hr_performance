@@ -324,7 +324,10 @@
     "positionParentNone": "— no parent (root) —",
     "positionDeleteConfirm": "Delete this position?",
     "posErrorDuplicate": "A position with this name already exists.",
-    "posErrorHasDependents": "Cannot delete: positions or staffing depend on it."
+    "posErrorHasDependents": "Cannot delete: positions or staffing depend on it.",
+    "levelsShow": "Levels ({count})",
+    "levelsHide": "Hide levels",
+    "levelsNote": "The org structure levels, referenced by each unit's level and each position's level. Drag to reorder."
   },
   "AdminPage": {
     "title": "Users & Permissions",
@@ -476,7 +479,27 @@
     "importFieldGender": "Gender",
     "importFieldNationality": "Nationality",
     "importFieldEmployeeCategory": "Employee category",
-    "importFieldInsuranceCategory": "Insurance category"
+    "importFieldInsuranceCategory": "Insurance category",
+    "chartSubtitle": "The approved organizational chart. Use the zoom buttons, and drag the image to pan.",
+    "chartUpload": "Upload chart image",
+    "chartReplace": "Replace image",
+    "chartUploading": "Uploading...",
+    "chartRemove": "Remove image",
+    "chartRemoveConfirm": "Remove the organizational chart image?",
+    "chartZoomIn": "Zoom in",
+    "chartZoomOut": "Zoom out",
+    "chartZoomReset": "Actual size",
+    "chartAlt": "Organizational chart",
+    "chartEmpty": "No chart image has been uploaded yet.",
+    "chartEmptyEditor": "No image yet. Upload a PNG or JPG of at most 8 MB.",
+    "chartErrorType": "Unsupported format — the image must be PNG or JPG.",
+    "chartErrorSize": "The image exceeds 8 MB.",
+    "chartErrorUpload": "Could not upload the image.",
+    "chartErrorInvalid": "Invalid input.",
+    "chartErrorForbidden": "You do not have permission to change the chart image.",
+    "chartErrorUnknown": "Could not complete the operation.",
+    "chartMovedNote": "Managing levels and positions has moved to",
+    "chartMovedLink": "the organizational units page"
   },
   "OrgStructureStaffingPage": {
     "title": "Staff Employees onto Positions",
