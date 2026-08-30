@@ -51,7 +51,19 @@ export interface NavItem {
    * `employeeData`). Omit entirely for items visible to every logged-in
    * user regardless of role (home).
    */
-  access?: Array<{ processArea: ProcessArea; minLevel: VpraLevel }>;
+  access?: Array<{
+    processArea: ProcessArea;
+    minLevel: VpraLevel;
+    /**
+     * This branch only counts if the caller ALSO has at least one real
+     * subordinate (2026-08-30: a caller who qualifies solely through
+     * `employeeDataSubordinates` but genuinely has zero reports shouldn't
+     * see the tab at all — it would just open to nothing useful for them).
+     * Ignored unless `visibleNavItems`/`visibleNavGroups` are given
+     * `context.hasSubordinates` — see `has_any_subordinates()`.
+     */
+    requiresSubordinates?: boolean;
+  }>;
 }
 
 // Per-item threshold is a deliberate product choice, not a mechanical ">none"
@@ -87,7 +99,7 @@ export const navItems: NavItem[] = [
     icon: Users,
     access: [
       { processArea: "employeeData", minLevel: "view" },
-      { processArea: "employeeDataSubordinates", minLevel: "view" },
+      { processArea: "employeeDataSubordinates", minLevel: "view", requiresSubordinates: true },
     ],
   },
   { segment: "career-path", labelKey: "careerPath", icon: Route, access: [{ processArea: "careerPath", minLevel: "view" }] },
@@ -293,23 +305,27 @@ export const navGroups: NavGroup[] = [
 /** Pure filter, kept here (not Sidebar.tsx) so it stays importable from Vitest without next/navigation. */
 export function visibleNavItems(
   items: NavItem[],
-  permissions: Partial<Record<ProcessArea, VpraLevel>>
+  permissions: Partial<Record<ProcessArea, VpraLevel>>,
+  context: { hasSubordinates?: boolean } = {}
 ): NavItem[] {
   return items.filter((item) => {
     if (!item.access || item.access.length === 0) return true;
-    return item.access.some(({ processArea, minLevel }) =>
-      hasVpraAccess(permissions[processArea] ?? "none", minLevel)
-    );
+    return item.access.some(({ processArea, minLevel, requiresSubordinates }) => {
+      if (!hasVpraAccess(permissions[processArea] ?? "none", minLevel)) return false;
+      if (requiresSubordinates && !context.hasSubordinates) return false;
+      return true;
+    });
   });
 }
 
 /** A group is visible if at least one child is visible for this permission set. */
 export function visibleNavGroups(
   groups: NavGroup[],
-  permissions: Partial<Record<ProcessArea, VpraLevel>>
+  permissions: Partial<Record<ProcessArea, VpraLevel>>,
+  context: { hasSubordinates?: boolean } = {}
 ): Array<NavGroup & { children: NavItem[] }> {
   return groups
-    .map((group) => ({ ...group, children: visibleNavItems(group.children, permissions) }))
+    .map((group) => ({ ...group, children: visibleNavItems(group.children, permissions, context) }))
     .filter((group) => group.children.length > 0);
 }
 

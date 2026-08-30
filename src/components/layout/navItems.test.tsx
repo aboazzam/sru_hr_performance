@@ -252,12 +252,36 @@ describe("visibleNavItems", () => {
     expect(segments).toHaveLength(navItems.length);
   });
 
-  it("employees is visible with only the narrower employeeDataSubordinates grant, not just employeeData", () => {
+  it("employees is visible with only the narrower employeeDataSubordinates grant, when the caller genuinely has subordinates", () => {
     // Real report (2026-07-27): a manager/deputy with genuine direct reports
     // but no employeeData grant -- only employeeDataSubordinates -- could
     // already see their team on the /employees page itself via RLS, but the
     // sidebar tab never showed at all.
-    const segments = visibleNavItems(navItems, { employeeDataSubordinates: "view" }).map((i) => i.segment);
+    const segments = visibleNavItems(navItems, { employeeDataSubordinates: "view" }, { hasSubordinates: true }).map(
+      (i) => i.segment
+    );
+    expect(segments).toContain("employees");
+  });
+
+  it("employees stays hidden via employeeDataSubordinates alone when the caller has zero real subordinates", () => {
+    // Follow-up request (2026-08-30): qualifying only through the
+    // subordinates branch with no actual reports would just open to nothing
+    // useful, so it's excluded even though the VPRA grant itself is met.
+    const withoutContext = visibleNavItems(navItems, { employeeDataSubordinates: "view" }).map((i) => i.segment);
+    expect(withoutContext).not.toContain("employees");
+
+    const withFalseContext = visibleNavItems(
+      navItems,
+      { employeeDataSubordinates: "view" },
+      { hasSubordinates: false }
+    ).map((i) => i.segment);
+    expect(withFalseContext).not.toContain("employees");
+  });
+
+  it("employees stays visible via employeeData regardless of hasSubordinates", () => {
+    const segments = visibleNavItems(navItems, { employeeData: "view" }, { hasSubordinates: false }).map(
+      (i) => i.segment
+    );
     expect(segments).toContain("employees");
   });
 });
