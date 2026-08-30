@@ -683,6 +683,16 @@ dialog.sru-modal::backdrop {
   opacity: 0.85;
 }
 
+/* 2026-08-29: label on a dashed "functional relationship" line (e.g. "وظيفيًا"
+   between لجنة المراجعة and إدارة المراجعة الداخلية) -- small pill-like text
+   sitting on the SVG canvas itself, not a DOM node, since it must scale/pan
+   with the rest of the chart's coordinate system. */
+.sru-orgchart-functional-label {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--sru-muted);
+}
+
 /* ===== Icon action buttons (2026-07-25) =====
    Compact icon-only buttons for row-level actions (view/edit/delete/save),
    replacing text buttons across the org-structure/admin/employees screens

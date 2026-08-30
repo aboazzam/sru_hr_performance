@@ -426,25 +426,35 @@ const updatePositionSchema = z.object({
   nameEn: z.string().trim().optional(),
   orgUnitId: z.string().uuid().nullable(),
   parentId: z.string().uuid().nullable(),
+  // null explicitly means "clear back to the level/theme color" (same
+  // null-vs-undefined convention updateLevel's own color param already
+  // uses); omitted means "leave whatever is already stored unchanged", so
+  // older callers that don't pass this at all keep working.
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
+    .optional(),
 });
 
 /**
- * Edits an existing position's name, org-unit link, and reporting line
- * ("التبعية") — the "خاصية التعديل" (edit capability) the project owner
- * asked for on the staffing screen, extended 2026-08-05 to also let an
- * existing position's parent be changed after creation (previously only
- * settable at `addPosition` time, with no way to fix a mistake or reflect a
- * real reorg afterward). Real authorization is
- * `org_structure_positions_update`'s RLS
- * (`check_vpra_global('orgStructure','approve')`).
+ * Edits an existing position's name, org-unit link, reporting line
+ * ("التبعية"), and org-chart color override — the "خاصية التعديل" (edit
+ * capability) the project owner asked for on the staffing screen, extended
+ * 2026-08-05 to also let an existing position's parent be changed after
+ * creation (previously only settable at `addPosition` time, with no way to
+ * fix a mistake or reflect a real reorg afterward), and 2026-08-29 to let a
+ * handful of positions within one shared level stand out with their own
+ * color (same convention as `updateLevel`'s own `color` param). Real
+ * authorization is `org_structure_positions_update`'s RLS
+ * (`check_vpra_global('orgStructure','recommend')`).
  *
  * `orgUnitId`/`parentId` are `string | null`, not optional — unlike
  * `addPosition`'s optional params, an edit form always resends the current
- * selection, and `null` explicitly means "clear the link" (same
- * null-vs-undefined convention `updateLevel`'s `color` already uses).
- * `parentId` must be `null` for a root-level position and a real position id
- * otherwise — this action does not re-derive that itself (it has no opinion
- * on which level is "root"); `validate_org_structure_position_parent()`
+ * selection, and `null` explicitly means "clear the link". `parentId` must
+ * be `null` for a root-level position and a real position id otherwise —
+ * this action does not re-derive that itself (it has no opinion on which
+ * level is "root"); `validate_org_structure_position_parent()`
  * (20260723000001/20260724000001) remains the single source of truth for
  * the invariant (root-must-be-null, no self-parent, no cycles), same as
  * `addPosition` already trusts it rather than duplicating the rule here.
@@ -454,7 +464,8 @@ export async function updatePosition(
   nameAr: string,
   nameEn: string,
   orgUnitId: string | null,
-  parentId: string | null
+  parentId: string | null,
+  color?: string | null
 ): Promise<OrgStructureActionState> {
   const parsed = updatePositionSchema.safeParse({
     positionId,
@@ -462,6 +473,7 @@ export async function updatePosition(
     nameEn: nameEn || undefined,
     orgUnitId,
     parentId,
+    color,
   });
   if (!parsed.success) {
     return { status: "error", message: "invalid_input" };
@@ -475,15 +487,15 @@ export async function updatePosition(
     return { status: "error", message: "unauthenticated" };
   }
 
-  const { error } = await supabase
-    .from("org_structure_positions")
-    .update({
-      name_ar: parsed.data.nameAr,
-      name_en: parsed.data.nameEn ?? null,
-      org_unit_id: parsed.data.orgUnitId,
-      parent_id: parsed.data.parentId,
-    })
-    .eq("id", parsed.data.positionId);
+  const update: Record<string, unknown> = {
+    name_ar: parsed.data.nameAr,
+    name_en: parsed.data.nameEn ?? null,
+    org_unit_id: parsed.data.orgUnitId,
+    parent_id: parsed.data.parentId,
+  };
+  if (parsed.data.color !== undefined) update.color = parsed.data.color;
+
+  const { error } = await supabase.from("org_structure_positions").update(update).eq("id", parsed.data.positionId);
 
   if (error) return mapError(error);
 
@@ -493,12 +505,7 @@ export async function updatePosition(
     action: "org_structure_position_updated",
     entity: "org_structure_positions",
     entity_id: parsed.data.positionId,
-    after_data: {
-      name_ar: parsed.data.nameAr,
-      name_en: parsed.data.nameEn ?? null,
-      org_unit_id: parsed.data.orgUnitId,
-      parent_id: parsed.data.parentId,
-    },
+    after_data: update,
   });
 
   return { status: "success" };

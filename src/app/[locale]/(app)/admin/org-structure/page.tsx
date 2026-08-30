@@ -63,7 +63,7 @@ export default async function OrgStructurePage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id, group_id, color")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -75,6 +75,27 @@ export default async function OrgStructurePage() {
     name_en: string | null;
     org_unit_id: string | null;
     job_title_id: string | null;
+    group_id: string | null;
+    color: string | null;
+  }>;
+
+  // 2026-08-29: real, data-driven replacement for the old name-string
+  // "isBranchContainer" heuristic -- see OrgChartTree.tsx's own header
+  // comment. A group pulls some of one real parent's children out of the
+  // shared grid and draws them as their own branch; a functional line is a
+  // secondary, non-reporting "dotted line" relationship (e.g. لجنة المراجعة
+  // <-> إدارة المراجعة الداخلية).
+  const { data: groupsData } = await supabase.from("org_structure_position_groups").select("id, parent_id, layout").is("deleted_at", null);
+  const groups = (groupsData ?? []) as Array<{ id: string; parent_id: string; layout: "horizontal" | "vertical" }>;
+  const { data: functionalLinesData } = await supabase
+    .from("org_structure_functional_lines")
+    .select("id, from_position_id, to_position_id, label_ar")
+    .is("deleted_at", null);
+  const functionalLines = (functionalLinesData ?? []) as Array<{
+    id: string;
+    from_position_id: string;
+    to_position_id: string;
+    label_ar: string | null;
   }>;
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
   const levelOrderById = new Map(levels.map((l) => [l.id, l.level_order]));
@@ -207,6 +228,8 @@ export default async function OrgStructurePage() {
               <OrgChartTree
                 positions={positions}
                 levels={levels.map((l) => ({ id: l.id, level_order: l.level_order, color: l.color }))}
+                groups={groups}
+                functionalLines={functionalLines}
                 assigneesByPosition={assigneesByPosition}
                 jobTitleByPosition={jobTitleByPosition}
                 emptyLabel={t("noPositions")}
@@ -251,6 +274,9 @@ export default async function OrgStructurePage() {
                                 initialNameEn={position.name_en}
                                 initialOrgUnitId={position.org_unit_id}
                                 initialParentId={position.parent_id}
+                                initialColor={position.color}
+                                defaultColorSwatch={defaultLevelColorSwatch(levelIndex)}
+                                identitySwatches={identitySwatches}
                                 orgUnits={orgUnits}
                                 levels={levels.map((l) => ({ id: l.id, level_order: l.level_order }))}
                                 positions={positions.map((p) => ({

@@ -31,6 +31,9 @@ export function OrgStructurePositionMiniRow({
   initialNameEn,
   initialOrgUnitId,
   initialParentId,
+  initialColor,
+  defaultColorSwatch,
+  identitySwatches,
   orgUnits,
   levels,
   positions,
@@ -42,6 +45,12 @@ export function OrgStructurePositionMiniRow({
   initialNameEn: string | null;
   initialOrgUnitId: string | null;
   initialParentId: string | null;
+  /** NULL = no admin override, chart falls back to the level/theme color. */
+  initialColor: string | null;
+  /** Starting swatch value shown in the picker before any override is chosen. */
+  defaultColorSwatch: string;
+  /** Quick-pick colors derived from the real org_identity primary/secondary colors. */
+  identitySwatches: string[];
   orgUnits: OrgUnitOption[];
   levels: LevelOption[];
   positions: PositionOption[];
@@ -61,6 +70,7 @@ export function OrgStructurePositionMiniRow({
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
   const [orgUnitId, setOrgUnitId] = useState(initialOrgUnitId ?? "");
   const [parentId, setParentId] = useState(initialParentId ?? "");
+  const [color, setColor] = useState<string | null>(initialColor);
   const [error, setError] = useState<string | null>(null);
 
   const orgUnitName = orgUnits.find((u) => u.id === initialOrgUnitId)?.name_ar ?? t("positionOrgUnitNone");
@@ -89,6 +99,7 @@ export function OrgStructurePositionMiniRow({
     setNameEn(initialNameEn ?? "");
     setOrgUnitId(initialOrgUnitId ?? "");
     setParentId(initialParentId ?? "");
+    setColor(initialColor);
     setIsEditing(true);
   }
 
@@ -100,7 +111,7 @@ export function OrgStructurePositionMiniRow({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null, isRootLevel ? null : parentId || null);
+      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null, isRootLevel ? null : parentId || null, color);
       if (res.status === "success") {
         setIsEditing(false);
         router.refresh();
@@ -203,6 +214,33 @@ export function OrgStructurePositionMiniRow({
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="sru-position-edit-group">
+        <span className="sru-position-edit-grouplabel">{t("customColorLabel")}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input
+            type="color"
+            value={color ?? defaultColorSwatch}
+            onChange={(e) => setColor(e.target.value)}
+            className="sru-color-swatch"
+            title={t("customColorLabel")}
+            aria-label={t("customColorLabel")}
+          />
+          <div style={{ display: "flex", gap: 4 }}>
+            {identitySwatches.map((swatch, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setColor(swatch)}
+                className={`sru-color-swatch-pick${color === swatch ? " selected" : ""}`}
+                style={{ background: swatch }}
+                title={swatch}
+                aria-label={swatch}
+              />
+            ))}
           </div>
         </div>
       </div>
