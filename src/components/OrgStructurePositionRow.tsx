@@ -38,6 +38,9 @@ export function OrgStructurePositionRow({
   initialNameEn,
   initialOrgUnitId,
   initialParentId,
+  initialColor,
+  defaultColorSwatch,
+  identitySwatches,
   orgUnits,
   levels,
   positions,
@@ -53,6 +56,12 @@ export function OrgStructurePositionRow({
   initialNameEn: string | null;
   initialOrgUnitId: string | null;
   initialParentId: string | null;
+  /** NULL = no admin override, chart falls back to the level/theme color. */
+  initialColor: string | null;
+  /** Starting swatch value shown in the picker before any override is chosen. */
+  defaultColorSwatch: string;
+  /** Quick-pick colors derived from the real org_identity primary/secondary colors. */
+  identitySwatches: string[];
   orgUnits: OrgUnitOption[];
   levels: LevelOption[];
   positions: PositionOption[];
@@ -78,6 +87,7 @@ export function OrgStructurePositionRow({
   const [nameEn, setNameEn] = useState(initialNameEn ?? "");
   const [orgUnitId, setOrgUnitId] = useState(initialOrgUnitId ?? "");
   const [parentId, setParentId] = useState(initialParentId ?? "");
+  const [color, setColor] = useState<string | null>(initialColor);
   const [unassigningId, setUnassigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +95,8 @@ export function OrgStructurePositionRow({
     nameAr !== initialNameAr ||
     nameEn !== (initialNameEn ?? "") ||
     orgUnitId !== (initialOrgUnitId ?? "") ||
-    parentId !== (initialParentId ?? "");
+    parentId !== (initialParentId ?? "") ||
+    color !== initialColor;
 
   // Same rule/exclusions as OrgStructurePositionMiniRow -- see
   // src/lib/orgStructurePositions.ts for the full rationale
@@ -106,7 +117,7 @@ export function OrgStructurePositionRow({
   function handleSave() {
     setError(null);
     startSaving(async () => {
-      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null, isRootLevel ? null : parentId || null);
+      const res = await updatePosition(positionId, nameAr, nameEn, orgUnitId || null, isRootLevel ? null : parentId || null, color);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -181,6 +192,29 @@ export function OrgStructurePositionRow({
               </option>
             ))}
           </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+          <input
+            type="color"
+            value={color ?? defaultColorSwatch}
+            onChange={(e) => setColor(e.target.value)}
+            className="sru-color-swatch"
+            title={t("customColorLabel")}
+            aria-label={t("customColorLabel")}
+          />
+          <div style={{ display: "flex", gap: 4 }}>
+            {identitySwatches.map((swatch, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setColor(swatch)}
+                className={`sru-color-swatch-pick${color === swatch ? " selected" : ""}`}
+                style={{ background: swatch }}
+                title={swatch}
+                aria-label={swatch}
+              />
+            ))}
+          </div>
         </div>
       </td>
       <td style={{ verticalAlign: "top", fontSize: 12 }}>{jobTitle ?? <span style={{ color: "var(--sru-muted)" }}>—</span>}</td>

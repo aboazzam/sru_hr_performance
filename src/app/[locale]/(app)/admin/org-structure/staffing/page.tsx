@@ -6,6 +6,7 @@ import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExce
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
 import { buildEmployeeLevelOrderResolver, isBelowOrUnknownLevel } from "@/lib/orgStructureEmployeeLevel";
+import { defaultLevelColorSwatch, identityColorSwatches, SRU_DEFAULT_PRIMARY, SRU_DEFAULT_SECONDARY } from "@/lib/orgChartColors";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign/edit/add position) is each table's own RLS
@@ -26,7 +27,7 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: positionsData } = await supabase
     .from("org_structure_positions")
-    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id")
+    .select("id, level_id, parent_id, name_ar, name_en, org_unit_id, job_title_id, color")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const positions = (positionsData ?? []) as Array<{
@@ -37,7 +38,18 @@ export default async function OrgStructureStaffingPage() {
     name_en: string | null;
     org_unit_id: string | null;
     job_title_id: string | null;
+    color: string | null;
   }>;
+
+  // Same identity-derived quick-pick swatches already built for the level
+  // color picker (2026-07-25) -- reused here for the 2026-08-29 per-position
+  // color override, same graceful-degradation posture (identity=view isn't
+  // held by hr_admin, so this falls back to the SRU defaults, not an error).
+  const { data: identity } = await supabase.from("org_identity").select("primary_color, secondary_color").maybeSingle();
+  const identitySwatches = identityColorSwatches(
+    identity?.primary_color ?? SRU_DEFAULT_PRIMARY,
+    identity?.secondary_color ?? SRU_DEFAULT_SECONDARY
+  );
   const positionNameById = new Map(positions.map((p) => [p.id, p.name_ar]));
   const positionLevelOrderById = new Map<string, number>();
   for (const p of positions) {
@@ -161,7 +173,7 @@ export default async function OrgStructureStaffingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {positions.map((position) => {
+                  {positions.map((position, positionIndex) => {
                     const positionAssignments = assignments
                       .filter((a) => a.position_id === position.id)
                       .map((a) => ({
@@ -179,6 +191,9 @@ export default async function OrgStructureStaffingPage() {
                         initialNameEn={position.name_en}
                         initialOrgUnitId={position.org_unit_id}
                         initialParentId={position.parent_id}
+                        initialColor={position.color}
+                        defaultColorSwatch={defaultLevelColorSwatch(levelOrderById.get(position.level_id) ?? positionIndex)}
+                        identitySwatches={identitySwatches}
                         orgUnits={orgUnits}
                         levels={levels}
                         positions={positions.map((p) => ({

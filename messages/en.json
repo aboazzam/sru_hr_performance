@@ -458,6 +458,7 @@
     "positionOrgUnitNone": "No link",
     "positionEditIdentityGroup": "Position Details",
     "positionEditLinksGroup": "Reporting Line & Org Link",
+    "customColorLabel": "Custom Color",
     "levelLabel": "Level",
     "structureLink": "Organizational Structure",
     "saveButton": "Save",
