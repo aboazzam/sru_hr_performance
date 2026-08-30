@@ -125,10 +125,18 @@ export default async function PlanComparePage({
       {/* The picker. A plain GET form — no client JS for what is one select
           and a submit, the same approach the employees and requests filters
           use. `previous?.id` preselects whatever is actually being compared,
-          so the control always shows the truth rather than a blank. */}
+          so the control always shows the truth rather than a blank.
+
+          `sru-actionbar` on the form is for the BUTTON'S SIZE only, asked for
+          once the module's other buttons were unified. The inline style stays:
+          it sets `align-items: flex-end` so the button sits on the select's
+          own baseline rather than centred against it, and an inline style
+          beats the class — so all that reaches here from the bar is its
+          `> .sru-btn` rule. */}
       {canView && plan && candidates.length > 0 && (
         <form
           method="get"
+          className="sru-actionbar"
           style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}
         >
           <label className="sru-field" style={{ minWidth: 260 }}>
