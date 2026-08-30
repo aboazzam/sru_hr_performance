@@ -95,3 +95,19 @@ export const PLAN_ITEM_IMPORT_COLUMNS = {
   monthlyCost: "التكلفة الشهرية التقديرية",
   justification: "المبرر",
 } as const;
+
+/**
+ * الوحدات التنظيمية. الاسم العربي هو المفتاح: `unit_code` اختياري على كثير
+ * من الوحدات فلا يصلح وحده معرّفًا، بينما القيد `UNIQUE(parent_id, name_ar)`
+ * يجعل (الاسم + التبعية) معًا فريدين — راجع مطابقة الصف في `import-actions`.
+ */
+export const ORG_UNIT_IMPORT_COLUMNS = {
+  // Deliberately the same labels the export writes (src/app/api/org-units/
+  // export/route.ts reads them from the same message keys the screen uses),
+  // so a file exported from the screen imports back with no remapping at all.
+  nameAr: "الاسم (عربي)",
+  parentName: "التبعية",
+  kind: "الشكل التنظيمي",
+  nameEn: "الاسم (إنجليزي)",
+  unitCode: "الرمز",
+} as const;
