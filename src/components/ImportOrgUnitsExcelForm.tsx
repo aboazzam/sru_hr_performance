@@ -31,6 +31,7 @@ export function ImportOrgUnitsExcelForm() {
     { key: "nameAr", label: t("fieldNameAr"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.nameAr, isKey: true },
     { key: "parentName", label: t("fieldParent"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.parentName, isKey: true },
     { key: "kind", label: t("fieldKind"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.kind },
+    { key: "type", label: t("fieldType"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.type },
     { key: "nameEn", label: t("fieldNameEn"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.nameEn },
     { key: "unitCode", label: t("fieldCode"), columnLabel: ORG_UNIT_IMPORT_COLUMNS.unitCode },
   ];

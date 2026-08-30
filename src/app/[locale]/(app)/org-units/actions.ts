@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { orgUnitKinds } from "@/lib/orgUnitTypes";
 
 export type OrgUnitActionState =
   | { status: "success" }
@@ -76,7 +75,8 @@ export async function createOrgUnit(input: {
   nameAr: string;
   nameEn?: string | null;
   unitCode?: string | null;
-  kind: string;
+  kindId: string;
+  typeId: string | null;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -86,7 +86,12 @@ export async function createOrgUnit(input: {
       // NOT NULL in the database with no default, so an empty code is a
       // rejected input rather than a null write that fails opaquely.
       unitCode: z.string().trim().min(1),
-      kind: z.enum(orgUnitKinds),
+      // The classifications are rows now, not a fixed list, so the only thing
+      // validated here is that an id was given -- whether it names a real,
+      // live row is settled by the foreign key, which cannot go stale the way
+      // a copy of the value list in this file would.
+      kindId: z.string().uuid(),
+      typeId: z.string().uuid().nullable(),
       parentId: z.string().uuid().nullable(),
     })
     .safeParse(input);
@@ -104,7 +109,8 @@ export async function createOrgUnit(input: {
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn?.trim() || null,
       unit_code: parsed.data.unitCode,
-      kind: parsed.data.kind,
+      kind_id: parsed.data.kindId,
+      type_id: parsed.data.typeId,
       parent_id: parsed.data.parentId,
     })
     .select("id");
@@ -119,7 +125,8 @@ export async function createOrgUnit(input: {
     entity_id: inserted[0].id,
     after_data: {
       name_ar: parsed.data.nameAr,
-      kind: parsed.data.kind,
+      kind_id: parsed.data.kindId,
+      type_id: parsed.data.typeId,
       parent_id: parsed.data.parentId,
     },
   });
@@ -141,7 +148,8 @@ export async function updateOrgUnit(input: {
   nameAr: string;
   nameEn?: string | null;
   unitCode?: string | null;
-  kind: string;
+  kindId: string;
+  typeId: string | null;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -152,7 +160,8 @@ export async function updateOrgUnit(input: {
       // NOT NULL in the database with no default, so an empty code is a
       // rejected input rather than a null write that fails opaquely.
       unitCode: z.string().trim().min(1),
-      kind: z.enum(orgUnitKinds),
+      kindId: z.string().uuid(),
+      typeId: z.string().uuid().nullable(),
       parentId: z.string().uuid().nullable(),
     })
     .refine((data) => data.parentId !== data.id, { message: "a unit cannot be its own parent" })
@@ -185,7 +194,7 @@ export async function updateOrgUnit(input: {
 
   const { data: before } = await supabase
     .from("org_units")
-    .select("name_ar, name_en, unit_code, kind, parent_id")
+    .select("name_ar, name_en, unit_code, kind_id, type_id, parent_id")
     .eq("id", parsed.data.id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -194,7 +203,8 @@ export async function updateOrgUnit(input: {
     name_ar: parsed.data.nameAr,
     name_en: parsed.data.nameEn?.trim() || null,
     unit_code: parsed.data.unitCode,
-    kind: parsed.data.kind,
+    kind_id: parsed.data.kindId,
+    type_id: parsed.data.typeId,
     parent_id: parsed.data.parentId,
   };
 

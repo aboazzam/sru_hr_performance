@@ -3,8 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Pencil, Trash2, Plus, Check, X } from "lucide-react";
+import { Pencil, Trash2, Plus, Save } from "lucide-react";
 import { AddFormDialog } from "@/components/AddFormDialog";
+import { OrgUnitFormFields, type OrgUnitFormValue } from "@/components/OrgUnitFormFields";
 import {
   createOrgUnit,
   updateOrgUnit,
@@ -12,7 +13,7 @@ import {
   type OrgUnitActionState,
 } from "@/app/[locale]/(app)/org-units/actions";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
-import { orgUnitKinds } from "@/lib/orgUnitTypes";
+import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
 import { ExportMenu } from "@/components/ExportMenu";
 import { ORG_UNIT_EXPORT_COLUMNS } from "@/lib/orgUnitExportColumns";
 
@@ -33,7 +34,10 @@ export interface OrgUnitRow {
   nameAr: string;
   nameEn: string | null;
   unitCode: string | null;
-  kind: string;
+  kindId: string;
+  kindNameAr: string;
+  typeId: string | null;
+  typeNameAr: string | null;
   parentId: string | null;
 }
 
@@ -57,59 +61,73 @@ function buildTree(rows: OrgUnitRow[]): Node[] {
   return roots;
 }
 
+/** The unit's own subtree — the set it can never be moved into. */
+function descendantIdsOf(rows: OrgUnitRow[], id: string): Set<string> {
+  const found = new Set<string>();
+  const walk = (current: string) => {
+    for (const row of rows) {
+      if (row.parentId === current && !found.has(row.id)) {
+        found.add(row.id);
+        walk(row.id);
+      }
+    }
+  };
+  walk(id);
+  return found;
+}
+
 function UnitRow({
   node,
   depth,
   rows,
+  kinds,
+  types,
   canEdit,
   onDone,
 }: {
   node: Node;
   depth: number;
   rows: OrgUnitRow[];
+  kinds: OrgUnitClassification[];
+  types: OrgUnitClassification[];
   canEdit: boolean;
   onDone: () => void;
 }) {
   const t = useTranslations("OrgUnitsPage");
-  const [editing, setEditing] = useState(false);
-  const [nameAr, setNameAr] = useState(node.nameAr);
-  const [nameEn, setNameEn] = useState(node.nameEn ?? "");
-  const [unitCode, setUnitCode] = useState(node.unitCode ?? "");
-  const [kind, setKind] = useState(node.kind);
-  const [parentId, setParentId] = useState(node.parentId ?? "");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [form, setForm] = useState<OrgUnitFormValue>({
+    nameAr: node.nameAr,
+    nameEn: node.nameEn ?? "",
+    unitCode: node.unitCode ?? "",
+    kindId: node.kindId,
+    typeId: node.typeId ?? "",
+    parentId: node.parentId ?? "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   // A unit cannot move under itself or under anything beneath it — the same
   // rule the action enforces, mirrored here so the impossible choice is never
   // offered in the first place.
-  const descendantIds = new Set<string>();
-  const collect = (id: string) => {
-    for (const row of rows) {
-      if (row.parentId === id && !descendantIds.has(row.id)) {
-        descendantIds.add(row.id);
-        collect(row.id);
-      }
-    }
-  };
-  collect(node.id);
+  const descendantIds = descendantIdsOf(rows, node.id);
   const parentOptions = rows
     .filter((row) => row.id !== node.id && !descendantIds.has(row.id))
     .sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"));
 
   const dirty =
-    nameAr !== node.nameAr ||
-    nameEn !== (node.nameEn ?? "") ||
-    unitCode !== (node.unitCode ?? "") ||
-    kind !== node.kind ||
-    parentId !== (node.parentId ?? "");
+    form.nameAr !== node.nameAr ||
+    form.nameEn !== (node.nameEn ?? "") ||
+    form.unitCode !== (node.unitCode ?? "") ||
+    form.kindId !== node.kindId ||
+    form.typeId !== (node.typeId ?? "") ||
+    form.parentId !== (node.parentId ?? "");
 
   function run(fn: () => Promise<OrgUnitActionState>, close = false) {
     setError(null);
     startTransition(async () => {
       const result = await fn();
       if (result.status === "success") {
-        if (close) setEditing(false);
+        if (close) dialogRef.current?.close();
         onDone();
       } else {
         setError(result.message);
@@ -130,130 +148,91 @@ function UnitRow({
           flexWrap: "wrap",
         }}
       >
-        {editing ? (
+        <span style={{ flex: 1, minWidth: 200 }}>
+          {node.nameAr}
+          {node.nameEn ? <span className="sru-name-en">{node.nameEn}</span> : null}
+        </span>
+        <span className="pill" style={{ fontSize: 11 }}>
+          {node.kindNameAr}
+        </span>
+        {node.typeNameAr ? (
+          <span className="pill" style={{ fontSize: 11 }}>
+            {node.typeNameAr}
+          </span>
+        ) : null}
+        {node.unitCode ? (
+          <span className="sru-en" style={{ fontSize: 11, color: "var(--sru-muted)" }}>
+            {node.unitCode}
+          </span>
+        ) : null}
+        {canEdit ? (
           <>
-            <div className="sru-field" style={{ width: 200 }}>
-              <label htmlFor={`unit-${node.id}-nameAr`}>{t("fieldNameAr")}</label>
-              <input id={`unit-${node.id}-nameAr`} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-            </div>
-            <div className="sru-field" style={{ width: 180 }}>
-              <label htmlFor={`unit-${node.id}-nameEn`}>{t("fieldNameEn")}</label>
-              <input
-                id={`unit-${node.id}-nameEn`}
-                value={nameEn}
-                dir="ltr"
-                onChange={(e) => setNameEn(e.target.value)}
-              />
-            </div>
-            <div className="sru-field" style={{ width: 110 }}>
-              <label htmlFor={`unit-${node.id}-code`}>{t("fieldCode")}</label>
-              <input id={`unit-${node.id}-code`} value={unitCode} dir="ltr" required onChange={(e) => setUnitCode(e.target.value)} />
-            </div>
-            <div className="sru-field" style={{ width: 150 }}>
-              <label htmlFor={`unit-${node.id}-kind`}>{t("fieldKind")}</label>
-              <select id={`unit-${node.id}-kind`} value={kind} onChange={(e) => setKind(e.target.value)}>
-                {orgUnitKinds.map((value) => (
-                  <option key={value} value={value}>
-                    {t(`kind_${value}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sru-field" style={{ width: 220 }}>
-              <label htmlFor={`unit-${node.id}-parent`}>{t("fieldParent")}</label>
-              <select id={`unit-${node.id}-parent`} value={parentId} onChange={(e) => setParentId(e.target.value)}>
-                <option value="">{t("parentNone")}</option>
-                {parentOptions.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.nameAr}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              className="sru-icon-action"
-              title={t("saveButton")}
-              aria-label={t("saveButton")}
-              disabled={pending || !dirty || nameAr.trim() === ""}
-              onClick={() =>
-                run(
-                  () =>
-                    updateOrgUnit({
-                      id: node.id,
-                      nameAr,
-                      nameEn: nameEn.trim() === "" ? null : nameEn,
-                      unitCode: unitCode.trim(),
-                      kind,
-                      parentId: parentId === "" ? null : parentId,
-                    }),
-                  true
-                )
-              }
+            {/* Editing is the same dialog as adding, opened by this row's own
+                pencil — not a row of bare inputs shoved into the tree. */}
+            <AddFormDialog
+              dialogRef={dialogRef}
+              triggerLabel={t("editButton")}
+              heading={t("editHeading")}
+              subtitle={node.nameAr}
+              closeLabel={t("closeButton")}
+              triggerClassName="sru-icon-action"
+              triggerIcon={<Pencil size={14} aria-hidden />}
             >
-              <Check size={14} aria-hidden />
-            </button>
+              <OrgUnitFormFields
+                idPrefix={`unit-${node.id}`}
+                value={form}
+                onChange={setForm}
+                kinds={kinds}
+                types={types}
+                parentOptions={parentOptions}
+                allowNoParent={node.parentId === null}
+              />
+              {error ? (
+                <p role="alert" style={{ color: "#b91c1c", fontSize: 12, marginTop: 10 }}>
+                  {t(errorKeys[error] ?? "errorUnknown")}
+                </p>
+              ) : null}
+              <div className="sru-form-submitrow">
+                <button
+                  type="button"
+                  className="sru-btn sru-btn-primary sru-btn-slim"
+                  disabled={pending || !dirty || form.nameAr.trim() === "" || form.unitCode.trim() === ""}
+                  onClick={() =>
+                    run(
+                      () =>
+                        updateOrgUnit({
+                          id: node.id,
+                          nameAr: form.nameAr,
+                          nameEn: form.nameEn.trim() === "" ? null : form.nameEn,
+                          unitCode: form.unitCode.trim(),
+                          kindId: form.kindId,
+                          typeId: form.typeId === "" ? null : form.typeId,
+                          parentId: form.parentId === "" ? null : form.parentId,
+                        }),
+                      true
+                    )
+                  }
+                >
+                  <Save size={14} aria-hidden />
+                  {t("saveButton")}
+                </button>
+              </div>
+            </AddFormDialog>
             <button
               type="button"
-              className="sru-icon-action"
-              title={t("cancelButton")}
-              aria-label={t("cancelButton")}
+              className="sru-icon-action danger"
+              title={t("deleteButton")}
+              aria-label={t("deleteButton")}
               disabled={pending}
               onClick={() => {
-                setNameAr(node.nameAr);
-                setNameEn(node.nameEn ?? "");
-                setUnitCode(node.unitCode ?? "");
-                setKind(node.kind);
-                setParentId(node.parentId ?? "");
-                setError(null);
-                setEditing(false);
+                if (!window.confirm(t("deleteConfirm"))) return;
+                run(() => deleteOrgUnit(node.id));
               }}
             >
-              <X size={14} aria-hidden />
+              <Trash2 size={14} aria-hidden />
             </button>
           </>
-        ) : (
-          <>
-            <span style={{ flex: 1, minWidth: 200 }}>
-              {node.nameAr}
-              {node.nameEn ? <span className="sru-name-en">{node.nameEn}</span> : null}
-            </span>
-            <span className="pill" style={{ fontSize: 11 }}>
-              {t(`kind_${node.kind}`)}
-            </span>
-            {node.unitCode ? (
-              <span className="sru-en" style={{ fontSize: 11, color: "var(--sru-muted)" }}>
-                {node.unitCode}
-              </span>
-            ) : null}
-            {canEdit ? (
-              <>
-                <button
-                  type="button"
-                  className="sru-icon-action"
-                  title={t("editButton")}
-                  aria-label={t("editButton")}
-                  onClick={() => setEditing(true)}
-                >
-                  <Pencil size={14} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="sru-icon-action danger"
-                  title={t("deleteButton")}
-                  aria-label={t("deleteButton")}
-                  disabled={pending}
-                  onClick={() => {
-                    if (!window.confirm(t("deleteConfirm"))) return;
-                    run(() => deleteOrgUnit(node.id));
-                  }}
-                >
-                  <Trash2 size={14} aria-hidden />
-                </button>
-              </>
-            ) : null}
-          </>
-        )}
+        ) : null}
         {error ? (
           <span role="alert" style={{ fontSize: 11, color: "#b91c1c" }}>
             {t(errorKeys[error] ?? "errorUnknown")}
@@ -264,7 +243,16 @@ function UnitRow({
       {node.children.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {node.children.map((child) => (
-            <UnitRow key={child.id} node={child} depth={depth + 1} rows={rows} canEdit={canEdit} onDone={onDone} />
+            <UnitRow
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              rows={rows}
+              kinds={kinds}
+              types={types}
+              canEdit={canEdit}
+              onDone={onDone}
+            />
           ))}
         </ul>
       ) : null}
@@ -280,18 +268,32 @@ function UnitRow({
  * the table — two versions of the same fact, and they had already drifted by
  * one unit. The table is the only source now.
  */
-export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit: boolean }) {
+export function OrgUnitsManager({
+  rows,
+  kinds,
+  types,
+  canEdit,
+}: {
+  rows: OrgUnitRow[];
+  kinds: OrgUnitClassification[];
+  types: OrgUnitClassification[];
+  canEdit: boolean;
+}) {
   const t = useTranslations("OrgUnitsPage");
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [newNameAr, setNewNameAr] = useState("");
-  const [newNameEn, setNewNameEn] = useState("");
-  const [newCode, setNewCode] = useState("");
-  const [newKind, setNewKind] = useState<string>("department");
-  const [newParent, setNewParent] = useState("");
+  const emptyForm: OrgUnitFormValue = {
+    nameAr: "",
+    nameEn: "",
+    unitCode: "",
+    kindId: kinds[0]?.id ?? "",
+    typeId: "",
+    parentId: "",
+  };
+  const [form, setForm] = useState<OrgUnitFormValue>(emptyForm);
 
   const refresh = () => router.refresh();
 
@@ -310,17 +312,15 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
     setError(null);
     startTransition(async () => {
       const result = await createOrgUnit({
-        nameAr: newNameAr,
-        nameEn: newNameEn.trim() === "" ? null : newNameEn,
-        unitCode: newCode.trim(),
-        kind: newKind,
-        parentId: newParent === "" ? null : newParent,
+        nameAr: form.nameAr,
+        nameEn: form.nameEn.trim() === "" ? null : form.nameEn,
+        unitCode: form.unitCode.trim(),
+        kindId: form.kindId,
+        typeId: form.typeId === "" ? null : form.typeId,
+        parentId: form.parentId === "" ? null : form.parentId,
       });
       if (result.status === "success") {
-        setNewNameAr("");
-        setNewNameEn("");
-        setNewCode("");
-        setNewParent("");
+        setForm(emptyForm);
         dialogRef.current?.close();
         refresh();
       } else {
@@ -372,56 +372,33 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
             subtitle={t("addSubtitle")}
             closeLabel={t("closeButton")}
           >
-            <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-nameAr">{t("fieldNameAr")}</label>
-              <input id="new-unit-nameAr" value={newNameAr} onChange={(e) => setNewNameAr(e.target.value)} />
-            </div>
-            <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-nameEn">{t("fieldNameEn")}</label>
-              <input id="new-unit-nameEn" value={newNameEn} dir="ltr" onChange={(e) => setNewNameEn(e.target.value)} />
-            </div>
-            <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-code">{t("fieldCode")}</label>
-              <input id="new-unit-code" value={newCode} dir="ltr" required onChange={(e) => setNewCode(e.target.value)} />
-            </div>
-            <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-kind">{t("fieldKind")}</label>
-              <select id="new-unit-kind" value={newKind} onChange={(e) => setNewKind(e.target.value)}>
-                {orgUnitKinds.map((value) => (
-                  <option key={value} value={value}>
-                    {t(`kind_${value}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sru-field" style={{ marginBottom: 12 }}>
-              <label htmlFor="new-unit-parent">{t("fieldParent")}</label>
-              {/* No "no parent" option: org_units_single_root allows exactly
-                  one rootless unit and the university already has it, so
-                  offering the choice only produces a refusal. */}
-              <select id="new-unit-parent" value={newParent} onChange={(e) => setNewParent(e.target.value)}>
-                <option value="">{t("parentPlaceholder")}</option>
-                {sortedRows.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.nameAr}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <OrgUnitFormFields
+              idPrefix="new-unit"
+              value={form}
+              onChange={setForm}
+              kinds={kinds}
+              types={types}
+              parentOptions={sortedRows}
+              allowNoParent={false}
+            />
             {error ? (
-              <p role="alert" style={{ color: "#b91c1c", fontSize: 12 }}>
+              <p role="alert" style={{ color: "#b91c1c", fontSize: 12, marginTop: 10 }}>
                 {t(errorKeys[error] ?? "errorUnknown")}
               </p>
             ) : null}
-            <button
-              type="button"
-              className="sru-btn sru-btn-primary sru-btn-slim"
-              disabled={pending || newNameAr.trim() === "" || newParent === ""}
-              onClick={add}
-            >
-              <Plus size={14} aria-hidden />
-              {t("addUnit")}
-            </button>
+            <div className="sru-form-submitrow">
+              <button
+                type="button"
+                className="sru-btn sru-btn-primary sru-btn-slim"
+                disabled={
+                  pending || form.nameAr.trim() === "" || form.unitCode.trim() === "" || form.parentId === ""
+                }
+                onClick={add}
+              >
+                <Plus size={14} aria-hidden />
+                {t("addUnit")}
+              </button>
+            </div>
           </AddFormDialog>
         ) : null}
       </div>
@@ -438,6 +415,8 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
                   node={{ ...row, children: [] }}
                   depth={0}
                   rows={rows}
+                  kinds={kinds}
+                  types={types}
                   canEdit={canEdit}
                   onDone={refresh}
                 />
@@ -447,7 +426,16 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {tree.map((root) => (
-              <UnitRow key={root.id} node={root} depth={0} rows={rows} canEdit={canEdit} onDone={refresh} />
+              <UnitRow
+                key={root.id}
+                node={root}
+                depth={0}
+                rows={rows}
+                kinds={kinds}
+                types={types}
+                canEdit={canEdit}
+                onDone={refresh}
+              />
             ))}
           </ul>
         )}

@@ -3,6 +3,7 @@ export const ORG_UNIT_EXPORT_COLUMNS = [
   "nameAr",
   "nameEn",
   "kind",
+  "type",
   "parent",
   "unitCode",
   "depth",

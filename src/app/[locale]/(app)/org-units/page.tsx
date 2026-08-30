@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { ImportOrgUnitsExcelForm } from "@/components/ImportOrgUnitsExcelForm";
 import { OrgUnitsManager, type OrgUnitRow } from "@/components/OrgUnitsManager";
+import { OrgUnitClassificationsManager } from "@/components/OrgUnitClassificationsManager";
+import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -20,27 +22,66 @@ export default async function OrgUnitsPage() {
   const t = await getTranslations("OrgUnitsPage");
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("org_units")
-    .select("id, name_ar, name_en, unit_code, kind, parent_id")
-    .is("deleted_at", null)
-    .order("name_ar");
+  // Both classification lists are read separately rather than through a
+  // PostgREST embed: they are also rendered on their own (the "manage
+  // classifications" panel needs every value, including ones no unit uses
+  // yet), and an embed would only return the ones already in use.
+  const [{ data }, { data: kindRows }, { data: typeRows }] = await Promise.all([
+    supabase
+      .from("org_units")
+      .select("id, name_ar, name_en, unit_code, kind_id, type_id, parent_id")
+      .is("deleted_at", null)
+      .order("name_ar"),
+    supabase
+      .from("org_unit_kinds")
+      .select("id, code, name_ar, name_en, display_order")
+      .is("deleted_at", null)
+      .order("display_order"),
+    supabase
+      .from("org_unit_types")
+      .select("id, code, name_ar, name_en, display_order")
+      .is("deleted_at", null)
+      .order("display_order"),
+  ]);
 
-  const rows: OrgUnitRow[] = (
-    (data ?? []) as Array<{
-      id: string;
-      name_ar: string;
-      name_en: string | null;
-      unit_code: string | null;
-      kind: string;
-      parent_id: string | null;
-    }>
-  ).map((row) => ({
+  const units = (data ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    unit_code: string | null;
+    kind_id: string;
+    type_id: string | null;
+    parent_id: string | null;
+  }>;
+
+  type ClassRow = { id: string; code: string; name_ar: string; name_en: string | null; display_order: number };
+  const toClassification = (list: ClassRow[], column: "kind_id" | "type_id"): OrgUnitClassification[] =>
+    list.map((row) => ({
+      id: row.id,
+      code: row.code,
+      nameAr: row.name_ar,
+      nameEn: row.name_en,
+      displayOrder: row.display_order,
+      // Counted here, not in the database: the panel needs it to disable the
+      // delete button, and this list is small enough that a second round trip
+      // per row would be the wasteful choice.
+      usageCount: units.filter((unit) => unit[column] === row.id).length,
+    }));
+
+  const kinds = toClassification((kindRows ?? []) as ClassRow[], "kind_id");
+  const types = toClassification((typeRows ?? []) as ClassRow[], "type_id");
+  const kindById = new Map(kinds.map((k) => [k.id, k]));
+  const typeById = new Map(types.map((t) => [t.id, t]));
+
+  const rows: OrgUnitRow[] = units.map((row) => ({
     id: row.id,
     nameAr: row.name_ar,
     nameEn: row.name_en,
     unitCode: row.unit_code,
-    kind: row.kind,
+    kindId: row.kind_id,
+    kindNameAr: kindById.get(row.kind_id)?.nameAr ?? "",
+    typeId: row.type_id,
+    typeNameAr: row.type_id ? typeById.get(row.type_id)?.nameAr ?? null : null,
     parentId: row.parent_id,
   }));
 
@@ -79,10 +120,12 @@ export default async function OrgUnitsPage() {
 
       <GroupTabs groupKey="administration" current="org-units" />
 
+      <OrgUnitClassificationsManager kinds={kinds} types={types} canEdit={canEdit} />
+
       {rows.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
-        <OrgUnitsManager rows={rows} canEdit={canEdit} />
+        <OrgUnitsManager rows={rows} kinds={kinds} types={types} canEdit={canEdit} />
       )}
     </div>
   );

@@ -1,31 +1,25 @@
 /**
- * The organisational form of a unit (`org_units.kind`).
+ * The two classification axes of an organisational unit.
  *
- * Ordered from the governance tier downwards, so a picker reads like the
- * chart rather than like an alphabet.
+ * Both used to be fixed lists in the source tree (`kind` was a Postgres ENUM
+ * with nine values). They are user-owned tables now — 20260830000002, asked
+ * for on 2026-08-30: "نريد التصنيف يكون ديناميك بحيث استطيع اضافة تصنيف" —
+ * so nothing here enumerates the values any more. What stays is the shape the
+ * screens read, and the reminder that the two axes are independent:
  *
- * Replaced `org_units.type` on 2026-08-30. That column was never an
- * administrative classification: its own migration says it came from the
- * BOX COLOUR in the org-chart image, and that a real classification "deserves
- * its own column rather than overloading this one". This is that column, and
- * its values are read off the unit names themselves.
- *
- * Kept out of the Server Action file on purpose: a `"use server"` module may
- * only export async functions — a const exported from one becomes a server
- * reference rather than the array itself, and every use of it fails at
- * runtime with "orgUnitKinds.map is not a function". This project has hit
- * that before; the constant lives in a plain module instead.
+ *   * الشكل التنظيمي (`kind`)  — WHAT this unit is: مجلس، لجنة، إدارة، قسم،
+ *     مكتب، مركز، وحدة، كلية، أمانة، قيادة. Required.
+ *   * نوع الإدارة (`type`)     — WHICH system it works in: حوكمة، داعمة،
+ *     أكاديمي، تطوير أعمال، مساهمة وأثر. Optional, and deliberately empty on
+ *     all 58 existing units: no source says which unit belongs to which, and
+ *     inventing that split would be fabricating data.
  */
-export const orgUnitKinds = [
-  "council",
-  "committee",
-  "secretariat",
-  "leadership",
-  "college",
-  "department",
-  "office",
-  "center",
-  "unit",
-] as const;
-
-export type OrgUnitKind = (typeof orgUnitKinds)[number];
+export interface OrgUnitClassification {
+  id: string;
+  code: string;
+  nameAr: string;
+  nameEn: string | null;
+  displayOrder: number;
+  /** Units currently carrying it — a classification in use cannot be deleted. */
+  usageCount: number;
+}
