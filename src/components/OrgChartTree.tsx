@@ -80,7 +80,17 @@ const SLOT_WIDTH = 226; // horizontal spacing per sibling slot in the main pyram
 // too tight once a group's last member and a same-column row-below item are
 // both tall (e.g. a position with many real assignees).
 const LEVEL_HEIGHT = 240;
-const MIN_SCALE = 0.28;
+// 0.28 (this component's original floor, from before this session's groups
+// work) made real text unreadable once auto-fit actually hit the floor --
+// direct feedback ("المعاينة غير واضح والخط غير مقروء عند التكبير") after
+// the real tree grew from 49 to 60 positions across deeper group nesting,
+// pushing auto-fit down to exactly that floor by default. Raised so the
+// SMALLEST the chart is ever allowed to render still keeps text legible;
+// a chart this size no longer fully fits an ordinary viewport at a readable
+// scale, and the wrapper's own scrolling (never `overflow:hidden`, see its
+// own comment) is the accepted tradeoff -- matching this component's
+// existing "never silently clip, scroll instead" design.
+const MIN_SCALE = 0.6;
 const MAX_SCALE = 2;
 const ZOOM_STEP = 0.18;
 
