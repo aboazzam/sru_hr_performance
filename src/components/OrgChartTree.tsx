@@ -99,8 +99,15 @@ const ZOOM_STEP = 0.18;
 // computeSlots-driven spacing, so a group with a single member whose own
 // children have further children still reads the same as before.
 const BRANCH_SLOT_WIDTH = 168; // horizontal spacing per sibling slot within one horizontal group's own fan-out
-const BRANCH_ROW_HEIGHT = 68; // vertical spacing per depth row within one horizontal group's own fan-out
-const BRANCH_TOP_GAP = 26; // gap between a group's anchor and its horizontal fan-out's first row
+// 68/26 were this component's own pre-existing values from before this
+// session's groups work, tuned for mostly-vacant leaf boxes -- real
+// feedback ("الادارات التابعة لتطوير الأعمال غير متناسقة") after real
+// assignee-bearing boxes made the two depth tiers (تطوير الأعمال's own
+// 3-way fan, then two of its members' own further children) sit too close
+// to read as a clear two-level hierarchy. Matched to VERTICAL_ROW_HEIGHT/
+// VERTICAL_TOP_GAP below for the same reason those were raised.
+const BRANCH_ROW_HEIGHT = 110;
+const BRANCH_TOP_GAP = 60;
 
 // 'vertical' group layout (2026-08-29, matches the approved mockup): every
 // member stacks directly below its real parent at the SAME horizontal
@@ -507,7 +514,7 @@ export function OrgChartTree({
     parentId: string,
     anchor: { left: number; top: number; bottom: number },
     byPositionId: Map<string, { left: number; top: number }>,
-    spines: Array<{ groupId: string; layout: "vertical"; columnLeft: number }>,
+    spines: Array<{ groupId: string; layout: "vertical"; columnLeft: number; anchorId: string }>,
     state: { maxBottom: number }
   ) {
     const groupsHere = groupsByParentId.get(parentId) ?? [];
@@ -531,7 +538,16 @@ export function OrgChartTree({
           state.maxBottom = Math.max(state.maxBottom, top + VERTICAL_ROW_HEIGHT / 2);
           layoutGroups(member.id, { left: pos.left, top: pos.top, bottom: pos.top + VERTICAL_ROW_HEIGHT / 2 }, byPositionId, spines, state);
         });
-        spines.push({ groupId: group.id, layout: "vertical", columnLeft });
+        // `anchorId` records the group's own real anchor (this `parentId`
+        // parameter, i.e. the position this group was actually laid out
+        // under) -- NOT necessarily the same as a member's own real DB
+        // parent_id. Found live in production: إدارة المراجعة الداخلية's
+        // group is anchored at رئيس الجامعة, but that position's own
+        // pre-existing parent_id is مجلس الجامعة (a documented, unrelated
+        // fact -- see the migration's own header note) -- drawing the stem
+        // from `members[0].parent_id` therefore drew a long, wrong line to
+        // مجلس الجامعة instead of the group's real، already-correct anchor.
+        spines.push({ groupId: group.id, layout: "vertical", columnLeft, anchorId: parentId });
       } else {
         const anchorPosition = positionById.get(parentId);
         if (!anchorPosition) return;
@@ -570,7 +586,7 @@ export function OrgChartTree({
 
   const groupLayout = useMemo(() => {
     const byPositionId = new Map<string, { left: number; top: number }>();
-    const spines: Array<{ groupId: string; layout: "vertical"; columnLeft: number }> = [];
+    const spines: Array<{ groupId: string; layout: "vertical"; columnLeft: number; anchorId: string }> = [];
     const state = { maxBottom: 0 };
     for (const p of mainPositions) {
       const slot = slotOf.get(p.id) ?? 0;
@@ -658,7 +674,7 @@ export function OrgChartTree({
       for (const spine of groupLayout.spines) {
         const members = membersByGroupId.get(spine.groupId) ?? [];
         if (members.length === 0) continue;
-        const stemFromEl = nodeElsRef.current.get(members[0].parent_id ?? "");
+        const stemFromEl = nodeElsRef.current.get(spine.anchorId);
         if (!stemFromEl) continue;
         const stemRect = stemFromEl.getBoundingClientRect();
         const stemX = toLocalX(stemRect.left + stemRect.width / 2);
