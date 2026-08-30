@@ -6,6 +6,11 @@ import { OrgUnitsManager, type OrgUnitRow } from "@/components/OrgUnitsManager";
 import { OrgUnitClassificationsManager } from "@/components/OrgUnitClassificationsManager";
 import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
 import type { UnitPosition, PositionOption } from "@/components/OrgUnitPositionsManager";
+import { OrgUnitLevelsManager } from "@/components/OrgUnitLevelsManager";
+import { OrgStructureLevelsList } from "@/components/OrgStructureLevelsList";
+import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
+import { AddOrgStructureLevelForm } from "@/components/AddOrgStructureLevelForm";
+import { defaultLevelColorSwatch, identityColorSwatches, SRU_DEFAULT_PRIMARY, SRU_DEFAULT_SECONDARY } from "@/lib/orgChartColors";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx.
@@ -46,7 +51,7 @@ export default async function OrgUnitsPage() {
       .order("display_order"),
     supabase
       .from("org_structure_levels")
-      .select("id, name_ar, level_order")
+      .select("id, name_ar, name_en, level_order, color")
       .is("deleted_at", null)
       .order("level_order"),
     // The chart's own positions: a unit may hold several, and their parent
@@ -70,10 +75,14 @@ export default async function OrgUnitsPage() {
     parent_id: string | null;
   }>;
 
-  const levels = ((levelRows ?? []) as Array<{ id: string; name_ar: string }>).map((row) => ({
-    id: row.id,
-    nameAr: row.name_ar,
-  }));
+  const levelRecords = (levelRows ?? []) as Array<{
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    level_order: number;
+    color: string | null;
+  }>;
+  const levels = levelRecords.map((row) => ({ id: row.id, nameAr: row.name_ar }));
   const levelName = new Map(levels.map((level) => [level.id, level.nameAr]));
   const unitName = new Map(units.map((unit) => [unit.id, unit.name_ar]));
 
@@ -122,6 +131,15 @@ export default async function OrgUnitsPage() {
 
   const kinds = toClassification((kindRows ?? []) as ClassRow[], "kind_id");
   const types = toClassification((typeRows ?? []) as ClassRow[], "type_id");
+  const { data: identity } = await supabase
+    .from("org_identity")
+    .select("primary_color, secondary_color")
+    .maybeSingle();
+  const identitySwatches = identityColorSwatches(
+    (identity?.primary_color as string | null) ?? SRU_DEFAULT_PRIMARY,
+    (identity?.secondary_color as string | null) ?? SRU_DEFAULT_SECONDARY
+  );
+
   const kindById = new Map(kinds.map((k) => [k.id, k]));
   const typeById = new Map(types.map((t) => [t.id, t]));
 
@@ -182,7 +200,34 @@ export default async function OrgUnitsPage() {
 
       <GroupTabs groupKey="administration" current="org-units" />
 
-      <OrgUnitClassificationsManager kinds={kinds} types={types} canEdit={canEdit} />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <OrgUnitClassificationsManager kinds={kinds} types={types} canEdit={canEdit} />
+        {canEditPositions ? (
+          <OrgUnitLevelsManager
+            count={levelRecords.length}
+            addForm={<AddOrgStructureLevelForm />}
+          >
+            <OrgStructureLevelsList
+              items={levelRecords.map((level, levelIndex) => ({
+                id: level.id,
+                node: (
+                  <OrgStructureLevelCard
+                    levelId={level.id}
+                    levelOrder={level.level_order}
+                    initialNameAr={level.name_ar}
+                    initialNameEn={level.name_en}
+                    initialColor={level.color}
+                    defaultColorSwatch={defaultLevelColorSwatch(levelIndex)}
+                    identitySwatches={identitySwatches}
+                  >
+                    {null}
+                  </OrgStructureLevelCard>
+                ),
+              }))}
+            />
+          </OrgUnitLevelsManager>
+        ) : null}
+      </div>
 
       {rows.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>

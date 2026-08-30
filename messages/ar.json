@@ -324,7 +324,10 @@
     "positionParentNone": "— بلا تبعية (جذر) —",
     "positionDeleteConfirm": "هل تريد حذف هذا المنصب؟",
     "posErrorDuplicate": "يوجد منصب بهذا الاسم بالفعل.",
-    "posErrorHasDependents": "لا يمكن حذفه: مناصب أو تسكينات تتبعه."
+    "posErrorHasDependents": "لا يمكن حذفه: مناصب أو تسكينات تتبعه.",
+    "levelsShow": "المستويات ({count})",
+    "levelsHide": "إخفاء المستويات",
+    "levelsNote": "مستويات الهيكل التنظيمي: يشير إليها مستوى الوحدة ومستوى كل منصب. اسحب لإعادة الترتيب."
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",
@@ -476,7 +479,27 @@
     "importFieldGender": "الجنس",
     "importFieldNationality": "الجنسية",
     "importFieldEmployeeCategory": "فئة الموظف",
-    "importFieldInsuranceCategory": "فئة التأمين"
+    "importFieldInsuranceCategory": "فئة التأمين",
+    "chartSubtitle": "صورة الهيكل التنظيمي المعتمد. استخدم أزرار التكبير، واسحب الصورة للتنقل فيها.",
+    "chartUpload": "رفع صورة الهيكل",
+    "chartReplace": "استبدال الصورة",
+    "chartUploading": "جارٍ الرفع...",
+    "chartRemove": "حذف الصورة",
+    "chartRemoveConfirm": "هل تريد حذف صورة الهيكل التنظيمي؟",
+    "chartZoomIn": "تكبير",
+    "chartZoomOut": "تصغير",
+    "chartZoomReset": "الحجم الأصلي",
+    "chartAlt": "الهيكل التنظيمي",
+    "chartEmpty": "لم تُرفع صورة الهيكل التنظيمي بعد.",
+    "chartEmptyEditor": "لم تُرفع صورة بعد. ارفع صورة PNG أو JPG بحجم لا يتجاوز ٨ ميجابايت.",
+    "chartErrorType": "الصيغة غير مدعومة — الصورة يجب أن تكون PNG أو JPG.",
+    "chartErrorSize": "حجم الصورة يتجاوز ٨ ميجابايت.",
+    "chartErrorUpload": "تعذر رفع الصورة.",
+    "chartErrorInvalid": "بيانات غير صالحة.",
+    "chartErrorForbidden": "لا تملك صلاحية تعديل صورة الهيكل.",
+    "chartErrorUnknown": "تعذر إتمام العملية.",
+    "chartMovedNote": "إدارة المستويات والمناصب انتقلت إلى",
+    "chartMovedLink": "صفحة الوحدات التنظيمية"
   },
   "OrgStructureStaffingPage": {
     "title": "تسكين الموظفين على المناصب",
