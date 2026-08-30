@@ -4,6 +4,7 @@ export const ORG_UNIT_EXPORT_COLUMNS = [
   "nameEn",
   "kind",
   "type",
+  "level",
   "parent",
   "unitCode",
   "depth",

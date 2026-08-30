@@ -309,7 +309,22 @@
     "classErrorInvalid": "الاسم مطلوب.",
     "classErrorDuplicate": "يوجد تصنيف بهذا الاسم بالفعل.",
     "classErrorInUse": "لا يمكن حذفه: وحدات تستخدمه.",
-    "exportColumn_type": "نوع الإدارة"
+    "exportColumn_type": "نوع الإدارة",
+    "fieldLevel": "المستوى",
+    "levelNone": "— بلا مستوى —",
+    "exportColumn_level": "المستوى",
+    "positionsButton": "المناصب",
+    "positionsHeading": "مناصب الوحدة",
+    "positionsNote": "هذه هي مناصب الهيكل التنظيمي نفسها، فما يُضاف هنا يظهر في الرسم. ويمكن أن تكون تبعية المنصب لمنصب في وحدة أخرى — كعميد يتبع الرئيس، ووكيل الكلية يتبع العميد.",
+    "positionsEmpty": "لا مناصب مرتبطة بهذه الوحدة بعد.",
+    "positionAdd": "إضافة منصب",
+    "positionNameAr": "اسم المنصب",
+    "positionNameEn": "الاسم بالإنجليزية",
+    "positionParent": "تبعية المنصب",
+    "positionParentNone": "— بلا تبعية (جذر) —",
+    "positionDeleteConfirm": "هل تريد حذف هذا المنصب؟",
+    "posErrorDuplicate": "يوجد منصب بهذا الاسم بالفعل.",
+    "posErrorHasDependents": "لا يمكن حذفه: مناصب أو تسكينات تتبعه."
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",

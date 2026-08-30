@@ -109,6 +109,7 @@ export const ORG_UNIT_IMPORT_COLUMNS = {
   parentName: "التبعية",
   kind: "الشكل التنظيمي",
   type: "نوع الإدارة",
+  level: "المستوى",
   nameEn: "الاسم (إنجليزي)",
   unitCode: "الرمز",
 } as const;

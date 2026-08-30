@@ -77,6 +77,7 @@ export async function createOrgUnit(input: {
   unitCode?: string | null;
   kindId: string;
   typeId: string | null;
+  levelId: string | null;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -92,6 +93,7 @@ export async function createOrgUnit(input: {
       // a copy of the value list in this file would.
       kindId: z.string().uuid(),
       typeId: z.string().uuid().nullable(),
+      levelId: z.string().uuid().nullable(),
       parentId: z.string().uuid().nullable(),
     })
     .safeParse(input);
@@ -111,6 +113,7 @@ export async function createOrgUnit(input: {
       unit_code: parsed.data.unitCode,
       kind_id: parsed.data.kindId,
       type_id: parsed.data.typeId,
+      level_id: parsed.data.levelId,
       parent_id: parsed.data.parentId,
     })
     .select("id");
@@ -127,6 +130,7 @@ export async function createOrgUnit(input: {
       name_ar: parsed.data.nameAr,
       kind_id: parsed.data.kindId,
       type_id: parsed.data.typeId,
+      level_id: parsed.data.levelId,
       parent_id: parsed.data.parentId,
     },
   });
@@ -150,6 +154,7 @@ export async function updateOrgUnit(input: {
   unitCode?: string | null;
   kindId: string;
   typeId: string | null;
+  levelId: string | null;
   parentId: string | null;
 }): Promise<OrgUnitActionState> {
   const parsed = z
@@ -162,6 +167,7 @@ export async function updateOrgUnit(input: {
       unitCode: z.string().trim().min(1),
       kindId: z.string().uuid(),
       typeId: z.string().uuid().nullable(),
+      levelId: z.string().uuid().nullable(),
       parentId: z.string().uuid().nullable(),
     })
     .refine((data) => data.parentId !== data.id, { message: "a unit cannot be its own parent" })
@@ -194,7 +200,7 @@ export async function updateOrgUnit(input: {
 
   const { data: before } = await supabase
     .from("org_units")
-    .select("name_ar, name_en, unit_code, kind_id, type_id, parent_id")
+    .select("name_ar, name_en, unit_code, kind_id, type_id, level_id, parent_id")
     .eq("id", parsed.data.id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -205,6 +211,7 @@ export async function updateOrgUnit(input: {
     unit_code: parsed.data.unitCode,
     kind_id: parsed.data.kindId,
     type_id: parsed.data.typeId,
+    level_id: parsed.data.levelId,
     parent_id: parsed.data.parentId,
   };
 

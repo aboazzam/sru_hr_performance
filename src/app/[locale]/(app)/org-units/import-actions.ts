@@ -105,6 +105,7 @@ export async function importOrgUnitsExcel(
     parentName: string;
     kindId: string | null;
     typeId: string | null;
+    levelId: string | null;
     nameEn: string;
     unitCode: string;
   };
@@ -112,13 +113,22 @@ export async function importOrgUnitsExcel(
   const text = (row: ExcelJS.Row, column: number | undefined) =>
     column == null ? "" : String(row.getCell(column).value ?? "").trim();
 
-  const [{ data: kindRows }, { data: typeRows }] = await Promise.all([
+  const [{ data: kindRows }, { data: typeRows }, { data: levelRows }] = await Promise.all([
     supabase.from("org_unit_kinds").select("id, code, name_ar, name_en").is("deleted_at", null),
     supabase.from("org_unit_types").select("id, code, name_ar, name_en").is("deleted_at", null),
+    // Levels carry no code column of their own, so the Arabic name is the
+    // only key -- reused as the code so the same resolver applies.
+    supabase.from("org_structure_levels").select("id, name_ar, name_en").is("deleted_at", null),
   ]);
   type ClassRow = { id: string; code: string; name_ar: string; name_en: string | null };
   const resolveKind = classificationResolver((kindRows ?? []) as ClassRow[]);
   const resolveType = classificationResolver((typeRows ?? []) as ClassRow[]);
+  const resolveLevel = classificationResolver(
+    ((levelRows ?? []) as Array<{ id: string; name_ar: string; name_en: string | null }>).map((row) => ({
+      ...row,
+      code: row.name_ar,
+    }))
+  );
 
   const rows: SheetRow[] = [];
   const rowErrors: string[] = [];
@@ -138,12 +148,19 @@ export async function importOrgUnitsExcel(
       rowErrors.push(`${nameAr}: ${typeRaw}`);
       return;
     }
+    const levelRaw = text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.level));
+    const levelId = resolveLevel(levelRaw);
+    if (levelRaw !== "" && levelId == null) {
+      rowErrors.push(`${nameAr}: ${levelRaw}`);
+      return;
+    }
     rows.push({
       line,
       nameAr,
       parentName: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.parentName)),
       kindId,
       typeId,
+      levelId,
       nameEn: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.nameEn)),
       unitCode: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.unitCode)),
     });
@@ -199,6 +216,7 @@ export async function importOrgUnitsExcel(
         const patch: Record<string, string | null> = {};
         if (writesField(options, "kind") && row.kindId) patch.kind_id = row.kindId;
         if (writesField(options, "type") && row.typeId) patch.type_id = row.typeId;
+        if (writesField(options, "level") && row.levelId) patch.level_id = row.levelId;
         if (writesField(options, "nameEn") && row.nameEn !== "") patch.name_en = row.nameEn;
         if (writesField(options, "unitCode") && row.unitCode !== "") patch.unit_code = row.unitCode;
         if (Object.keys(patch).length > 0) {
@@ -232,6 +250,7 @@ export async function importOrgUnitsExcel(
           unit_code: row.unitCode,
           kind_id: row.kindId,
           type_id: row.typeId,
+          level_id: row.levelId,
           parent_id: parentId,
         })
         .select("id");

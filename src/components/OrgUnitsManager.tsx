@@ -15,6 +15,11 @@ import {
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
 import { ExportMenu } from "@/components/ExportMenu";
+import {
+  OrgUnitPositionsManager,
+  type UnitPosition,
+  type PositionOption,
+} from "@/components/OrgUnitPositionsManager";
 import { ORG_UNIT_EXPORT_COLUMNS } from "@/lib/orgUnitExportColumns";
 
 const errorKeys: Record<string, string> = {
@@ -38,6 +43,8 @@ export interface OrgUnitRow {
   kindNameAr: string;
   typeId: string | null;
   typeNameAr: string | null;
+  levelId: string | null;
+  levelNameAr: string | null;
   parentId: string | null;
 }
 
@@ -82,6 +89,10 @@ function UnitRow({
   rows,
   kinds,
   types,
+  levels,
+  positionsByUnit,
+  allPositions,
+  canEditPositions,
   canEdit,
   onDone,
 }: {
@@ -90,6 +101,10 @@ function UnitRow({
   rows: OrgUnitRow[];
   kinds: OrgUnitClassification[];
   types: OrgUnitClassification[];
+  levels: Array<{ id: string; nameAr: string }>;
+  positionsByUnit: Record<string, UnitPosition[]>;
+  allPositions: PositionOption[];
+  canEditPositions: boolean;
   canEdit: boolean;
   onDone: () => void;
 }) {
@@ -101,6 +116,7 @@ function UnitRow({
     unitCode: node.unitCode ?? "",
     kindId: node.kindId,
     typeId: node.typeId ?? "",
+    levelId: node.levelId ?? "",
     parentId: node.parentId ?? "",
   });
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +136,7 @@ function UnitRow({
     form.unitCode !== (node.unitCode ?? "") ||
     form.kindId !== node.kindId ||
     form.typeId !== (node.typeId ?? "") ||
+    form.levelId !== (node.levelId ?? "") ||
     form.parentId !== (node.parentId ?? "");
 
   function run(fn: () => Promise<OrgUnitActionState>, close = false) {
@@ -160,6 +177,11 @@ function UnitRow({
             {node.typeNameAr}
           </span>
         ) : null}
+        {node.levelNameAr ? (
+          <span className="pill" style={{ fontSize: 11 }}>
+            {node.levelNameAr}
+          </span>
+        ) : null}
         {node.unitCode ? (
           <span className="sru-en" style={{ fontSize: 11, color: "var(--sru-muted)" }}>
             {node.unitCode}
@@ -184,6 +206,7 @@ function UnitRow({
                 onChange={setForm}
                 kinds={kinds}
                 types={types}
+                levels={levels}
                 parentOptions={parentOptions}
                 allowNoParent={node.parentId === null}
               />
@@ -207,6 +230,7 @@ function UnitRow({
                           unitCode: form.unitCode.trim(),
                           kindId: form.kindId,
                           typeId: form.typeId === "" ? null : form.typeId,
+                          levelId: form.levelId === "" ? null : form.levelId,
                           parentId: form.parentId === "" ? null : form.parentId,
                         }),
                       true
@@ -218,6 +242,14 @@ function UnitRow({
                 </button>
               </div>
             </AddFormDialog>
+            <OrgUnitPositionsManager
+              unitId={node.id}
+              unitNameAr={node.nameAr}
+              positions={positionsByUnit[node.id] ?? []}
+              allPositions={allPositions}
+              levels={levels}
+              canEdit={canEditPositions}
+            />
             <button
               type="button"
               className="sru-icon-action danger"
@@ -250,6 +282,10 @@ function UnitRow({
               rows={rows}
               kinds={kinds}
               types={types}
+              levels={levels}
+              positionsByUnit={positionsByUnit}
+              allPositions={allPositions}
+              canEditPositions={canEditPositions}
               canEdit={canEdit}
               onDone={onDone}
             />
@@ -272,11 +308,19 @@ export function OrgUnitsManager({
   rows,
   kinds,
   types,
+  levels,
+  positionsByUnit,
+  allPositions,
+  canEditPositions,
   canEdit,
 }: {
   rows: OrgUnitRow[];
   kinds: OrgUnitClassification[];
   types: OrgUnitClassification[];
+  levels: Array<{ id: string; nameAr: string }>;
+  positionsByUnit: Record<string, UnitPosition[]>;
+  allPositions: PositionOption[];
+  canEditPositions: boolean;
   canEdit: boolean;
 }) {
   const t = useTranslations("OrgUnitsPage");
@@ -291,6 +335,7 @@ export function OrgUnitsManager({
     unitCode: "",
     kindId: kinds[0]?.id ?? "",
     typeId: "",
+    levelId: "",
     parentId: "",
   };
   const [form, setForm] = useState<OrgUnitFormValue>(emptyForm);
@@ -317,6 +362,7 @@ export function OrgUnitsManager({
         unitCode: form.unitCode.trim(),
         kindId: form.kindId,
         typeId: form.typeId === "" ? null : form.typeId,
+        levelId: form.levelId === "" ? null : form.levelId,
         parentId: form.parentId === "" ? null : form.parentId,
       });
       if (result.status === "success") {
@@ -378,6 +424,7 @@ export function OrgUnitsManager({
               onChange={setForm}
               kinds={kinds}
               types={types}
+              levels={levels}
               parentOptions={sortedRows}
               allowNoParent={false}
             />
@@ -417,6 +464,10 @@ export function OrgUnitsManager({
                   rows={rows}
                   kinds={kinds}
                   types={types}
+                  levels={levels}
+                  positionsByUnit={positionsByUnit}
+                  allPositions={allPositions}
+                  canEditPositions={canEditPositions}
                   canEdit={canEdit}
                   onDone={refresh}
                 />
@@ -433,6 +484,10 @@ export function OrgUnitsManager({
                 rows={rows}
                 kinds={kinds}
                 types={types}
+                levels={levels}
+                positionsByUnit={positionsByUnit}
+                allPositions={allPositions}
+                canEditPositions={canEditPositions}
                 canEdit={canEdit}
                 onDone={refresh}
               />
