@@ -108,6 +108,7 @@ export const ORG_UNIT_IMPORT_COLUMNS = {
   nameAr: "الاسم (عربي)",
   parentName: "التبعية",
   kind: "الشكل التنظيمي",
+  type: "نوع الإدارة",
   nameEn: "الاسم (إنجليزي)",
   unitCode: "الرمز",
 } as const;

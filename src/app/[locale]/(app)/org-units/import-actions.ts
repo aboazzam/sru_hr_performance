@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ORG_UNIT_IMPORT_COLUMNS } from "@/lib/importColumns";
 import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
-import { orgUnitKinds, type OrgUnitKind } from "@/lib/orgUnitTypes";
+import { foldArabicHamza } from "@/lib/arabicSearch";
 
 export type OrgUnitsImportResult =
   | {
@@ -18,25 +18,28 @@ export type OrgUnitsImportResult =
   | { status: "error"; message: "invalid_input" | "unauthenticated" | "unknown" }
   | null;
 
-/** The Arabic label a sheet is likely to carry, mapped back to the enum. */
-const KIND_BY_ARABIC: Record<string, OrgUnitKind> = {
-  مجلس: "council",
-  لجنة: "committee",
-  أمانة: "secretariat",
-  قيادة: "leadership",
-  كلية: "college",
-  إدارة: "department",
-  ادارة: "department",
-  مكتب: "office",
-  مركز: "center",
-  وحدة: "unit",
-};
-
-function normaliseKind(raw: string): OrgUnitKind | null {
-  const value = raw.trim();
-  if (value === "") return null;
-  if ((orgUnitKinds as readonly string[]).includes(value)) return value as OrgUnitKind;
-  return KIND_BY_ARABIC[value] ?? null;
+/**
+ * Resolves a classification cell against the live table.
+ *
+ * This used to be a hardcoded Arabic-to-enum map in this file. It cannot be,
+ * now that the lists are user-owned (20260830000002): a classification added
+ * from the screen would be unknown to a copy frozen in the source. The lookup
+ * accepts the Arabic name, the English name, or the stored code, all
+ * case-insensitively and hamza-insensitively, since a real sheet writes
+ * whichever it has to hand.
+ */
+function classificationResolver(rows: Array<{ id: string; code: string; name_ar: string; name_en: string | null }>) {
+  const byLabel = new Map<string, string>();
+  for (const row of rows) {
+    byLabel.set(foldArabicHamza(row.name_ar.trim()), row.id);
+    byLabel.set(row.code.trim().toLowerCase(), row.id);
+    if (row.name_en) byLabel.set(row.name_en.trim().toLowerCase(), row.id);
+  }
+  return (raw: string): string | null => {
+    const value = raw.trim();
+    if (value === "") return null;
+    return byLabel.get(foldArabicHamza(value)) ?? byLabel.get(value.toLowerCase()) ?? null;
+  };
 }
 
 function headerMap(sheet: ExcelJS.Worksheet): Map<string, number> {
@@ -100,13 +103,22 @@ export async function importOrgUnitsExcel(
     line: number;
     nameAr: string;
     parentName: string;
-    kind: OrgUnitKind | null;
+    kindId: string | null;
+    typeId: string | null;
     nameEn: string;
     unitCode: string;
   };
 
   const text = (row: ExcelJS.Row, column: number | undefined) =>
     column == null ? "" : String(row.getCell(column).value ?? "").trim();
+
+  const [{ data: kindRows }, { data: typeRows }] = await Promise.all([
+    supabase.from("org_unit_kinds").select("id, code, name_ar, name_en").is("deleted_at", null),
+    supabase.from("org_unit_types").select("id, code, name_ar, name_en").is("deleted_at", null),
+  ]);
+  type ClassRow = { id: string; code: string; name_ar: string; name_en: string | null };
+  const resolveKind = classificationResolver((kindRows ?? []) as ClassRow[]);
+  const resolveType = classificationResolver((typeRows ?? []) as ClassRow[]);
 
   const rows: SheetRow[] = [];
   const rowErrors: string[] = [];
@@ -115,16 +127,23 @@ export async function importOrgUnitsExcel(
     const nameAr = text(row, nameCol);
     if (nameAr === "") return;
     const kindRaw = text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.kind));
-    const kind = normaliseKind(kindRaw);
-    if (kindRaw !== "" && kind == null) {
+    const kindId = resolveKind(kindRaw);
+    if (kindRaw !== "" && kindId == null) {
       rowErrors.push(`${nameAr}: ${kindRaw}`);
+      return;
+    }
+    const typeRaw = text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.type));
+    const typeId = resolveType(typeRaw);
+    if (typeRaw !== "" && typeId == null) {
+      rowErrors.push(`${nameAr}: ${typeRaw}`);
       return;
     }
     rows.push({
       line,
       nameAr,
       parentName: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.parentName)),
-      kind,
+      kindId,
+      typeId,
       nameEn: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.nameEn)),
       unitCode: text(row, cols.get(ORG_UNIT_IMPORT_COLUMNS.unitCode)),
     });
@@ -136,13 +155,13 @@ export async function importOrgUnitsExcel(
 
   const { data: existingData } = await supabase
     .from("org_units")
-    .select("id, name_ar, parent_id, kind, name_en, unit_code")
+    .select("id, name_ar, parent_id, kind_id, name_en, unit_code")
     .is("deleted_at", null);
   const existing = (existingData ?? []) as Array<{
     id: string;
     name_ar: string;
     parent_id: string | null;
-    kind: string;
+    kind_id: string;
     name_en: string | null;
     unit_code: string | null;
   }>;
@@ -178,7 +197,8 @@ export async function importOrgUnitsExcel(
           continue;
         }
         const patch: Record<string, string | null> = {};
-        if (writesField(options, "kind") && row.kind) patch.kind = row.kind;
+        if (writesField(options, "kind") && row.kindId) patch.kind_id = row.kindId;
+        if (writesField(options, "type") && row.typeId) patch.type_id = row.typeId;
         if (writesField(options, "nameEn") && row.nameEn !== "") patch.name_en = row.nameEn;
         if (writesField(options, "unitCode") && row.unitCode !== "") patch.unit_code = row.unitCode;
         if (Object.keys(patch).length > 0) {
@@ -198,7 +218,7 @@ export async function importOrgUnitsExcel(
       // A new unit needs both a form and a code: both columns are NOT NULL
       // with no default, and there is no sensible silent value for either
       // "what kind of thing is this" or "what is it called in the system".
-      if (!row.kind || row.unitCode === "") {
+      if (!row.kindId || row.unitCode === "") {
         rowErrors.push(row.nameAr);
         progressed = true;
         continue;
@@ -210,7 +230,8 @@ export async function importOrgUnitsExcel(
           name_ar: row.nameAr,
           name_en: writesField(options, "nameEn") && row.nameEn !== "" ? row.nameEn : null,
           unit_code: row.unitCode,
-          kind: row.kind,
+          kind_id: row.kindId,
+          type_id: row.typeId,
           parent_id: parentId,
         })
         .select("id");
@@ -223,7 +244,7 @@ export async function importOrgUnitsExcel(
           id: data[0].id,
           name_ar: row.nameAr,
           parent_id: parentId,
-          kind: row.kind,
+          kind_id: row.kindId,
           name_en: null,
           unit_code: null,
         });

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   const { data } = await supabase
     .from("org_units")
-    .select("id, name_ar, name_en, unit_code, kind, parent_id")
+    .select("id, name_ar, name_en, unit_code, kind_id, type_id, parent_id")
     .is("deleted_at", null)
     .order("name_ar");
 
@@ -34,9 +34,20 @@ export async function GET(request: NextRequest) {
     name_ar: string;
     name_en: string | null;
     unit_code: string | null;
-    kind: string;
+    kind_id: string;
+    type_id: string | null;
     parent_id: string | null;
   }>;
+
+  // The classifications are rows now (20260830000002), so their Arabic names
+  // are read rather than looked up in a message catalogue that would go stale
+  // the moment someone adds one from the screen.
+  const [{ data: kindRows }, { data: typeRows }] = await Promise.all([
+    supabase.from("org_unit_kinds").select("id, name_ar").is("deleted_at", null),
+    supabase.from("org_unit_types").select("id, name_ar").is("deleted_at", null),
+  ]);
+  const kindName = new Map(((kindRows ?? []) as Array<{ id: string; name_ar: string }>).map((r) => [r.id, r.name_ar]));
+  const typeName = new Map(((typeRows ?? []) as Array<{ id: string; name_ar: string }>).map((r) => [r.id, r.name_ar]));
 
   const byId = new Map(units.map((u) => [u.id, u]));
   const childCount = new Map<string, number>();
@@ -69,6 +80,7 @@ export async function GET(request: NextRequest) {
     nameAr: t("fieldNameAr"),
     nameEn: t("fieldNameEn"),
     kind: t("fieldKind"),
+    type: t("fieldType"),
     parent: t("fieldParent"),
     unitCode: t("fieldCode"),
     depth: t("exportColumnDepth"),
@@ -83,7 +95,9 @@ export async function GET(request: NextRequest) {
       case "nameEn":
         return unit.name_en ?? "";
       case "kind":
-        return t(`kind_${unit.kind}`);
+        return kindName.get(unit.kind_id) ?? "";
+      case "type":
+        return unit.type_id ? typeName.get(unit.type_id) ?? "" : "";
       case "parent":
         return unit.parent_id ? (byId.get(unit.parent_id)?.name_ar ?? "") : "";
       case "unitCode":
