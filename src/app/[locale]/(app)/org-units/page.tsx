@@ -5,7 +5,13 @@ import { ImportOrgUnitsExcelForm } from "@/components/ImportOrgUnitsExcelForm";
 import { OrgUnitsManager, type OrgUnitRow } from "@/components/OrgUnitsManager";
 import { OrgUnitClassificationsManager } from "@/components/OrgUnitClassificationsManager";
 import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
-import type { UnitPosition, PositionOption } from "@/components/OrgUnitPositionsManager";
+import type {
+  UnitPosition,
+  PositionOption,
+  PositionAssignment,
+  EmployeeOption,
+} from "@/components/OrgUnitPositionsManager";
+import { Link } from "@/i18n/navigation";
 import { OrgUnitLevelsManager } from "@/components/OrgUnitLevelsManager";
 import { OrgStructureLevelsList } from "@/components/OrgStructureLevelsList";
 import { OrgStructureLevelCard } from "@/components/OrgStructureLevelCard";
@@ -32,8 +38,15 @@ export default async function OrgUnitsPage() {
   // PostgREST embed: they are also rendered on their own (the "manage
   // classifications" panel needs every value, including ones no unit uses
   // yet), and an embed would only return the ones already in use.
-  const [{ data }, { data: kindRows }, { data: typeRows }, { data: levelRows }, { data: positionRows }] =
-    await Promise.all([
+  const [
+    { data },
+    { data: kindRows },
+    { data: typeRows },
+    { data: levelRows },
+    { data: positionRows },
+    { data: assignmentRows },
+    { data: employeeRows },
+  ] = await Promise.all([
     supabase
       .from("org_units")
       .select("id, name_ar, name_en, unit_code, kind_id, type_id, level_id, parent_id")
@@ -62,6 +75,17 @@ export default async function OrgUnitsPage() {
       .select("id, name_ar, name_en, level_id, parent_id, org_unit_id")
       .is("deleted_at", null)
       .order("name_ar"),
+    // Staffing moved here from the التسكين screen, so who fills a position is
+    // read alongside the positions themselves.
+    supabase
+      .from("org_structure_assignments")
+      .select("id, position_id, employee_id")
+      .is("deleted_at", null),
+    supabase
+      .from("profiles")
+      .select("id, employee_number, full_name_ar")
+      .is("deleted_at", null)
+      .order("full_name_ar"),
   ]);
 
   const units = (data ?? []) as Array<{
@@ -109,6 +133,29 @@ export default async function OrgUnitsPage() {
     });
     positionsByUnit[position.org_unit_id] = list;
   }
+  const employees: EmployeeOption[] = (
+    (employeeRows ?? []) as Array<{ id: string; employee_number: string | null; full_name_ar: string }>
+  ).map((row) => ({ id: row.id, nameAr: row.full_name_ar, employeeNumber: row.employee_number }));
+  const employeeName = new Map(employees.map((employee) => [employee.id, employee.nameAr]));
+
+  const assignmentsByPosition: Record<string, PositionAssignment[]> = {};
+  for (const assignment of (assignmentRows ?? []) as Array<{
+    id: string;
+    position_id: string;
+    employee_id: string;
+  }>) {
+    const list = assignmentsByPosition[assignment.position_id] ?? [];
+    list.push({
+      assignmentId: assignment.id,
+      employeeId: assignment.employee_id,
+      // An employee the caller cannot read through profiles' own RLS still
+      // shows as an occupied seat rather than vanishing, so the position
+      // never looks vacant when it is not.
+      nameAr: employeeName.get(assignment.employee_id) ?? "—",
+    });
+    assignmentsByPosition[assignment.position_id] = list;
+  }
+
   const allPositions: PositionOption[] = positions.map((position) => ({
     id: position.id,
     nameAr: position.name_ar,
@@ -171,6 +218,18 @@ export default async function OrgUnitsPage() {
       (row) => row.process_area === "orgStructure"
     )?.vpra_level ?? "none";
   const canEditPositions = hasVpraAccess(orgStructureLevel, "recommend");
+  // Staffing has its own process area (20260725000001 split it out of
+  // orgStructure), so filling a position is gated separately from editing it.
+  const staffingLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "staffing"
+    )?.vpra_level ?? "none";
+  const canStaff = hasVpraAccess(staffingLevel, "recommend");
+  const userManagementLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "userManagement"
+    )?.vpra_level ?? "none";
+  const canSeePermissions = hasVpraAccess(userManagementLevel, "view");
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -229,6 +288,19 @@ export default async function OrgUnitsPage() {
         ) : null}
       </div>
 
+      {/* The permissions screen stays where it is -- the project owner asked
+          for a link between the two, not a move ("يبقى تاب الصلاحيات مكانه
+          ونضيف رابطا بينهما"), with the permissions module itself to be gone
+          through separately once the units are done. */}
+      {canSeePermissions ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 14 }}>
+          {t("permissionsNote")}{" "}
+          <Link href="/admin" style={{ color: "var(--sru-purple)", fontWeight: 600 }}>
+            {t("permissionsLink")}
+          </Link>
+        </p>
+      ) : null}
+
       {rows.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("empty")}</p>
       ) : (
@@ -239,6 +311,9 @@ export default async function OrgUnitsPage() {
           levels={levels}
           positionsByUnit={positionsByUnit}
           allPositions={allPositions}
+          assignmentsByPosition={assignmentsByPosition}
+          employees={employees}
+          canStaff={canStaff}
           canEditPositions={canEditPositions}
           canEdit={canEdit}
         />
