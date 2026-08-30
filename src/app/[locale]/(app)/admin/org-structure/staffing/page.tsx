@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AssignEmployeeForm } from "@/components/AssignEmployeeForm";
 import { OrgStructurePositionRow } from "@/components/OrgStructurePositionRow";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
+import { StaffingExportMenu } from "@/components/StaffingExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { buildDescendantOrgUnitIdsResolver } from "@/lib/orgUnitHierarchy";
 import { buildEmployeeLevelOrderResolver, isBelowOrUnknownLevel } from "@/lib/orgStructureEmployeeLevel";
@@ -146,6 +147,7 @@ export default async function OrgStructureStaffingPage() {
         </div>
         <div className="sru-actionbar no-print">
           <ImportOrgStructureExcelForm />
+          <StaffingExportMenu />
         </div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 28px" }} />

@@ -500,7 +500,15 @@
     "errorHasDependents": "This position still has assigned employees or child positions — resolve that first.",
     "errorDuplicate": "This employee is already staffed on this position.",
     "errorUnknown": "An unexpected error occurred.",
-    "success": "Saved successfully."
+    "success": "Saved successfully.",
+    "exportButton": "Export",
+    "exportPdf": "Export PDF",
+    "exportExcel": "Export Excel",
+    "exportCsv": "Export CSV",
+    "exportColumnsHeading": "Choose columns to export",
+    "exportColumnsNote": "Select the fields to include in the file — covers the full staffing table's data.",
+    "exportConfirmButton": "Export",
+    "closeButton": "Close"
   },
   "EmployeesPage": {
     "title": "Employees",

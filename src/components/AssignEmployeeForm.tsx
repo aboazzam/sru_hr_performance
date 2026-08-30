@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { Briefcase, Link2, User } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { assignEmployee } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
@@ -58,34 +59,47 @@ export function AssignEmployeeForm({ positions, employees }: { positions: Positi
   if (positions.length === 0 || employees.length === 0) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="sru-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 700 }}>{t("assignHeading")}</h3>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("positionLabel")}</label>
-        <select value={positionId} onChange={(e) => setSelectedPositionId(e.target.value)} required className={inputClass}>
-          {positions.map((position) => (
-            <option key={position.id} value={position.id}>
-              {position.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("employeeLabel")}</label>
-        <select value={employeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} required className={inputClass}>
-          {employees.map((employee) => (
-            <option key={employee.id} value={employee.id}>
-              {employee.label}
-            </option>
-          ))}
-        </select>
+    <form onSubmit={handleSubmit} className="sru-card sru-assign-employee-form">
+      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{t("assignHeading")}</h3>
+      {/* المنصب أولًا في الترميز فيظهر يمينًا في RTL، والموظف بعده فيظهر
+          يسارًا — موصولان بشارة ربط بينهما بدل تكديسهما عموديًا. */}
+      <div className="sru-assign-employee-row">
+        <div className="sru-assign-employee-field">
+          <label className="sru-assign-employee-field-label">
+            <Briefcase size={14} aria-hidden />
+            {t("positionLabel")}
+          </label>
+          <select value={positionId} onChange={(e) => setSelectedPositionId(e.target.value)} required className={inputClass}>
+            {positions.map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="sru-assign-employee-connector" aria-hidden="true">
+          <Link2 size={16} />
+        </div>
+        <div className="sru-assign-employee-field">
+          <label className="sru-assign-employee-field-label">
+            <User size={14} aria-hidden />
+            {t("employeeLabel")}
+          </label>
+          <select value={employeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} required className={inputClass}>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600" style={{ marginTop: 10 }}>
           {t(errorMessageKeys[error] ?? "errorUnknown")}
         </p>
       )}
-      <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary">
+      <button type="submit" disabled={isPending} className="sru-btn sru-btn-primary" style={{ marginTop: 12 }}>
         {t("assignButton")}
       </button>
     </form>
