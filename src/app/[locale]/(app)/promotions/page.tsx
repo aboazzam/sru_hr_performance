@@ -110,7 +110,7 @@ export default async function PromotionsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="sru-actionbar no-print">
           <Link href="/promotions/history" className="sru-btn">
             {t("approvalHistory")}
           </Link>
