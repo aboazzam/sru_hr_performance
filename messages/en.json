@@ -327,7 +327,15 @@
     "posErrorHasDependents": "Cannot delete: positions or staffing depend on it.",
     "levelsShow": "Levels ({count})",
     "levelsHide": "Hide levels",
-    "levelsNote": "The org structure levels, referenced by each unit's level and each position's level. Drag to reorder."
+    "levelsNote": "The org structure levels, referenced by each unit's level and each position's level. Drag to reorder.",
+    "staffLabel": "Staffed by:",
+    "staffVacant": "Vacant",
+    "staffPick": "— pick an employee —",
+    "staffAdd": "Assign employee",
+    "staffRemove": "Unassign",
+    "staffRemoveConfirm": "Unassign this employee?",
+    "permissionsNote": "User and role permissions are managed on",
+    "permissionsLink": "the permissions page"
   },
   "AdminPage": {
     "title": "Users & Permissions",

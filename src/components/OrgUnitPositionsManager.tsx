@@ -3,12 +3,14 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Plus, Trash2, Save, Users } from "lucide-react";
+import { Plus, Trash2, Save, Users, UserPlus, UserMinus } from "lucide-react";
 import { AddFormDialog } from "@/components/AddFormDialog";
 import {
   addPosition,
   updatePosition,
   deletePosition,
+  assignEmployee,
+  unassignEmployee,
 } from "@/app/[locale]/(app)/admin/org-structure/actions";
 
 export interface UnitPosition {
@@ -18,6 +20,19 @@ export interface UnitPosition {
   levelId: string;
   parentId: string | null;
   orgUnitId: string | null;
+}
+
+/** One employee staffed onto a position. */
+export interface PositionAssignment {
+  assignmentId: string;
+  employeeId: string;
+  nameAr: string;
+}
+
+export interface EmployeeOption {
+  id: string;
+  nameAr: string;
+  employeeNumber: string | null;
 }
 
 export interface PositionOption {
@@ -61,6 +76,9 @@ export function OrgUnitPositionsManager({
   positions,
   allPositions,
   levels,
+  assignmentsByPosition,
+  employees,
+  canStaff,
   canEdit,
 }: {
   unitId: string;
@@ -68,6 +86,9 @@ export function OrgUnitPositionsManager({
   positions: UnitPosition[];
   allPositions: PositionOption[];
   levels: Array<{ id: string; nameAr: string }>;
+  assignmentsByPosition: Record<string, PositionAssignment[]>;
+  employees: EmployeeOption[];
+  canStaff: boolean;
   canEdit: boolean;
 }) {
   const t = useTranslations("OrgUnitsPage");
@@ -133,6 +154,9 @@ export function OrgUnitPositionsManager({
             allPositions={allPositions.filter((option) => option.id !== position.id)}
             levels={levels}
             nameOf={nameOf}
+            assignments={assignmentsByPosition[position.id] ?? []}
+            employees={employees}
+            canStaff={canStaff}
             canEdit={canEdit}
             onDone={refresh}
           />
@@ -227,6 +251,9 @@ function PositionRow({
   allPositions,
   levels,
   nameOf,
+  assignments,
+  employees,
+  canStaff,
   canEdit,
   onDone,
 }: {
@@ -234,6 +261,9 @@ function PositionRow({
   allPositions: PositionOption[];
   levels: Array<{ id: string; nameAr: string }>;
   nameOf: (option: PositionOption) => string;
+  assignments: PositionAssignment[];
+  employees: EmployeeOption[];
+  canStaff: boolean;
   canEdit: boolean;
   onDone: () => void;
 }) {
@@ -243,6 +273,7 @@ function PositionRow({
   const [parentId, setParentId] = useState(position.parentId ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [staffId, setStaffId] = useState("");
 
   const dirty =
     nameAr !== position.nameAr ||
@@ -260,13 +291,12 @@ function PositionRow({
   }
 
   return (
+    <div style={{ padding: "7px 0", borderBottom: "1px solid var(--sru-border)" }}>
     <div
       style={{
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "7px 0",
-        borderBottom: "1px solid var(--sru-border)",
         flexWrap: "wrap",
       }}
     >
@@ -334,6 +364,80 @@ function PositionRow({
           {t(errorKeys[error] ?? "errorUnknown")}
         </span>
       ) : null}
+    </div>
+
+    {/* Staffing, in the same row as the position it fills -- moved here from
+        the separate التسكين screen (2026-08-30: "نربط كل ما يتعلق بالمناصب
+        والتسكين ... بصفحة الوحدات التنظيمية"). Gated on `staffing`, its own
+        process area: org_structure_assignments' RLS is separate from the
+        positions table's, so a caller may edit a position without being
+        allowed to fill it. */}
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap", paddingInlineStart: 4 }}>
+      <span style={{ color: "var(--sru-muted)", fontSize: 11 }}>{t("staffLabel")}</span>
+      {assignments.length === 0 ? (
+        <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("staffVacant")}</span>
+      ) : (
+        assignments.map((assignment) => (
+          <span
+            key={assignment.assignmentId}
+            className="pill"
+            style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}
+          >
+            {assignment.nameAr}
+            {canStaff ? (
+              <button
+                type="button"
+                className="sru-icon-action danger"
+                title={t("staffRemove")}
+                aria-label={t("staffRemove")}
+                disabled={pending}
+                onClick={() => {
+                  if (!window.confirm(t("staffRemoveConfirm"))) return;
+                  run(() => unassignEmployee(assignment.assignmentId));
+                }}
+              >
+                <UserMinus size={12} aria-hidden />
+              </button>
+            ) : null}
+          </span>
+        ))
+      )}
+      {canStaff ? (
+        <>
+          <select
+            value={staffId}
+            onChange={(event) => setStaffId(event.target.value)}
+            style={{ width: 190 }}
+            aria-label={t("staffAdd")}
+          >
+            <option value="">{t("staffPick")}</option>
+            {employees
+              .filter((employee) => !assignments.some((a) => a.employeeId === employee.id))
+              .map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.employeeNumber ? `${employee.employeeNumber} — ${employee.nameAr}` : employee.nameAr}
+                </option>
+              ))}
+          </select>
+          <button
+            type="button"
+            className="sru-icon-action"
+            title={t("staffAdd")}
+            aria-label={t("staffAdd")}
+            disabled={pending || staffId === ""}
+            onClick={() =>
+              run(async () => {
+                const result = await assignEmployee(position.id, staffId);
+                if (result.status === "success") setStaffId("");
+                return result;
+              })
+            }
+          >
+            <UserPlus size={14} aria-hidden />
+          </button>
+        </>
+      ) : null}
+    </div>
     </div>
   );
 }
