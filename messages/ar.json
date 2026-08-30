@@ -470,7 +470,15 @@
     "errorHasDependents": "لا يمكن حذف هذا المنصب لوجود موظفين مسكَّنين عليه أو مناصب تابعة له — عالج ذلك أولًا.",
     "errorDuplicate": "هذا الموظف مسكَّن بالفعل على هذا المنصب.",
     "errorUnknown": "حدث خطأ غير متوقع.",
-    "success": "تم الحفظ بنجاح."
+    "success": "تم الحفظ بنجاح.",
+    "exportButton": "تصدير",
+    "exportPdf": "تصدير PDF",
+    "exportExcel": "تصدير Excel",
+    "exportCsv": "تصدير CSV",
+    "exportColumnsHeading": "اختر الأعمدة المطلوب تصديرها",
+    "exportColumnsNote": "حدّد الحقول التي تريد تضمينها في الملف — تشمل كل بيانات جدول التسكين.",
+    "exportConfirmButton": "تصدير",
+    "closeButton": "إغلاق"
   },
   "EmployeesPage": {
     "title": "الموظفون",

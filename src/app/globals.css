@@ -3018,3 +3018,57 @@ table {
 .admin-matrix th .sru-name-en {
   text-align: center;
 }
+
+/* ===== نموذج تسكين موظف على منصب (2026-08-30) =====
+   كان المنصب والموظف حقلين مكدَّسين رأسيًا بلا أي تمييز بصري بينهما — طُلب
+   جعل المنصب يمينًا والموظف يسارًا "بشكل ابداعي". صفّهما جنبًا إلى جنب
+   يحقق الترتيب المطلوب تلقائيًا في RTL (أول عنصر في الترميز يظهر يمينًا)،
+   وشارة الربط الدائرية بينهما (نفس تدرّج .sru-formsection-badge) تُجسّد
+   العلاقة المقصودة بصريًا — موظف يُربط بمنصب — بدل خط فاصل عادٍ. تتكدّس
+   الحقول رأسيًا مجددًا تحت 560px كي لا تضيق القوائم المنسدلة على الجوال. */
+.sru-assign-employee-form {
+  max-width: 640px;
+}
+.sru-assign-employee-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+.sru-assign-employee-field {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sru-assign-employee-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sru-muted);
+}
+.sru-assign-employee-connector {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sru-purple-light), var(--sru-blue-light));
+  color: var(--sru-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 9px;
+}
+@media (max-width: 560px) {
+  .sru-assign-employee-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sru-assign-employee-connector {
+    align-self: center;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+}
