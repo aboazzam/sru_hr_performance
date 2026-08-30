@@ -126,7 +126,7 @@ export default async function RecruitmentRequestsPage() {
       ) : (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
           {canRaise && (
-            <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div className="sru-actionbar no-print">
               <Link href="/recruitment/requests/new" className="sru-btn sru-btn-primary">
                 {t("newRequest")}
               </Link>

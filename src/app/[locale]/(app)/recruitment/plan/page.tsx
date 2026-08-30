@@ -74,7 +74,10 @@ export default async function RecruitmentPlanPage() {
               at the top RIGHT, which is where the button was asked for — no
               float or explicit alignment needed. */}
           {canPrepare && (
-            <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            /* `sru-actionbar` — نفس شريط أزرار المبادرات وبقية شاشات
+               التوظيف. كان هذا الزر وحده باقيًا على الحجم الكبير، فيقرأ
+               مختلفًا عن أزرار الشاشات المجاورة بلا سبب. */
+            <div className="sru-actionbar no-print">
               <CreateRecruitmentPlanForm />
             </div>
           )}
