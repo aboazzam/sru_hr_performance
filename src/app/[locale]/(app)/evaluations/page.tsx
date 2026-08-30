@@ -5,7 +5,7 @@ import { EvaluationCycleRow, type EvaluationCycleRowData } from "@/components/Ev
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import type { Locale } from "@/i18n/config";
 import { getDisplayTimezone } from "@/lib/systemSettings";
-import { cycleDependentTables, summariseCycleScoring, todayInTimezone } from "@/lib/evaluationCycle";
+import { cycleDependentTables, todayInTimezone } from "@/lib/evaluationCycle";
 import type { EvaluationCycleType } from "./cycles/new/actions";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -30,9 +30,7 @@ export default async function EvaluationCyclesPage() {
   // cycles are university-wide metadata, not per-employee/org-unit scoped.
   const { data } = await supabase
     .from("evaluation_cycles")
-    .select(
-      "id, name_ar, name_en, cycle_type, start_date, end_date, weight_activities, weight_competencies, weight_bau, weight_feedback_360"
-    )
+    .select("id, name_ar, name_en, cycle_type, start_date, end_date")
     .is("deleted_at", null)
     .order("start_date", { ascending: false });
 
@@ -43,10 +41,6 @@ export default async function EvaluationCyclesPage() {
     cycle_type: EvaluationCycleType;
     start_date: string;
     end_date: string;
-    weight_activities: number;
-    weight_competencies: number;
-    weight_bau: number;
-    weight_feedback_360: number;
   }> | null;
 
   // How many real records depend on each cycle, across every table with a
@@ -71,31 +65,9 @@ export default async function EvaluationCyclesPage() {
     );
   }
 
-  // Scoring progress per cycle. Two reads, both RLS-scoped like everything
-  // else here, so a caller only ever counts what they can genuinely see.
-  const cycleIdList = (cycles ?? []).map((c) => c.id);
-  const { data: cycleEvaluations } =
-    cycleIdList.length > 0
-      ? await supabase.from("evaluations").select("id, cycle_id").in("cycle_id", cycleIdList).is("deleted_at", null)
-      : { data: [] };
-  const evaluationIds = ((cycleEvaluations ?? []) as { id: string }[]).map((e) => e.id);
-  const { data: cycleScores } =
-    evaluationIds.length > 0
-      ? await supabase
-          .from("evaluation_scores")
-          .select("evaluation_id, score")
-          .in("evaluation_id", evaluationIds)
-          .is("deleted_at", null)
-      : { data: [] };
-  const scoringByCycle = summariseCycleScoring(
-    (cycleEvaluations ?? []) as { id: string; cycle_id: string }[],
-    (cycleScores ?? []) as { evaluation_id: string; score: number | null }[]
-  );
-
   // "Today" for the derived status column, in the configured display
   // timezone rather than the server's — the same setting the user-activity
   // and promotions-history screens already respect.
-  const digits = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US";
   const timezone = await getDisplayTimezone(supabase);
   const today = todayInTimezone(timezone);
 
@@ -113,12 +85,6 @@ export default async function EvaluationCyclesPage() {
     startDate: cycle.start_date,
     endDate: cycle.end_date,
     usageCount: usageByCycle.get(cycle.id) ?? 0,
-    weights: {
-      activities: Number(cycle.weight_activities),
-      competencies: Number(cycle.weight_competencies),
-      bau: Number(cycle.weight_bau),
-      feedback360: Number(cycle.weight_feedback_360),
-    },
   }));
 
   return (
@@ -173,7 +139,6 @@ export default async function EvaluationCyclesPage() {
                   <th>{t("columnStartDate")}</th>
                   <th>{t("columnEndDate")}</th>
                   <th>{t("columnStatus")}</th>
-                  <th>{t("columnWeights")}</th>
                   <th>{t("columnUsage")}</th>
                   <th className="no-print">{t("columnActions")}</th>
                 </tr>
@@ -192,43 +157,6 @@ export default async function EvaluationCyclesPage() {
             </table>
           </div>
         </div>
-      )}
-
-      {rows.length > 0 && (
-        <section style={{ marginTop: 26 }}>
-          <h2 className="sru-title" style={{ fontSize: 15 }}>
-            {t("metricsHeading")}
-          </h2>
-          <p style={{ color: "var(--sru-muted)", fontSize: 12, margin: "4px 0 12px", lineHeight: 1.8 }}>
-            {t("metricsNote")}
-          </p>
-          {/* One card per cycle rather than one figure for all of them: an
-              average across two different periods answers nothing. */}
-          {rows.map((row) => {
-            const s = scoringByCycle.get(row.id) ?? { total: 0, scored: 0, remaining: 0, averageScore: null };
-            return (
-              <div key={row.id} className="sru-card" style={{ marginBottom: 10 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{row.nameAr}</p>
-                <div className="sru-home-mine">
-                  <span className="sru-home-tile">
-                    <span className="sru-home-tile-label">{t("metricScored")}</span>
-                    <strong>{s.scored.toLocaleString(digits)}</strong>
-                  </span>
-                  <span className="sru-home-tile">
-                    <span className="sru-home-tile-label">{t("metricRemaining")}</span>
-                    <strong>{s.remaining.toLocaleString(digits)}</strong>
-                  </span>
-                  <span className="sru-home-tile">
-                    <span className="sru-home-tile-label">{t("metricAverage")}</span>
-                    {/* Never 0 when nothing was scored — an untouched cycle
-                        must not read as a cycle that scored zero. */}
-                    <strong>{s.averageScore == null ? t("metricNoAverage") : `${s.averageScore.toLocaleString(digits)}%`}</strong>
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </section>
       )}
     </div>
   );
