@@ -1367,10 +1367,38 @@ html[dir="ltr"] .sru-back-arrow {
      since normal document flow spacing isn't affected by either. Applied
      once on `main` so every page gets clearance without its own print CSS
      — pages with their own scoped print padding (e.g.
-     `.competencies-print-page`) simply add theirs on top of this. */
+     `.competencies-print-page`) simply add theirs on top of this.
+
+     Confirmed live (2026-08-30, real multi-page export): this padding only
+     fixes page 1 — page 2 onward overlapped the header again. `padding` on
+     `main` is a one-time offset at the very start of that box's content, it
+     does not re-apply at each page-break the way `@page` margin is
+     specifically designed to (an @page margin box, unlike element padding,
+     repeats on every physical page by definition). Kept as a page-1 safety
+     net regardless of whether `@page`'s own margin is actually honored in a
+     given print pipeline; the real per-page fix is the `@page` margin
+     override just below. */
   .sru-app-shell main {
     padding-top: 16mm !important;
     padding-bottom: 16mm !important;
+  }
+
+  /* `sru-print.css`'s own `@page {size:A4;margin:16mm}` should already
+     reserve enough room for the header (top:3mm + height:9mm = 12mm) and
+     footer on EVERY page — @page margins are the CSS-native per-page-
+     repeating mechanism, unlike the `main` padding above. That it evidently
+     isn't enough (page 2+ still overlapped) means either this exact
+     property isn't cascading as expected here, or whatever printed those
+     pages used a non-default "Margins" setting in the print dialog that
+     overrides page CSS margins entirely (a real, well-known browser
+     behavor, and something no page-level CSS can control). Raising
+     margin-top/-bottom specifically (leaving the 16mm side margins from the
+     kit alone) is the direct, spec-correct lever for "more repeating
+     clearance on every page" — tried here as the real per-page fix instead
+     of only chasing it via one-time content padding. */
+  @page {
+    margin-top: 20mm;
+    margin-bottom: 20mm;
   }
 }
 
