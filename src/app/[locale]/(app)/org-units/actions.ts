@@ -83,7 +83,9 @@ export async function createOrgUnit(input: {
     .object({
       nameAr: z.string().trim().min(1),
       nameEn: z.string().trim().nullable().optional(),
-      unitCode: z.string().trim().nullable().optional(),
+      // NOT NULL in the database with no default, so an empty code is a
+      // rejected input rather than a null write that fails opaquely.
+      unitCode: z.string().trim().min(1),
       kind: z.enum(orgUnitKinds),
       parentId: z.string().uuid().nullable(),
     })
@@ -101,7 +103,7 @@ export async function createOrgUnit(input: {
     .insert({
       name_ar: parsed.data.nameAr,
       name_en: parsed.data.nameEn?.trim() || null,
-      unit_code: parsed.data.unitCode?.trim() || null,
+      unit_code: parsed.data.unitCode,
       kind: parsed.data.kind,
       parent_id: parsed.data.parentId,
     })
@@ -147,7 +149,9 @@ export async function updateOrgUnit(input: {
       id: z.string().uuid(),
       nameAr: z.string().trim().min(1),
       nameEn: z.string().trim().nullable().optional(),
-      unitCode: z.string().trim().nullable().optional(),
+      // NOT NULL in the database with no default, so an empty code is a
+      // rejected input rather than a null write that fails opaquely.
+      unitCode: z.string().trim().min(1),
       kind: z.enum(orgUnitKinds),
       parentId: z.string().uuid().nullable(),
     })
@@ -189,7 +193,7 @@ export async function updateOrgUnit(input: {
   const after = {
     name_ar: parsed.data.nameAr,
     name_en: parsed.data.nameEn?.trim() || null,
-    unit_code: parsed.data.unitCode?.trim() || null,
+    unit_code: parsed.data.unitCode,
     kind: parsed.data.kind,
     parent_id: parsed.data.parentId,
   };

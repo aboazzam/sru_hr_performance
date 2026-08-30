@@ -13,6 +13,8 @@ import {
 } from "@/app/[locale]/(app)/org-units/actions";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import { orgUnitKinds } from "@/lib/orgUnitTypes";
+import { ExportMenu } from "@/components/ExportMenu";
+import { ORG_UNIT_EXPORT_COLUMNS } from "@/lib/orgUnitExportColumns";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -145,7 +147,7 @@ function UnitRow({
             </div>
             <div className="sru-field" style={{ width: 110 }}>
               <label htmlFor={`unit-${node.id}-code`}>{t("fieldCode")}</label>
-              <input id={`unit-${node.id}-code`} value={unitCode} dir="ltr" onChange={(e) => setUnitCode(e.target.value)} />
+              <input id={`unit-${node.id}-code`} value={unitCode} dir="ltr" required onChange={(e) => setUnitCode(e.target.value)} />
             </div>
             <div className="sru-field" style={{ width: 150 }}>
               <label htmlFor={`unit-${node.id}-kind`}>{t("fieldKind")}</label>
@@ -181,7 +183,7 @@ function UnitRow({
                       id: node.id,
                       nameAr,
                       nameEn: nameEn.trim() === "" ? null : nameEn,
-                      unitCode: unitCode.trim() === "" ? null : unitCode,
+                      unitCode: unitCode.trim(),
                       kind,
                       parentId: parentId === "" ? null : parentId,
                     }),
@@ -310,7 +312,7 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
       const result = await createOrgUnit({
         nameAr: newNameAr,
         nameEn: newNameEn.trim() === "" ? null : newNameEn,
-        unitCode: newCode.trim() === "" ? null : newCode,
+        unitCode: newCode.trim(),
         kind: newKind,
         parentId: newParent === "" ? null : newParent,
       });
@@ -338,6 +340,30 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
           style={{ maxWidth: 320 }}
         />
         <span style={{ color: "var(--sru-muted)", fontSize: 12 }}>{t("unitCount", { count: rows.length })}</span>
+        {/* One "تصدير" control (PDF / Excel / CSV + a column picker), the same
+            one the employees and vacancies screens use. The search text goes
+            with it so the file matches what is on screen. */}
+        <ExportMenu
+          columns={ORG_UNIT_EXPORT_COLUMNS.map((key) => ({ key, label: t(`exportColumn_${key}`) }))}
+          filenameBase="org-units"
+          buildHref={(format, columns) => {
+            const params = new URLSearchParams();
+            if (search.trim() !== "") params.set("q", search.trim());
+            params.set("format", format);
+            params.set("columns", columns.join(","));
+            return `/api/org-units/export?${params}`;
+          }}
+          labels={{
+            export: t("exportButton"),
+            pdf: t("exportPdf"),
+            excel: t("exportExcel"),
+            csv: t("exportCsv"),
+            columnsHeading: t("exportColumnsHeading"),
+            columnsNote: t("exportColumnsNote"),
+            confirm: t("exportConfirmButton"),
+            close: t("closeButton"),
+          }}
+        />
         {canEdit ? (
           <AddFormDialog
             dialogRef={dialogRef}
@@ -356,7 +382,7 @@ export function OrgUnitsManager({ rows, canEdit }: { rows: OrgUnitRow[]; canEdit
             </div>
             <div className="sru-field" style={{ marginBottom: 12 }}>
               <label htmlFor="new-unit-code">{t("fieldCode")}</label>
-              <input id="new-unit-code" value={newCode} dir="ltr" onChange={(e) => setNewCode(e.target.value)} />
+              <input id="new-unit-code" value={newCode} dir="ltr" required onChange={(e) => setNewCode(e.target.value)} />
             </div>
             <div className="sru-field" style={{ marginBottom: 12 }}>
               <label htmlFor="new-unit-kind">{t("fieldKind")}</label>

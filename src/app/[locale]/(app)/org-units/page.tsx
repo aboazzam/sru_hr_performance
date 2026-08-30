@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
-import { PrintButton } from "@/components/PrintButton";
+import { ImportOrgUnitsExcelForm } from "@/components/ImportOrgUnitsExcelForm";
 import { OrgUnitsManager, type OrgUnitRow } from "@/components/OrgUnitsManager";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -70,9 +70,10 @@ export default async function OrgUnitsPage() {
           </h1>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
-        <div className="sru-actionbar no-print">
-          <PrintButton />
-        </div>
+        {/* Export lives beside the search inside the manager, because it
+            honours that search — the same split the vacancies screen uses.
+            Its PDF option replaces the old standalone print button. */}
+        <div className="sru-actionbar no-print">{canEdit ? <ImportOrgUnitsExcelForm /> : null}</div>
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
