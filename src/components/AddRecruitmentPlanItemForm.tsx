@@ -173,7 +173,7 @@ export function AddRecruitmentPlanItemForm({
         <label className="sru-field">
           <span>{t("fieldHeadcount")}</span>
           <input
-            type="number"
+            type="number" lang="en"
             min={1}
             dir="ltr"
             value={headcount}
@@ -209,7 +209,7 @@ export function AddRecruitmentPlanItemForm({
         <label className="sru-field">
           <span>{t("fieldMonthlyCost")}</span>
           <input
-            type="number"
+            type="number" lang="en"
             min={0}
             step="0.01"
             dir="ltr"

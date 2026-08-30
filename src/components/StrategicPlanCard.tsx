@@ -174,11 +174,11 @@ export function StrategicPlanCard({
             </div>
             <div className="sru-field">
               <label>{t("startYearLabel")}</label>
-              <input type="number" name="startYear" required min={2000} max={2200} defaultValue={plan.startYear} />
+              <input type="number" lang="en" name="startYear" required min={2000} max={2200} defaultValue={plan.startYear} />
             </div>
             <div className="sru-field">
               <label>{t("endYearLabel")}</label>
-              <input type="number" name="endYear" required min={2000} max={2200} defaultValue={plan.endYear} />
+              <input type="number" lang="en" name="endYear" required min={2000} max={2200} defaultValue={plan.endYear} />
             </div>
           </div>
 

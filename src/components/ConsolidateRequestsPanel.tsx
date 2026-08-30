@@ -206,7 +206,7 @@ export function ConsolidateRequestsPanel({
                       <td>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                           <input
-                            type="number"
+                            type="number" lang="en"
                             min={0}
                             step="0.01"
                             dir="ltr"

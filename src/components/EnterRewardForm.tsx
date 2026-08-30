@@ -100,7 +100,7 @@ export function EnterRewardForm({
       <div>
         <label className="block text-sm font-medium mb-1">{t("amountLabel")}</label>
         <input
-          type="number"
+          type="number" lang="en"
           name="amount"
           min="0"
           step="0.01"

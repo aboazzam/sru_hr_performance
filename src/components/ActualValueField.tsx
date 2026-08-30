@@ -64,7 +64,7 @@ export function ActualValueField({
       <span className="sru-field" style={{ maxWidth: 150 }}>
         <label>{label}</label>
         <input
-          type="number"
+          type="number" lang="en"
           step="0.01"
           value={value}
           placeholder={t("actualPlaceholder")}

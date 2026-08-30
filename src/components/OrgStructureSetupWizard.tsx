@@ -145,7 +145,7 @@ export function OrgStructureSetupWizard() {
           </label>
           <input
             id="wizard-level-count"
-            type="number"
+            type="number" lang="en"
             min={1}
             max={20}
             value={count}

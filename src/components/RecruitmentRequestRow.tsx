@@ -254,7 +254,7 @@ export function RecruitmentRequestRow({
               <div className="sru-field">
                 <label>{t("fieldHeadcount")}</label>
                 <input
-                  type="number"
+                  type="number" lang="en"
                   min={1}
                   max={1000}
                   dir="ltr"
@@ -291,7 +291,7 @@ export function RecruitmentRequestRow({
               <div className="sru-field">
                 <label>{t("fieldEstimatedCost")}</label>
                 <input
-                  type="number"
+                  type="number" lang="en"
                   min={0}
                   step="0.01"
                   dir="ltr"

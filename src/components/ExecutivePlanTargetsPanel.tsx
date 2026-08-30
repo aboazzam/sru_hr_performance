@@ -179,7 +179,7 @@ function TargetRow({
                 <div className="sru-field" style={{ maxWidth: 180 }}>
                   <label>{t("targetYearValueLabel")}</label>
                   <input
-                    type="number"
+                    type="number" lang="en"
                     step="0.01"
                     value={targetValue}
                     disabled={!canManage}
@@ -343,7 +343,7 @@ function OrgUnitSplit({
               ))}
             </select>
             <input
-              type="number"
+              type="number" lang="en"
               step="0.01"
               min="0.01"
               max="100"

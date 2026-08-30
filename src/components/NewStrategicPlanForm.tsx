@@ -87,11 +87,11 @@ export function NewStrategicPlanForm() {
             </div>
             <div className="sru-field">
               <label>{t("startYearLabel")}</label>
-              <input type="number" name="startYear" required min="2000" max="2200" step="1" dir="ltr" placeholder="2026" />
+              <input type="number" lang="en" name="startYear" required min="2000" max="2200" step="1" dir="ltr" placeholder="2026" />
             </div>
             <div className="sru-field">
               <label>{t("endYearLabel")}</label>
-              <input type="number" name="endYear" required min="2000" max="2200" step="1" dir="ltr" placeholder="2030" />
+              <input type="number" lang="en" name="endYear" required min="2000" max="2200" step="1" dir="ltr" placeholder="2030" />
             </div>
           </div>
 

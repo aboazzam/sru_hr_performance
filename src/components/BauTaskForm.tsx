@@ -136,7 +136,7 @@ export function BauTaskForm({
           <div className="sru-field">
             <label>{t("weightLabel")}</label>
             <input
-              type="number"
+              type="number" lang="en"
               name="weight"
               min="0.01"
               max="100"

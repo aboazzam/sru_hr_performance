@@ -79,7 +79,7 @@ export function WeightGroupFields({
               <input
                 id={`${idPrefix}-${method}`}
                 name={fieldNames?.[method]}
-                type="number"
+                type="number" lang="en"
                 min={0}
                 max={100}
                 step={1}

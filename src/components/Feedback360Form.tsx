@@ -138,7 +138,7 @@ export function Feedback360Form({
       <div>
         <label className="block text-sm font-medium mb-1">{t("overallScoreLabel")}</label>
         <input
-          type="number"
+          type="number" lang="en"
           name="overallScore"
           min={0}
           max={100}
