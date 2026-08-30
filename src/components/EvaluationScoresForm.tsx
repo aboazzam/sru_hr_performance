@@ -59,7 +59,7 @@ export function EvaluationScoresForm({
         <td>{subject.nameAr ?? subject.titleAr}</td>
         <td>
           <input
-            type="number"
+            type="number" lang="en"
             min={0}
             max={100}
             step="0.1"

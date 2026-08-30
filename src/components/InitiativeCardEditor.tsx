@@ -372,7 +372,7 @@ export function InitiativeCardEditor({
                 not part of what makes a card complete on the day it is filed. */}
             <label>{t("progressLabel")}</label>
             <input
-              type="number"
+              type="number" lang="en"
               name="progressPercent"
               min={0}
               max={100}

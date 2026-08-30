@@ -216,7 +216,7 @@ function ShareCard({ share, employees }: { share: UnitShareRow; employees: Emplo
             </select>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <input
-              type="number"
+              type="number" lang="en"
               step="0.01"
               min="0.01"
               max="100"

@@ -81,7 +81,7 @@ function AnnualTargetRow({
       <td>{cycle.name_ar}</td>
       <td>
         <input
-          type="number"
+          type="number" lang="en"
           step="0.01"
           value={target}
           disabled={!canEdit}
@@ -92,7 +92,7 @@ function AnnualTargetRow({
       </td>
       <td>
         <input
-          type="number"
+          type="number" lang="en"
           step="0.01"
           value={actual}
           disabled={!canEdit}
@@ -225,11 +225,11 @@ export function ManageKpisPanel({
                   </div>
                   <div className="sru-field">
                     <label>{t("planTargetFieldLabel")}</label>
-                    <input type="number" name="planTargetValue" step="0.01" placeholder={t("planTargetPlaceholder")} />
+                    <input type="number" lang="en" name="planTargetValue" step="0.01" placeholder={t("planTargetPlaceholder")} />
                   </div>
                   <div className="sru-field">
                     <label>{t("weightFieldLabel")}</label>
-                    <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
+                    <input type="number" lang="en" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
                   </div>
                 </div>
               </section>

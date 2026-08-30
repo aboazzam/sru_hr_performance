@@ -112,7 +112,7 @@ export function JobTitleCoreForm({
         <div className="sru-field">
           <label>{t("coreGradeLabel")}</label>
           <input
-            type="number"
+            type="number" lang="en"
             min={1}
             max={16}
             value={gradeLevel}

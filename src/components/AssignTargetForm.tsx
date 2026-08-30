@@ -123,7 +123,7 @@ export function AssignTargetForm({
           </div>
           <div className="sru-field">
             <label>{t("targetLabel")}</label>
-            <input type="number" name="targetValue" required step="0.01" placeholder={t("targetPlaceholder")} />
+            <input type="number" lang="en" name="targetValue" required step="0.01" placeholder={t("targetPlaceholder")} />
           </div>
           <div className="sru-field">
             <label>{t("unitLabel")}</label>
@@ -135,7 +135,7 @@ export function AssignTargetForm({
           </div>
           <div className="sru-field">
             <label>{t("weightLabel")}</label>
-            <input type="number" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
+            <input type="number" lang="en" name="weight" min="0.01" max="100" step="0.01" placeholder={t("weightPlaceholder")} />
           </div>
         </div>
       </section>

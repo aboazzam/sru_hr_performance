@@ -85,7 +85,7 @@ export function EmployeeBauTasksPanel({
               </div>
               <div className="sru-field" style={{ marginBottom: 12 }}>
                 <label htmlFor="bau-weight">{t("weightLabel")}</label>
-                <input id="bau-weight" name="weight" type="number" min={0.01} max={100} step={0.01} dir="ltr" />
+                <input id="bau-weight" name="weight" type="number" lang="en" min={0.01} max={100} step={0.01} dir="ltr" />
               </div>
               {state?.status === "error" ? (
                 <p role="alert" style={{ color: "#b91c1c", fontSize: 12 }}>

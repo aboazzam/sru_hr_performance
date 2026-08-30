@@ -31,7 +31,7 @@ export function UpdateProgressForm({
       <input type="hidden" name="nodeType" value={nodeType} />
       <input type="hidden" name="id" value={id} />
       <input
-        type="number"
+        type="number" lang="en"
         name="actualValue"
         step="0.01"
         defaultValue={currentActualValue ?? undefined}

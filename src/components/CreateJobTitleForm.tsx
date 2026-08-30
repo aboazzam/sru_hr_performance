@@ -155,7 +155,7 @@ export function CreateJobTitleForm({
           </div>
           <div className="sru-field">
             <label>{t("gradeLabelInput")}</label>
-            <input type="number" min={1} max={16} value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} dir="ltr" />
+            <input type="number" lang="en" min={1} max={16} value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} dir="ltr" />
           </div>
           <div className="sru-field">
             <label>{t("categoryLabel")}</label>
