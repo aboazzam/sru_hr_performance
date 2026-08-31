@@ -329,7 +329,10 @@
     "levelsHide": "إخفاء المستويات",
     "levelsNote": "مستويات الهيكل التنظيمي: يشير إليها مستوى الوحدة ومستوى كل منصب. اسحب لإعادة الترتيب.",
     "permissionsNote": "صلاحيات المستخدمين والأدوار تُدار في",
-    "permissionsLink": "صفحة الصلاحيات"
+    "permissionsLink": "صفحة الصلاحيات",
+    "positionParentSearch": "ابحث عن منصب...",
+    "positionParentNoMatches": "لا مناصب مطابقة",
+    "positionSaved": "حُفظ"
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",

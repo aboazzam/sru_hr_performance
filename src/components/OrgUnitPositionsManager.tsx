@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Plus, Trash2, Save, Users } from "lucide-react";
 import { AddFormDialog } from "@/components/AddFormDialog";
+import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import {
   addPosition,
   updatePosition,
@@ -82,8 +83,14 @@ export function OrgUnitPositionsManager({
   const [newParentId, setNewParentId] = useState("");
 
   const refresh = () => router.refresh();
+  // The option names a POSITION. The unit is appended only when it says
+  // something the position name does not: most chart positions were created
+  // named after their own unit, so comparing against the CURRENT unit (as this
+  // did) produced "كلية الطب — كلية الطب" and made the list read as a list of
+  // departments rather than of posts (2026-08-31: "ضع لي تبعية المنصب لمنصب
+  // وليست إدارة").
   const nameOf = (option: PositionOption) =>
-    option.unitNameAr && option.unitNameAr !== unitNameAr
+    option.unitNameAr && option.unitNameAr !== option.nameAr
       ? `${option.nameAr} — ${option.unitNameAr}`
       : option.nameAr;
 
@@ -185,18 +192,14 @@ export function OrgUnitPositionsManager({
                 <label htmlFor={`pos-${unitId}-parent`}>{t("positionParent")}</label>
                 {/* Every position, not just this unit's: a dean's own parent
                     is the president, who belongs to another unit. */}
-                <select
+                <ParentPositionPicker
                   id={`pos-${unitId}-parent`}
                   value={newParentId}
-                  onChange={(e) => setNewParentId(e.target.value)}
-                >
-                  <option value="">{t("positionParentNone")}</option>
-                  {allPositions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {nameOf(option)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setNewParentId}
+                  options={allPositions}
+                  nameOf={nameOf}
+                  noneLabel={t("positionParentNone")}
+                />
               </div>
             </div>
             {error ? (
@@ -222,6 +225,74 @@ export function OrgUnitPositionsManager({
   );
 }
 
+/**
+ * A parent picker over every position in the university.
+ *
+ * The list runs to sixty-odd entries, so it carries its own search — the same
+ * narrow-the-select pattern the job-title and employee pickers use, and
+ * hamza-insensitive for the same reason. The chosen value survives a search
+ * that no longer matches it: filtering the options must not silently change
+ * what the row is about to save.
+ */
+function ParentPositionPicker({
+  id,
+  value,
+  onChange,
+  options,
+  nameOf,
+  noneLabel,
+  compact = false,
+}: {
+  id: string;
+  value: string;
+  onChange: (next: string) => void;
+  options: PositionOption[];
+  nameOf: (option: PositionOption) => string;
+  noneLabel: string;
+  /** Inline in a row rather than stacked in a form. */
+  compact?: boolean;
+}) {
+  const t = useTranslations("OrgUnitsPage");
+  const [search, setSearch] = useState("");
+  const query = search.trim();
+  const matching =
+    query === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), query));
+  const selected = options.find((option) => option.id === value);
+
+  return (
+    <div style={{ display: "flex", flexDirection: compact ? "row" : "column", gap: 6, alignItems: compact ? "center" : "stretch" }}>
+      <input
+        type="search"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t("positionParentSearch")}
+        style={{ width: compact ? 150 : "100%", fontSize: 13 }}
+      />
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={{ width: compact ? 200 : "100%", fontSize: 13 }}
+      >
+        <option value="">{noneLabel}</option>
+        {/* Kept even when the search excludes it, so narrowing the list never
+            quietly drops the parent already chosen. */}
+        {selected && !matching.some((option) => option.id === selected.id) ? (
+          <option value={selected.id}>{nameOf(selected)}</option>
+        ) : null}
+        {matching.map((option) => (
+          <option key={option.id} value={option.id}>
+            {nameOf(option)}
+          </option>
+        ))}
+      </select>
+      {query !== "" && matching.length === 0 ? (
+        <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("positionParentNoMatches")}</span>
+      ) : null}
+    </div>
+  );
+}
+
 function PositionRow({
   position,
   allPositions,
@@ -242,6 +313,7 @@ function PositionRow({
   const [nameEn, setNameEn] = useState(position.nameEn ?? "");
   const [parentId, setParentId] = useState(position.parentId ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const dirty =
@@ -250,12 +322,20 @@ function PositionRow({
     parentId !== (position.parentId ?? "");
   const levelName = levels.find((level) => level.id === position.levelId)?.nameAr ?? "—";
 
-  function run(fn: () => Promise<{ status: string; message?: string }>) {
+  function run(fn: () => Promise<{ status: string; message?: string }>, confirm = false) {
     setError(null);
+    setSaved(false);
     startTransition(async () => {
       const result = await fn();
-      if (result.status === "success") onDone();
-      else setError(result.message ?? "unknown");
+      if (result.status === "success") {
+        // Reported on 2026-08-31 as "لم أره قد انعكس": the rename HAD saved,
+        // but nothing on screen said so -- the field already showed the typed
+        // text, so a successful save and a dropped one looked identical.
+        if (confirm) setSaved(true);
+        onDone();
+      } else {
+        setError(result.message ?? "unknown");
+      }
     });
   }
 
@@ -272,16 +352,25 @@ function PositionRow({
     >
       {canEdit ? (
         <>
-          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} style={{ width: 160 }} />
-          <input value={nameEn} dir="ltr" onChange={(e) => setNameEn(e.target.value)} style={{ width: 130 }} />
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)} style={{ width: 200 }}>
-            <option value="">{t("positionParentNone")}</option>
-            {allPositions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {nameOf(option)}
-              </option>
-            ))}
-          </select>
+          {/* 13px matches .sru-field's own controls; unclassed inputs fell back
+              to the 16px browser default and read oversized next to everything
+              else on the screen (2026-08-31). */}
+          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} style={{ width: 160, fontSize: 13 }} />
+          <input
+            value={nameEn}
+            dir="ltr"
+            onChange={(e) => setNameEn(e.target.value)}
+            style={{ width: 130, fontSize: 13 }}
+          />
+          <ParentPositionPicker
+            id={`row-${position.id}-parent`}
+            value={parentId}
+            onChange={setParentId}
+            options={allPositions}
+            nameOf={nameOf}
+            noneLabel={t("positionParentNone")}
+            compact
+          />
         </>
       ) : (
         <span style={{ minWidth: 200 }}>
@@ -301,14 +390,16 @@ function PositionRow({
             aria-label={t("saveButton")}
             disabled={pending || !dirty || nameAr.trim() === ""}
             onClick={() =>
-              run(() =>
-                updatePosition(
-                  position.id,
-                  nameAr,
-                  nameEn,
-                  position.orgUnitId,
-                  parentId === "" ? null : parentId
-                )
+              run(
+                () =>
+                  updatePosition(
+                    position.id,
+                    nameAr,
+                    nameEn,
+                    position.orgUnitId,
+                    parentId === "" ? null : parentId
+                  ),
+                true
               )
             }
           >
@@ -328,6 +419,11 @@ function PositionRow({
             <Trash2 size={14} aria-hidden />
           </button>
         </>
+      ) : null}
+      {saved && !dirty ? (
+        <span role="status" style={{ fontSize: 11, color: "var(--sru-success, #1f9d55)" }}>
+          {t("positionSaved")}
+        </span>
       ) : null}
       {error ? (
         <span role="alert" style={{ fontSize: 11, color: "#b91c1c" }}>

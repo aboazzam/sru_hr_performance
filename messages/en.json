@@ -329,7 +329,10 @@
     "levelsHide": "Hide levels",
     "levelsNote": "The org structure levels, referenced by each unit's level and each position's level. Drag to reorder.",
     "permissionsNote": "User and role permissions are managed on",
-    "permissionsLink": "the permissions page"
+    "permissionsLink": "the permissions page",
+    "positionParentSearch": "Search for a position...",
+    "positionParentNoMatches": "No matching positions",
+    "positionSaved": "Saved"
   },
   "AdminPage": {
     "title": "Users & Permissions",
