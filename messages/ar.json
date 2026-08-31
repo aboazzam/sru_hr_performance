@@ -1635,15 +1635,21 @@
     "weightsSourceOrgUnit": "وفق توزيع إدارة الموظف.",
     "weightsSourceCycle": "وفق توزيع الدورة (لا توزيع خاص بإدارة الموظف).",
     "tabActivities": "الأنشطة المكلَّف بها",
-    "activitiesEmpty": "لا توجد أنشطة مكلَّف بها هذا الموظف في هذه الدورة."
+    "activitiesEmpty": "لا توجد أنشطة مكلَّف بها هذا الموظف في هذه الدورة.",
+    "columnRequiredLevel": "المستوى المطلوب",
+    "competenciesFromJobTitle": "الجدارات المطلوبة للمسمى الوظيفي «{jobTitle}» (من شاشة المسار الوظيفي).",
+    "competenciesFromFramework": "لا توجد جدارات محددة لهذا المسمى الوظيفي بعد — يعرض هذا القسم الإطار الكامل للجدارات مؤقتًا."
   },
   "EvaluationScoresPage": {
     "title": "إدخال الدرجات",
     "competenciesHeading": "الجدارات",
     "competenciesEmpty": "لا توجد جدارات في الإطار.",
+    "competenciesFromJobTitle": "الجدارات المطلوبة للمسمى الوظيفي «{jobTitle}» (من شاشة المسار الوظيفي).",
+    "competenciesFromFramework": "لا توجد جدارات محددة لهذا المسمى الوظيفي بعد — يعرض هذا القسم الإطار الكامل للجدارات مؤقتًا.",
     "goalsHeading": "الأهداف",
     "goalsEmpty": "لا توجد أهداف مُسنَدة لهذا الموظف في هذه الدورة.",
     "columnSubject": "العنصر",
+    "columnRequiredLevel": "المستوى المطلوب",
     "columnScore": "الدرجة (0-100)",
     "columnComment": "ملاحظة",
     "submit": "حفظ الدرجات",

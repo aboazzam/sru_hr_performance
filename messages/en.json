@@ -1635,15 +1635,21 @@
     "weightsSourceOrgUnit": "Using the employee's department distribution.",
     "weightsSourceCycle": "Using the cycle distribution (their department has none of its own).",
     "tabActivities": "Assigned activities",
-    "activitiesEmpty": "This employee has no assigned activities in this cycle."
+    "activitiesEmpty": "This employee has no assigned activities in this cycle.",
+    "columnRequiredLevel": "Required Level",
+    "competenciesFromJobTitle": "Competencies required for the job title \"{jobTitle}\" (from the Career Path screen).",
+    "competenciesFromFramework": "No competencies are assigned to this job title yet — showing the full competency framework instead."
   },
   "EvaluationScoresPage": {
     "title": "Enter Scores",
     "competenciesHeading": "Competencies",
     "competenciesEmpty": "No competencies in the framework.",
+    "competenciesFromJobTitle": "Competencies required for the job title \"{jobTitle}\" (from the Career Path screen).",
+    "competenciesFromFramework": "No competencies are assigned to this job title yet — showing the full competency framework instead.",
     "goalsHeading": "Goals",
     "goalsEmpty": "No goals assigned to this employee in this cycle.",
     "columnSubject": "Item",
+    "columnRequiredLevel": "Required Level",
     "columnScore": "Score (0-100)",
     "columnComment": "Comment",
     "submit": "Save Scores",

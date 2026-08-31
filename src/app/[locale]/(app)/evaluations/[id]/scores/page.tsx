@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EvaluationScoresForm } from "@/components/EvaluationScoresForm";
+import { resolveEvaluationCompetencies } from "@/lib/evaluationCompetencies";
+import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationScoresPage({
@@ -44,19 +46,6 @@ export default async function EvaluationScoresPage({
     employee_number: string;
   };
 
-  // Full competency framework — every role holds at least `view` on
-  // `competencyFramework` (checked directly in role_permissions), so this
-  // never renders empty for a role that can reach this page at all.
-  // Filtering to the employee's own job family isn't done here — no
-  // documented rule for it exists yet (competencies.job_family_id is
-  // nullable/general-vs-specific, but CLAUDE.md doesn't say evaluations
-  // should filter by it) — flagged as a follow-up, not invented.
-  const { data: competencies } = await supabase
-    .from("competencies")
-    .select("id, name_ar")
-    .is("deleted_at", null)
-    .order("name_ar");
-
   const { data: activityData } = await supabase
     .from("initiative_activities")
     .select("id, title_ar")
@@ -95,6 +84,12 @@ export default async function EvaluationScoresPage({
     }
   }
 
+  const { source, jobTitleNameAr, competencies } = await resolveEvaluationCompetencies(
+    supabase,
+    evaluation.employee_id,
+    [...scoresByCompetency.keys()]
+  );
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
       <h1 className="sru-title" style={{ fontSize: 20 }}>
@@ -107,9 +102,17 @@ export default async function EvaluationScoresPage({
 
       <EvaluationScoresForm
         evaluationId={evaluation.id}
-        competencies={(showCompetencies ? competencies ?? [] : []).map((c) => ({
+        competenciesNote={
+          showCompetencies
+            ? source === "job_title" && jobTitleNameAr
+              ? t("competenciesFromJobTitle", { jobTitle: jobTitleNameAr })
+              : t("competenciesFromFramework")
+            : undefined
+        }
+        competencies={(showCompetencies ? competencies : []).map((c) => ({
           id: c.id,
-          nameAr: c.name_ar,
+          nameAr: c.nameAr,
+          requiredLevelAr: c.requiredLevel ? behavioralLevelLabels[c.requiredLevel] : null,
           initialScore: scoresByCompetency.get(c.id)?.score ?? null,
           initialComment: scoresByCompetency.get(c.id)?.comment ?? null,
         }))}
