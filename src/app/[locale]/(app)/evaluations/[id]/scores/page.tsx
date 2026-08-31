@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { EvaluationScoresForm } from "@/components/EvaluationScoresForm";
 import { resolveEvaluationCompetencies, describeCompetenciesSource } from "@/lib/evaluationCompetencies";
 import { behavioralLevelLabels } from "@/lib/data/competencies";
+import { BackLink } from "@/components/BackLink";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationScoresPage({
@@ -92,6 +93,12 @@ export default async function EvaluationScoresPage({
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
+      <div style={{ marginBottom: 10 }}>
+        <BackLink href={`/evaluations/${evaluation.id}${method ? `#${method}` : ""}`}>
+          {t("backToEvaluation")}
+        </BackLink>
+      </div>
+
       <h1 className="sru-title" style={{ fontSize: 20 }}>
         {t("title")}
       </h1>

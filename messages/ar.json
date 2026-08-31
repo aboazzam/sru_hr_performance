@@ -1630,6 +1630,7 @@
   },
   "EvaluationScoresPage": {
     "title": "إدخال الدرجات",
+    "backToEvaluation": "العودة إلى التقييم",
     "competenciesHeading": "الجدارات",
     "competenciesEmpty": "لا توجد جدارات في الإطار.",
     "competenciesFromEmployee": "الجدارات المحددة لهذا الموظف تحديدًا (من ملفه الشخصي)، مستقلة عن جدارات مسماه الوظيفي المشتركة.",
