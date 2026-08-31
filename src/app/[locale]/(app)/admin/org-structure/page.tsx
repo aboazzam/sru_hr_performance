@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { OrgStructureChartImage } from "@/components/OrgStructureChartImage";
 import { GroupTabs } from "@/components/layout/GroupTabs";
@@ -19,12 +19,13 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 // their screens moved to /org-units rather than being deleted with the chart,
 // which is why this page links there instead of simply dropping them.
 export default async function OrgStructurePage() {
+  const locale = (await getLocale()) as "ar" | "en";
   const t = await getTranslations("OrgStructurePage");
   const supabase = await createClient();
 
   const [{ data: permissionRows }, { data: chart }] = await Promise.all([
     supabase.rpc("get_my_permissions"),
-    supabase.from("org_structure_chart").select("image_url").maybeSingle(),
+    supabase.from("org_structure_chart").select("image_url, image_url_en").maybeSingle(),
   ]);
 
   const orgStructureLevel =
@@ -46,7 +47,12 @@ export default async function OrgStructurePage() {
       </div>
       <div className="sru-diag" style={{ margin: "8px 0 20px" }} />
 
-      <OrgStructureChartImage imageUrl={(chart?.image_url as string | null) ?? null} canEdit={canEdit} />
+      <OrgStructureChartImage
+        locale={locale}
+        imageUrlAr={(chart?.image_url as string | null) ?? null}
+        imageUrlEn={(chart?.image_url_en as string | null) ?? null}
+        canEdit={canEdit}
+      />
 
       {/* The features that used to live here now live beside the units they
           describe, so this says where they went rather than leaving a reader
