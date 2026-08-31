@@ -320,7 +320,7 @@
     "positionAdd": "إضافة منصب",
     "positionNameAr": "اسم المنصب",
     "positionNameEn": "الاسم بالإنجليزية",
-    "positionParent": "تبعية المنصب",
+    "positionParent": "التبعية",
     "positionParentNone": "— بلا تبعية (جذر) —",
     "positionDeleteConfirm": "هل تريد حذف هذا المنصب؟",
     "posErrorDuplicate": "يوجد منصب بهذا الاسم بالفعل.",
@@ -332,7 +332,8 @@
     "permissionsLink": "صفحة الصلاحيات",
     "positionParentSearch": "ابحث عن منصب...",
     "positionParentNoMatches": "لا مناصب مطابقة",
-    "positionSaved": "حُفظ"
+    "positionSaved": "حُفظ",
+    "positionLevelFallback": "لا مستوى للوحدة بعد — حدّده هنا، أو من نموذج الوحدة ليرثه كل مناصبها."
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",

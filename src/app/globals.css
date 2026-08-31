@@ -2956,3 +2956,56 @@ table {
 .admin-matrix th .sru-name-en {
   text-align: center;
 }
+
+/* The parent-position combobox's own list rows. Added here rather than in
+   sru-ui.css, which is not ours to edit (CLAUDE.md §7). */
+.sru-combobox-option {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--sru-ink);
+  text-align: start;
+  cursor: pointer;
+}
+.sru-combobox-option:hover,
+.sru-combobox-option:focus-visible {
+  background: var(--sru-purple-light);
+}
+
+/* The parent picker's closed value box and its open panel. */
+.sru-combobox-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--sru-ink);
+  background: rgba(247, 245, 251, 0.7);
+  border: 1.4px solid rgba(80, 30, 140, 0.14);
+  cursor: pointer;
+  text-align: start;
+}
+.sru-combobox-panel {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 20;
+  background: #fff;
+  border: 1.4px solid rgba(80, 30, 140, 0.18);
+  box-shadow: 0 8px 22px rgba(30, 10, 60, 0.12);
+}
+.sru-combobox-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--sru-border);
+  font-family: inherit;
+  font-size: 13px;
+}

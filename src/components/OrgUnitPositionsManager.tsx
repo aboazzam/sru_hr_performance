@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Plus, Trash2, Save, Users } from "lucide-react";
+import { Plus, Trash2, Save, Users, ChevronDown } from "lucide-react";
 import { AddFormDialog } from "@/components/AddFormDialog";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
 import {
@@ -59,6 +59,7 @@ const errorKeys: Record<string, string> = {
 export function OrgUnitPositionsManager({
   unitId,
   unitNameAr,
+  unitLevelId,
   positions,
   allPositions,
   levels,
@@ -66,6 +67,8 @@ export function OrgUnitPositionsManager({
 }: {
   unitId: string;
   unitNameAr: string;
+  /** The unit's own level; a new position inherits it. */
+  unitLevelId: string | null;
   positions: UnitPosition[];
   allPositions: PositionOption[];
   levels: Array<{ id: string; nameAr: string }>;
@@ -79,7 +82,13 @@ export function OrgUnitPositionsManager({
   const [pending, startTransition] = useTransition();
   const [newNameAr, setNewNameAr] = useState("");
   const [newNameEn, setNewNameEn] = useState("");
-  const [newLevelId, setNewLevelId] = useState(levels[0]?.id ?? "");
+  // Asked for on 2026-08-31: "احذف خانة ... فهذا تحديد المستوى يظهر في
+  // النموذج عند اضافة او تحرير الوحدة التنظيمية" -- the level belongs to the
+  // unit, so a position takes its unit's. The picker below is kept ONLY for a
+  // unit that has no level yet, because org_structure_positions.level_id is
+  // NOT NULL and would otherwise have nothing to write.
+  const [newLevelId, setNewLevelId] = useState(unitLevelId ?? levels[0]?.id ?? "");
+  const levelComesFromUnit = unitLevelId != null;
   const [newParentId, setNewParentId] = useState("");
 
   const refresh = () => router.refresh();
@@ -138,7 +147,6 @@ export function OrgUnitPositionsManager({
             key={position.id}
             position={position}
             allPositions={allPositions.filter((option) => option.id !== position.id)}
-            levels={levels}
             nameOf={nameOf}
             canEdit={canEdit}
             onDone={refresh}
@@ -174,33 +182,34 @@ export function OrgUnitPositionsManager({
                   onChange={(e) => setNewNameEn(e.target.value)}
                 />
               </div>
-              <div className="sru-field">
-                <label htmlFor={`pos-${unitId}-level`}>{t("fieldLevel")}</label>
-                <select
-                  id={`pos-${unitId}-level`}
-                  value={newLevelId}
-                  onChange={(e) => setNewLevelId(e.target.value)}
-                >
-                  {levels.map((level) => (
-                    <option key={level.id} value={level.id}>
-                      {level.nameAr}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sru-field">
-                <label htmlFor={`pos-${unitId}-parent`}>{t("positionParent")}</label>
-                {/* Every position, not just this unit's: a dean's own parent
-                    is the president, who belongs to another unit. */}
-                <ParentPositionPicker
-                  id={`pos-${unitId}-parent`}
-                  value={newParentId}
-                  onChange={setNewParentId}
-                  options={allPositions}
-                  nameOf={nameOf}
-                  noneLabel={t("positionParentNone")}
-                />
-              </div>
+              {levelComesFromUnit ? null : (
+                <div className="sru-field">
+                  <label htmlFor={`pos-${unitId}-level`}>{t("fieldLevel")}</label>
+                  <select
+                    id={`pos-${unitId}-level`}
+                    value={newLevelId}
+                    onChange={(e) => setNewLevelId(e.target.value)}
+                  >
+                    {levels.map((level) => (
+                      <option key={level.id} value={level.id}>
+                        {level.nameAr}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("positionLevelFallback")}</span>
+                </div>
+              )}
+              {/* Every position, not just this unit's: a dean's own parent is
+                  the president, who belongs to another unit. */}
+              <ParentPositionPicker
+                id={`pos-${unitId}-parent`}
+                label={t("positionParent")}
+                value={newParentId}
+                onChange={setNewParentId}
+                options={allPositions}
+                nameOf={nameOf}
+                noneLabel={t("positionParentNone")}
+              />
             </div>
             {error ? (
               <p role="alert" style={{ color: "#b91c1c", fontSize: 12, marginTop: 10 }}>
@@ -226,84 +235,155 @@ export function OrgUnitPositionsManager({
 }
 
 /**
- * A parent picker over every position in the university.
+ * The parent picker: a button showing the current parent, opening a panel
+ * whose FIRST row is the search box.
  *
- * The list runs to sixty-odd entries, so it carries its own search — the same
- * narrow-the-select pattern the job-title and employee pickers use, and
- * hamza-insensitive for the same reason. The chosen value survives a search
- * that no longer matches it: filtering the options must not silently change
- * what the row is about to save.
+ * Two earlier shapes were wrong, both reported. A search input beside a select
+ * read as the field itself, so typing set nothing and the position saved with
+ * no parent. Folding the search INTO the value box was closer but still put a
+ * "ابحث عن منصب..." placeholder where the value belongs, which read as an
+ * empty field rather than as a chosen parent (2026-08-31: "الحقل المضلل
+ * استبدله بنص عنوان التبعية ... اجعل اول خيار يسمح بالكتابة للبحث").
+ *
+ * So the closed control shows only the value, and searching lives inside the
+ * open list where it cannot be mistaken for the value. Leaving the panel never
+ * changes what is stored: a value is set only by picking a row.
  */
 function ParentPositionPicker({
   id,
+  label,
   value,
   onChange,
   options,
   nameOf,
   noneLabel,
-  compact = false,
 }: {
   id: string;
+  label: string;
   value: string;
   onChange: (next: string) => void;
   options: PositionOption[];
   nameOf: (option: PositionOption) => string;
   noneLabel: string;
-  /** Inline in a row rather than stacked in a form. */
-  compact?: boolean;
 }) {
   const t = useTranslations("OrgUnitsPage");
-  const [search, setSearch] = useState("");
-  const query = search.trim();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const selected = options.find((option) => option.id === value) ?? null;
+  const trimmed = query.trim();
   const matching =
-    query === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), query));
-  const selected = options.find((option) => option.id === value);
+    trimmed === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), trimmed));
+
+  function choose(next: string) {
+    onChange(next);
+    setQuery("");
+    setOpen(false);
+  }
+
+  // Closed by an outside mousedown, the same way this app's other menus are:
+  // blur does not fire when focus never actually moves, which left a stale
+  // panel open over the row.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => {
+      setOpen(false);
+      setQuery("");
+    };
+    const onDown = (event: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(event.target as Node)) close();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <div style={{ display: "flex", flexDirection: compact ? "row" : "column", gap: 6, alignItems: compact ? "center" : "stretch" }}>
-      <input
-        type="search"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t("positionParentSearch")}
-        style={{ width: compact ? 150 : "100%", fontSize: 13 }}
-      />
-      <select
+    <div className="sru-field" ref={boxRef} style={{ position: "relative", minWidth: 220 }}>
+      <label htmlFor={id}>{label}</label>
+      <button
+        type="button"
         id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        style={{ width: compact ? 200 : "100%", fontSize: 13 }}
+        className="sru-combobox-value"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((wasOpen) => !wasOpen);
+          setQuery("");
+          window.setTimeout(() => searchRef.current?.focus(), 0);
+        }}
       >
-        <option value="">{noneLabel}</option>
-        {/* Kept even when the search excludes it, so narrowing the list never
-            quietly drops the parent already chosen. */}
-        {selected && !matching.some((option) => option.id === selected.id) ? (
-          <option value={selected.id}>{nameOf(selected)}</option>
-        ) : null}
-        {matching.map((option) => (
-          <option key={option.id} value={option.id}>
-            {nameOf(option)}
-          </option>
-        ))}
-      </select>
-      {query !== "" && matching.length === 0 ? (
-        <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("positionParentNoMatches")}</span>
+        <span>{selected ? nameOf(selected) : noneLabel}</span>
+        <ChevronDown size={14} aria-hidden />
+      </button>
+      {open ? (
+        <div className="sru-combobox-panel" role="listbox" aria-labelledby={id}>
+          {/* The first row, as asked: searching happens inside the list, never
+              in the place where the value is shown. */}
+          <input
+            ref={searchRef}
+            type="text"
+            autoComplete="off"
+            className="sru-combobox-search"
+            placeholder={t("positionParentSearch")}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <ul style={{ margin: 0, padding: 0, listStyle: "none", maxHeight: 200, overflowY: "auto" }}>
+            <li>
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === ""}
+                className="sru-combobox-option"
+                onClick={() => choose("")}
+              >
+                {noneLabel}
+              </button>
+            </li>
+            {matching.map((option) => (
+              <li key={option.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={option.id === value}
+                  className="sru-combobox-option"
+                  onClick={() => choose(option.id)}
+                >
+                  {nameOf(option)}
+                </button>
+              </li>
+            ))}
+            {matching.length === 0 ? (
+              <li style={{ padding: "8px 10px", fontSize: 11.5, color: "var(--sru-muted)" }}>
+                {t("positionParentNoMatches")}
+              </li>
+            ) : null}
+          </ul>
+        </div>
       ) : null}
     </div>
   );
 }
 
+
 function PositionRow({
   position,
   allPositions,
-  levels,
   nameOf,
   canEdit,
   onDone,
 }: {
   position: UnitPosition;
   allPositions: PositionOption[];
-  levels: Array<{ id: string; nameAr: string }>;
   nameOf: (option: PositionOption) => string;
   canEdit: boolean;
   onDone: () => void;
@@ -320,7 +400,6 @@ function PositionRow({
     nameAr !== position.nameAr ||
     nameEn !== (position.nameEn ?? "") ||
     parentId !== (position.parentId ?? "");
-  const levelName = levels.find((level) => level.id === position.levelId)?.nameAr ?? "—";
 
   function run(fn: () => Promise<{ status: string; message?: string }>, confirm = false) {
     setError(null);
@@ -364,12 +443,12 @@ function PositionRow({
           />
           <ParentPositionPicker
             id={`row-${position.id}-parent`}
+            label={t("positionParent")}
             value={parentId}
             onChange={setParentId}
             options={allPositions}
             nameOf={nameOf}
             noneLabel={t("positionParentNone")}
-            compact
           />
         </>
       ) : (
@@ -378,9 +457,6 @@ function PositionRow({
           {position.nameEn ? <span className="sru-name-en">{position.nameEn}</span> : null}
         </span>
       )}
-      <span className="pill" style={{ fontSize: 11 }}>
-        {levelName}
-      </span>
       {canEdit ? (
         <>
           <button
