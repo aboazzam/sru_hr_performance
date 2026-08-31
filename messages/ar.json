@@ -504,7 +504,9 @@
     "chartErrorForbidden": "لا تملك صلاحية تعديل صورة الهيكل.",
     "chartErrorUnknown": "تعذر إتمام العملية.",
     "chartMovedNote": "إدارة المستويات والمناصب انتقلت إلى",
-    "chartMovedLink": "صفحة الوحدات التنظيمية"
+    "chartMovedLink": "صفحة الوحدات التنظيمية",
+    "chartVersionAr": "النسخة العربية",
+    "chartVersionEn": "النسخة الإنجليزية"
   },
   "OrgStructureStaffingPage": {
     "title": "تسكين الموظفين على المناصب",

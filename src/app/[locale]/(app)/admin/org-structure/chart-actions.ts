@@ -17,12 +17,19 @@ export type ChartActionState =
  * caller's own client again — so `org_structure_chart_update` is the real
  * gate, and a refusal matches no rows rather than raising, which is why the
  * update selects back and treats an empty result as forbidden.
+ *
+ * `locale` picks the column: the Arabic and English chart images are two
+ * independent uploads (2026-08-31 — "نحتاج مكان نرفع فيه النسخة الانجليزية
+ * بحيث يتم رفعها عند تصفح المشروع بصفحاته الانجليزية"), shown to whoever is
+ * browsing that locale's pages, edited from the same admin screen regardless
+ * of which locale the admin themselves is currently browsing in.
  */
 export async function saveOrgStructureChart(input: {
+  locale: "ar" | "en";
   imageUrl: string | null;
 }): Promise<ChartActionState> {
   const parsed = z
-    .object({ imageUrl: z.string().url().nullable() })
+    .object({ locale: z.enum(["ar", "en"]), imageUrl: z.string().url().nullable() })
     .safeParse(input);
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
@@ -38,10 +45,12 @@ export async function saveOrgStructureChart(input: {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
+  const column = parsed.data.locale === "en" ? "image_url_en" : "image_url";
+
   const { data, error } = await supabase
     .from("org_structure_chart")
     .update({
-      image_url: parsed.data.imageUrl,
+      [column]: parsed.data.imageUrl,
       updated_at: new Date().toISOString(),
       updated_by: profile?.id ?? null,
     })
@@ -55,10 +64,12 @@ export async function saveOrgStructureChart(input: {
   const admin = createAdminClient();
   await admin.from("audit_log").insert({
     actor_id: user.id,
-    action: parsed.data.imageUrl ? "org_structure_chart_set" : "org_structure_chart_cleared",
+    action: parsed.data.imageUrl
+      ? (parsed.data.locale === "en" ? "org_structure_chart_en_set" : "org_structure_chart_set")
+      : (parsed.data.locale === "en" ? "org_structure_chart_en_cleared" : "org_structure_chart_cleared"),
     entity: "org_structure_chart",
     entity_id: data[0].id,
-    after_data: { image_url: parsed.data.imageUrl },
+    after_data: { [column]: parsed.data.imageUrl },
   });
 
   return { status: "success" };

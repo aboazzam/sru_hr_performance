@@ -22,22 +22,19 @@ const errorKeys: Record<string, string> = {
 };
 
 /**
- * The org structure as an uploaded image, replacing the generated chart.
+ * One image (Arabic or English), with its own upload/zoom/pan/remove state.
  *
- * Asked for on 2026-08-30: "أرغب بحذف المحتوى كاملا واستبداله بصورة png or
- * jpg قابلة للتكبير". The chart component it replaces had been rebuilt five
- * times chasing a layout that matched the official drawing; the official
- * drawing itself is the answer.
- *
- * Zoom is a CSS transform on the image inside a scrolling frame, and dragging
- * pans it — no library, and nothing that has to understand the picture. The
- * positions and levels the old chart drew are unaffected: they live on, and
- * are managed from the org units screen.
+ * Extracted so the two locales' editors are two independent instances rather
+ * than one editor secretly juggling two images — each has its own scale,
+ * drag state, and in-flight upload, and a save error in one never touches
+ * the other's fields or its now-stale `imageUrl` prop.
  */
-export function OrgStructureChartImage({
+function ChartImageSlot({
+  locale,
   imageUrl,
   canEdit,
 }: {
+  locale: "ar" | "en";
   imageUrl: string | null;
   canEdit: boolean;
 }) {
@@ -77,9 +74,11 @@ export function OrgStructureChartImage({
     try {
       const supabase = createClient();
       // A stable name per upload (not a fixed one) so a replaced image is
-      // never served from a stale CDN cache under the same URL.
+      // never served from a stale CDN cache under the same URL. Locale is
+      // folded into the path so the two uploads never collide with each
+      // other in the shared "org-structure" bucket.
       const extension = file.type === "image/png" ? "png" : "jpg";
-      const path = `chart-${Date.now()}.${extension}`;
+      const path = `chart-${locale}-${Date.now()}.${extension}`;
       const { error: uploadError } = await supabase.storage
         .from("org-structure")
         .upload(path, file, { upsert: true, contentType: file.type });
@@ -89,7 +88,7 @@ export function OrgStructureChartImage({
       }
       const { data } = supabase.storage.from("org-structure").getPublicUrl(path);
       startTransition(async () => {
-        const result = await saveOrgStructureChart({ imageUrl: data.publicUrl });
+        const result = await saveOrgStructureChart({ locale, imageUrl: data.publicUrl });
         if (result.status === "success") {
           setScale(1);
           router.refresh();
@@ -105,7 +104,7 @@ export function OrgStructureChartImage({
   function clear() {
     setError(null);
     startTransition(async () => {
-      const result = await saveOrgStructureChart({ imageUrl: null });
+      const result = await saveOrgStructureChart({ locale, imageUrl: null });
       if (result.status === "success") router.refresh();
       else setError(result.message);
     });
@@ -254,6 +253,58 @@ export function OrgStructureChartImage({
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The org structure as an uploaded image, replacing the generated chart.
+ *
+ * Asked for on 2026-08-30: "أرغب بحذف المحتوى كاملا واستبداله بصورة png or
+ * jpg قابلة للتكبير". The chart component it replaces had been rebuilt five
+ * times chasing a layout that matched the official drawing; the official
+ * drawing itself is the answer.
+ *
+ * Zoom is a CSS transform on the image inside a scrolling frame, and dragging
+ * pans it — no library, and nothing that has to understand the picture. The
+ * positions and levels the old chart drew are unaffected: they live on, and
+ * are managed from the org units screen.
+ *
+ * Two independent images since 2026-08-31 ("نحتاج مكان نرفع فيه النسخة
+ * الانجليزية بحيث يتم رفعها عند تصفح المشروع بصفحاته الانجليزية"): a plain
+ * viewer only ever sees the one matching the page's OWN current locale (the
+ * same single-image behaviour as before), while an editor sees and manages
+ * both regardless of which locale they are currently browsing this admin
+ * screen in — uploading the English chart doesn't require switching the
+ * whole UI to English first.
+ */
+export function OrgStructureChartImage({
+  locale,
+  imageUrlAr,
+  imageUrlEn,
+  canEdit,
+}: {
+  locale: "ar" | "en";
+  imageUrlAr: string | null;
+  imageUrlEn: string | null;
+  canEdit: boolean;
+}) {
+  const t = useTranslations("OrgStructurePage");
+
+  if (!canEdit) {
+    return <ChartImageSlot locale={locale} imageUrl={locale === "en" ? imageUrlEn : imageUrlAr} canEdit={false} />;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+      <div>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("chartVersionAr")}</h2>
+        <ChartImageSlot locale="ar" imageUrl={imageUrlAr} canEdit />
+      </div>
+      <div>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("chartVersionEn")}</h2>
+        <ChartImageSlot locale="en" imageUrl={imageUrlEn} canEdit />
+      </div>
     </div>
   );
 }
