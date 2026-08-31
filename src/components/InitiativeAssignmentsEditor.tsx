@@ -171,7 +171,7 @@ export function InitiativeAssignmentsEditor({
                     <span style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noPercentage")}</span>
                   ) : (
                     <input
-                      type="number" lang="en"
+                      type="text" inputMode="decimal"
                       required
                       min="0.01"
                       max="100"

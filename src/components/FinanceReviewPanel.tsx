@@ -123,7 +123,7 @@ export function FinanceReviewPanel({
         <label className="sru-field">
           <span>{t("fieldApprovedBudget")}</span>
           <input
-            type="number" lang="en"
+            type="text" inputMode="decimal"
             min={0}
             step="0.01"
             dir="ltr"

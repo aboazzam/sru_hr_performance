@@ -81,7 +81,7 @@ export function VacancyAnnouncementForm({
         <label className="sru-field">
           <span>{t("fieldOpenings")}</span>
           <input
-            type="number" lang="en"
+            type="text" inputMode="numeric"
             min={1}
             dir="ltr"
             value={openings}
