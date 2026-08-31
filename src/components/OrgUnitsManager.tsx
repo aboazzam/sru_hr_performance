@@ -250,6 +250,7 @@ function UnitRow({
             <OrgUnitPositionsManager
               unitId={node.id}
               unitNameAr={node.nameAr}
+              unitLevelId={node.levelId}
               positions={positionsByUnit[node.id] ?? []}
               allPositions={allPositions}
               levels={levels}
