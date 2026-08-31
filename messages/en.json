@@ -1624,15 +1624,17 @@
     "tabActivities": "Assigned activities",
     "activitiesEmpty": "This employee has no assigned activities in this cycle.",
     "columnRequiredLevel": "Required Level",
+    "competenciesFromEmployee": "Competencies assigned specifically to this employee (from their own profile), independent of their job title's shared ones.",
     "competenciesFromJobTitle": "Competencies required for the job title \"{jobTitle}\" (from the Career Path screen).",
-    "competenciesFromFramework": "No competencies are assigned to this job title yet — showing the full competency framework instead."
+    "competenciesFromFramework": "No competencies are assigned to this employee or their job title yet — showing the full competency framework instead."
   },
   "EvaluationScoresPage": {
     "title": "Enter Scores",
     "competenciesHeading": "Competencies",
     "competenciesEmpty": "No competencies in the framework.",
+    "competenciesFromEmployee": "Competencies assigned specifically to this employee (from their own profile), independent of their job title's shared ones.",
     "competenciesFromJobTitle": "Competencies required for the job title \"{jobTitle}\" (from the Career Path screen).",
-    "competenciesFromFramework": "No competencies are assigned to this job title yet — showing the full competency framework instead.",
+    "competenciesFromFramework": "No competencies are assigned to this employee or their job title yet — showing the full competency framework instead.",
     "goalsHeading": "Goals",
     "goalsEmpty": "No goals assigned to this employee in this cycle.",
     "columnSubject": "Item",
