@@ -23,16 +23,27 @@ const errorMessageKeys: Record<string, string> = {
   unauthenticated: "errorForbidden",
   forbidden: "errorForbidden",
   duplicate: "errorDuplicate",
+  position_staffed: "errorPositionStaffed",
   unknown: "errorUnknown",
 };
 
 /**
- * One position under its organizational unit: a name, a staffed/vacant
- * status badge, and an icon opening the actual staffing edit — assign or
- * unassign employees. Everything else this row used to carry (name/level/
- * parent/org-unit/color editing, delete) moved to /org-units, where
- * positions themselves are now created and edited (2026-08-31: "فيه أشياء
- * كثيرة هنا لا أحتاجها ... نحتاج فقط التسكين").
+ * One position under its organizational unit: a name, the occupant's name
+ * when staffed, a staffed/vacant status badge, and an icon opening the
+ * actual staffing edit — assign or unassign employees. Everything else this
+ * row used to carry (name/level/parent/org-unit/color editing, delete)
+ * moved to /org-units, where positions themselves are now created and
+ * edited (2026-08-31: "فيه أشياء كثيرة هنا لا أحتاجها ... نحتاج فقط
+ * التسكين").
+ *
+ * A position holds at most one active occupant at a time — an employee may
+ * still hold several different positions, just not the reverse (2026-08-31
+ * follow-up: "لكل منصب شخص واحد فقط ... فهنا اضاف باسل عمر مع اني قد اضفت
+ * اسامة صالح"). The assign form below only ever renders while the position
+ * is vacant; the real enforcement is `org_structure_assignments_one_per_
+ * position_uidx` (20260831000001) plus `assignEmployee` mapping its
+ * violation to `position_staffed` — this component hiding the form is a
+ * courtesy, not the actual boundary.
  */
 export function PositionStaffingRow({
   positionId,
@@ -57,9 +68,11 @@ export function PositionStaffingRow({
   const [error, setError] = useState<string | null>(null);
 
   const isStaffed = assignments.length > 0;
-  const assignedIds = new Set(assignments.map((assignment) => assignment.employeeId));
-  const availableEmployees = employees.filter((employee) => !assignedIds.has(employee.id));
-  const employeeId = selectedEmployeeId ?? availableEmployees[0]?.id ?? "";
+  // Whenever the assign form actually renders the position is vacant (no
+  // assignments to exclude) -- `employees` is used directly rather than
+  // filtering it, since exclusion only ever mattered while several
+  // employees could share one position.
+  const employeeId = selectedEmployeeId ?? employees[0]?.id ?? "";
 
   function handleAssign() {
     if (!employeeId) return;
@@ -103,6 +116,7 @@ export function PositionStaffingRow({
         {nameAr}
         {nameEn ? <span className="sru-name-en">{nameEn}</span> : null}
       </span>
+      {isStaffed ? <span style={{ fontSize: 12.5, color: "var(--sru-muted)" }}>{assignments[0].label}</span> : null}
       <span
         className="pill"
         style={{
@@ -148,21 +162,16 @@ export function PositionStaffingRow({
           </ul>
         )}
 
-        {availableEmployees.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "flex-end",
-              flexWrap: "wrap",
-              paddingTop: assignments.length > 0 ? 12 : 0,
-              borderTop: assignments.length > 0 ? "1px dashed var(--sru-border)" : "none",
-            }}
-          >
+        {isStaffed ? (
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 12, paddingTop: 12, borderTop: "1px dashed var(--sru-border)" }}>
+            {t("alreadyStaffedNote")}
+          </p>
+        ) : employees.length > 0 ? (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
             <div className="sru-field" style={{ flex: 1, minWidth: 200, margin: 0 }}>
               <label htmlFor={`staffing-employee-${positionId}`}>{t("employeeLabel")}</label>
               <select id={`staffing-employee-${positionId}`} value={employeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)}>
-                {availableEmployees.map((employee) => (
+                {employees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
                     {employee.label}
                   </option>
