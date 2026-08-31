@@ -10,6 +10,7 @@ export type OrgStructureErrorMessage =
   | "forbidden"
   | "has_dependents"
   | "duplicate"
+  | "position_staffed"
   | "unknown";
 
 export type OrgStructureActionState =
@@ -576,10 +577,13 @@ const assignEmployeeSchema = z.object({
 /**
  * "تسكين الأشخاص على الوظائف" — staffs a profile onto a position. Real
  * authorization is `org_structure_assignments_insert`'s RLS
- * (`check_vpra_global('orgStructure','approve')`). No headcount cap is
- * enforced (a position may have several active assignments); the
- * partial-unique index only blocks assigning the SAME employee to the SAME
- * position twice while active.
+ * (`check_vpra_global('staffing','recommend')`). A position holds at most one
+ * active occupant at a time — an employee may still hold several different
+ * positions, just not the reverse (2026-08-31: "لكل منصب شخص واحد فقط").
+ * Enforced by `org_structure_assignments_one_per_position_uidx`
+ * (20260831000001), a real DB constraint rather than only the UI hiding the
+ * assign form once staffed — a Server Action must not trust the client
+ * didn't race two tabs/admins to the same position.
  */
 export async function assignEmployee(positionId: string, employeeId: string): Promise<OrgStructureActionState> {
   const parsed = assignEmployeeSchema.safeParse({ positionId, employeeId });
@@ -603,6 +607,12 @@ export async function assignEmployee(positionId: string, employeeId: string): Pr
 
   if (error) {
     if (error.code === "23505") {
+      if (error.message.includes("org_structure_assignments_one_per_position_uidx")) {
+        // This position already has a different active occupant -- unassign
+        // them first. Checked by message, not just SQLSTATE, since 23505
+        // alone doesn't say WHICH of this table's two unique indexes fired.
+        return { status: "error", message: "position_staffed" };
+      }
       // Real feedback (2026-07-25): re-submitting the same (position,
       // employee) pair -- e.g. the position already had this exact
       // assignment -- was silently mapped to "invalid_input", shown to the
