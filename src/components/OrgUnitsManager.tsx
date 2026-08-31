@@ -13,6 +13,7 @@ import {
   type OrgUnitActionState,
 } from "@/app/[locale]/(app)/org-units/actions";
 import { includesIgnoringHamza } from "@/lib/arabicSearch";
+import { computeOrgUnitIndents } from "@/lib/orgUnitIndent";
 import type { OrgUnitClassification } from "@/lib/orgUnitTypes";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
@@ -47,6 +48,7 @@ export interface OrgUnitRow {
   typeNameAr: string | null;
   levelId: string | null;
   levelNameAr: string | null;
+  levelOrder: number | null;
   parentId: string | null;
 }
 
@@ -87,13 +89,14 @@ function descendantIdsOf(rows: OrgUnitRow[], id: string): Set<string> {
 
 function UnitRow({
   node,
-  depth,
+  indent,
   rows,
   kinds,
   types,
   levels,
   positionsByUnit,
   allPositions,
+  indents,
   assignmentsByPosition,
   employees,
   canStaff,
@@ -102,13 +105,15 @@ function UnitRow({
   onDone,
 }: {
   node: Node;
-  depth: number;
+  /** Steps of indentation, from the unit's LEVEL -- see computeOrgUnitIndents. */
+  indent: number;
   rows: OrgUnitRow[];
   kinds: OrgUnitClassification[];
   types: OrgUnitClassification[];
   levels: Array<{ id: string; nameAr: string }>;
   positionsByUnit: Record<string, UnitPosition[]>;
   allPositions: PositionOption[];
+  indents: Map<string, number>;
   assignmentsByPosition: Record<string, PositionAssignment[]>;
   employees: EmployeeOption[];
   canStaff: boolean;
@@ -168,7 +173,7 @@ function UnitRow({
           alignItems: "center",
           gap: 8,
           padding: "7px 0",
-          paddingInlineStart: depth * 18,
+          paddingInlineStart: indent * 18,
           borderBottom: "1px solid var(--sru-border)",
           flexWrap: "wrap",
         }}
@@ -289,13 +294,14 @@ function UnitRow({
             <UnitRow
               key={child.id}
               node={child}
-              depth={depth + 1}
+              indent={indents.get(child.id) ?? indent + 1}
               rows={rows}
               kinds={kinds}
               types={types}
               levels={levels}
               positionsByUnit={positionsByUnit}
               allPositions={allPositions}
+              indents={indents}
               assignmentsByPosition={assignmentsByPosition}
               employees={employees}
               canStaff={canStaff}
@@ -369,6 +375,12 @@ export function OrgUnitsManager({
       search.trim() !== "" &&
       (includesIgnoringHamza(row.nameAr, search) ||
         (row.nameEn ? row.nameEn.toLowerCase().includes(search.trim().toLowerCase()) : false))
+  );
+  // One pass over the whole list: a unit's indent comes from its level, and
+  // an unlevelled one needs its parent's indent, so it cannot be worked out
+  // from a single row in isolation.
+  const indents = computeOrgUnitIndents(
+    rows.map((row) => ({ id: row.id, parentId: row.parentId, levelOrder: row.levelOrder }))
   );
   const tree = buildTree(rows);
   const sortedRows = [...rows].sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"));
@@ -480,13 +492,14 @@ export function OrgUnitsManager({
                 <UnitRow
                   key={row.id}
                   node={{ ...row, children: [] }}
-                  depth={0}
+                  indent={0}
                   rows={rows}
                   kinds={kinds}
                   types={types}
                   levels={levels}
                   positionsByUnit={positionsByUnit}
                   allPositions={allPositions}
+                  indents={indents}
                   assignmentsByPosition={assignmentsByPosition}
                   employees={employees}
                   canStaff={canStaff}
@@ -503,13 +516,14 @@ export function OrgUnitsManager({
               <UnitRow
                 key={root.id}
                 node={root}
-                depth={0}
+                indent={indents.get(root.id) ?? 0}
                 rows={rows}
                 kinds={kinds}
                 types={types}
                 levels={levels}
                 positionsByUnit={positionsByUnit}
                 allPositions={allPositions}
+                indents={indents}
                 assignmentsByPosition={assignmentsByPosition}
                 employees={employees}
                 canStaff={canStaff}
