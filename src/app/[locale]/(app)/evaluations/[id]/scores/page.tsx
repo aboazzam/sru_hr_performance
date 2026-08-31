@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EvaluationScoresForm } from "@/components/EvaluationScoresForm";
-import { resolveEvaluationCompetencies } from "@/lib/evaluationCompetencies";
+import { resolveEvaluationCompetencies, describeCompetenciesSource } from "@/lib/evaluationCompetencies";
 import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -104,9 +104,10 @@ export default async function EvaluationScoresPage({
         evaluationId={evaluation.id}
         competenciesNote={
           showCompetencies
-            ? source === "job_title" && jobTitleNameAr
-              ? t("competenciesFromJobTitle", { jobTitle: jobTitleNameAr })
-              : t("competenciesFromFramework")
+            ? (() => {
+                const note = describeCompetenciesSource(source, jobTitleNameAr);
+                return t(note.key, note.params);
+              })()
             : undefined
         }
         competencies={(showCompetencies ? competencies : []).map((c) => ({

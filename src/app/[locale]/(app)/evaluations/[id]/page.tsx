@@ -11,7 +11,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
-import { resolveEvaluationCompetencies } from "@/lib/evaluationCompetencies";
+import { resolveEvaluationCompetencies, describeCompetenciesSource } from "@/lib/evaluationCompetencies";
 import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
@@ -249,9 +249,10 @@ export default async function EvaluationDetailPage({
         <>
           {editButton("competencies")}
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 10 }}>
-            {competenciesSource === "job_title" && jobTitleNameAr
-              ? t("competenciesFromJobTitle", { jobTitle: jobTitleNameAr })
-              : t("competenciesFromFramework")}
+            {(() => {
+              const note = describeCompetenciesSource(competenciesSource, jobTitleNameAr);
+              return t(note.key, note.params);
+            })()}
           </p>
           {simpleTable(
             [t("columnTitle"), t("columnRequiredLevel"), t("columnScore")],
