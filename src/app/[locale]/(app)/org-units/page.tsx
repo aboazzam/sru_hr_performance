@@ -107,6 +107,7 @@ export default async function OrgUnitsPage() {
     color: string | null;
   }>;
   const levels = levelRecords.map((row) => ({ id: row.id, nameAr: row.name_ar }));
+  const levelOrder = new Map(levelRecords.map((row) => [row.id, row.level_order]));
   const levelName = new Map(levels.map((level) => [level.id, level.nameAr]));
   const unitName = new Map(units.map((unit) => [unit.id, unit.name_ar]));
 
@@ -201,6 +202,7 @@ export default async function OrgUnitsPage() {
     typeNameAr: row.type_id ? typeById.get(row.type_id)?.nameAr ?? null : null,
     levelId: row.level_id,
     levelNameAr: row.level_id ? levelName.get(row.level_id) ?? null : null,
+    levelOrder: row.level_id ? levelOrder.get(row.level_id) ?? null : null,
     parentId: row.parent_id,
   }));
 
