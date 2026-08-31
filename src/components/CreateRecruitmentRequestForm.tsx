@@ -244,7 +244,7 @@ export function CreateRecruitmentRequestForm({
           <label className="sru-field">
             <span>{t("fieldHeadcount")}</span>
             <input
-              type="number" lang="en"
+              type="text" inputMode="numeric"
               min={1}
               max={1000}
               dir="ltr"
@@ -353,7 +353,7 @@ export function CreateRecruitmentRequestForm({
           <label className="sru-field">
             <span>{t("fieldEstimatedCost")}</span>
             <input
-              type="number" lang="en"
+              type="text" inputMode="decimal"
               min={0}
               step="0.01"
               dir="ltr"

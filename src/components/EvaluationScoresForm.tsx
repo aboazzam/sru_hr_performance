@@ -65,7 +65,7 @@ export function EvaluationScoresForm({
         )}
         <td>
           <input
-            type="number" lang="en"
+            type="text" inputMode="decimal"
             min={0}
             max={100}
             step="0.1"

@@ -148,7 +148,7 @@ export function RecruitmentPlanItemRow({
       <td>
         {editing ? (
           <input
-            type="number" lang="en"
+            type="text" inputMode="numeric"
             min={1}
             dir="ltr"
             value={headcount}
@@ -197,7 +197,7 @@ export function RecruitmentPlanItemRow({
       <td>
         {editing ? (
           <input
-            type="number" lang="en"
+            type="text" inputMode="decimal"
             min={0}
             step="0.01"
             dir="ltr"
