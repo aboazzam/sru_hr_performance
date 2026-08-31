@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Plus, Trash2, Save, Users } from "lucide-react";
@@ -188,19 +188,17 @@ export function OrgUnitPositionsManager({
                   ))}
                 </select>
               </div>
-              <div className="sru-field">
-                <label htmlFor={`pos-${unitId}-parent`}>{t("positionParent")}</label>
-                {/* Every position, not just this unit's: a dean's own parent
-                    is the president, who belongs to another unit. */}
-                <ParentPositionPicker
-                  id={`pos-${unitId}-parent`}
-                  value={newParentId}
-                  onChange={setNewParentId}
-                  options={allPositions}
-                  nameOf={nameOf}
-                  noneLabel={t("positionParentNone")}
-                />
-              </div>
+              {/* Every position, not just this unit's: a dean's own parent is
+                  the president, who belongs to another unit. */}
+              <ParentPositionPicker
+                id={`pos-${unitId}-parent`}
+                label={t("positionParent")}
+                value={newParentId}
+                onChange={setNewParentId}
+                options={allPositions}
+                nameOf={nameOf}
+                noneLabel={t("positionParentNone")}
+              />
             </div>
             {error ? (
               <p role="alert" style={{ color: "#b91c1c", fontSize: 12, marginTop: 10 }}>
@@ -226,72 +224,166 @@ export function OrgUnitPositionsManager({
 }
 
 /**
- * A parent picker over every position in the university.
+ * One control for choosing a position's parent: a combobox, not a search box
+ * stacked on a select.
  *
- * The list runs to sixty-odd entries, so it carries its own search — the same
- * narrow-the-select pattern the job-title and employee pickers use, and
- * hamza-insensitive for the same reason. The chosen value survives a search
- * that no longer matches it: filtering the options must not silently change
- * what the row is about to save.
+ * The first version put the two side by side, and it misread badly (2026-08-31:
+ * "التبعية لا يظهر لي القائمة المنسدلة وإنما أكتب نص وإذا كتبته لا يظهر بعد
+ * الحفظ"). Typing into what looked like the field set nothing, so a position
+ * was saved with no parent and the typed text vanished. Here the box the user
+ * types in IS the field: it shows the current parent, filtering happens as they
+ * type, and a value is only ever set by picking from the list.
+ *
+ * Leaving the box on stray text never changes the saved value -- it snaps back
+ * to whatever is actually selected, so what is on screen is always what will be
+ * saved.
  */
 function ParentPositionPicker({
   id,
+  label,
   value,
   onChange,
   options,
   nameOf,
   noneLabel,
-  compact = false,
 }: {
   id: string;
+  label: string;
   value: string;
   onChange: (next: string) => void;
   options: PositionOption[];
   nameOf: (option: PositionOption) => string;
   noneLabel: string;
-  /** Inline in a row rather than stacked in a form. */
-  compact?: boolean;
 }) {
   const t = useTranslations("OrgUnitsPage");
-  const [search, setSearch] = useState("");
-  const query = search.trim();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((option) => option.id === value) ?? null;
+  const selectedLabel = selected ? nameOf(selected) : noneLabel;
+  const trimmed = query.trim();
   const matching =
-    query === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), query));
-  const selected = options.find((option) => option.id === value);
+    trimmed === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), trimmed));
+
+  function choose(next: string) {
+    onChange(next);
+    setQuery("");
+    setOpen(false);
+  }
+
+  // Closing on an outside mousedown, the same way this app's other menus do,
+  // rather than relying on the input's own blur: blur does not fire when focus
+  // never actually moved (a click on a non-focusable area, for one), which left
+  // the box showing typed text that was not the saved value -- exactly the
+  // confusion this control exists to end. Escape closes it too.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => {
+      setOpen(false);
+      setQuery("");
+    };
+    const onDown = (event: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(event.target as Node)) close();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <div style={{ display: "flex", flexDirection: compact ? "row" : "column", gap: 6, alignItems: compact ? "center" : "stretch" }}>
+    <div className="sru-field" ref={boxRef} style={{ position: "relative", minWidth: 220 }}>
+      <label htmlFor={id}>{label}</label>
       <input
-        type="search"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t("positionParentSearch")}
-        style={{ width: compact ? 150 : "100%", fontSize: 13 }}
-      />
-      <select
         id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        style={{ width: compact ? 200 : "100%", fontSize: 13 }}
-      >
-        <option value="">{noneLabel}</option>
-        {/* Kept even when the search excludes it, so narrowing the list never
-            quietly drops the parent already chosen. */}
-        {selected && !matching.some((option) => option.id === selected.id) ? (
-          <option value={selected.id}>{nameOf(selected)}</option>
-        ) : null}
-        {matching.map((option) => (
-          <option key={option.id} value={option.id}>
-            {nameOf(option)}
-          </option>
-        ))}
-      </select>
-      {query !== "" && matching.length === 0 ? (
-        <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("positionParentNoMatches")}</span>
+        type="text"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={`${id}-list`}
+        autoComplete="off"
+        // Typing shows the query; otherwise the box shows the real selection,
+        // so the field always reads as its own value rather than as a filter.
+        value={open ? query : selected ? selectedLabel : ""}
+        placeholder={selected ? selectedLabel : noneLabel}
+        onFocus={() => {
+          setQuery("");
+          setOpen(true);
+        }}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          // Delayed so a click on an option lands before the list closes.
+          window.setTimeout(() => {
+            setOpen(false);
+            setQuery("");
+          }, 150);
+        }}
+      />
+      {open ? (
+        <ul
+          id={`${id}-list`}
+          role="listbox"
+          style={{
+            position: "absolute",
+            insetInlineStart: 0,
+            insetInlineEnd: 0,
+            top: "100%",
+            zIndex: 20,
+            margin: 0,
+            padding: 0,
+            listStyle: "none",
+            maxHeight: 220,
+            overflowY: "auto",
+            background: "#fff",
+            border: "1.4px solid rgba(80, 30, 140, 0.18)",
+            boxShadow: "0 8px 22px rgba(30, 10, 60, 0.12)",
+          }}
+        >
+          <li>
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === ""}
+              className="sru-combobox-option"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose("")}
+            >
+              {noneLabel}
+            </button>
+          </li>
+          {matching.map((option) => (
+            <li key={option.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={option.id === value}
+                className="sru-combobox-option"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => choose(option.id)}
+              >
+                {nameOf(option)}
+              </button>
+            </li>
+          ))}
+          {matching.length === 0 ? (
+            <li style={{ padding: "8px 10px", fontSize: 11.5, color: "var(--sru-muted)" }}>
+              {t("positionParentNoMatches")}
+            </li>
+          ) : null}
+        </ul>
       ) : null}
     </div>
   );
 }
+
 
 function PositionRow({
   position,
@@ -364,12 +456,12 @@ function PositionRow({
           />
           <ParentPositionPicker
             id={`row-${position.id}-parent`}
+            label={t("positionParent")}
             value={parentId}
             onChange={setParentId}
             options={allPositions}
             nameOf={nameOf}
             noneLabel={t("positionParentNone")}
-            compact
           />
         </>
       ) : (

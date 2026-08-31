@@ -2956,3 +2956,22 @@ table {
 .admin-matrix th .sru-name-en {
   text-align: center;
 }
+
+/* The parent-position combobox's own list rows. Added here rather than in
+   sru-ui.css, which is not ours to edit (CLAUDE.md §7). */
+.sru-combobox-option {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--sru-ink);
+  text-align: start;
+  cursor: pointer;
+}
+.sru-combobox-option:hover,
+.sru-combobox-option:focus-visible {
+  background: var(--sru-purple-light);
+}
