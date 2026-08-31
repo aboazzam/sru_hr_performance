@@ -755,75 +755,19 @@ dialog.sru-modal::backdrop {
   cursor: not-allowed;
 }
 
-/* ===== Position edit card (2026-08-05) =====
-   Real feedback on OrgStructurePositionMiniRow/OrgStructurePositionRow's
-   edit mode: once a parent/reporting-line select joined the existing
-   name/name/org-unit fields, the row became one unlabeled, same-styled
-   flex line -- nothing distinguished the position's own name from which
-   field controlled its reporting line versus its org-unit link. Replaces
-   that flat row with a bordered "now editing" card, split into two named
-   groups (the position's own identity vs. its two organizational links),
-   each field carrying a real label -- same underlying .sru-field
-   label/input look as every other form in this app, just applied here for
-   the first time to an inline row-level editor instead of a page form. */
+/* ===== Position edit card =====
+   A generic bordered "now editing" card, reused wherever a row needs an
+   inline edit panel that reads as distinct from the surrounding list (e.g.
+   InitiativeAssignmentsEditor, ProgramInitiativesTab). Originally built for
+   OrgStructurePositionRow's staffing-page position editor (2026-08-05),
+   which has since moved to /org-units (2026-08-31) — these two rules
+   outlived that specific consumer. */
 .sru-position-edit-card {
   background: var(--sru-purple-light);
   border: 1.5px solid var(--sru-purple);
   border-radius: 0;
   padding: 14px 16px 12px;
   margin: 6px 0;
-}
-.sru-position-edit-group + .sru-position-edit-group {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--sru-border);
-}
-.sru-position-edit-grouplabel {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: var(--sru-purple);
-  margin-bottom: 8px;
-}
-.sru-position-edit-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
-}
-@media (max-width: 560px) {
-  .sru-position-edit-fields {
-    grid-template-columns: 1fr;
-  }
-}
-.sru-position-edit-field label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--sru-muted);
-  margin-bottom: 4px;
-}
-.sru-position-edit-field input,
-.sru-position-edit-field select {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--sru-border);
-  border-radius: 0;
-  font-family: inherit;
-  font-size: 12.5px;
-  background: #fff;
-  color: var(--sru-ink);
-}
-.sru-position-edit-field input:focus,
-.sru-position-edit-field select:focus {
-  outline: 2px solid var(--sru-blue);
-  border-color: var(--sru-blue);
-}
-.sru-position-edit-field p {
-  margin: 0;
-  font-size: 11px;
-  color: var(--sru-muted);
-  padding: 8px 0 2px;
 }
 .sru-position-edit-actions {
   display: flex;
@@ -833,12 +777,6 @@ dialog.sru-modal::backdrop {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--sru-border);
-}
-.sru-position-edit-actions-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--sru-border);
-  margin: 0 4px;
 }
 
 /* ===== Drag-and-drop level reordering (2026-07-25) ===== */
@@ -3017,58 +2955,4 @@ table {
 .admin-matrix td .sru-name-en,
 .admin-matrix th .sru-name-en {
   text-align: center;
-}
-
-/* ===== نموذج تسكين موظف على منصب (2026-08-30) =====
-   كان المنصب والموظف حقلين مكدَّسين رأسيًا بلا أي تمييز بصري بينهما — طُلب
-   جعل المنصب يمينًا والموظف يسارًا "بشكل ابداعي". صفّهما جنبًا إلى جنب
-   يحقق الترتيب المطلوب تلقائيًا في RTL (أول عنصر في الترميز يظهر يمينًا)،
-   وشارة الربط الدائرية بينهما (نفس تدرّج .sru-formsection-badge) تُجسّد
-   العلاقة المقصودة بصريًا — موظف يُربط بمنصب — بدل خط فاصل عادٍ. تتكدّس
-   الحقول رأسيًا مجددًا تحت 560px كي لا تضيق القوائم المنسدلة على الجوال. */
-.sru-assign-employee-form {
-  max-width: 640px;
-}
-.sru-assign-employee-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-}
-.sru-assign-employee-field {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.sru-assign-employee-field-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--sru-muted);
-}
-.sru-assign-employee-connector {
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--sru-purple-light), var(--sru-blue-light));
-  color: var(--sru-purple);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 9px;
-}
-@media (max-width: 560px) {
-  .sru-assign-employee-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .sru-assign-employee-connector {
-    align-self: center;
-    margin: 0;
-    transform: rotate(90deg);
-  }
 }
