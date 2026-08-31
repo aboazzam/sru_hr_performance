@@ -11,6 +11,8 @@ import {
 import { Link } from "@/i18n/navigation";
 import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalType } from "@/lib/vpra";
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
+import { resolveEvaluationCompetencies } from "@/lib/evaluationCompetencies";
+import { behavioralLevelLabels } from "@/lib/data/competencies";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationDetailPage({
@@ -108,13 +110,6 @@ export default async function EvaluationDetailPage({
     .is("deleted_at", null);
   const feedback = (feedbackData ?? []) as Array<{ id: string; evaluator_relation: EvalType; comments: string | null }>;
 
-  const { data: competencyData } = await supabase
-    .from("competencies")
-    .select("id, name_ar")
-    .is("deleted_at", null)
-    .order("name_ar");
-  const competencies = (competencyData ?? []) as Array<{ id: string; name_ar: string }>;
-
   const { data: scoreData } = await supabase
     .from("evaluation_scores")
     .select("competency_id, goal_id, bau_task_id, activity_id, score")
@@ -128,6 +123,14 @@ export default async function EvaluationDetailPage({
     score: number | null;
   }>;
   const scoreByCompetency = new Map(scores.filter((x) => x.competency_id).map((x) => [x.competency_id as string, x.score]));
+
+  // Same job-title-driven resolution the scoring screen uses (2026-08-31) —
+  // this read-only tab used to independently fetch the full ~27-competency
+  // framework, showing a list unrelated to what the employee's own job
+  // title actually requires (the exact mismatch a reviewer reported live).
+  const { source: competenciesSource, jobTitleNameAr, competencies: resolvedCompetencies } =
+    await resolveEvaluationCompetencies(supabase, evaluation.employee_id, [...scoreByCompetency.keys()]);
+  const competencies = resolvedCompetencies;
   const scoreByBauTask = new Map(scores.filter((x) => x.bau_task_id).map((x) => [x.bau_task_id as string, x.score]));
   const scoreByActivity = new Map(scores.filter((x) => x.activity_id).map((x) => [x.activity_id as string, x.score]));
 
@@ -245,9 +248,18 @@ export default async function EvaluationDetailPage({
       content: (
         <>
           {editButton("competencies")}
+          <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 10 }}>
+            {competenciesSource === "job_title" && jobTitleNameAr
+              ? t("competenciesFromJobTitle", { jobTitle: jobTitleNameAr })
+              : t("competenciesFromFramework")}
+          </p>
           {simpleTable(
-            [t("columnTitle"), t("columnScore")],
-            competencies.map((c) => [c.name_ar, scoreByCompetency.get(c.id) ?? "—"]),
+            [t("columnTitle"), t("columnRequiredLevel"), t("columnScore")],
+            competencies.map((c) => [
+              c.nameAr,
+              c.requiredLevel ? behavioralLevelLabels[c.requiredLevel] : "—",
+              scoreByCompetency.get(c.id) ?? "—",
+            ]),
             t("competenciesEmpty")
           )}
         </>

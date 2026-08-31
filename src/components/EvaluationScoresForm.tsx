@@ -11,6 +11,7 @@ interface ScoredSubject {
   id: string;
   titleAr?: string;
   nameAr?: string;
+  requiredLevelAr?: string | null;
   initialScore: number | null;
   initialComment: string | null;
 }
@@ -28,6 +29,7 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
 export function EvaluationScoresForm({
   evaluationId,
   competencies,
+  competenciesNote,
   activities,
   bauTasks = [],
   showCompetencies = true,
@@ -36,6 +38,7 @@ export function EvaluationScoresForm({
 }: {
   evaluationId: string;
   competencies: ScoredSubject[];
+  competenciesNote?: string;
   activities: ScoredSubject[];
   bauTasks?: ScoredSubject[];
   showCompetencies?: boolean;
@@ -53,10 +56,13 @@ export function EvaluationScoresForm({
   const commentInputClass =
     "w-full px-2 py-1 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
-  function renderRows(prefix: "competency" | "activity" | "bau", subjects: ScoredSubject[]) {
+  function renderRows(prefix: "competency" | "activity" | "bau", subjects: ScoredSubject[], showRequiredLevel = false) {
     return subjects.map((subject) => (
       <tr key={subject.id}>
         <td>{subject.nameAr ?? subject.titleAr}</td>
+        {showRequiredLevel && (
+          <td style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{subject.requiredLevelAr ?? "—"}</td>
+        )}
         <td>
           <input
             type="number" lang="en"
@@ -99,6 +105,11 @@ export function EvaluationScoresForm({
         <h2 className="sru-title" style={{ fontSize: 16, marginBottom: 8 }}>
           {t("competenciesHeading")}
         </h2>
+        {competenciesNote && (
+          <p style={{ color: "var(--sru-muted)", fontSize: 12.5, marginTop: -4, marginBottom: 10 }}>
+            {competenciesNote}
+          </p>
+        )}
         {competencies.length === 0 ? (
           <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("competenciesEmpty")}</p>
         ) : (
@@ -108,11 +119,12 @@ export function EvaluationScoresForm({
                 <thead>
                   <tr>
                     <th>{t("columnSubject")}</th>
+                    <th>{t("columnRequiredLevel")}</th>
                     <th>{t("columnScore")}</th>
                     <th>{t("columnComment")}</th>
                   </tr>
                 </thead>
-                <tbody>{renderRows("competency", competencies)}</tbody>
+                <tbody>{renderRows("competency", competencies, true)}</tbody>
               </table>
             </div>
           </div>

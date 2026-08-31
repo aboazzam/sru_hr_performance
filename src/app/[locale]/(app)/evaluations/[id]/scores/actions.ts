@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveEvaluationCompetencies } from "@/lib/evaluationCompetencies";
 
 export type SaveEvaluationScoresState =
   | { status: "success" }
@@ -22,16 +23,18 @@ const scoreFieldSchema = z
   }).nullable());
 
 /**
- * Saves competency/goal scores for one evaluation (`evaluation_scores`,
- * migration 20260718000006). The set of competencies/goals scored is NOT
- * trusted from the client — it's re-derived here from `competencies` (the
- * full framework, since no per-employee/job-family filtering mechanism
- * exists yet — CLAUDE.md doesn't document one, flagged as a follow-up, not
- * invented here) and `goals` (the employee's own goals for this
- * evaluation's cycle), then matched against form fields named
- * `score_competency_<id>` / `comment_competency_<id>` and
- * `score_goal_<id>` / `comment_goal_<id>`. A client can only ever affect
- * rows for subjects that genuinely apply to this evaluation.
+ * Saves competency/activity/BAU-task scores for one evaluation
+ * (`evaluation_scores`, migration 20260718000006). The set of subjects
+ * scored is NOT trusted from the client — competencies are re-derived here
+ * via the same `resolveEvaluationCompetencies` helper the scores page
+ * itself uses (the employee's own job-title competencies, from
+ * `job_title_competencies`, falling back to the full framework when none
+ * are assigned — 2026-08-31, closing the "no per-employee filtering exists
+ * yet" gap this file used to flag), and activities/BAU tasks are re-derived
+ * from the employee's own assigned rows, then matched against form fields
+ * named `score_competency_<id>` / `comment_competency_<id>` and similarly
+ * for `activity`/`bau`. A client can only ever affect rows for subjects
+ * that genuinely apply to this evaluation.
  *
  * Each row is written through the caller's own RLS-respecting client —
  * real authorization is `evaluation_scores`' own INSERT/UPDATE policies
@@ -76,10 +79,18 @@ export async function saveEvaluationScores(
     return { status: "error", message: "not_found" };
   }
 
-  const { data: competencies } = await supabase
-    .from("competencies")
-    .select("id")
+  const { data: existingCompetencyScores } = await supabase
+    .from("evaluation_scores")
+    .select("competency_id")
+    .eq("evaluation_id", parsedId.data)
+    .not("competency_id", "is", null)
     .is("deleted_at", null);
+
+  const { competencies } = await resolveEvaluationCompetencies(
+    supabase,
+    evaluation.employee_id,
+    (existingCompetencyScores ?? []).map((row) => row.competency_id as string)
+  );
 
   // Activities replaced strategic targets as the "results" subject
   // (20260828000001): the weight is named for what it actually weighs.
