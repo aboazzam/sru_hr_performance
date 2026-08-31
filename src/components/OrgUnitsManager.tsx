@@ -20,8 +20,6 @@ import {
   OrgUnitPositionsManager,
   type UnitPosition,
   type PositionOption,
-  type PositionAssignment,
-  type EmployeeOption,
 } from "@/components/OrgUnitPositionsManager";
 import { ORG_UNIT_EXPORT_COLUMNS } from "@/lib/orgUnitExportColumns";
 
@@ -97,9 +95,6 @@ function UnitRow({
   positionsByUnit,
   allPositions,
   indents,
-  assignmentsByPosition,
-  employees,
-  canStaff,
   canEditPositions,
   canEdit,
   onDone,
@@ -114,9 +109,6 @@ function UnitRow({
   positionsByUnit: Record<string, UnitPosition[]>;
   allPositions: PositionOption[];
   indents: Map<string, number>;
-  assignmentsByPosition: Record<string, PositionAssignment[]>;
-  employees: EmployeeOption[];
-  canStaff: boolean;
   canEditPositions: boolean;
   canEdit: boolean;
   onDone: () => void;
@@ -261,9 +253,6 @@ function UnitRow({
               positions={positionsByUnit[node.id] ?? []}
               allPositions={allPositions}
               levels={levels}
-              assignmentsByPosition={assignmentsByPosition}
-              employees={employees}
-              canStaff={canStaff}
               canEdit={canEditPositions}
             />
             <button
@@ -302,9 +291,6 @@ function UnitRow({
               positionsByUnit={positionsByUnit}
               allPositions={allPositions}
               indents={indents}
-              assignmentsByPosition={assignmentsByPosition}
-              employees={employees}
-              canStaff={canStaff}
               canEditPositions={canEditPositions}
               canEdit={canEdit}
               onDone={onDone}
@@ -331,9 +317,6 @@ export function OrgUnitsManager({
   levels,
   positionsByUnit,
   allPositions,
-  assignmentsByPosition,
-  employees,
-  canStaff,
   canEditPositions,
   canEdit,
 }: {
@@ -343,9 +326,6 @@ export function OrgUnitsManager({
   levels: Array<{ id: string; nameAr: string }>;
   positionsByUnit: Record<string, UnitPosition[]>;
   allPositions: PositionOption[];
-  assignmentsByPosition: Record<string, PositionAssignment[]>;
-  employees: EmployeeOption[];
-  canStaff: boolean;
   canEditPositions: boolean;
   canEdit: boolean;
 }) {
@@ -500,9 +480,6 @@ export function OrgUnitsManager({
                   positionsByUnit={positionsByUnit}
                   allPositions={allPositions}
                   indents={indents}
-                  assignmentsByPosition={assignmentsByPosition}
-                  employees={employees}
-                  canStaff={canStaff}
                   canEditPositions={canEditPositions}
                   canEdit={canEdit}
                   onDone={refresh}
@@ -524,9 +501,6 @@ export function OrgUnitsManager({
                 positionsByUnit={positionsByUnit}
                 allPositions={allPositions}
                 indents={indents}
-                assignmentsByPosition={assignmentsByPosition}
-                employees={employees}
-                canStaff={canStaff}
                 canEditPositions={canEditPositions}
                 canEdit={canEdit}
                 onDone={refresh}
