@@ -546,9 +546,7 @@
     "exportColumnsHeading": "Choose columns to export",
     "exportColumnsNote": "Select the fields to include in the file — covers the full staffing table's data.",
     "exportConfirmButton": "Export",
-    "closeButton": "Close",
-    "noPositionsInUnit": "No positions in this unit yet.",
-    "positionsWithoutUnit": "Positions with no unit"
+    "closeButton": "Close"
   },
   "EmployeesPage": {
     "title": "Employees",

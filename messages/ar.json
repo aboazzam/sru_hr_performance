@@ -546,9 +546,7 @@
     "exportColumnsHeading": "اختر الأعمدة المطلوب تصديرها",
     "exportColumnsNote": "حدّد الحقول التي تريد تضمينها في الملف — تشمل كل بيانات جدول التسكين.",
     "exportConfirmButton": "تصدير",
-    "closeButton": "إغلاق",
-    "noPositionsInUnit": "لا مناصب في هذه الوحدة بعد.",
-    "positionsWithoutUnit": "مناصب غير مرتبطة بوحدة"
+    "closeButton": "إغلاق"
   },
   "EmployeesPage": {
     "title": "الموظفون",
