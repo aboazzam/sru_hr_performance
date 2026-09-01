@@ -272,6 +272,14 @@ function ParentPositionPicker({
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const valueRef = useRef<HTMLButtonElement>(null);
+  // Viewport coordinates for the open panel. It is positioned FIXED rather
+  // than absolute because a <dialog> carries overflow:auto from the UA
+  // stylesheet, so an absolutely-positioned child is clipped at the dialog's
+  // edge -- the list opened but its options were cut off (2026-09-01: "اجعل
+  // القائمة تظهر حتى لو كانت خارج محيط النموذج"). Nothing above it creates a
+  // containing block (no transform/filter), so fixed really is viewport-based.
+  const [panelBox, setPanelBox] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const selected = options.find((option) => option.id === value) ?? null;
   const trimmed = query.trim();
@@ -310,6 +318,32 @@ function ParentPositionPicker({
     setOpen(false);
   }
 
+  // Measured from the trigger, and re-measured while open: the dialog itself
+  // scrolls, so a panel pinned to stale coordinates would drift off its field.
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const trigger = valueRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const PANEL_MAX = 260;
+      const below = window.innerHeight - rect.bottom;
+      // Flipped above the field when there is not room beneath it, so the
+      // list is never pushed off the bottom of the screen.
+      const top = below < PANEL_MAX && rect.top > below ? Math.max(8, rect.top - PANEL_MAX) : rect.bottom;
+      setPanelBox({ top, left: rect.left, width: rect.width });
+    };
+    place();
+    window.addEventListener("resize", place);
+    // Capture phase: the scroll that matters is the dialog's own, and scroll
+    // events do not bubble.
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
   // Closed by an outside mousedown, the same way this app's other menus are:
   // blur does not fire when focus never actually moves, which left a stale
   // panel open over the row.
@@ -337,6 +371,7 @@ function ParentPositionPicker({
     <div className="sru-field" ref={boxRef} style={{ position: "relative", minWidth: 220 }}>
       <label htmlFor={id}>{label}</label>
       <button
+        ref={valueRef}
         type="button"
         id={id}
         className="sru-combobox-value"
@@ -352,7 +387,12 @@ function ParentPositionPicker({
         <ChevronDown size={14} aria-hidden />
       </button>
       {open ? (
-        <div className="sru-combobox-panel" role="listbox" aria-labelledby={id}>
+        <div
+          className="sru-combobox-panel"
+          role="listbox"
+          aria-labelledby={id}
+          style={panelBox ? { top: panelBox.top, left: panelBox.left, width: panelBox.width } : undefined}
+        >
           {/* The first row, as asked: searching happens inside the list, never
               in the place where the value is shown. */}
           <input
@@ -364,7 +404,8 @@ function ParentPositionPicker({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <ul style={{ margin: 0, padding: 0, listStyle: "none", maxHeight: 200, overflowY: "auto" }}>
+          {/* The panel itself scrolls now; a second scroller here would nest. */}
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             <li>
               <button
                 type="button"

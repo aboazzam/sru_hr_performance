@@ -2993,10 +2993,13 @@ table {
   text-align: start;
 }
 .sru-combobox-panel {
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  z-index: 20;
+  /* fixed, not absolute: a <dialog> clips absolutely-positioned children at
+     its own edge (UA overflow:auto), which cut the list off. The component
+     supplies top/left/width measured from the trigger. */
+  position: fixed;
+  z-index: 60;
+  max-height: 260px;
+  overflow-y: auto;
   background: #fff;
   border: 1.4px solid rgba(80, 30, 140, 0.18);
   box-shadow: 0 8px 22px rgba(30, 10, 60, 0.12);
