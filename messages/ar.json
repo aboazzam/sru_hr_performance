@@ -333,7 +333,8 @@
     "positionParentSearch": "ابحث عن منصب...",
     "positionParentNoMatches": "لا مناصب مطابقة",
     "positionSaved": "حُفظ",
-    "positionLevelFallback": "لا مستوى للوحدة بعد — حدّده هنا، أو من نموذج الوحدة ليرثه كل مناصبها."
+    "positionLevelFallback": "لا مستوى للوحدة بعد — حدّده هنا، أو من نموذج الوحدة ليرثه كل مناصبها.",
+    "positionParentNoUnit": "بلا وحدة تنظيمية"
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",

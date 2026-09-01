@@ -333,7 +333,8 @@
     "positionParentSearch": "Search for a position...",
     "positionParentNoMatches": "No matching positions",
     "positionSaved": "Saved",
-    "positionLevelFallback": "This unit has no level yet — set it here, or on the unit form so its positions inherit it."
+    "positionLevelFallback": "This unit has no level yet — set it here, or on the unit form so its positions inherit it.",
+    "positionParentNoUnit": "No organizational unit"
   },
   "AdminPage": {
     "title": "Users & Permissions",
