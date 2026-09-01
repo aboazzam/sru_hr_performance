@@ -507,7 +507,9 @@
     "chartMovedNote": "إدارة المستويات والمناصب انتقلت إلى",
     "chartMovedLink": "صفحة الوحدات التنظيمية",
     "chartVersionAr": "النسخة العربية",
-    "chartVersionEn": "النسخة الإنجليزية"
+    "chartVersionEn": "النسخة الإنجليزية",
+    "chartCurrentLocaleNote": "هذه هي الصورة التي يراها من يتصفح صفحات الموقع بهذه اللغة الآن.",
+    "chartOtherLocaleNote": "لا تظهر في هذه الصفحة — تُدار من هنا، وتظهر فقط لمن يتصفح الموقع باللغة الأخرى."
   },
   "OrgStructureStaffingPage": {
     "title": "تسكين الموظفين على المناصب",
