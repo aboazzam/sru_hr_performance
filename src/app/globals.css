@@ -3009,3 +3009,14 @@ table {
   font-family: inherit;
   font-size: 13px;
 }
+
+/* Department heading inside the parent-position list. */
+.sru-combobox-group {
+  padding: 6px 10px;
+  background: var(--sru-purple-light);
+  color: var(--sru-purple-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}

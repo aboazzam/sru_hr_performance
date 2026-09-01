@@ -98,10 +98,11 @@ export function OrgUnitPositionsManager({
   // did) produced "كلية الطب — كلية الطب" and made the list read as a list of
   // departments rather than of posts (2026-08-31: "ضع لي تبعية المنصب لمنصب
   // وليست إدارة").
-  const nameOf = (option: PositionOption) =>
-    option.unitNameAr && option.unitNameAr !== option.nameAr
-      ? `${option.nameAr} — ${option.unitNameAr}`
-      : option.nameAr;
+  // The option is the POST alone. Its department is the heading it sits
+  // under, not a suffix: appending it produced "رئيس مركز إدارة المحتوى —
+  // مركز إدارة المحتوى", which repeats itself and buries the post in noise
+  // (2026-09-01: "أظهر أسماء الإدارات").
+  const nameOf = (option: PositionOption) => option.nameAr;
 
   function add() {
     setError(null);
@@ -274,8 +275,34 @@ function ParentPositionPicker({
 
   const selected = options.find((option) => option.id === value) ?? null;
   const trimmed = query.trim();
+  // Searching matches the department too, so typing a department name finds
+  // every post inside it -- otherwise the heading would be visible but
+  // unsearchable.
   const matching =
-    trimmed === "" ? options : options.filter((option) => includesIgnoringHamza(nameOf(option), trimmed));
+    trimmed === ""
+      ? options
+      : options.filter(
+          (option) =>
+            includesIgnoringHamza(option.nameAr, trimmed) ||
+            (option.unitNameAr ? includesIgnoringHamza(option.unitNameAr, trimmed) : false)
+        );
+
+  // One group per department, in Arabic order; posts with no department come
+  // last under their own heading rather than being dropped or left unlabelled.
+  const grouped = (() => {
+    const byUnit = new Map<string, PositionOption[]>();
+    for (const option of matching) {
+      const key = option.unitNameAr ?? "";
+      const list = byUnit.get(key) ?? [];
+      list.push(option);
+      byUnit.set(key, list);
+    }
+    const named = [...byUnit.entries()]
+      .filter(([unit]) => unit !== "")
+      .sort((a, b) => a[0].localeCompare(b[0], "ar"));
+    const unnamed = byUnit.get("");
+    return unnamed ? [...named, ["", unnamed] as [string, PositionOption[]]] : named;
+  })();
 
   function choose(next: string) {
     onChange(next);
@@ -349,17 +376,26 @@ function ParentPositionPicker({
                 {noneLabel}
               </button>
             </li>
-            {matching.map((option) => (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={option.id === value}
-                  className="sru-combobox-option"
-                  onClick={() => choose(option.id)}
-                >
-                  {nameOf(option)}
-                </button>
+            {grouped.map(([unitName, groupOptions]) => (
+              <li key={unitName || "__none__"}>
+                <div className="sru-combobox-group" role="presentation">
+                  {unitName || t("positionParentNoUnit")}
+                </div>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {groupOptions.map((option) => (
+                    <li key={option.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={option.id === value}
+                        className="sru-combobox-option"
+                        onClick={() => choose(option.id)}
+                      >
+                        {nameOf(option)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
             {matching.length === 0 ? (
