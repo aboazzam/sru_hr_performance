@@ -273,10 +273,19 @@ function ChartImageSlot({
  * Two independent images since 2026-08-31 ("نحتاج مكان نرفع فيه النسخة
  * الانجليزية بحيث يتم رفعها عند تصفح المشروع بصفحاته الانجليزية"): a plain
  * viewer only ever sees the one matching the page's OWN current locale (the
- * same single-image behaviour as before), while an editor sees and manages
- * both regardless of which locale they are currently browsing this admin
- * screen in — uploading the English chart doesn't require switching the
- * whole UI to English first.
+ * same single-image behaviour as before).
+ *
+ * An editor sees and manages both regardless of which locale they are
+ * currently browsing this admin screen in — uploading the English chart
+ * doesn't require switching the whole UI to English first. The CURRENT
+ * locale's own image is always listed first though (2026-08-31, found live:
+ * an editor uploaded the same file into the wrong slot, because the first
+ * section rendered "النسخة العربية" no matter which language they were
+ * actually browsing in, and reasonably assumed the first section was the one
+ * that would show on their own current page). Reordering by locale, plus an
+ * explicit note under the second section naming which visitors it actually
+ * reaches, makes that "which one is live right now" question unambiguous
+ * without hiding either editor's controls.
  */
 export function OrgStructureChartImage({
   locale,
@@ -295,16 +304,26 @@ export function OrgStructureChartImage({
     return <ChartImageSlot locale={locale} imageUrl={locale === "en" ? imageUrlEn : imageUrlAr} canEdit={false} />;
   }
 
+  const sections =
+    locale === "ar"
+      ? [
+          { slotLocale: "ar" as const, imageUrl: imageUrlAr, heading: t("chartVersionAr"), note: t("chartCurrentLocaleNote") },
+          { slotLocale: "en" as const, imageUrl: imageUrlEn, heading: t("chartVersionEn"), note: t("chartOtherLocaleNote") },
+        ]
+      : [
+          { slotLocale: "en" as const, imageUrl: imageUrlEn, heading: t("chartVersionEn"), note: t("chartCurrentLocaleNote") },
+          { slotLocale: "ar" as const, imageUrl: imageUrlAr, heading: t("chartVersionAr"), note: t("chartOtherLocaleNote") },
+        ];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-      <div>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("chartVersionAr")}</h2>
-        <ChartImageSlot locale="ar" imageUrl={imageUrlAr} canEdit />
-      </div>
-      <div>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("chartVersionEn")}</h2>
-        <ChartImageSlot locale="en" imageUrl={imageUrlEn} canEdit />
-      </div>
+      {sections.map((section) => (
+        <div key={section.slotLocale}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{section.heading}</h2>
+          <p style={{ color: "var(--sru-muted)", fontSize: 11.5, marginBottom: 10 }}>{section.note}</p>
+          <ChartImageSlot locale={section.slotLocale} imageUrl={section.imageUrl} canEdit />
+        </div>
+      ))}
     </div>
   );
 }

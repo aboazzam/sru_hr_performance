@@ -507,7 +507,9 @@
     "chartMovedNote": "Managing levels and positions has moved to",
     "chartMovedLink": "the organizational units page",
     "chartVersionAr": "Arabic Version",
-    "chartVersionEn": "English Version"
+    "chartVersionEn": "English Version",
+    "chartCurrentLocaleNote": "This is the image shown to visitors browsing the site in this language right now.",
+    "chartOtherLocaleNote": "Not shown on this page — managed here, but only shown to visitors browsing the site in the other language."
   },
   "OrgStructureStaffingPage": {
     "title": "Staff Employees onto Positions",
