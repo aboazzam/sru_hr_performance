@@ -3023,3 +3023,35 @@ table {
   position: sticky;
   top: 0;
 }
+
+/* ===== Nested staffing unit cards (2026-09-01) =====
+   "اعمل كرت كبير للادارة التنفيذية ... وداخلها كروت للادارات التابعة لها"
+   -- a unit whose whole org-unit subtree (per org_units.parent_id) sits
+   under one named anchor (رئيس الجامعة) now renders as a card containing
+   its qualifying children's own cards, as deep as the real tree goes. The
+   outer (depth 0) card reuses .sru-card as-is for the exact same look every
+   other flat group on this page already has; only the inner, nested levels
+   get their own smaller/tinted/indented card so "كرت داخل كرت داخل كرت"
+   reads as a real step-in, not a flat repeat of the same box. */
+.sru-staffing-unit-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.sru-staffing-unit-card-children {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.sru-staffing-unit-card-nested {
+  border: 1px solid var(--sru-border);
+  border-inline-start: 3px solid var(--sru-purple);
+  background: var(--sru-purple-light);
+  padding: 12px 14px;
+  margin-inline-start: 14px;
+}
+.sru-staffing-unit-card-title-nested {
+  font-size: 13px;
+  color: var(--sru-purple-dark);
+}

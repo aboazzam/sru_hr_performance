@@ -1,10 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { PositionStaffingRow } from "@/components/PositionStaffingRow";
+import { StaffingUnitCard } from "@/components/StaffingUnitCard";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { StaffingExportMenu } from "@/components/StaffingExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { Link } from "@/i18n/navigation";
+import { buildStaffingGroups, type StaffingUnitNode } from "@/lib/staffingUnitTree";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign) is org_structure_assignments' own RLS
@@ -18,6 +19,18 @@ import { Link } from "@/i18n/navigation";
 // Positions are created and edited on /org-units now (OrgUnitPositionsManager),
 // which is why this page only groups them by their org unit and offers a
 // staffed/vacant badge plus an assign/unassign dialog per row.
+//
+// 2026-09-01: units under "رئيس الجامعة" (per org_units.parent_id) now nest
+// as cards inside cards down to whatever depth their real hierarchy goes,
+// rather than each rendering as its own flat, unrelated card — "اعمل كرت
+// كبير للادارة التنفيذية ... وداخلها كروت للادارات التابعة لها ... كرت داخل
+// كرت داخل كرت بمجرد وضعنا التبعية". Nesting deliberately does NOT climb
+// past رئيس الجامعة itself (confirmed directly: "يقف التعشيش عند نائب
+// الرئيس ورؤوساء الادارات التنفيذية") -- unbounded nesting would collapse
+// virtually the whole university into one card rooted at مجلس الأمناء,
+// since almost every branch traces back there. Everything outside that
+// subtree (councils, unlinked positions, ...) stays exactly as flat as
+// before. See src/lib/staffingUnitTree.ts for the actual rule.
 export default async function OrgStructureStaffingPage() {
   const t = await getTranslations("OrgStructureStaffingPage");
   const supabase = await createClient();
@@ -36,11 +49,9 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: orgUnitsData } = await supabase
     .from("org_units")
-    .select("id, name_ar")
+    .select("id, name_ar, parent_id")
     .is("deleted_at", null);
-  const orgUnitNameById = new Map(
-    ((orgUnitsData ?? []) as Array<{ id: string; name_ar: string }>).map((unit) => [unit.id, unit.name_ar])
-  );
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -78,31 +89,30 @@ export default async function OrgStructureStaffingPage() {
     (employee) => ({ id: employee.id, label: `${employee.employee_number} — ${employee.full_name_ar}` })
   );
 
-  // Grouped by the position's own linked org unit, not a tree — this screen
-  // only needs "which positions live under which unit", the hierarchy among
-  // units themselves is /org-units' job. A position with no link (or one
-  // pointing at a deleted unit) lands in its own group instead of vanishing.
-  const positionsByGroup = new Map<string, { name: string; positions: typeof positions }>();
-  for (const position of positions) {
-    const unitName = position.org_unit_id ? orgUnitNameById.get(position.org_unit_id) : undefined;
-    const key = unitName ? position.org_unit_id! : "unlinked";
-    const group = positionsByGroup.get(key) ?? { name: unitName ?? t("unlinkedGroupHeading"), positions: [] };
-    group.positions.push(position);
-    positionsByGroup.set(key, group);
-  }
-  const groups = Array.from(positionsByGroup.entries())
-    .map(([key, group]) => ({
-      key,
-      name: group.name,
-      positions: [...group.positions].sort((a, b) => a.name_ar.localeCompare(b.name_ar, "ar")),
-    }))
-    // The unlinked group always trails, whatever its Arabic-collation rank
-    // among real unit names would otherwise put it.
-    .sort((a, b) => {
-      if (a.key === "unlinked") return 1;
-      if (b.key === "unlinked") return -1;
-      return a.name.localeCompare(b.name, "ar");
-    });
+  // "رئيس الجامعة"'s own subtree nests as cards inside cards; everything
+  // else stays one flat card per unit, exactly as before — see the comment
+  // above and src/lib/staffingUnitTree.ts for why the anchor is looked up
+  // by name rather than a hardcoded ID, and why nesting stops there.
+  const staffingPositions = positions.map((position) => ({
+    id: position.id,
+    nameAr: position.name_ar,
+    nameEn: position.name_en,
+    orgUnitId: position.org_unit_id,
+  }));
+  const orgUnitRefs = orgUnits.map((unit) => ({ id: unit.id, nameAr: unit.name_ar, parentId: unit.parent_id }));
+  const { nestedRoots, flatGroups, unlinkedPositions } = buildStaffingGroups(staffingPositions, orgUnitRefs, "رئيس الجامعة");
+
+  const flatAsNodes: StaffingUnitNode[] = flatGroups.map((group) => ({
+    id: group.id,
+    name: group.name,
+    positions: group.positions,
+    children: [],
+  }));
+  const topLevelCards = [...nestedRoots, ...flatAsNodes].sort((a, b) => a.name.localeCompare(b.name, "ar"));
+  // The unlinked group always trails, whatever its Arabic-collation rank
+  // among real unit names would otherwise put it.
+  const unlinkedNode: StaffingUnitNode | null =
+    unlinkedPositions.length > 0 ? { id: "unlinked", name: t("unlinkedGroupHeading"), positions: unlinkedPositions, children: [] } : null;
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -136,23 +146,12 @@ export default async function OrgStructureStaffingPage() {
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {groups.map((group) => (
-            <div key={group.key} className="sru-card">
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{group.name}</h3>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {group.positions.map((position) => (
-                  <PositionStaffingRow
-                    key={position.id}
-                    positionId={position.id}
-                    nameAr={position.name_ar}
-                    nameEn={position.name_en}
-                    assignments={assignmentsByPositionId.get(position.id) ?? []}
-                    employees={employeeOptions}
-                  />
-                ))}
-              </ul>
-            </div>
+          {topLevelCards.map((node) => (
+            <StaffingUnitCard key={node.id} node={node} depth={0} assignmentsByPositionId={assignmentsByPositionId} employees={employeeOptions} />
           ))}
+          {unlinkedNode ? (
+            <StaffingUnitCard node={unlinkedNode} depth={0} assignmentsByPositionId={assignmentsByPositionId} employees={employeeOptions} />
+          ) : null}
         </div>
       )}
     </div>
