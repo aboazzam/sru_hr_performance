@@ -280,3 +280,65 @@ export async function deleteOrgUnit(id: string): Promise<OrgUnitActionState> {
 
   return { status: "success" };
 }
+
+const reorderOrgUnitsSchema = z.object({
+  parentId: z.string().uuid().nullable(),
+  orderedIds: z.array(z.string().uuid()).min(1),
+});
+
+/**
+ * Reorders one sibling group -- every unit sharing `parentId` (or every
+ * root, for `parentId: null`) -- to match `orderedIds`. 2026-09-02: "اضف
+ * خاصية التحريك بحيث يمكن للمستخدم تغيير الترتيب"، ثم "كلاهما، ونفّذها في
+ * صفحة الوحدات التنظيمية" once asked whether that meant reordering the
+ * child units inside a card, the top-level cards themselves, or both --
+ * both are the SAME operation here: a unit's `sort_order` is read wherever
+ * it's displayed (this tree and the staffing screen's nested cards alike),
+ * so reordering the real siblings under "رئيس الجامعة" in this tree is
+ * exactly what controls the staffing screen's own top-level card order.
+ *
+ * `orderedIds` must be exactly the current, non-deleted members of that ONE
+ * sibling group -- checked explicitly, the same discipline `reorderLevels`
+ * already established, so a partial or foreign list can't silently corrupt
+ * a group it wasn't even about. Unlike `org_structure_levels.level_order`,
+ * `sort_order` carries no uniqueness constraint (a duplicate is harmless,
+ * broken by name_ar), so this writes the final values directly in one pass
+ * -- no negative-placeholder dance needed to dodge a collision that can't
+ * happen.
+ */
+export async function reorderOrgUnits(parentId: string | null, orderedIds: string[]): Promise<OrgUnitActionState> {
+  const parsed = reorderOrgUnitsSchema.safeParse({ parentId, orderedIds });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "error", message: "unauthenticated" };
+
+  let siblingQuery = supabase.from("org_units").select("id").is("deleted_at", null);
+  siblingQuery = parsed.data.parentId ? siblingQuery.eq("parent_id", parsed.data.parentId) : siblingQuery.is("parent_id", null);
+  const { data: siblings, error: fetchError } = await siblingQuery;
+  if (fetchError) return mapError(fetchError);
+
+  const siblingIds = new Set((siblings ?? []).map((row) => row.id as string));
+  const requestedIds = parsed.data.orderedIds;
+  if (siblingIds.size !== requestedIds.length || !requestedIds.every((id) => siblingIds.has(id))) {
+    return { status: "error", message: "invalid_input" };
+  }
+
+  for (let i = 0; i < requestedIds.length; i++) {
+    const { error } = await supabase.from("org_units").update({ sort_order: i }).eq("id", requestedIds[i]);
+    if (error) return mapError(error);
+  }
+
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: user.id,
+    action: "org_units_reordered",
+    entity: "org_units",
+    after_data: { parent_id: parsed.data.parentId, order: requestedIds },
+  });
+
+  return { status: "success" };
+}

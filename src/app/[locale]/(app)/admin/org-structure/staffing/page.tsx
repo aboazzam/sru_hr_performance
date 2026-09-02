@@ -5,7 +5,7 @@ import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExce
 import { StaffingExportMenu } from "@/components/StaffingExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { Link } from "@/i18n/navigation";
-import { buildStaffingGroups, type StaffingUnitNode } from "@/lib/staffingUnitTree";
+import { buildStaffingGroups, compareUnits, type StaffingUnitNode } from "@/lib/staffingUnitTree";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign) is org_structure_assignments' own RLS
@@ -31,6 +31,12 @@ import { buildStaffingGroups, type StaffingUnitNode } from "@/lib/staffingUnitTr
 // since almost every branch traces back there. Everything outside that
 // subtree (councils, unlinked positions, ...) stays exactly as flat as
 // before. See src/lib/staffingUnitTree.ts for the actual rule.
+//
+// 2026-09-02: ordering — of siblings within a card, and of the top-level
+// cards among themselves — now follows each unit's own manually-set
+// `sort_order` (drag-and-drop, built on /org-units) before falling back to
+// alphabetical, rather than being purely alphabetical. This page never
+// writes that column; it only reads it, same as everything else here.
 export default async function OrgStructureStaffingPage() {
   const t = await getTranslations("OrgStructureStaffingPage");
   const supabase = await createClient();
@@ -49,9 +55,9 @@ export default async function OrgStructureStaffingPage() {
 
   const { data: orgUnitsData } = await supabase
     .from("org_units")
-    .select("id, name_ar, parent_id")
+    .select("id, name_ar, parent_id, sort_order")
     .is("deleted_at", null);
-  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>;
+  const orgUnits = (orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null; sort_order: number }>;
 
   const { data: assignmentsData } = await supabase
     .from("org_structure_assignments")
@@ -99,7 +105,7 @@ export default async function OrgStructureStaffingPage() {
     nameEn: position.name_en,
     orgUnitId: position.org_unit_id,
   }));
-  const orgUnitRefs = orgUnits.map((unit) => ({ id: unit.id, nameAr: unit.name_ar, parentId: unit.parent_id }));
+  const orgUnitRefs = orgUnits.map((unit) => ({ id: unit.id, nameAr: unit.name_ar, parentId: unit.parent_id, sortOrder: unit.sort_order }));
   const { nestedRoots, flatGroups, unlinkedPositions } = buildStaffingGroups(staffingPositions, orgUnitRefs, "رئيس الجامعة");
 
   const flatAsNodes: StaffingUnitNode[] = flatGroups.map((group) => ({
@@ -107,12 +113,18 @@ export default async function OrgStructureStaffingPage() {
     name: group.name,
     positions: group.positions,
     children: [],
+    sortOrder: group.sortOrder,
   }));
-  const topLevelCards = [...nestedRoots, ...flatAsNodes].sort((a, b) => a.name.localeCompare(b.name, "ar"));
-  // The unlinked group always trails, whatever its Arabic-collation rank
-  // among real unit names would otherwise put it.
+  // Same tie-break rule buildStaffingGroups already applies within each of
+  // these two arrays -- reused here to merge them into one ordered list.
+  const topLevelCards = [...nestedRoots, ...flatAsNodes].sort(compareUnits);
+  // The unlinked group always trails, whatever its sortOrder/Arabic-collation
+  // rank among real unit names would otherwise put it -- it isn't a real
+  // org_units row, so it has no sortOrder of its own to compare with.
   const unlinkedNode: StaffingUnitNode | null =
-    unlinkedPositions.length > 0 ? { id: "unlinked", name: t("unlinkedGroupHeading"), positions: unlinkedPositions, children: [] } : null;
+    unlinkedPositions.length > 0
+      ? { id: "unlinked", name: t("unlinkedGroupHeading"), positions: unlinkedPositions, children: [], sortOrder: 0 }
+      : null;
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>

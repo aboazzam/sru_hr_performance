@@ -42,7 +42,7 @@ export default async function OrgUnitsPage() {
   ] = await Promise.all([
     supabase
       .from("org_units")
-      .select("id, name_ar, name_en, unit_code, kind_id, type_id, level_id, parent_id")
+      .select("id, name_ar, name_en, unit_code, kind_id, type_id, level_id, parent_id, sort_order")
       .is("deleted_at", null)
       .order("name_ar"),
     supabase
@@ -79,6 +79,7 @@ export default async function OrgUnitsPage() {
     type_id: string | null;
     level_id: string | null;
     parent_id: string | null;
+    sort_order: number;
   }>;
 
   const levelRecords = (levelRows ?? []) as Array<{
@@ -163,6 +164,7 @@ export default async function OrgUnitsPage() {
     levelNameAr: row.level_id ? levelName.get(row.level_id) ?? null : null,
     levelOrder: row.level_id ? levelOrder.get(row.level_id) ?? null : null,
     parentId: row.parent_id,
+    sortOrder: row.sort_order,
   }));
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");

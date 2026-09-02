@@ -22,6 +22,7 @@ import {
   type PositionOption,
 } from "@/components/OrgUnitPositionsManager";
 import { ORG_UNIT_EXPORT_COLUMNS } from "@/lib/orgUnitExportColumns";
+import { OrgUnitSiblingsList } from "@/components/OrgUnitSiblingsList";
 
 const errorKeys: Record<string, string> = {
   invalid_input: "errorInvalidInput",
@@ -48,6 +49,11 @@ export interface OrgUnitRow {
   levelNameAr: string | null;
   levelOrder: number | null;
   parentId: string | null;
+  /** Manual display order among siblings (2026-09-02 drag-to-reorder) -- 0
+   *  for every unit until an admin actually drags one, so ties still fall
+   *  back to alphabetical below, exactly matching the order this screen
+   *  already showed before this column existed. */
+  sortOrder: number;
 }
 
 type Node = OrgUnitRow & { children: Node[] };
@@ -63,7 +69,7 @@ function buildTree(rows: OrgUnitRow[]): Node[] {
     else roots.push(node);
   }
   const sort = (list: Node[]) => {
-    list.sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"));
+    list.sort((a, b) => a.sortOrder - b.sortOrder || a.nameAr.localeCompare(b.nameAr, "ar"));
     list.forEach((n) => sort(n.children));
   };
   sort(roots);
@@ -280,23 +286,48 @@ function UnitRow({
 
       {node.children.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {node.children.map((child) => (
-            <UnitRow
-              key={child.id}
-              node={child}
-              indent={indents.get(child.id) ?? indent + 1}
-              rows={rows}
-              kinds={kinds}
-              types={types}
-              levels={levels}
-              positionsByUnit={positionsByUnit}
-              allPositions={allPositions}
-              indents={indents}
-              canEditPositions={canEditPositions}
-              canEdit={canEdit}
-              onDone={onDone}
+          {canEdit ? (
+            <OrgUnitSiblingsList
+              parentId={node.id}
+              items={node.children.map((child) => ({
+                id: child.id,
+                node: (
+                  <UnitRow
+                    node={child}
+                    indent={indents.get(child.id) ?? indent + 1}
+                    rows={rows}
+                    kinds={kinds}
+                    types={types}
+                    levels={levels}
+                    positionsByUnit={positionsByUnit}
+                    allPositions={allPositions}
+                    indents={indents}
+                    canEditPositions={canEditPositions}
+                    canEdit={canEdit}
+                    onDone={onDone}
+                  />
+                ),
+              }))}
             />
-          ))}
+          ) : (
+            node.children.map((child) => (
+              <UnitRow
+                key={child.id}
+                node={child}
+                indent={indents.get(child.id) ?? indent + 1}
+                rows={rows}
+                kinds={kinds}
+                types={types}
+                levels={levels}
+                positionsByUnit={positionsByUnit}
+                allPositions={allPositions}
+                indents={indents}
+                canEditPositions={canEditPositions}
+                canEdit={canEdit}
+                onDone={onDone}
+              />
+            ))
+          )}
         </ul>
       ) : null}
     </li>
@@ -490,23 +521,48 @@ export function OrgUnitsManager({
           )
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {tree.map((root) => (
-              <UnitRow
-                key={root.id}
-                node={root}
-                indent={indents.get(root.id) ?? 0}
-                rows={rows}
-                kinds={kinds}
-                types={types}
-                levels={levels}
-                positionsByUnit={positionsByUnit}
-                allPositions={allPositions}
-                indents={indents}
-                canEditPositions={canEditPositions}
-                canEdit={canEdit}
-                onDone={refresh}
+            {canEdit ? (
+              <OrgUnitSiblingsList
+                parentId={null}
+                items={tree.map((root) => ({
+                  id: root.id,
+                  node: (
+                    <UnitRow
+                      node={root}
+                      indent={indents.get(root.id) ?? 0}
+                      rows={rows}
+                      kinds={kinds}
+                      types={types}
+                      levels={levels}
+                      positionsByUnit={positionsByUnit}
+                      allPositions={allPositions}
+                      indents={indents}
+                      canEditPositions={canEditPositions}
+                      canEdit={canEdit}
+                      onDone={refresh}
+                    />
+                  ),
+                }))}
               />
-            ))}
+            ) : (
+              tree.map((root) => (
+                <UnitRow
+                  key={root.id}
+                  node={root}
+                  indent={indents.get(root.id) ?? 0}
+                  rows={rows}
+                  kinds={kinds}
+                  types={types}
+                  levels={levels}
+                  positionsByUnit={positionsByUnit}
+                  allPositions={allPositions}
+                  indents={indents}
+                  canEditPositions={canEditPositions}
+                  canEdit={canEdit}
+                  onDone={refresh}
+                />
+              ))
+            )}
           </ul>
         )}
       </div>
