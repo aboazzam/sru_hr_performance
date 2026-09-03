@@ -56,7 +56,8 @@ export type ProcessArea =
   | "recruitmentPlan"
   | "recruitmentBudget"
   | "recruitmentRequests"
-  | "recruitmentPortal";
+  | "recruitmentPortal"
+  | "threeSixty";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -87,6 +88,7 @@ export const processAreas: ProcessArea[] = [
   "recruitmentBudget",
   "recruitmentRequests",
   "recruitmentPortal",
+  "threeSixty",
 ];
 
 /**
@@ -125,6 +127,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   recruitmentBudget: "مراجعة ميزانية التوظيف",
   recruitmentRequests: "طلب الاحتياج",
   recruitmentPortal: "بوابة التوظيف",
+  threeSixty: "التقييم الدائري (360)",
 };
 
 export interface ProcessAreaSection {
@@ -176,13 +179,18 @@ export interface ProcessAreaSection {
  * والمسار الوظيفي" (the one-section-per-area invariant means an area can
  * only be listed once). Known coupling, deliberate: `promotions` also
  * gates `rewards` and `recommendations`, so a grant made under this
- * section reaches those too — see that migration's header.
+ * section reaches those too — see that migration's header. `threeSixty`
+ * (20260902) backs the standalone "التقييم الدائري" (360 Review) module —
+ * its own cycles/rater-groups/competencies/items/assignments/responses
+ * schema, independent of the older, simpler `feedback_360` table (which
+ * stays on `evaluation`, unchanged).
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
     titleAr: "طرق التقييم وإدارة الأداء",
     areas: [
       "evaluation",
+      "threeSixty",
       "calibration",
       "goalsLibrary",
       "goalAssignment",
