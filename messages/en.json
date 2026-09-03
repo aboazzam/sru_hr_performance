@@ -550,7 +550,8 @@
     "exportColumnsHeading": "Choose columns to export",
     "exportColumnsNote": "Select the fields to include in the file — covers the full staffing table's data.",
     "exportConfirmButton": "Export",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "dragToReorder": "Drag to reorder"
   },
   "EmployeesPage": {
     "title": "Employees",
