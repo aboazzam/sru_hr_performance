@@ -334,7 +334,8 @@
     "positionParentNoMatches": "لا مناصب مطابقة",
     "positionSaved": "حُفظ",
     "positionLevelFallback": "لا مستوى للوحدة بعد — حدّده هنا، أو من نموذج الوحدة ليرثه كل مناصبها.",
-    "positionParentNoUnit": "بلا وحدة تنظيمية"
+    "positionParentNoUnit": "بلا وحدة تنظيمية",
+    "dragToReorder": "اسحب لإعادة الترتيب"
   },
   "AdminPage": {
     "title": "المستخدمون والصلاحيات",

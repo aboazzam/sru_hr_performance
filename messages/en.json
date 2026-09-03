@@ -334,7 +334,8 @@
     "positionParentNoMatches": "No matching positions",
     "positionSaved": "Saved",
     "positionLevelFallback": "This unit has no level yet — set it here, or on the unit form so its positions inherit it.",
-    "positionParentNoUnit": "No organizational unit"
+    "positionParentNoUnit": "No organizational unit",
+    "dragToReorder": "Drag to reorder"
   },
   "AdminPage": {
     "title": "Users & Permissions",
