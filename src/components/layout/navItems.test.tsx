@@ -50,15 +50,39 @@ describe("navItems (top-level, ungrouped)", () => {
 });
 
 describe("navGroups (2026-07-24 grouped nav)", () => {
-  it("has exactly 6 groups, with executivePlan added after strategicPlan (2026-08-20)", () => {
+  it("has exactly 7 groups, with threeSixty added after recruitment (2026-09-02)", () => {
     expect(navGroups.map((g) => g.groupKey)).toEqual([
       "strategicPlan",
       "executivePlan",
       "administration",
       "evaluationMethods",
       "recruitment",
+      "threeSixty",
       "evaluationResults",
     ]);
+  });
+
+  // "التقييم الدائري" (360 Review, 2026-09-02): two HR tabs gated on the new
+  // `threeSixty` area, and five self-service tabs deliberately ungated --
+  // same "kpis"/"reports" precedent (real access is row-level: self,
+  // is_my_direct_report, is_my_subordinate — not a role_permissions grant
+  // most roles never hold).
+  it("the threeSixty group has its two gated tabs and five ungated self-service tabs", () => {
+    const threeSixty = navGroups.find((g) => g.groupKey === "threeSixty")!;
+    expect(threeSixty.children.map((c) => c.segment)).toEqual([
+      "three-sixty",
+      "three-sixty/template",
+      "three-sixty/nominate",
+      "three-sixty/approvals",
+      "three-sixty/rate",
+      "three-sixty/report",
+      "three-sixty/team-report",
+    ]);
+    expect(threeSixty.children[0].access).toEqual([{ processArea: "threeSixty", minLevel: "view" }]);
+    expect(threeSixty.children[1].access).toEqual([{ processArea: "threeSixty", minLevel: "prepare" }]);
+    for (const child of threeSixty.children.slice(2)) {
+      expect(child.access).toBeUndefined();
+    }
   });
 
   // 2026-08-04: the "التوظيف" module — خطة التوظيف (its own new
@@ -138,7 +162,18 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     // "kpis/plans" -- browsing which plans exist is for all staff, and
     // creating one is gated on the page itself. "kpis" moved into the new
     // executivePlan group but stays ungated for the same row-level reason.
-    const ungated = new Set(["kpis/plans", "operational-plans", "initiative-assignments"]);
+    const ungated = new Set([
+      "kpis/plans",
+      "operational-plans",
+      "initiative-assignments",
+      // "التقييم الدائري" self-service tabs (2026-09-02) -- see the dedicated
+      // threeSixty test above for why these five are deliberately ungated.
+      "three-sixty/nominate",
+      "three-sixty/approvals",
+      "three-sixty/rate",
+      "three-sixty/report",
+      "three-sixty/team-report",
+    ]);
     for (const group of navGroups) {
       for (const child of group.children) {
         if (ungated.has(child.segment)) {
@@ -287,15 +322,25 @@ describe("visibleNavItems", () => {
 });
 
 describe("visibleNavGroups", () => {
-  it("always shows both plan groups (every child ungated) regardless of permissions", () => {
+  it("always shows both plan groups plus threeSixty's ungated tabs regardless of permissions", () => {
     // 2026-08-01: after removing the vision/mission, strategic-goals, and
     // goal-library tabs from this group, its only two remaining children
     // ("kpis/plans", "kpis") are both ungated -- so this group's visibility
     // no longer varies by permission at all, unlike before.
+    // 2026-09-02: threeSixty joins them -- five of its seven tabs are
+    // ungated self-service pages, so the group (with just those five
+    // children) is always visible too, even with zero grants.
     const groups = visibleNavGroups(navGroups, {});
-    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan"]);
+    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan", "threeSixty"]);
     expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans"]);
     expect(groups[1].children.map((c) => c.segment)).toEqual(["operational-plans", "initiative-assignments"]);
+    expect(groups[2].children.map((c) => c.segment)).toEqual([
+      "three-sixty/nominate",
+      "three-sixty/approvals",
+      "three-sixty/rate",
+      "three-sixty/report",
+      "three-sixty/team-report",
+    ]);
   });
 
   it("still shows both plan groups for a strategy_admin-level permission set", () => {

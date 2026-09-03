@@ -34,6 +34,52 @@ export const CAREER_PATH_IMPORT_COLUMNS = {
 } as const;
 
 /**
+ * التقييم الدائري (360): the "قالب" workbook -- one sheet per catalog
+ * table (rater_group / rating_scale / competency / item). Column headers
+ * are the literal snake_case field names given directly by the project
+ * owner ("بمفاتيح مطابقة لملف الاستيراد المرفق") rather than this app's
+ * usual Arabic-label convention, since no actual reference file exists to
+ * derive Arabic labels from -- the given field names ARE the reference.
+ */
+export const THREE_SIXTY_RATER_GROUP_COLUMNS = {
+  relationshipCode: "relationship_code",
+  nameAr: "name_ar",
+  groupWeightPct: "group_weight_pct",
+  minRatersInGroup: "min_raters_in_group",
+  maxRatersInGroup: "max_raters_in_group",
+  shownSeparately: "shown_separately",
+  employeeMayNominate: "employee_may_nominate",
+} as const;
+
+export const THREE_SIXTY_RATING_SCALE_COLUMNS = {
+  scaleCode: "scale_code",
+  optionCode: "option_code",
+  labelAr: "label_ar",
+  numericValue: "numeric_value",
+  countedInScore: "counted_in_score",
+} as const;
+
+export const THREE_SIXTY_COMPETENCY_COLUMNS = {
+  competencyCode: "competency_code",
+  nameAr: "name_ar",
+  definitionAr: "definition_ar",
+  weightPct: "weight_pct",
+  appliesTo: "applies_to",
+} as const;
+
+export const THREE_SIXTY_ITEM_COLUMNS = {
+  itemCode: "item_code",
+  competencyCode: "competency_code",
+  itemType: "item_type",
+  textAr: "text_ar",
+  raterGroups: "rater_groups",
+  required: "required",
+  reverseScored: "reverse_scored",
+  scaleCode: "scale_code",
+  displayOrder: "display_order",
+} as const;
+
+/**
  * Spans BOTH sheets of the employees/org-structure workbook. The mapping is
  * applied to each sheet's own header row, so a label only ever matches the
  * sheet that actually has it.

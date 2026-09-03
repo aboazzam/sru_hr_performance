@@ -34,6 +34,10 @@ import {
   Megaphone,
   Globe,
   Building2,
+  Orbit,
+  Layers,
+  UserCheck,
+  PenLine,
 } from "lucide-react";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
@@ -287,6 +291,31 @@ export const navGroups: NavGroup[] = [
       // `vacancies`، فيمكن منح تصفّح البوابة دون إدارة الشواغر.
       { segment: "recruitment/portal", labelKey: "recruitmentPortalInternal", icon: Globe, access: [{ processArea: "recruitmentPortal", minLevel: "view" }] },
       { segment: "recruitment/portal/external", labelKey: "recruitmentPortalExternal", icon: Globe, access: [{ processArea: "recruitmentPortal", minLevel: "view" }] },
+    ],
+  },
+  // "التقييم الدائري" (360 Review, 2026-09-02): a standalone new module,
+  // independent of the older/simpler "feedback-360" page still living
+  // under evaluationMethods. Two tabs are HR-only (managing the cycle and
+  // its survey template) and gated on the new `threeSixty` area; the other
+  // four are self-service (nominate my own raters, my supervisor approving
+  // my team's nominations, rating the people I was assigned, and reading
+  // my own/my team's report) and deliberately left ungated -- same "reports"/
+  // "kpis" precedent used throughout this file: real access is row-level
+  // (self/assignment/is_my_direct_report/is_my_subordinate), not a flat
+  // role_permissions grant most roles never hold, so gating the tab itself
+  // would hide it from people who genuinely have something to do there.
+  {
+    groupKey: "threeSixty",
+    labelKey: "threeSixty",
+    icon: Orbit,
+    children: [
+      { segment: "three-sixty", labelKey: "threeSixtyCycles", icon: Orbit, access: [{ processArea: "threeSixty", minLevel: "view" }] },
+      { segment: "three-sixty/template", labelKey: "threeSixtyTemplate", icon: Layers, access: [{ processArea: "threeSixty", minLevel: "prepare" }] },
+      { segment: "three-sixty/nominate", labelKey: "threeSixtyNominate", icon: UserCheck },
+      { segment: "three-sixty/approvals", labelKey: "threeSixtyApprovals", icon: ClipboardCheck },
+      { segment: "three-sixty/rate", labelKey: "threeSixtyRate", icon: PenLine },
+      { segment: "three-sixty/report", labelKey: "threeSixtyReport", icon: FileBarChart },
+      { segment: "three-sixty/team-report", labelKey: "threeSixtyTeamReport", icon: Users },
     ],
   },
   {
