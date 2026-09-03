@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, startTransition, type FormEvent } from "react";
+import { useActionState, useEffect, useMemo, useState, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { submitThreeSixtyNominations, type SubmitNominationsState } from "@/app/[locale]/(app)/three-sixty/nominate/actions";
@@ -90,9 +90,17 @@ export function ThreeSixtyNominateForm({
     startTransition(() => formAction(formData));
   }
 
-  if (state?.status === "success") {
-    startTransition(() => router.refresh());
-  }
+  // In useEffect, not the render body: found during review that this was
+  // the one component in this PR calling router.refresh() directly during
+  // render -- since refresh() doesn't unmount the component (unlike the
+  // router.push() calls elsewhere in this module), state.status stays
+  // 'success' across the resulting re-render and the render body would
+  // call refresh() again, forever. useEffect's [state] dependency only
+  // re-fires on a genuine new action-state object (a fresh submission),
+  // matching every other action-state component in this module.
+  useEffect(() => {
+    if (state?.status === "success") router.refresh();
+  }, [state, router]);
 
   return (
     <form onSubmit={handleSubmit}>

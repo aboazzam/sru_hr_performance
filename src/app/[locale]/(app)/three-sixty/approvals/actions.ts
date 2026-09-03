@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createMissingThreeSixtyAssignments } from "../assignmentCreation";
 
 const schema = z.object({
   cycleId: z.string().uuid(),
@@ -87,28 +89,30 @@ export async function reviewThreeSixtyNominations(
   if (!count) return { status: "error", message: "forbidden" };
 
   if (decision === "approved") {
-    const { data: existingAssignments } = await supabase
-      .from("three_sixty_assignments")
-      .select("relationship_code, rater_employee_id")
-      .eq("cycle_id", cycleId)
-      .eq("subject_employee_id", subjectEmployeeId)
-      .is("deleted_at", null);
-    const existingKeys = new Set((existingAssignments ?? []).map((a) => `${a.relationship_code}::${a.rater_employee_id}`));
-
-    const toInsert = submittedRows
-      .filter((r) => !existingKeys.has(`${r.relationship_code}::${r.rater_employee_id}`))
-      .map((r) => ({
-        cycle_id: cycleId,
-        subject_employee_id: subjectEmployeeId,
-        rater_employee_id: r.rater_employee_id,
-        relationship_code: r.relationship_code,
-      }));
-
-    if (toInsert.length > 0) {
-      const { error: insertError } = await supabase.from("three_sixty_assignments").insert(toInsert);
-      if (insertError) return { status: "error", message: "unknown" };
-    }
+    const { error: createError } = await createMissingThreeSixtyAssignments(
+      supabase,
+      cycleId,
+      submittedRows.map((r) => ({
+        subjectEmployeeId,
+        raterEmployeeId: r.rater_employee_id,
+        relationshipCode: r.relationship_code,
+      }))
+    );
+    if (createError) return { status: "error", message: "unknown" };
   }
+
+  // CLAUDE.md 5-A rule 6: audit every sensitive write. An approval/return
+  // decision has real downstream effects (it materializes assignment
+  // rows on approval) -- found missing across this whole module on review.
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: user.id,
+    action: "three_sixty_nomination_reviewed",
+    entity: "three_sixty_nominations",
+    entity_id: subjectEmployeeId,
+    before_data: { cycleId, status: "submitted", count: submittedRows.length },
+    after_data: { decision, notes: notes ?? null },
+  });
 
   return { status: "success" };
 }

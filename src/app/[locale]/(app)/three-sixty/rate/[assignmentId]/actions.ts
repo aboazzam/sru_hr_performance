@@ -79,14 +79,15 @@ export type SubmitAssignmentState =
  * Required items are checked here, not just in the UI, since a client-only
  * check can't be trusted (CLAUDE.md's "never trust the client" rule).
  */
+const submitSchema = z.object({ assignmentId: z.string().uuid() });
+
 export async function submitThreeSixtyAssignment(
   _prevState: SubmitAssignmentState,
   formData: FormData
 ): Promise<SubmitAssignmentState> {
-  const assignmentId = formData.get("assignmentId");
-  if (typeof assignmentId !== "string" || assignmentId === "") {
-    return { status: "error", message: "invalid_input" };
-  }
+  const parsed = submitSchema.safeParse({ assignmentId: formData.get("assignmentId") });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+  const { assignmentId } = parsed.data;
 
   const supabase = await createClient();
 

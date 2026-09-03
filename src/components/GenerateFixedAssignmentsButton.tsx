@@ -26,7 +26,7 @@ export function GenerateFixedAssignmentsButton({ cycleId }: { cycleId: string })
         </span>
       )}
       {state?.status === "error" && (
-        <span role="alert" style={{ fontSize: 11.5, color: "#b91c1c", marginInlineStart: 10 }}>
+        <span role="alert" style={{ fontSize: 11.5, color: "var(--sru-danger, #b91c1c)", marginInlineStart: 10 }}>
           {t("generateAssignmentsError")}
         </span>
       )}

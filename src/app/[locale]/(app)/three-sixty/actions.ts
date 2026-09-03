@@ -2,6 +2,9 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const cycleIdSchema = z.object({ cycleId: z.string().uuid() });
 
 const createCycleSchema = z
   .object({
@@ -114,6 +117,17 @@ export async function createThreeSixtyCycle(
     return { status: "error", message: "unknown" };
   }
 
+  // CLAUDE.md 5-A rule 6: audit every sensitive write -- found missing
+  // across this whole module on review.
+  const admin = createAdminClient();
+  await admin.from("audit_log").insert({
+    actor_id: user.id,
+    action: "three_sixty_cycle_created",
+    entity: "three_sixty_cycles",
+    entity_id: inserted.id,
+    after_data: { cycleCode: d.cycleCode, nameAr: d.nameAr },
+  });
+
   return { status: "success", cycleId: inserted.id };
 }
 
@@ -132,11 +146,15 @@ export async function activateThreeSixtyCycle(
   _prevState: ThreeSixtyCycleActionState,
   formData: FormData
 ): Promise<ThreeSixtyCycleActionState> {
-  const cycleId = formData.get("cycleId");
-  if (typeof cycleId !== "string" || cycleId === "") {
-    return { status: "error", message: "invalid_input" };
-  }
+  const parsed = cycleIdSchema.safeParse({ cycleId: formData.get("cycleId") });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+  const { cycleId } = parsed.data;
+
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error, count } = await supabase
     .from("three_sixty_cycles")
     .update({ status: "active" }, { count: "exact" })
@@ -151,6 +169,19 @@ export async function activateThreeSixtyCycle(
     return { status: "error", message: "unknown" };
   }
   if (!count) return { status: "error", message: "forbidden" };
+
+  if (user) {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "three_sixty_cycle_activated",
+      entity: "three_sixty_cycles",
+      entity_id: cycleId,
+      before_data: { status: "draft" },
+      after_data: { status: "active" },
+    });
+  }
+
   return { status: "success" };
 }
 
@@ -159,11 +190,15 @@ export async function closeThreeSixtyCycle(
   _prevState: ThreeSixtyCycleActionState,
   formData: FormData
 ): Promise<ThreeSixtyCycleActionState> {
-  const cycleId = formData.get("cycleId");
-  if (typeof cycleId !== "string" || cycleId === "") {
-    return { status: "error", message: "invalid_input" };
-  }
+  const parsed = cycleIdSchema.safeParse({ cycleId: formData.get("cycleId") });
+  if (!parsed.success) return { status: "error", message: "invalid_input" };
+  const { cycleId } = parsed.data;
+
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error, count } = await supabase
     .from("three_sixty_cycles")
     .update({ status: "closed" }, { count: "exact" })
@@ -177,5 +212,18 @@ export async function closeThreeSixtyCycle(
     return { status: "error", message: "unknown" };
   }
   if (!count) return { status: "error", message: "forbidden" };
+
+  if (user) {
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
+      actor_id: user.id,
+      action: "three_sixty_cycle_closed",
+      entity: "three_sixty_cycles",
+      entity_id: cycleId,
+      before_data: { status: "active" },
+      after_data: { status: "closed" },
+    });
+  }
+
   return { status: "success" };
 }

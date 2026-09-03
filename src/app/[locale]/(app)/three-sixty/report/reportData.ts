@@ -93,20 +93,25 @@ export async function getThreeSixtyReport(
   const { data: responseRows } = await supabase
     .from("three_sixty_responses")
     .select(
-      "numeric_value, text_value, three_sixty_items(competency_id, item_type, reverse_scored, scale_code, text_ar, three_sixty_competencies(name_ar))"
+      "option_id, numeric_value, text_value, three_sixty_items(competency_id, item_type, reverse_scored, scale_code, text_ar, three_sixty_competencies(name_ar))"
     )
     .in("assignment_id", submittedAssignmentIds);
 
   const { data: scaleRows } = await supabase
     .from("three_sixty_rating_scale_options")
-    .select("scale_code, numeric_value, counted_in_score")
+    .select("id, scale_code, numeric_value, counted_in_score")
     .is("deleted_at", null);
   const scaleBoundsByCode = new Map<string, { min: number; max: number }>();
+  // Keyed by option id, not scale_code+numeric_value -- counted_in_score is a
+  // per-OPTION flag (e.g. an "N/A" option with counted_in_score=false), not
+  // derivable from the scale's numeric bounds.
+  const countedByOptionId = new Map<string, boolean>();
   for (const row of scaleRows ?? []) {
     const bounds = scaleBoundsByCode.get(row.scale_code) ?? { min: row.numeric_value, max: row.numeric_value };
     bounds.min = Math.min(bounds.min, row.numeric_value);
     bounds.max = Math.max(bounds.max, row.numeric_value);
     scaleBoundsByCode.set(row.scale_code, bounds);
+    countedByOptionId.set(row.id, row.counted_in_score);
   }
 
   const scored: { competencyId: string; numericValue: number; reverseScored: boolean; scaleMin: number; scaleMax: number; countedInScore: boolean }[] = [];
@@ -131,13 +136,18 @@ export async function getThreeSixtyReport(
     }
     if (row.numeric_value == null || !item.scale_code) continue;
     const bounds = scaleBoundsByCode.get(item.scale_code) ?? { min: row.numeric_value, max: row.numeric_value };
+    // Defaults to true (counted) only when the option can't be resolved at
+    // all (e.g. a stale/deleted option) -- a real, live option's own flag
+    // always wins, so an "N/A"-style option marked counted_in_score=false
+    // is correctly excluded instead of silently averaged in.
+    const countedInScore = row.option_id ? (countedByOptionId.get(row.option_id) ?? true) : true;
     scored.push({
       competencyId: item.competency_id,
       numericValue: row.numeric_value,
       reverseScored: item.reverse_scored,
       scaleMin: bounds.min,
       scaleMax: bounds.max,
-      countedInScore: true,
+      countedInScore,
     });
   }
 

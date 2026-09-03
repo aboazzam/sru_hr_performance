@@ -97,7 +97,7 @@ export function ThreeSixtyQuestionnaireForm({
               <div>
                 <h3>
                   {item.textAr}
-                  {item.required && <span style={{ color: "#b91c1c" }}> *</span>}
+                  {item.required && <span style={{ color: "var(--sru-danger, #b91c1c)" }}> *</span>}
                 </h3>
               </div>
               {savedAt[item.id] && (
