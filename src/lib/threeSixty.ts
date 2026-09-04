@@ -4,6 +4,21 @@
  * matching this project's convention of extracting shared business rules
  * (e.g. `recruitmentPlan.ts`, `vacancyStatus.ts`, `orgStructurePositions.ts`)
  * rather than inlining them once inside a Server Component/Action.
+ *
+ * The scoring pipeline (2026-09-04 rewrite, literal rules given directly by
+ * the project owner) is a chain of small, composable functions rather than
+ * one large one, so each rule is independently testable:
+ *
+ *   raw assignments --excludeByTenure--> eligible assignments
+ *   eligible assignments + responses --computeItemGroupAverages-->
+ *     per (item, rater group) averages
+ *   --computeCompetencyGroupScores--> per (competency, rater group) scores
+ *   --computeCompetencyOfficialScores (combineWeighted by group_weight_pct)-->
+ *     per-competency official score
+ *   --computeOverallScore (combineWeighted by weight_pct)--> overall score
+ *
+ * `combineWeighted` is the ONE weighted-combine implementation shared by the
+ * competency, overall, and item-ranking steps -- not three near-copies.
  */
 
 export type ThreeSixtyCycleStatus = "draft" | "active" | "closed";
@@ -28,9 +43,13 @@ export const threeSixtyNominationStatusLabels: Record<ThreeSixtyNominationStatus
   returned: "أُعيدت لتعديل",
 };
 
+/** The relationship_code this project's template always uses for self-assessment (see generateThreeSixtyFixedAssignments). */
+export const SELF_RELATIONSHIP_CODE = "self";
+
 export interface ThreeSixtyRaterGroup {
   relationshipCode: string;
   nameAr: string;
+  groupWeightPct: number;
   minRatersInGroup: number;
   maxRatersInGroup: number | null;
   shownSeparately: boolean;
@@ -47,6 +66,12 @@ export interface ThreeSixtyItem {
   reverseScored: boolean;
   scaleCode: string | null;
   displayOrder: number;
+}
+
+export interface ThreeSixtyCompetency {
+  id: string;
+  nameAr: string;
+  weightPct: number | null;
 }
 
 /**
@@ -132,36 +157,243 @@ export function reverseAdjustedValue(
   return reverseScored ? scaleMin + scaleMax - value : value;
 }
 
-export interface ScoredResponse {
-  competencyId: string;
-  numericValue: number;
-  reverseScored: boolean;
-  scaleMin: number;
-  scaleMax: number;
-  countedInScore: boolean;
+export interface AssignmentForTenure {
+  id: string;
+  relationshipCode: string;
+  status: ThreeSixtyAssignmentStatus;
+  monthsWorkedTogether: number | null;
 }
 
-/** competencyId -> average adjusted score across every counted response for it. */
-export function aggregateCompetencyScores(responses: ScoredResponse[]): Map<string, number> {
-  const sums = new Map<string, { total: number; count: number }>();
-  for (const r of responses) {
-    if (!r.countedInScore) continue;
-    const adjusted = reverseAdjustedValue(r.numericValue, r.scaleMin, r.scaleMax, r.reverseScored);
-    const entry = sums.get(r.competencyId) ?? { total: 0, count: 0 };
-    entry.total += adjusted;
-    entry.count += 1;
-    sums.set(r.competencyId, entry);
+/**
+ * "يُستبعد آلياً كل تعيين months_worked_together أقل من min_months_together."
+ * [استنتاج]: an assignment with an UNKNOWN tenure (months_worked_together is
+ * NULL -- the field was only ever added for this rewrite, so most existing
+ * data won't have it) is NOT excluded -- the rule only fires when a real
+ * value is actually below the threshold, since there is no data to apply
+ * the rule to otherwise.
+ */
+export function excludeByTenure<T extends AssignmentForTenure>(assignments: T[], minMonthsTogether: number): T[] {
+  return assignments.filter((a) => a.monthsWorkedTogether == null || a.monthsWorkedTogether >= minMonthsTogether);
+}
+
+/**
+ * Whether enough SCORING-group raters (group_weight_pct > 0 -- self/
+ * supervisor are explicitly weight-0 "comparison only" groups per the
+ * literal rule "الرئيس المباشر والتقييم الذاتي وزنهما صفر... ولا يدخلان
+ * النتيجة") have completed their assignment for a result to be computed at
+ * all. `eligibleAssignments` must already be tenure-filtered (via
+ * `excludeByTenure`) and restricted to this one subject/cycle.
+ */
+export function meetsMinRatersGate(
+  eligibleAssignments: { relationshipCode: string; status: ThreeSixtyAssignmentStatus }[],
+  raterGroups: Pick<ThreeSixtyRaterGroup, "relationshipCode" | "groupWeightPct">[],
+  minRaters: number
+): { ok: boolean; completedCount: number } {
+  const scoringCodes = new Set(raterGroups.filter((g) => g.groupWeightPct > 0).map((g) => g.relationshipCode));
+  const completedCount = eligibleAssignments.filter(
+    (a) => a.status === "submitted" && scoringCodes.has(a.relationshipCode)
+  ).length;
+  return { ok: completedCount >= minRaters, completedCount };
+}
+
+export interface WeightedEntry {
+  score: number | null;
+  weightPct: number;
+}
+
+/**
+ * The one shared weighted-combine used for competency scores, the overall
+ * score, and item ranking -- entries with `score: null` (no countable data)
+ * are excluded from BOTH the numerator and the weight denominator instead
+ * of being treated as zero, so a group/competency with no respondents
+ * doesn't silently drag the result down. Returns null only when NO entry
+ * has data (or all weights among entries with data are zero).
+ */
+export function combineWeighted(entries: WeightedEntry[]): number | null {
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (const entry of entries) {
+    if (entry.score == null) continue;
+    weightedSum += entry.score * entry.weightPct;
+    totalWeight += entry.weightPct;
   }
-  const result = new Map<string, number>();
-  for (const [competencyId, { total, count }] of sums) {
-    if (count > 0) result.set(competencyId, total / count);
+  if (totalWeight <= 0) return null;
+  return weightedSum / totalWeight;
+}
+
+export interface PreparedResponse {
+  itemId: string;
+  competencyId: string;
+  relationshipCode: string;
+  /** Already reverse-adjusted; null means "not counted" (e.g. a counted_in_score=false option) and must be excluded from the average, not treated as 0. */
+  adjustedValue: number | null;
+}
+
+/** itemId -> relationshipCode -> average adjusted value (undefined if nobody in that group answered/counted). */
+export function computeItemGroupAverages(responses: PreparedResponse[]): Map<string, Map<string, number>> {
+  const sums = new Map<string, Map<string, { total: number; count: number }>>();
+  for (const r of responses) {
+    if (r.adjustedValue == null) continue;
+    const byGroup = sums.get(r.itemId) ?? new Map<string, { total: number; count: number }>();
+    const entry = byGroup.get(r.relationshipCode) ?? { total: 0, count: 0 };
+    entry.total += r.adjustedValue;
+    entry.count += 1;
+    byGroup.set(r.relationshipCode, entry);
+    sums.set(r.itemId, byGroup);
+  }
+  const result = new Map<string, Map<string, number>>();
+  for (const [itemId, byGroup] of sums) {
+    const averages = new Map<string, number>();
+    for (const [code, { total, count }] of byGroup) {
+      if (count > 0) averages.set(code, total / count);
+    }
+    result.set(itemId, averages);
+  }
+  return result;
+}
+
+/**
+ * "نتيجة الجدارة = متوسط عباراتها": per (competency, rater group), the
+ * average of that group's own item-averages for the competency's items
+ * (only items that have data in that group -- a competency with zero
+ * answered items in a group has no score for that group, not zero).
+ */
+export function computeCompetencyGroupScores(
+  itemGroupAverages: Map<string, Map<string, number>>,
+  items: Pick<ThreeSixtyItem, "id" | "competencyId">[]
+): Map<string, Map<string, number>> {
+  const sums = new Map<string, Map<string, { total: number; count: number }>>();
+  for (const item of items) {
+    const byGroup = itemGroupAverages.get(item.id);
+    if (!byGroup) continue;
+    for (const [code, avg] of byGroup) {
+      const compByGroup = sums.get(item.competencyId) ?? new Map<string, { total: number; count: number }>();
+      const entry = compByGroup.get(code) ?? { total: 0, count: 0 };
+      entry.total += avg;
+      entry.count += 1;
+      compByGroup.set(code, entry);
+      sums.set(item.competencyId, compByGroup);
+    }
+  }
+  const result = new Map<string, Map<string, number>>();
+  for (const [competencyId, byGroup] of sums) {
+    const averages = new Map<string, number>();
+    for (const [code, { total, count }] of byGroup) {
+      if (count > 0) averages.set(code, total / count);
+    }
+    result.set(competencyId, averages);
+  }
+  return result;
+}
+
+/** "تُحسب نتيجة كل فئة على حدة، ثم تُجمع بأوزان group_weight_pct." -- the official per-competency score, combining every rater group's own competency score by its weight. */
+export function computeCompetencyOfficialScores(
+  competencyGroupScores: Map<string, Map<string, number>>,
+  raterGroups: Pick<ThreeSixtyRaterGroup, "relationshipCode" | "groupWeightPct">[]
+): Map<string, number | null> {
+  const result = new Map<string, number | null>();
+  for (const [competencyId, byGroup] of competencyGroupScores) {
+    const entries: WeightedEntry[] = raterGroups.map((g) => ({
+      score: byGroup.get(g.relationshipCode) ?? null,
+      weightPct: g.groupWeightPct,
+    }));
+    result.set(competencyId, combineWeighted(entries));
+  }
+  return result;
+}
+
+/** "النتيجة الكلية = مجموع الجدارات بأوزان weight_pct." */
+export function computeOverallScore(
+  competencyOfficialScores: Map<string, number | null>,
+  competencies: Pick<ThreeSixtyCompetency, "id" | "weightPct">[]
+): number | null {
+  const entries: WeightedEntry[] = competencies.map((c) => ({
+    score: competencyOfficialScores.get(c.id) ?? null,
+    weightPct: c.weightPct ?? 0,
+  }));
+  return combineWeighted(entries);
+}
+
+export interface CompetencyGap {
+  competencyId: string;
+  nameAr: string;
+  selfScore: number;
+  othersScore: number;
+  gap: number;
+}
+
+/**
+ * "فجوة التقييم الذاتي عن متوسط الآخرين لكل جدارة، مع إبراز أكبر ثلاث فجوات."
+ * A competency with no self-assessment data, or no official (others') score,
+ * is skipped -- a gap can't be computed without both sides.
+ */
+export function computeSelfGaps(
+  competencyGroupScores: Map<string, Map<string, number>>,
+  competencyOfficialScores: Map<string, number | null>,
+  competencies: ThreeSixtyCompetency[],
+  selfRelationshipCode: string = SELF_RELATIONSHIP_CODE
+): CompetencyGap[] {
+  const gaps: CompetencyGap[] = [];
+  for (const c of competencies) {
+    const selfScore = competencyGroupScores.get(c.id)?.get(selfRelationshipCode);
+    const othersScore = competencyOfficialScores.get(c.id);
+    if (selfScore == null || othersScore == null) continue;
+    gaps.push({ competencyId: c.id, nameAr: c.nameAr, selfScore, othersScore, gap: selfScore - othersScore });
+  }
+  return gaps.sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap)).slice(0, 3);
+}
+
+export interface ItemScore {
+  itemId: string;
+  textAr: string;
+  competencyId: string;
+  score: number;
+}
+
+export interface RankableItem {
+  id: string;
+  textAr: string;
+  competencyId: string;
+}
+
+/**
+ * Official per-item score (same weighted-combine-by-group as competencies),
+ * for "أعلى ثلاث عبارات وأدنى ثلاث عبارات" -- ranked across the WHOLE
+ * survey, not per competency. Items with no countable data anywhere are
+ * excluded from ranking entirely, never padded with a fake 0 entry.
+ */
+export function rankItems(
+  itemGroupAverages: Map<string, Map<string, number>>,
+  items: RankableItem[],
+  raterGroups: Pick<ThreeSixtyRaterGroup, "relationshipCode" | "groupWeightPct">[]
+): { top: ItemScore[]; bottom: ItemScore[] } {
+  const scored: ItemScore[] = [];
+  for (const item of items) {
+    const byGroup = itemGroupAverages.get(item.id);
+    const entries: WeightedEntry[] = raterGroups.map((g) => ({
+      score: byGroup?.get(g.relationshipCode) ?? null,
+      weightPct: g.groupWeightPct,
+    }));
+    const score = combineWeighted(entries);
+    if (score != null) scored.push({ itemId: item.id, textAr: item.textAr, competencyId: item.competencyId, score });
+  }
+  const sorted = [...scored].sort((a, b) => b.score - a.score);
+  return { top: sorted.slice(0, 3), bottom: sorted.slice(-3).reverse() };
+}
+
+/** Fisher-Yates shuffle -- `rng` is injectable so tests can be deterministic; defaults to Math.random for real use (screens 4/5's "بترتيب عشوائي" pooled open-text list). */
+export function shuffleOpenTextAnswers(texts: string[], rng: () => number = Math.random): string[] {
+  const result = [...texts];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
 }
 
 export interface AssignmentForCompletion {
   relationshipCode: string;
-  status: "pending" | "submitted" | "excluded";
+  status: ThreeSixtyAssignmentStatus;
 }
 
 export interface GroupCompletionStat {
@@ -190,7 +422,9 @@ export function groupCompletionStats(assignments: AssignmentForCompletion[]): Gr
  * `min_raters_in_group`) -- otherwise showing "the one peer who rated you"
  * as its own row would de-anonymize that single respondent. Groups that
  * don't clear the bar are folded into the overall aggregate instead of
- * being silently dropped.
+ * being silently dropped. This governs DISPLAY only -- the official
+ * competency/overall score above still incorporates a below-threshold
+ * group's real numbers, it just isn't shown as its own line.
  */
 export function visibleGroupBreakdown(
   raterGroups: ThreeSixtyRaterGroup[],

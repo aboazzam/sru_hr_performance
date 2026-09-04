@@ -8,6 +8,11 @@ const schema = z.object({
   cycleId: z.string().uuid(),
   // relationshipCode -> array of nominated rater profile ids, as JSON.
   selections: z.string(),
+  // rater profile id -> months worked together (number) or null/omitted if
+  // not entered, as JSON. Captured here (not on the resulting assignment
+  // directly) because the NOMINATING employee is the one who knows this,
+  // per this project's `months_worked_together` design decision.
+  monthsByRaterId: z.string().optional(),
 });
 
 export type SubmitNominationsState =
@@ -33,12 +38,15 @@ export async function submitThreeSixtyNominations(
   const parsed = schema.safeParse({
     cycleId: formData.get("cycleId"),
     selections: formData.get("selections"),
+    monthsByRaterId: formData.get("monthsByRaterId") || undefined,
   });
   if (!parsed.success) return { status: "error", message: "invalid_input" };
 
   let selections: Record<string, string[]>;
+  let monthsByRaterId: Record<string, number | null> = {};
   try {
     selections = JSON.parse(parsed.data.selections);
+    if (parsed.data.monthsByRaterId) monthsByRaterId = JSON.parse(parsed.data.monthsByRaterId);
   } catch {
     return { status: "error", message: "invalid_input" };
   }
@@ -80,6 +88,7 @@ export async function submitThreeSixtyNominations(
   const raterGroups: ThreeSixtyRaterGroup[] = (raterGroupRows ?? []).map((g) => ({
     relationshipCode: g.relationship_code,
     nameAr: g.name_ar,
+    groupWeightPct: g.group_weight_pct,
     minRatersInGroup: g.min_raters_in_group,
     maxRatersInGroup: g.max_raters_in_group,
     shownSeparately: g.shown_separately,
@@ -114,7 +123,14 @@ export async function submitThreeSixtyNominations(
   }
 
   const toRemoveIds = (existingRows ?? []).filter((r) => !desiredKeys.has(`${r.relationship_code}::${r.rater_employee_id}`)).map((r) => r.id);
-  const toInsert: { cycle_id: string; subject_employee_id: string; rater_employee_id: string; relationship_code: string; status: string }[] = [];
+  const toInsert: {
+    cycle_id: string;
+    subject_employee_id: string;
+    rater_employee_id: string;
+    relationship_code: string;
+    status: string;
+    months_worked_together: number | null;
+  }[] = [];
   for (const key of desiredKeys) {
     if (!existingByKey.has(key)) {
       const [relationshipCode, raterEmployeeId] = key.split("::");
@@ -124,12 +140,11 @@ export async function submitThreeSixtyNominations(
         rater_employee_id: raterEmployeeId,
         relationship_code: relationshipCode,
         status: "submitted",
+        months_worked_together: monthsByRaterId[raterEmployeeId] ?? null,
       });
     }
   }
-  const toKeepIds = (existingRows ?? [])
-    .filter((r) => desiredKeys.has(`${r.relationship_code}::${r.rater_employee_id}`))
-    .map((r) => r.id);
+  const toKeep = (existingRows ?? []).filter((r) => desiredKeys.has(`${r.relationship_code}::${r.rater_employee_id}`));
 
   if (toRemoveIds.length > 0) {
     const { error } = await supabase
@@ -142,8 +157,11 @@ export async function submitThreeSixtyNominations(
     const { error } = await supabase.from("three_sixty_nominations").insert(toInsert);
     if (error) return { status: "error", message: "forbidden" };
   }
-  if (toKeepIds.length > 0) {
-    const { error } = await supabase.from("three_sixty_nominations").update({ status: "submitted" }).in("id", toKeepIds);
+  for (const row of toKeep) {
+    const { error } = await supabase
+      .from("three_sixty_nominations")
+      .update({ status: "submitted", months_worked_together: monthsByRaterId[row.rater_employee_id] ?? null })
+      .eq("id", row.id);
     if (error) return { status: "error", message: "forbidden" };
   }
 
