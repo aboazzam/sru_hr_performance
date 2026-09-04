@@ -1,11 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { StaffingUnitCard } from "@/components/StaffingUnitCard";
+import { StaffingCardGroup } from "@/components/StaffingCardGroup";
 import { ImportOrgStructureExcelForm } from "@/components/ImportOrgStructureExcelForm";
 import { StaffingExportMenu } from "@/components/StaffingExportMenu";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { Link } from "@/i18n/navigation";
 import { buildStaffingGroups, compareUnits, type StaffingUnitNode } from "@/lib/staffingUnitTree";
+import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 // Auth is enforced centrally by (app)/layout.tsx; real write authorization
 // (assign/unassign) is org_structure_assignments' own RLS
@@ -35,8 +37,18 @@ import { buildStaffingGroups, compareUnits, type StaffingUnitNode } from "@/lib/
 // 2026-09-02: ordering — of siblings within a card, and of the top-level
 // cards among themselves — now follows each unit's own manually-set
 // `sort_order` (drag-and-drop, built on /org-units) before falling back to
-// alphabetical, rather than being purely alphabetical. This page never
-// writes that column; it only reads it, same as everything else here.
+// alphabetical, rather than being purely alphabetical.
+//
+// 2026-09-03: this page can now WRITE that same order directly too, not
+// just read it -- "أضفها" (confirmed after asking, since drag-reordering
+// had deliberately stayed off this screen since the 2026-08-31
+// simplification down to assign/unassign only). Gated on the same
+// employeeData>=approve bar /org-units' own drag UI uses (org_units_update's
+// real RLS), not orgStructure -- reordering writes org_units, a different
+// table from what this screen's assign/unassign already touches. A node's
+// own children are always one real sibling group and are all draggable; the
+// merged top-level list mixes "رئيس الجامعة"'s real children with unrelated
+// flat cards, so only the former get a grip -- see StaffingCardGroup.
 export default async function OrgStructureStaffingPage() {
   const t = await getTranslations("OrgStructureStaffingPage");
   const supabase = await createClient();
@@ -107,6 +119,11 @@ export default async function OrgStructureStaffingPage() {
   }));
   const orgUnitRefs = orgUnits.map((unit) => ({ id: unit.id, nameAr: unit.name_ar, parentId: unit.parent_id, sortOrder: unit.sort_order }));
   const { nestedRoots, flatGroups, unlinkedPositions } = buildStaffingGroups(staffingPositions, orgUnitRefs, "رئيس الجامعة");
+  const anchorUnit = orgUnits.find((unit) => unit.name_ar === "رئيس الجامعة");
+  // Every id buildStaffingGroups put in nestedRoots is, by definition, a
+  // direct child of the anchor -- the one real sibling group this merged
+  // top-level list can safely drag-reorder.
+  const nestedRootIds = new Set(nestedRoots.map((root) => root.id));
 
   const flatAsNodes: StaffingUnitNode[] = flatGroups.map((group) => ({
     id: group.id,
@@ -118,6 +135,16 @@ export default async function OrgStructureStaffingPage() {
   // Same tie-break rule buildStaffingGroups already applies within each of
   // these two arrays -- reused here to merge them into one ordered list.
   const topLevelCards = [...nestedRoots, ...flatAsNodes].sort(compareUnits);
+
+  const { data: permissionRows } = await supabase.rpc("get_my_permissions");
+  const employeeDataLevel =
+    ((permissionRows ?? []) as { process_area: ProcessArea; vpra_level: VpraLevel }[]).find(
+      (row) => row.process_area === "employeeData"
+    )?.vpra_level ?? "none";
+  // Reordering writes org_units, not org_structure_assignments -- gated on
+  // employeeData>=approve (org_units_update's real RLS), the same bar
+  // /org-units' own drag UI uses, not this page's usual orgStructure gate.
+  const canEdit = hasVpraAccess(employeeDataLevel, "approve");
   // The unlinked group always trails, whatever its sortOrder/Arabic-collation
   // rank among real unit names would otherwise put it -- it isn't a real
   // org_units row, so it has no sortOrder of its own to compare with.
@@ -158,11 +185,37 @@ export default async function OrgStructureStaffingPage() {
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {topLevelCards.map((node) => (
-            <StaffingUnitCard key={node.id} node={node} depth={0} assignmentsByPositionId={assignmentsByPositionId} employees={employeeOptions} />
-          ))}
+          {canEdit && anchorUnit ? (
+            <StaffingCardGroup
+              parentId={anchorUnit.id}
+              items={topLevelCards.map((node) => ({
+                id: node.id,
+                draggable: nestedRootIds.has(node.id),
+                node: (
+                  <StaffingUnitCard
+                    node={node}
+                    depth={0}
+                    assignmentsByPositionId={assignmentsByPositionId}
+                    employees={employeeOptions}
+                    canEdit={canEdit}
+                  />
+                ),
+              }))}
+            />
+          ) : (
+            topLevelCards.map((node) => (
+              <StaffingUnitCard
+                key={node.id}
+                node={node}
+                depth={0}
+                assignmentsByPositionId={assignmentsByPositionId}
+                employees={employeeOptions}
+                canEdit={canEdit}
+              />
+            ))
+          )}
           {unlinkedNode ? (
-            <StaffingUnitCard node={unlinkedNode} depth={0} assignmentsByPositionId={assignmentsByPositionId} employees={employeeOptions} />
+            <StaffingUnitCard node={unlinkedNode} depth={0} assignmentsByPositionId={assignmentsByPositionId} employees={employeeOptions} canEdit={canEdit} />
           ) : null}
         </div>
       )}
