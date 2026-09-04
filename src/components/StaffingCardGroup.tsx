@@ -10,11 +10,11 @@ import { reorderIds } from "@/lib/reorder";
 interface CardGroupItem {
   id: string;
   node: ReactNode;
-  /** False for a card that shares no real org_units parent with its
-   *  visible neighbours here (e.g. a flat card from an unrelated branch,
-   *  merged into the same list purely for display) -- it renders with no
-   *  grip and never participates in a drop. */
-  draggable: boolean;
+  /** The card's real `org_units.parent_id` -- null renders with no grip and
+   *  never participates in a drop. A group of one (no other visible item
+   *  shares this id) is pointless to drag, so the caller is expected to
+   *  pass null for those too, not just for parentless cards. */
+  groupId: string | null;
 }
 
 const errorKeys: Record<string, string> = {
@@ -32,18 +32,22 @@ const errorKeys: Record<string, string> = {
  * column and `reorderOrgUnits` action /org-units already writes, so a drag
  * here and a drag there are the same fact, just edited from two screens.
  *
- * Unlike `OrgUnitSiblingsList` (org-units' own tree, where every list is
- * already one real sibling group), a card list *here* can mix units that
- * share no real parent at all -- the top-level list merges "رئيس الجامعة"'s
- * real children with unrelated flat cards from other branches, and
- * `reorderOrgUnits` can only ever touch ONE sibling group at a time. Each
- * item therefore carries its own `draggable` flag; a non-draggable item
- * renders with no grip and is invisible to the drag logic entirely -- the
- * new order is computed by extracting just the draggable ids (in their
- * current relative order) and reordering *within that subset*, so a
- * flat card sitting between two draggable ones never breaks the drag.
+ * Unlike `OrgUnitSiblingsList` (org-units' own tree, where every rendered
+ * list is already one real sibling group), a card list *here* can mix
+ * SEVERAL real sibling groups at once -- the top-level list showed this
+ * live (2026-09-04): "رئيس الجامعة"'s own children are one group, but
+ * several other visible cards (the "رئيس الجامعة" flat card itself,
+ * "إدارة المراجعة الداخلية", "أمانة مجلس الجامعة", ...) turned out to be a
+ * SECOND real group -- all direct children of "مجلس الجامعة" -- that an
+ * earlier version of this component never recognized as draggable at all.
+ * `reorderOrgUnits` can only ever touch one group per call, so each item
+ * carries its own `groupId` (its real parent id, or null when it has no
+ * group-mate visible here); a drop is only honoured between two items
+ * sharing the same groupId, and the persisted order is computed from just
+ * that group's own ids (in their current relative order), so unrelated
+ * cards interleaved between them never disturb the drag.
  */
-export function StaffingCardGroup({ parentId, items }: { parentId: string | null; items: CardGroupItem[] }) {
+export function StaffingCardGroup({ items }: { items: CardGroupItem[] }) {
   const t = useTranslations("OrgStructureStaffingPage");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -57,13 +61,20 @@ export function StaffingCardGroup({ parentId, items }: { parentId: string | null
     setDraggedId(null);
     if (!dragged || dragged === targetId) return;
 
-    const draggableOrder = items.filter((item) => item.draggable).map((item) => item.id);
-    const nextOrder = reorderIds(draggableOrder, dragged, targetId);
-    if (nextOrder === draggableOrder) return;
+    const draggedItem = items.find((item) => item.id === dragged);
+    const targetItem = items.find((item) => item.id === targetId);
+    // A drop only makes sense between two cards that share a real parent --
+    // dropping "إدارة التميز المؤسسي" (رئيس الجامعة's child) onto "أمانة
+    // مجلس الجامعة" (مجلس الجامعة's child) has no coherent meaning.
+    if (!draggedItem?.groupId || draggedItem.groupId !== targetItem?.groupId) return;
+
+    const groupOrder = items.filter((item) => item.groupId === draggedItem.groupId).map((item) => item.id);
+    const nextOrder = reorderIds(groupOrder, dragged, targetId);
+    if (nextOrder === groupOrder) return;
 
     setError(null);
     startTransition(async () => {
-      const res = await reorderOrgUnits(parentId, nextOrder);
+      const res = await reorderOrgUnits(draggedItem.groupId, nextOrder);
       if (res.status === "success") {
         router.refresh();
       } else {
@@ -80,7 +91,7 @@ export function StaffingCardGroup({ parentId, items }: { parentId: string | null
         </p>
       )}
       {items.map((item) =>
-        !item.draggable ? (
+        item.groupId === null ? (
           <div key={item.id}>{item.node}</div>
         ) : (
           <div

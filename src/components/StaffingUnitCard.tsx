@@ -22,9 +22,9 @@ interface EmployeeOption {
  *
  * 2026-09-03: a node's own children are always exactly one real org_units
  * sibling group (`buildNode` builds them from `childrenOf.get(node.id)`),
- * so they're always draggable against each other -- unlike the mixed
- * top-level list in staffing/page.tsx, which has to mark some cards
- * non-draggable.
+ * so they're always draggable against each other when there's more than
+ * one -- unlike the mixed top-level list in staffing/page.tsx, which can
+ * hold several distinct real sibling groups at once (see StaffingCardGroup).
  */
 export function StaffingUnitCard({
   node,
@@ -64,10 +64,10 @@ export function StaffingUnitCard({
         <div className="sru-staffing-unit-card-children">
           {canEdit ? (
             <StaffingCardGroup
-              parentId={node.id}
               items={node.children.map((child) => ({
                 id: child.id,
-                draggable: true,
+                // A lone child has no sibling to drag against here.
+                groupId: node.children.length > 1 ? node.id : null,
                 node: (
                   <StaffingUnitCard
                     node={child}
