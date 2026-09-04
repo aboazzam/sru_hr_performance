@@ -1648,6 +1648,7 @@
   },
   "EvaluationScoresPage": {
     "title": "Enter Scores",
+    "backToEvaluation": "Back to evaluation",
     "competenciesHeading": "Competencies",
     "competenciesEmpty": "No competencies in the framework.",
     "competenciesFromEmployee": "Competencies assigned specifically to this employee (from their own profile), independent of their job title's shared ones.",
