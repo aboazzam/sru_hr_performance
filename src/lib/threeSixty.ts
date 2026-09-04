@@ -66,12 +66,78 @@ export interface ThreeSixtyItem {
   reverseScored: boolean;
   scaleCode: string | null;
   displayOrder: number;
+  /** null = level-agnostic (e.g. the open-text item), always shown regardless of the subject's resolved level. */
+  behavioralLevel: BehavioralLevel | null;
 }
 
 export interface ThreeSixtyCompetency {
   id: string;
   nameAr: string;
   weightPct: number | null;
+}
+
+/**
+ * 2026-09-04: "نفس الجدارات الأساسية لكن بمستويات مختلفة" -- items now vary
+ * by behavioral level (basic/practitioner/advanced/professional), matching
+ * the seniority of the employee actually being rated rather than one fixed
+ * level for everyone (see migration 20260904000003's header). `practitioner`
+ * is the documented fallback when the subject's job title has no
+ * `job_title_competencies.required_level` on record for a given competency
+ * -- most job titles today don't (checked directly against production
+ * before building this), so this fallback is load-bearing, not an edge case.
+ */
+export type BehavioralLevel = "basic" | "practitioner" | "advanced" | "professional";
+export const DEFAULT_BEHAVIORAL_LEVEL: BehavioralLevel = "practitioner";
+
+export interface ThreeSixtyCompetencySource {
+  id: string;
+  /** The real institutional competency this 360 competency was seeded from, or null if it has none (no per-job-title level data can ever apply). */
+  sourceCompetencyId: string | null;
+}
+
+export interface JobTitleCompetencyLevel {
+  /** The REAL institutional competency id (competencies.id), matching ThreeSixtyCompetencySource.sourceCompetencyId -- not the 360 competency's own id. */
+  competencyId: string;
+  requiredLevel: BehavioralLevel;
+}
+
+/**
+ * For each 360 competency, resolve which behavioral level applies to a given
+ * subject employee's job title: the job title's own required_level for the
+ * competency's real institutional counterpart if one is on record, else
+ * `fallback`. A 360 competency with no `sourceCompetencyId` always resolves
+ * to `fallback` -- there is no per-job-title data that could ever apply to
+ * it.
+ */
+export function resolveThreeSixtyItemLevels(
+  competencies: ThreeSixtyCompetencySource[],
+  jobTitleLevels: JobTitleCompetencyLevel[],
+  fallback: BehavioralLevel = DEFAULT_BEHAVIORAL_LEVEL
+): Map<string, BehavioralLevel> {
+  const levelBySourceCompetencyId = new Map(jobTitleLevels.map((l) => [l.competencyId, l.requiredLevel]));
+  const result = new Map<string, BehavioralLevel>();
+  for (const c of competencies) {
+    const resolved = c.sourceCompetencyId ? levelBySourceCompetencyId.get(c.sourceCompetencyId) : undefined;
+    result.set(c.id, resolved ?? fallback);
+  }
+  return result;
+}
+
+/**
+ * Screen 3, level-aware: an item applies to this subject if it's either
+ * level-agnostic (`behavioralLevel: null`, e.g. the open-text item) or its
+ * own level matches the subject's resolved level for its competency. Applied
+ * BEFORE `itemsForRelationship` -- the two filters are independent (one
+ * narrows by who's rating, the other by who's being rated) and compose in
+ * either order.
+ */
+export function itemsForSubjectLevel<T extends { competencyId: string; behavioralLevel: BehavioralLevel | null }>(
+  items: T[],
+  resolvedLevelByCompetencyId: Map<string, BehavioralLevel>
+): T[] {
+  return items.filter(
+    (item) => item.behavioralLevel == null || item.behavioralLevel === resolvedLevelByCompetencyId.get(item.competencyId)
+  );
 }
 
 /**

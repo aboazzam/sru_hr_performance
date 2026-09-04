@@ -49,10 +49,17 @@ export default async function ThreeSixtyTemplatePage() {
       .order("competency_code"),
     supabase
       .from("three_sixty_items")
-      .select("id, item_code, text_ar, item_type, rater_groups, scale_code, display_order, three_sixty_competencies(name_ar)")
+      .select("id, item_code, text_ar, item_type, rater_groups, scale_code, display_order, behavioral_level, three_sixty_competencies(name_ar)")
       .is("deleted_at", null)
       .order("display_order"),
   ]);
+
+  const levelLabels: Record<string, string> = {
+    basic: t("levelBasic"),
+    practitioner: t("levelPractitioner"),
+    advanced: t("levelAdvanced"),
+    professional: t("levelProfessional"),
+  };
 
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px" }}>
@@ -187,6 +194,7 @@ export default async function ThreeSixtyTemplatePage() {
               <tr>
                 <th>item_code</th>
                 <th>{t("columnCompetency")}</th>
+                <th>{t("columnBehavioralLevel")}</th>
                 <th>text_ar</th>
                 <th>item_type</th>
                 <th>rater_groups</th>
@@ -199,6 +207,7 @@ export default async function ThreeSixtyTemplatePage() {
                   <tr key={item.id}>
                     <td style={{ fontFamily: "monospace" }}>{item.item_code}</td>
                     <td>{competency?.name_ar ?? "—"}</td>
+                    <td>{item.behavioral_level ? levelLabels[item.behavioral_level] ?? item.behavioral_level : t("levelAgnostic")}</td>
                     <td>{item.text_ar}</td>
                     <td>{item.item_type}</td>
                     <td style={{ fontFamily: "monospace", fontSize: 11 }}>{(item.rater_groups as string[]).join(", ")}</td>
@@ -207,7 +216,7 @@ export default async function ThreeSixtyTemplatePage() {
               })}
               {(!items || items.length === 0) && (
                 <tr>
-                  <td colSpan={5} style={{ color: "var(--sru-muted)", textAlign: "center" }}>
+                  <td colSpan={6} style={{ color: "var(--sru-muted)", textAlign: "center" }}>
                     {t("empty")}
                   </td>
                 </tr>

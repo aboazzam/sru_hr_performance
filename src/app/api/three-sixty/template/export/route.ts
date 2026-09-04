@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
       .order("competency_code"),
     supabase
       .from("three_sixty_items")
-      .select("item_code, competency_id, item_type, text_ar, rater_groups, required, reverse_scored, scale_code, display_order, three_sixty_competencies(competency_code)")
+      .select(
+        "item_code, competency_id, item_type, text_ar, rater_groups, required, reverse_scored, scale_code, display_order, behavioral_level, three_sixty_competencies(competency_code)"
+      )
       .is("deleted_at", null)
       .order("display_order"),
   ]);
@@ -103,6 +105,7 @@ export async function GET(request: NextRequest) {
       reverse_scored: boolean;
       scale_code: string | null;
       display_order: number;
+      behavioral_level: string | null;
       three_sixty_competencies: { competency_code: string } | null;
     }>).map((i) => [
       i.item_code,
@@ -114,6 +117,7 @@ export async function GET(request: NextRequest) {
       i.reverse_scored ? "TRUE" : "FALSE",
       i.scale_code,
       i.display_order,
+      i.behavioral_level,
     ])
   );
 

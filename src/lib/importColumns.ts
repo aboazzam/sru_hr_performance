@@ -77,6 +77,7 @@ export const THREE_SIXTY_ITEM_COLUMNS = {
   reverseScored: "reverse_scored",
   scaleCode: "scale_code",
   displayOrder: "display_order",
+  behavioralLevel: "behavioral_level",
 } as const;
 
 /**

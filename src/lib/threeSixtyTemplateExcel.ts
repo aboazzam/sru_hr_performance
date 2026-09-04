@@ -72,6 +72,11 @@ const templateFields = {
     { key: "item.reverseScored", label: "معكوسة (reverse_scored)", column: IT.reverseScored },
     { key: "item.scaleCode", label: "رمز المقياس (لعبارات rating)", column: IT.scaleCode },
     { key: "item.displayOrder", label: "ترتيب العرض", column: IT.displayOrder },
+    {
+      key: "item.behavioralLevel",
+      label: "المستوى السلوكي (basic/practitioner/advanced/professional -- فارغ = كل المستويات)",
+      column: IT.behavioralLevel,
+    },
   ],
 } as const satisfies Record<ThreeSixtyTemplateSheetKey, readonly ThreeSixtyTemplateFieldSpec[]>;
 
