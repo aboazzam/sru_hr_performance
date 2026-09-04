@@ -2,12 +2,8 @@
 
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
-import {
-  THREE_SIXTY_RATER_GROUP_COLUMNS as RG,
-  THREE_SIXTY_RATING_SCALE_COLUMNS as RS,
-  THREE_SIXTY_COMPETENCY_COLUMNS as CO,
-  THREE_SIXTY_ITEM_COLUMNS as IT,
-} from "@/lib/importColumns";
+import { applyMapping, parseImportOptions, updatesExisting, writesField } from "@/lib/excelImportOptions";
+import { threeSixtyTemplateColumnLabels, THREE_SIXTY_TEMPLATE_SHEETS } from "@/lib/threeSixtyTemplateExcel";
 
 export type ImportThreeSixtyTemplateResult =
   | {
@@ -65,20 +61,25 @@ function findSheet(workbook: ExcelJS.Workbook, name: string): ExcelJS.Worksheet 
  * form) -- see 20260902000002's header for why these four tables are
  * cycle-independent, reusable reference data.
  *
- * Deliberately the SIMPLER, single-step, fixed-header import shape (like
- * this project's earlier importers before the 2026-08-24 shared
- * `ExcelImportDialog` 2-step column-mapping UI existed) rather than that
- * newer dialog -- four sheets' worth of mapping UI would be a large,
- * separate investment relative to the rest of this already-large module;
- * flagged as a reasonable follow-up if column remapping is ever needed.
- * Column headers ARE the literal snake_case field names given directly by
- * the project owner (see `importColumns.ts`'s own header comment).
+ * 2026-09-04 rewrite: now goes through the shared column-mapping/mode
+ * machinery (`excelImportOptions.ts`) like every other importer in this
+ * app -- a real file rarely uses our exact snake_case headers verbatim, so
+ * the caller maps the file's own columns to these fields first (screen 2 of
+ * the shared `ExcelImportDialog`) instead of the file being silently
+ * ignored when a header doesn't match. `applyMapping` rewrites each sheet's
+ * raw header index into the canonical column-label keys below it, so the
+ * row-parsing logic itself is unchanged from the original fixed-header
+ * version.
  *
- * Every sheet is upserted by its own natural key (never deleted from) --
- * same "add/update only, never remove by omission" discipline as every
- * other import in this app. Sheets are processed in dependency order
- * (rating_scale, rater_group, competency, then item, which references the
- * first three) so a brand-new template can be imported in one pass.
+ * Mode governs existing rows only, exactly like every other importer:
+ * "insert_only" (the default) never touches a row already matched by its
+ * natural key, "upsert" also updates it -- on the fields the caller ticked.
+ * A brand-new row (no match by natural key) is always inserted in either
+ * mode. Nothing is ever deleted.
+ *
+ * Sheets are processed in dependency order (rating_scale, rater_group,
+ * competency, then item, which references the first three) so a
+ * brand-new template can be imported in one pass.
  */
 export async function importThreeSixtyTemplateExcel(
   _prevState: ImportThreeSixtyTemplateResult | null,
@@ -97,6 +98,9 @@ export async function importThreeSixtyTemplateExcel(
     return { status: "error", message: "unauthenticated" };
   }
 
+  const options = parseImportOptions(formData);
+  const mayUpdate = updatesExisting(options);
+
   let workbook: ExcelJS.Workbook;
   try {
     const buffer = await file.arrayBuffer();
@@ -113,9 +117,14 @@ export async function importThreeSixtyTemplateExcel(
   let itemsWritten = 0;
 
   // ---- rating_scale ---------------------------------------------------
-  const ratingScaleSheet = findSheet(workbook, "rating_scale");
+  const ratingScaleSheet = findSheet(workbook, THREE_SIXTY_TEMPLATE_SHEETS.ratingScale);
   if (ratingScaleSheet) {
-    const cols = headerMap(ratingScaleSheet);
+    const cols = applyMapping(
+      headerMap(ratingScaleSheet),
+      options,
+      threeSixtyTemplateColumnLabels("ratingScale"),
+      THREE_SIXTY_TEMPLATE_SHEETS.ratingScale
+    );
     const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
     const { data: existingData } = await supabase
       .from("three_sixty_rating_scale_options")
@@ -125,27 +134,27 @@ export async function importThreeSixtyTemplateExcel(
 
     for (let r = 2; r <= ratingScaleSheet.rowCount; r++) {
       const row = ratingScaleSheet.getRow(r);
-      const scaleCode = cellText(get(row, RS.scaleCode));
-      const optionCode = cellText(get(row, RS.optionCode));
-      const labelAr = cellText(get(row, RS.labelAr));
-      const numericValue = cellNumber(get(row, RS.numericValue));
+      const scaleCode = cellText(get(row, "scale_code"));
+      const optionCode = cellText(get(row, "option_code"));
+      const labelAr = cellText(get(row, "label_ar"));
+      const numericValue = cellNumber(get(row, "numeric_value"));
       if (!scaleCode && !optionCode && !labelAr) continue;
       if (!scaleCode || !optionCode || !labelAr || numericValue === null) {
         rowErrors.push(`rating_scale الصف ${r}: بيانات ناقصة (scale_code/option_code/label_ar/numeric_value) — تم التجاوز`);
         continue;
       }
-      const patch = {
-        scale_code: scaleCode,
-        option_code: optionCode,
-        label_ar: labelAr,
-        numeric_value: numericValue,
-        counted_in_score: cellBool(get(row, RS.countedInScore), true),
-      };
       const key = `${scaleCode}::${optionCode}`;
       const existingId = existingByKey.get(key);
+      if (existingId && !mayUpdate) continue;
+
+      const patch: Record<string, unknown> = { scale_code: scaleCode, option_code: optionCode };
+      if (writesField(options, "ratingScale.labelAr")) patch.label_ar = labelAr;
+      if (writesField(options, "ratingScale.numericValue")) patch.numeric_value = numericValue;
+      if (writesField(options, "ratingScale.countedInScore")) patch.counted_in_score = cellBool(get(row, "counted_in_score"), true);
+
       const { error } = existingId
         ? await supabase.from("three_sixty_rating_scale_options").update(patch).eq("id", existingId)
-        : await supabase.from("three_sixty_rating_scale_options").insert(patch);
+        : await supabase.from("three_sixty_rating_scale_options").insert({ counted_in_score: true, ...patch });
       if (error) {
         rowErrors.push(`rating_scale الصف ${r}: ${error.message}`);
       } else {
@@ -155,9 +164,14 @@ export async function importThreeSixtyTemplateExcel(
   }
 
   // ---- rater_group ------------------------------------------------------
-  const raterGroupSheet = findSheet(workbook, "rater_group");
+  const raterGroupSheet = findSheet(workbook, THREE_SIXTY_TEMPLATE_SHEETS.raterGroup);
   if (raterGroupSheet) {
-    const cols = headerMap(raterGroupSheet);
+    const cols = applyMapping(
+      headerMap(raterGroupSheet),
+      options,
+      threeSixtyTemplateColumnLabels("raterGroup"),
+      THREE_SIXTY_TEMPLATE_SHEETS.raterGroup
+    );
     const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
     const { data: existingData } = await supabase
       .from("three_sixty_rater_groups")
@@ -167,26 +181,27 @@ export async function importThreeSixtyTemplateExcel(
 
     for (let r = 2; r <= raterGroupSheet.rowCount; r++) {
       const row = raterGroupSheet.getRow(r);
-      const relationshipCode = cellText(get(row, RG.relationshipCode));
-      const nameAr = cellText(get(row, RG.nameAr));
+      const relationshipCode = cellText(get(row, "relationship_code"));
+      const nameAr = cellText(get(row, "name_ar"));
       if (!relationshipCode && !nameAr) continue;
       if (!relationshipCode || !nameAr) {
         rowErrors.push(`rater_group الصف ${r}: بيانات ناقصة (relationship_code/name_ar) — تم التجاوز`);
         continue;
       }
-      const patch = {
-        relationship_code: relationshipCode,
-        name_ar: nameAr,
-        group_weight_pct: cellNumber(get(row, RG.groupWeightPct)) ?? 0,
-        min_raters_in_group: cellNumber(get(row, RG.minRatersInGroup)) ?? 0,
-        max_raters_in_group: cellNumber(get(row, RG.maxRatersInGroup)),
-        shown_separately: cellBool(get(row, RG.shownSeparately), false),
-        employee_may_nominate: cellBool(get(row, RG.employeeMayNominate), false),
-      };
       const existingId = existingByCode.get(relationshipCode);
+      if (existingId && !mayUpdate) continue;
+
+      const patch: Record<string, unknown> = { relationship_code: relationshipCode };
+      if (writesField(options, "raterGroup.nameAr")) patch.name_ar = nameAr;
+      if (writesField(options, "raterGroup.groupWeightPct")) patch.group_weight_pct = cellNumber(get(row, "group_weight_pct")) ?? 0;
+      if (writesField(options, "raterGroup.minRatersInGroup")) patch.min_raters_in_group = cellNumber(get(row, "min_raters_in_group")) ?? 0;
+      if (writesField(options, "raterGroup.maxRatersInGroup")) patch.max_raters_in_group = cellNumber(get(row, "max_raters_in_group"));
+      if (writesField(options, "raterGroup.shownSeparately")) patch.shown_separately = cellBool(get(row, "shown_separately"), false);
+      if (writesField(options, "raterGroup.employeeMayNominate")) patch.employee_may_nominate = cellBool(get(row, "employee_may_nominate"), false);
+
       const { error } = existingId
         ? await supabase.from("three_sixty_rater_groups").update(patch).eq("id", existingId)
-        : await supabase.from("three_sixty_rater_groups").insert(patch);
+        : await supabase.from("three_sixty_rater_groups").insert({ name_ar: nameAr, ...patch });
       if (error) {
         rowErrors.push(`rater_group الصف ${r}: ${error.message}`);
       } else {
@@ -196,9 +211,14 @@ export async function importThreeSixtyTemplateExcel(
   }
 
   // ---- competency ---------------------------------------------------
-  const competencySheet = findSheet(workbook, "competency");
+  const competencySheet = findSheet(workbook, THREE_SIXTY_TEMPLATE_SHEETS.competency);
   if (competencySheet) {
-    const cols = headerMap(competencySheet);
+    const cols = applyMapping(
+      headerMap(competencySheet),
+      options,
+      threeSixtyTemplateColumnLabels("competency"),
+      THREE_SIXTY_TEMPLATE_SHEETS.competency
+    );
     const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
     const { data: existingData } = await supabase
       .from("three_sixty_competencies")
@@ -208,24 +228,25 @@ export async function importThreeSixtyTemplateExcel(
 
     for (let r = 2; r <= competencySheet.rowCount; r++) {
       const row = competencySheet.getRow(r);
-      const competencyCode = cellText(get(row, CO.competencyCode));
-      const nameAr = cellText(get(row, CO.nameAr));
+      const competencyCode = cellText(get(row, "competency_code"));
+      const nameAr = cellText(get(row, "name_ar"));
       if (!competencyCode && !nameAr) continue;
       if (!competencyCode || !nameAr) {
         rowErrors.push(`competency الصف ${r}: بيانات ناقصة (competency_code/name_ar) — تم التجاوز`);
         continue;
       }
-      const patch = {
-        competency_code: competencyCode,
-        name_ar: nameAr,
-        definition_ar: cellText(get(row, CO.definitionAr)),
-        weight_pct: cellNumber(get(row, CO.weightPct)),
-        applies_to: cellText(get(row, CO.appliesTo)),
-      };
       const existingId = existingByCode.get(competencyCode);
+      if (existingId && !mayUpdate) continue;
+
+      const patch: Record<string, unknown> = { competency_code: competencyCode };
+      if (writesField(options, "competency.nameAr")) patch.name_ar = nameAr;
+      if (writesField(options, "competency.definitionAr")) patch.definition_ar = cellText(get(row, "definition_ar"));
+      if (writesField(options, "competency.weightPct")) patch.weight_pct = cellNumber(get(row, "weight_pct"));
+      if (writesField(options, "competency.appliesTo")) patch.applies_to = cellText(get(row, "applies_to"));
+
       const { error } = existingId
         ? await supabase.from("three_sixty_competencies").update(patch).eq("id", existingId)
-        : await supabase.from("three_sixty_competencies").insert(patch);
+        : await supabase.from("three_sixty_competencies").insert({ name_ar: nameAr, ...patch });
       if (error) {
         rowErrors.push(`competency الصف ${r}: ${error.message}`);
       } else {
@@ -235,9 +256,14 @@ export async function importThreeSixtyTemplateExcel(
   }
 
   // ---- item ---------------------------------------------------------
-  const itemSheet = findSheet(workbook, "item");
+  const itemSheet = findSheet(workbook, THREE_SIXTY_TEMPLATE_SHEETS.item);
   if (itemSheet) {
-    const cols = headerMap(itemSheet);
+    const cols = applyMapping(
+      headerMap(itemSheet),
+      options,
+      threeSixtyTemplateColumnLabels("item"),
+      THREE_SIXTY_TEMPLATE_SHEETS.item
+    );
     const get = (row: ExcelJS.Row, col: string) => (cols.has(col) ? row.getCell(cols.get(col)!).value : null);
     const [{ data: competencyRows }, { data: existingItems }] = await Promise.all([
       supabase.from("three_sixty_competencies").select("id, competency_code").is("deleted_at", null),
@@ -248,9 +274,9 @@ export async function importThreeSixtyTemplateExcel(
 
     for (let r = 2; r <= itemSheet.rowCount; r++) {
       const row = itemSheet.getRow(r);
-      const itemCode = cellText(get(row, IT.itemCode));
-      const textAr = cellText(get(row, IT.textAr));
-      const competencyCode = cellText(get(row, IT.competencyCode));
+      const itemCode = cellText(get(row, "item_code"));
+      const textAr = cellText(get(row, "text_ar"));
+      const competencyCode = cellText(get(row, "competency_code"));
       if (!itemCode && !textAr) continue;
       if (!itemCode || !textAr || !competencyCode) {
         rowErrors.push(`item الصف ${r}: بيانات ناقصة (item_code/competency_code/text_ar) — تم التجاوز`);
@@ -261,8 +287,8 @@ export async function importThreeSixtyTemplateExcel(
         rowErrors.push(`item الصف ${r}: الجدارة "${competencyCode}" غير موجودة — تم التجاوز`);
         continue;
       }
-      const itemType = cellText(get(row, IT.itemType)) === "open_text" ? "open_text" : "rating";
-      const raterGroupsRaw = cellText(get(row, IT.raterGroups)) ?? "";
+      const itemType = cellText(get(row, "item_type")) === "open_text" ? "open_text" : "rating";
+      const raterGroupsRaw = cellText(get(row, "rater_groups")) ?? "";
       const raterGroups = raterGroupsRaw
         .split(/[,،]/)
         .map((s) => s.trim())
@@ -271,26 +297,27 @@ export async function importThreeSixtyTemplateExcel(
         rowErrors.push(`item الصف ${r}: عمود rater_groups فارغ — تم التجاوز`);
         continue;
       }
-      const scaleCode = cellText(get(row, IT.scaleCode));
+      const scaleCode = cellText(get(row, "scale_code"));
       if (itemType === "rating" && !scaleCode) {
         rowErrors.push(`item الصف ${r}: عبارة من نوع rating بلا scale_code — تم التجاوز`);
         continue;
       }
-      const patch = {
-        item_code: itemCode,
-        competency_id: competencyId,
-        item_type: itemType,
-        text_ar: textAr,
-        rater_groups: raterGroups,
-        required: cellBool(get(row, IT.required), true),
-        reverse_scored: cellBool(get(row, IT.reverseScored), false),
-        scale_code: itemType === "rating" ? scaleCode : null,
-        display_order: cellNumber(get(row, IT.displayOrder)) ?? 0,
-      };
       const existingId = existingItemByCode.get(itemCode);
+      if (existingId && !mayUpdate) continue;
+
+      const patch: Record<string, unknown> = { item_code: itemCode };
+      if (writesField(options, "item.competencyCode")) patch.competency_id = competencyId;
+      if (writesField(options, "item.itemType")) patch.item_type = itemType;
+      if (writesField(options, "item.textAr")) patch.text_ar = textAr;
+      if (writesField(options, "item.raterGroups")) patch.rater_groups = raterGroups;
+      if (writesField(options, "item.required")) patch.required = cellBool(get(row, "required"), true);
+      if (writesField(options, "item.reverseScored")) patch.reverse_scored = cellBool(get(row, "reverse_scored"), false);
+      if (writesField(options, "item.scaleCode")) patch.scale_code = itemType === "rating" ? scaleCode : null;
+      if (writesField(options, "item.displayOrder")) patch.display_order = cellNumber(get(row, "display_order")) ?? 0;
+
       const { error } = existingId
         ? await supabase.from("three_sixty_items").update(patch).eq("id", existingId)
-        : await supabase.from("three_sixty_items").insert(patch);
+        : await supabase.from("three_sixty_items").insert({ competency_id: competencyId, item_type: itemType, text_ar: textAr, rater_groups: raterGroups, ...patch });
       if (error) {
         rowErrors.push(`item الصف ${r}: ${error.message}`);
       } else {
@@ -299,12 +326,7 @@ export async function importThreeSixtyTemplateExcel(
     }
   }
 
-  if (
-    !ratingScaleSheet &&
-    !raterGroupSheet &&
-    !competencySheet &&
-    !itemSheet
-  ) {
+  if (!ratingScaleSheet && !raterGroupSheet && !competencySheet && !itemSheet) {
     return { status: "error", message: "invalid_input" };
   }
 
