@@ -127,7 +127,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   recruitmentBudget: "مراجعة ميزانية التوظيف",
   recruitmentRequests: "طلب الاحتياج",
   recruitmentPortal: "بوابة التوظيف",
-  threeSixty: "التقييم الدائري (360)",
+  threeSixty: "تقييم 360",
 };
 
 export interface ProcessAreaSection {
