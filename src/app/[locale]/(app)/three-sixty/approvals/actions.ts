@@ -55,7 +55,7 @@ export async function reviewThreeSixtyNominations(
 
   const { data: submittedRows, error: fetchError } = await supabase
     .from("three_sixty_nominations")
-    .select("id, relationship_code, rater_employee_id")
+    .select("id, relationship_code, rater_employee_id, months_worked_together")
     .eq("cycle_id", cycleId)
     .eq("subject_employee_id", subjectEmployeeId)
     .eq("status", "submitted")
@@ -96,6 +96,7 @@ export async function reviewThreeSixtyNominations(
         subjectEmployeeId,
         raterEmployeeId: r.rater_employee_id,
         relationshipCode: r.relationship_code,
+        monthsWorkedTogether: r.months_worked_together,
       }))
     );
     if (createError) return { status: "error", message: "unknown" };

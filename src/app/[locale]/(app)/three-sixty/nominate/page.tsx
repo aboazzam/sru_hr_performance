@@ -45,7 +45,7 @@ export default async function ThreeSixtyNominatePage() {
   const { data: existing } = cycle && myProfile
     ? await supabase
         .from("three_sixty_nominations")
-        .select("id, relationship_code, rater_employee_id, status, review_notes")
+        .select("id, relationship_code, rater_employee_id, status, review_notes, months_worked_together")
         .eq("cycle_id", cycle.id)
         .eq("subject_employee_id", myProfile.id)
         .is("deleted_at", null)
@@ -81,6 +81,7 @@ export default async function ThreeSixtyNominatePage() {
             raterEmployeeId: e.rater_employee_id,
             status: e.status,
             reviewNotes: e.review_notes,
+            monthsWorkedTogether: e.months_worked_together,
           }))}
         />
       )}

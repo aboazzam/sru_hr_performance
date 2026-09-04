@@ -1,38 +1,68 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  aggregateCompetencyScores,
+  computeCompetencyGroupScores,
+  computeCompetencyOfficialScores,
+  computeItemGroupAverages,
+  computeOverallScore,
+  computeSelfGaps,
+  excludeByTenure,
   groupCompletionStats,
+  meetsMinRatersGate,
+  rankItems,
+  reverseAdjustedValue,
+  shuffleOpenTextAnswers,
   visibleGroupBreakdown,
+  type CompetencyGap,
+  type ItemScore,
+  type PreparedResponse,
+  type ThreeSixtyAssignmentStatus,
+  type ThreeSixtyCompetency,
   type ThreeSixtyRaterGroup,
 } from "@/lib/threeSixty";
 
+export interface CompetencyReportRow {
+  competencyId: string;
+  nameAr: string;
+  weightPct: number | null;
+  /** null = no countable data for this competency at all (e.g. every response was "لم ألاحظ"). */
+  score: number | null;
+  /** Only groups that clear BOTH shown_separately and the min_raters_in_group k-anonymity floor. */
+  byGroup: { relationshipCode: string; nameAr: string; score: number | null }[];
+  hasFoldedGroups: boolean;
+}
+
 export interface ThreeSixtyReportData {
   cycle: { id: string; nameAr: string; anonymityMode: "anonymous" | "identified" };
+  insufficientData: boolean;
+  completedRaters: number;
+  minRatersRequired: number;
   overallScore: number | null;
-  competencyBreakdown: { competencyId: string; nameAr: string; score: number }[];
-  groupBreakdown: { relationshipCode: string; nameAr: string; total: number; submitted: number }[];
-  foldedGroupCount: number;
-  openTextComments: { itemText: string; answer: string }[];
+  competencies: CompetencyReportRow[];
+  selfGaps: CompetencyGap[];
+  topItems: ItemScore[];
+  bottomItems: ItemScore[];
+  groupCompletion: { relationshipCode: string; nameAr: string; total: number; submitted: number }[];
+  /** Pooled, shuffled, with no item/category/date/order attached -- see threeSixty.ts's `shuffleOpenTextAnswers`. */
+  openTextAnswers: string[];
 }
 
 /**
- * Screens 4/5's shared data assembly -- one function so an employee's own
+ * Screens 4/5's shared data assembly (2026-09-04 rewrite, literal scoring
+ * rules given directly by the project owner -- see src/lib/threeSixty.ts's
+ * own header for the full pipeline) -- one function so an employee's own
  * report and a manager's view of a team member's report can never drift
  * apart (the exact "a fix landing in only one of two places" trap this
- * project has hit before). Returns null when there is nothing to show
- * (no closed cycle, or the cycle has no assignments for this employee).
+ * project has hit before). Returns null when there is nothing to show at
+ * all (no closed cycle, or the cycle has no assignments for this employee)
+ * -- NOT the same as `insufficientData: true`, which means real assignments
+ * exist but too few scoring-group raters completed theirs.
  *
- * Anonymity: `visibleGroupBreakdown` (src/lib/threeSixty.ts) folds any
- * rater group that hasn't cleared its own `min_raters_in_group`
- * k-anonymity floor into an aggregate "other" bucket instead of showing it
- * on its own -- see that function's own doc comment. Open-text comments are
- * listed WITHOUT any rater attribution regardless of `anonymity_mode`:
- * resolving "which of several possible raters wrote this" would need a
- * general-purpose profile-name lookup this module deliberately does not
- * build (every name-resolution RPC added this session is narrowly scoped
- * to a specific, already-authorized relationship) -- flagged as a
- * known, deliberate simplification rather than silently pretending
- * `anonymity_mode = 'identified'` is fully implemented.
+ * Confidentiality, applied at every step: no field returned here ever
+ * carries a rater's identity (only aggregated scores/counts); a rater
+ * group's own breakdown is included in `byGroup` only once it clears
+ * `min_raters_in_group` (k-anonymity) -- folded otherwise (`hasFoldedGroups`
+ * says so without naming which); `openTextAnswers` is a flat, shuffled list
+ * with no item/category/date attached.
  */
 export async function getThreeSixtyReport(
   supabase: SupabaseClient,
@@ -41,138 +71,189 @@ export async function getThreeSixtyReport(
 ): Promise<ThreeSixtyReportData | null> {
   const cycleQuery = supabase
     .from("three_sixty_cycles")
-    .select("id, name_ar, anonymity_mode")
+    .select("id, name_ar, anonymity_mode, min_raters, min_months_together")
     .eq("status", "closed")
     .is("deleted_at", null);
   const { data: cycle } = cycleId
     ? await cycleQuery.eq("id", cycleId).maybeSingle()
     : await cycleQuery.order("end_date", { ascending: false }).limit(1).maybeSingle();
-
   if (!cycle) return null;
 
-  const { data: assignments } = await supabase
+  const { data: assignmentRows } = await supabase
     .from("three_sixty_assignments")
-    .select("id, relationship_code, status")
+    .select("id, relationship_code, status, months_worked_together")
     .eq("cycle_id", cycle.id)
     .eq("subject_employee_id", employeeId)
     .is("deleted_at", null);
+  if (!assignmentRows || assignmentRows.length === 0) return null;
 
-  if (!assignments || assignments.length === 0) return null;
+  const assignments = assignmentRows.map((a) => ({
+    id: a.id,
+    relationshipCode: a.relationship_code,
+    status: a.status as ThreeSixtyAssignmentStatus,
+    monthsWorkedTogether: a.months_worked_together,
+  }));
+  const tenureEligible = excludeByTenure(assignments, cycle.min_months_together);
+  const relationshipByAssignmentId = new Map(tenureEligible.map((a) => [a.id, a.relationshipCode]));
 
   const { data: raterGroupRows } = await supabase
     .from("three_sixty_rater_groups")
-    .select("relationship_code, name_ar, min_raters_in_group, max_raters_in_group, shown_separately, employee_may_nominate")
+    .select("relationship_code, name_ar, group_weight_pct, min_raters_in_group, max_raters_in_group, shown_separately, employee_may_nominate")
     .is("deleted_at", null);
   const raterGroups: ThreeSixtyRaterGroup[] = (raterGroupRows ?? []).map((g) => ({
     relationshipCode: g.relationship_code,
     nameAr: g.name_ar,
+    groupWeightPct: g.group_weight_pct,
     minRatersInGroup: g.min_raters_in_group,
     maxRatersInGroup: g.max_raters_in_group,
     shownSeparately: g.shown_separately,
     employeeMayNominate: g.employee_may_nominate,
   }));
-  const nameByCode = new Map(raterGroups.map((g) => [g.relationshipCode, g.nameAr]));
+  const raterGroupByCode = new Map(raterGroups.map((g) => [g.relationshipCode, g]));
 
-  const stats = groupCompletionStats(
-    assignments.map((a) => ({ relationshipCode: a.relationship_code, status: a.status as "pending" | "submitted" | "excluded" }))
-  );
-  const { visible, folded } = visibleGroupBreakdown(raterGroups, stats);
+  const gate = meetsMinRatersGate(tenureEligible, raterGroups, cycle.min_raters);
 
-  const submittedAssignmentIds = assignments.filter((a) => a.status === "submitted").map((a) => a.id);
-  if (submittedAssignmentIds.length === 0) {
+  const completionStats = groupCompletionStats(tenureEligible);
+  const { visible: visibleStats } = visibleGroupBreakdown(raterGroups, completionStats);
+  const visibleCodes = new Set(visibleStats.map((s) => s.relationshipCode));
+  const groupCompletion = completionStats.map((s) => ({
+    relationshipCode: s.relationshipCode,
+    nameAr: raterGroupByCode.get(s.relationshipCode)?.nameAr ?? s.relationshipCode,
+    total: s.total,
+    submitted: s.submitted,
+  }));
+
+  const { data: competencyRows } = await supabase
+    .from("three_sixty_competencies")
+    .select("id, name_ar, weight_pct")
+    .is("deleted_at", null);
+  const competencies: ThreeSixtyCompetency[] = (competencyRows ?? []).map((c) => ({
+    id: c.id,
+    nameAr: c.name_ar,
+    weightPct: c.weight_pct,
+  }));
+
+  if (!gate.ok) {
     return {
       cycle: { id: cycle.id, nameAr: cycle.name_ar, anonymityMode: cycle.anonymity_mode },
+      insufficientData: true,
+      completedRaters: gate.completedCount,
+      minRatersRequired: cycle.min_raters,
       overallScore: null,
-      competencyBreakdown: [],
-      groupBreakdown: visible.map((s) => ({ relationshipCode: s.relationshipCode, nameAr: nameByCode.get(s.relationshipCode) ?? s.relationshipCode, total: s.total, submitted: s.submitted })),
-      foldedGroupCount: folded.length,
-      openTextComments: [],
+      competencies: [],
+      selfGaps: [],
+      topItems: [],
+      bottomItems: [],
+      groupCompletion,
+      openTextAnswers: [],
     };
   }
 
+  const submittedIds = tenureEligible.filter((a) => a.status === "submitted").map((a) => a.id);
+
+  const { data: itemRows } = await supabase
+    .from("three_sixty_items")
+    .select("id, competency_id, item_type, reverse_scored, scale_code, text_ar")
+    .is("deleted_at", null);
+  const items = itemRows ?? [];
+  const ratingItems = items.filter((i) => i.item_type === "rating");
+  const itemById = new Map(items.map((i) => [i.id, i]));
+
   const { data: responseRows } = await supabase
     .from("three_sixty_responses")
-    .select(
-      "option_id, numeric_value, text_value, three_sixty_items(competency_id, item_type, reverse_scored, scale_code, text_ar, three_sixty_competencies(name_ar))"
-    )
-    .in("assignment_id", submittedAssignmentIds);
+    .select("assignment_id, item_id, option_id, numeric_value, text_value")
+    .in("assignment_id", submittedIds);
 
   const { data: scaleRows } = await supabase
     .from("three_sixty_rating_scale_options")
     .select("id, scale_code, numeric_value, counted_in_score")
     .is("deleted_at", null);
+  // Bounds are derived ONLY from counted_in_score=true options -- a "لم
+  // ألاحظ"/N/A option's own numeric_value (often 0, outside the real rating
+  // range) must not shift where reverseAdjustedValue mirrors a reverse-scored
+  // item's raw value, even though that same option is separately (and
+  // correctly) excluded from every average below.
   const scaleBoundsByCode = new Map<string, { min: number; max: number }>();
-  // Keyed by option id, not scale_code+numeric_value -- counted_in_score is a
-  // per-OPTION flag (e.g. an "N/A" option with counted_in_score=false), not
-  // derivable from the scale's numeric bounds.
   const countedByOptionId = new Map<string, boolean>();
   for (const row of scaleRows ?? []) {
+    countedByOptionId.set(row.id, row.counted_in_score);
+    if (!row.counted_in_score) continue;
     const bounds = scaleBoundsByCode.get(row.scale_code) ?? { min: row.numeric_value, max: row.numeric_value };
     bounds.min = Math.min(bounds.min, row.numeric_value);
     bounds.max = Math.max(bounds.max, row.numeric_value);
     scaleBoundsByCode.set(row.scale_code, bounds);
-    countedByOptionId.set(row.id, row.counted_in_score);
   }
 
-  const scored: { competencyId: string; numericValue: number; reverseScored: boolean; scaleMin: number; scaleMax: number; countedInScore: boolean }[] = [];
-  const competencyNameById = new Map<string, string>();
-  const openTextComments: { itemText: string; answer: string }[] = [];
-
+  const prepared: PreparedResponse[] = [];
+  const openTextAnswersRaw: string[] = [];
   for (const row of responseRows ?? []) {
-    const item = row.three_sixty_items as unknown as {
-      competency_id: string;
-      item_type: "rating" | "open_text";
-      reverse_scored: boolean;
-      scale_code: string | null;
-      text_ar: string;
-      three_sixty_competencies: { name_ar: string } | null;
-    } | null;
+    const item = itemById.get(row.item_id);
     if (!item) continue;
-    competencyNameById.set(item.competency_id, item.three_sixty_competencies?.name_ar ?? item.competency_id);
-
+    const relationshipCode = relationshipByAssignmentId.get(row.assignment_id);
+    if (!relationshipCode) continue; // tenure-excluded or unrelated assignment
     if (item.item_type === "open_text") {
-      if (row.text_value) openTextComments.push({ itemText: item.text_ar, answer: row.text_value });
+      if (row.text_value && row.text_value.trim() !== "") openTextAnswersRaw.push(row.text_value.trim());
       continue;
     }
     if (row.numeric_value == null || !item.scale_code) continue;
+    // "خيار counted_in_score = N يُستبعد من المتوسط ولا يُعامل كصفر" -- an
+    // unresolved option id defaults to counted (true), never silently drops
+    // real data because of a stale/deleted option row.
+    const counted = row.option_id ? countedByOptionId.get(row.option_id) ?? true : true;
     const bounds = scaleBoundsByCode.get(item.scale_code) ?? { min: row.numeric_value, max: row.numeric_value };
-    // Defaults to true (counted) only when the option can't be resolved at
-    // all (e.g. a stale/deleted option) -- a real, live option's own flag
-    // always wins, so an "N/A"-style option marked counted_in_score=false
-    // is correctly excluded instead of silently averaged in.
-    const countedInScore = row.option_id ? (countedByOptionId.get(row.option_id) ?? true) : true;
-    scored.push({
+    prepared.push({
+      itemId: row.item_id,
       competencyId: item.competency_id,
-      numericValue: row.numeric_value,
-      reverseScored: item.reverse_scored,
-      scaleMin: bounds.min,
-      scaleMax: bounds.max,
-      countedInScore,
+      relationshipCode,
+      adjustedValue: counted ? reverseAdjustedValue(row.numeric_value, bounds.min, bounds.max, item.reverse_scored) : null,
     });
   }
 
-  const perCompetency = aggregateCompetencyScores(scored);
-  const competencyBreakdown = [...perCompetency.entries()].map(([competencyId, score]) => ({
-    competencyId,
-    nameAr: competencyNameById.get(competencyId) ?? competencyId,
-    score,
-  }));
-  const overallScore =
-    competencyBreakdown.length > 0
-      ? competencyBreakdown.reduce((sum, c) => sum + c.score, 0) / competencyBreakdown.length
-      : null;
+  const itemGroupAverages = computeItemGroupAverages(prepared);
+  const competencyGroupScores = computeCompetencyGroupScores(
+    itemGroupAverages,
+    ratingItems.map((i) => ({ id: i.id, competencyId: i.competency_id }))
+  );
+  const competencyOfficialScores = computeCompetencyOfficialScores(competencyGroupScores, raterGroups);
+  const overallScore = computeOverallScore(competencyOfficialScores, competencies);
+  const selfGaps = computeSelfGaps(competencyGroupScores, competencyOfficialScores, competencies);
+  const { top: topItems, bottom: bottomItems } = rankItems(
+    itemGroupAverages,
+    ratingItems.map((i) => ({ id: i.id, textAr: i.text_ar, competencyId: i.competency_id })),
+    raterGroups
+  );
+
+  const competencyReportRows: CompetencyReportRow[] = competencies.map((c) => {
+    const byGroupScores = competencyGroupScores.get(c.id);
+    const byGroup = [...visibleCodes]
+      .map((code) => ({
+        relationshipCode: code,
+        nameAr: raterGroupByCode.get(code)?.nameAr ?? code,
+        score: byGroupScores?.get(code) ?? null,
+      }))
+      .filter((row) => row.score != null);
+    const hasFoldedGroups = (byGroupScores?.size ?? 0) > byGroup.length;
+    return {
+      competencyId: c.id,
+      nameAr: c.nameAr,
+      weightPct: c.weightPct,
+      score: competencyOfficialScores.get(c.id) ?? null,
+      byGroup,
+      hasFoldedGroups,
+    };
+  });
 
   return {
     cycle: { id: cycle.id, nameAr: cycle.name_ar, anonymityMode: cycle.anonymity_mode },
+    insufficientData: false,
+    completedRaters: gate.completedCount,
+    minRatersRequired: cycle.min_raters,
     overallScore,
-    competencyBreakdown,
-    groupBreakdown: visible.map((s) => ({
-      relationshipCode: s.relationshipCode,
-      nameAr: nameByCode.get(s.relationshipCode) ?? s.relationshipCode,
-      total: s.total,
-      submitted: s.submitted,
-    })),
-    foldedGroupCount: folded.length,
-    openTextComments,
+    competencies: competencyReportRows,
+    selfGaps,
+    topItems,
+    bottomItems,
+    groupCompletion,
+    openTextAnswers: shuffleOpenTextAnswers(openTextAnswersRaw),
   };
 }

@@ -24,6 +24,7 @@ interface ExistingNomination {
   raterEmployeeId: string;
   status: ThreeSixtyNominationStatus;
   reviewNotes: string | null;
+  monthsWorkedTogether: number | null;
 }
 
 export function ThreeSixtyNominateForm({
@@ -50,6 +51,14 @@ export function ThreeSixtyNominateForm({
     return init;
   });
   const [search, setSearch] = useState<Record<string, string>>({});
+  const [months, setMonths] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const row of existing) {
+      if (row.monthsWorkedTogether != null) init[row.raterEmployeeId] = String(row.monthsWorkedTogether);
+    }
+    return init;
+  });
+  const employeeLabelById = useMemo(() => new Map(employees.map((e) => [e.id, e.label])), [employees]);
 
   const locked = existing.some((e) => e.status === "submitted" || e.status === "approved");
   const returnedNote = existing.find((e) => e.status === "returned" && e.reviewNotes)?.reviewNotes;
@@ -87,6 +96,12 @@ export function ThreeSixtyNominateForm({
     const payload: Record<string, string[]> = {};
     for (const [code, set] of Object.entries(selections)) payload[code] = [...set];
     formData.set("selections", JSON.stringify(payload));
+    const monthsPayload: Record<string, number> = {};
+    for (const [raterId, value] of Object.entries(months)) {
+      const n = Number(value);
+      if (value.trim() !== "" && Number.isFinite(n)) monthsPayload[raterId] = n;
+    }
+    formData.set("monthsByRaterId", JSON.stringify(monthsPayload));
     startTransition(() => formAction(formData));
   }
 
@@ -161,6 +176,26 @@ export function ThreeSixtyNominateForm({
                 <p style={{ color: "var(--sru-muted)", fontSize: 11.5 }}>{t("noMatches")}</p>
               )}
             </div>
+
+            {selectedSet.size > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <p style={{ fontSize: 11, color: "var(--sru-muted)", marginBottom: 6 }}>{t("monthsTogetherHeading")}</p>
+                {[...selectedSet].map((raterId) => (
+                  <div key={raterId} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, flex: 1 }}>{employeeLabelById.get(raterId) ?? raterId}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      disabled={locked}
+                      value={months[raterId] ?? ""}
+                      onChange={(e) => setMonths((prev) => ({ ...prev, [raterId]: e.target.value }))}
+                      placeholder={t("monthsTogetherPlaceholder")}
+                      style={{ width: 90 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         );
       })}
