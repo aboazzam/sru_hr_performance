@@ -62,7 +62,7 @@
     "executivePlans": "قائمة الخطط التشغيلية",
     "initiativeAssignments": "إسناد المبادرات",
     "orgUnits": "الوحدات التنظيمية",
-    "threeSixty": "التقييم الدائري",
+    "threeSixty": "تقييم 360",
     "threeSixtyCycles": "الدورات",
     "threeSixtyTemplate": "القالب",
     "threeSixtyNominate": "ترشيح المقيّمين",
@@ -1697,11 +1697,11 @@
     "errorUnknown": "حدث خطأ غير متوقع."
   },
   "ThreeSixtyCyclesPage": {
-    "title": "التقييم الدائري (360)",
-    "subtitle": "إدارة دورات التقييم الدائري ومتابعة نسب الاكتمال.",
+    "title": "تقييم 360",
+    "subtitle": "إدارة دورات تقييم 360 ومتابعة نسب الاكتمال.",
     "templateButton": "إدارة القالب",
     "newCycleButton": "دورة جديدة",
-    "empty": "لا توجد دورات تقييم دائري بعد.",
+    "empty": "لا توجد دورات تقييم 360 بعد.",
     "columnName": "الاسم",
     "columnCode": "الرمز",
     "columnStartDate": "تاريخ البداية",
@@ -1713,15 +1713,15 @@
     "actionError": "تعذر تنفيذ الإجراء."
   },
   "ThreeSixtyNewCyclePage": {
-    "title": "دورة تقييم دائري جديدة",
+    "title": "دورة تقييم 360 جديدة",
     "subtitle": "أدخل بيانات الدورة وحدودها وإعدادات السرية.",
-    "errorForbidden": "ليست لديك صلاحية إنشاء دورة تقييم دائري.",
+    "errorForbidden": "ليست لديك صلاحية إنشاء دورة تقييم 360.",
     "errorNoScale": "لا يوجد مقياس تقييم في القالب — استورد ملف القالب أولًا من شاشة إدارة القالب.",
     "sectionBasicTitle": "بيانات الدورة",
     "cycleCodeLabel": "رمز الدورة",
     "cycleCodePlaceholder": "مثال: 360-2027-H1",
     "nameArLabel": "اسم الدورة",
-    "nameArPlaceholder": "مثال: التقييم الدائري 2027",
+    "nameArPlaceholder": "مثال: تقييم 360 لعام 2027",
     "purposeLabel": "الغرض من الدورة — اختياري",
     "purposePlaceholder": "اكتب الغرض من هذه الدورة",
     "sectionBoundsTitle": "الفترة والحدود",
@@ -1745,15 +1745,15 @@
     "submitting": "جارٍ الإنشاء...",
     "errorInvalidInput": "تحقق من الحقول المدخلة.",
     "errorUnauthenticated": "يجب تسجيل الدخول أولًا.",
-    "errorForbiddenSubmit": "ليست لديك صلاحية إنشاء دورة تقييم دائري.",
+    "errorForbiddenSubmit": "ليست لديك صلاحية إنشاء دورة تقييم 360.",
     "errorDuplicate": "رمز الدورة مستخدم بالفعل.",
     "errorUnknownScale": "مقياس التقييم المحدد غير موجود.",
     "errorUnknown": "حدث خطأ غير متوقع."
   },
   "ThreeSixtyTemplatePage": {
-    "title": "قالب التقييم الدائري",
+    "title": "قالب تقييم 360",
     "subtitle": "فئات المقيّمين ومقاييس التقييم والجدارات والعبارات — كتالوج مشترك بين كل الدورات.",
-    "errorForbidden": "ليست لديك صلاحية إدارة قالب التقييم الدائري.",
+    "errorForbidden": "ليست لديك صلاحية إدارة قالب تقييم 360.",
     "importButton": "استيراد من إكسل",
     "importHeading": "استيراد ملف القالب",
     "importNote": "ملف إكسل بأربع أوراق عمل: rater_group، rating_scale، competency، item. تُحدَّث الصفوف الموجودة بمطابقة رمزها ولا يُحذف شيء.",
@@ -1796,9 +1796,9 @@
   },
   "ThreeSixtyNominatePage": {
     "title": "ترشيح المقيّمين",
-    "subtitle": "رشّح من سيقيّمك في التقييم الدائري ضمن الحد الأدنى والأقصى، ثم أرسل القائمة لاعتماد رئيسك المباشر.",
+    "subtitle": "رشّح من سيقيّمك في تقييم 360 ضمن الحد الأدنى والأقصى، ثم أرسل القائمة لاعتماد رئيسك المباشر.",
     "errorForbidden": "تعذر تحديد ملفك الشخصي.",
-    "errorNoActiveCycle": "لا توجد دورة تقييم دائري نشطة حاليًا.",
+    "errorNoActiveCycle": "لا توجد دورة تقييم 360 نشطة حاليًا.",
     "errorNoNominateableGroups": "لا توجد فئات مقيّمين يمكن ترشيحها في قالب هذه الدورة.",
     "boundsNote": "الحد الإجمالي المطلوب للمقيّمين: من {min} إلى {max}.",
     "groupBoundsNote": "من {min} إلى {max} — المختار حاليًا: {selected}",
@@ -1815,7 +1815,7 @@
   "ThreeSixtyApprovalsPage": {
     "title": "اعتماد قوائم الترشيح",
     "subtitle": "اعتمد أو أعِد قوائم مقيّمي فريقك المباشر في الدورة النشطة.",
-    "errorNoActiveCycle": "لا توجد دورة تقييم دائري نشطة حاليًا.",
+    "errorNoActiveCycle": "لا توجد دورة تقييم 360 نشطة حاليًا.",
     "errorNoReports": "لا يوجد لديك مرؤوسون مباشرون.",
     "empty": "لا توجد قوائم ترشيح بانتظار إجرائك حاليًا.",
     "columnRelationship": "العلاقة",
@@ -1840,7 +1840,7 @@
     "viewButton": "عرض"
   },
   "ThreeSixtyQuestionnairePage": {
-    "title": "استبانة التقييم الدائري",
+    "title": "استبانة تقييم 360",
     "errorForbidden": "هذا التكليف غير موجود أو ليس مخصصًا لك.",
     "errorNoItems": "لا توجد عبارات لهذه العلاقة.",
     "savedIndicator": "تم الحفظ",
@@ -1851,7 +1851,7 @@
     "submitting": "جارٍ الإرسال..."
   },
   "ThreeSixtyReportPage": {
-    "title": "تقرير التقييم الدائري",
+    "title": "تقرير تقييم 360",
     "errorForbidden": "ليست لديك صلاحية الاطلاع على هذا التقرير.",
     "errorNoReport": "لا يوجد تقرير متاح بعد — لا توجد دورة مغلقة تشمل هذا الموظف.",
     "overallScoreLabel": "الدرجة الإجمالية",
@@ -1875,7 +1875,7 @@
   },
   "ThreeSixtyTeamReportPage": {
     "title": "تقارير فريقي",
-    "subtitle": "تقارير التقييم الدائري لمرؤوسيك المباشرين بعد إغلاق الدورة.",
+    "subtitle": "تقارير تقييم 360 لمرؤوسيك المباشرين بعد إغلاق الدورة.",
     "empty": "لا يوجد لديك مرؤوسون مباشرون.",
     "columnEmployee": "الموظف",
     "columnActions": "إجراءات",
