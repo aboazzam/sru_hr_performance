@@ -2,7 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { ThreeSixtyQuestionnaireForm } from "@/components/ThreeSixtyQuestionnaireForm";
-import { itemsForRelationship, type ThreeSixtyItem } from "@/lib/threeSixty";
+import {
+  itemsForRelationship,
+  itemsForSubjectLevel,
+  resolveThreeSixtyItemLevels,
+  type BehavioralLevel,
+  type ThreeSixtyItem,
+} from "@/lib/threeSixty";
 
 export default async function ThreeSixtyQuestionnairePage({
   params,
@@ -41,18 +47,26 @@ export default async function ThreeSixtyQuestionnairePage({
   )?.subject_name;
   const cycle = assignment.three_sixty_cycles as unknown as { name_ar: string; scale_code: string } | null;
 
-  const [{ data: itemRows }, { data: scaleOptionRows }, { data: responseRows }] = await Promise.all([
-    supabase
-      .from("three_sixty_items")
-      .select("id, item_code, competency_id, item_type, text_ar, rater_groups, required, reverse_scored, scale_code, display_order")
-      .is("deleted_at", null),
-    supabase
-      .from("three_sixty_rating_scale_options")
-      .select("id, scale_code, option_code, label_ar, numeric_value")
-      .is("deleted_at", null)
-      .order("numeric_value"),
-    supabase.from("three_sixty_responses").select("item_id, option_id, numeric_value, text_value").eq("assignment_id", assignmentId),
-  ]);
+  const [{ data: itemRows }, { data: scaleOptionRows }, { data: responseRows }, { data: competencyRows }, { data: levelRows }] =
+    await Promise.all([
+      supabase
+        .from("three_sixty_items")
+        .select(
+          "id, item_code, competency_id, item_type, text_ar, rater_groups, required, reverse_scored, scale_code, display_order, behavioral_level"
+        )
+        .is("deleted_at", null),
+      supabase
+        .from("three_sixty_rating_scale_options")
+        .select("id, scale_code, option_code, label_ar, numeric_value")
+        .is("deleted_at", null)
+        .order("numeric_value"),
+      supabase.from("three_sixty_responses").select("item_id, option_id, numeric_value, text_value").eq("assignment_id", assignmentId),
+      supabase.from("three_sixty_competencies").select("id, source_competency_id").is("deleted_at", null),
+      // SECURITY DEFINER -- an ordinary rater has no RLS branch letting them
+      // read the subject's job_title_id or job_title_competencies directly
+      // (see migration 20260904000003's header).
+      supabase.rpc("get_three_sixty_subject_levels", { p_subject_employee_id: assignment.subject_employee_id }),
+    ]);
 
   const items: ThreeSixtyItem[] = (itemRows ?? []).map((i) => ({
     id: i.id,
@@ -64,8 +78,16 @@ export default async function ThreeSixtyQuestionnairePage({
     reverseScored: i.reverse_scored,
     scaleCode: i.scale_code,
     displayOrder: i.display_order,
+    behavioralLevel: i.behavioral_level as BehavioralLevel | null,
   }));
-  const applicableItems = itemsForRelationship(items, assignment.relationship_code);
+  const resolvedLevels = resolveThreeSixtyItemLevels(
+    (competencyRows ?? []).map((c) => ({ id: c.id, sourceCompetencyId: c.source_competency_id })),
+    ((levelRows ?? []) as { competency_id: string; required_level: BehavioralLevel }[]).map((r) => ({
+      competencyId: r.competency_id,
+      requiredLevel: r.required_level,
+    }))
+  );
+  const applicableItems = itemsForRelationship(itemsForSubjectLevel(items, resolvedLevels), assignment.relationship_code);
   const textAndScaleByItemId = new Map((itemRows ?? []).map((i) => [i.id, { textAr: i.text_ar, scaleCode: i.scale_code }]));
 
   const optionsByScale = new Map<string, { id: string; optionCode: string; labelAr: string; numericValue: number }[]>();

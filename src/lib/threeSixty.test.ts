@@ -15,6 +15,8 @@ import {
   shuffleOpenTextAnswers,
   groupCompletionStats,
   visibleGroupBreakdown,
+  resolveThreeSixtyItemLevels,
+  itemsForSubjectLevel,
   type ThreeSixtyItem,
   type ThreeSixtyRaterGroup,
   type ThreeSixtyCompetency,
@@ -32,6 +34,7 @@ function item(overrides: Partial<ThreeSixtyItem>): ThreeSixtyItem {
     reverseScored: false,
     scaleCode: "freq",
     displayOrder: 0,
+    behavioralLevel: null,
     ...overrides,
   };
 }
@@ -442,5 +445,59 @@ describe("visibleGroupBreakdown", () => {
     ]);
     expect(visible).toEqual([]);
     expect(folded).toHaveLength(1);
+  });
+});
+
+describe("resolveThreeSixtyItemLevels", () => {
+  it("uses the job title's own required_level for the competency's real counterpart", () => {
+    const result = resolveThreeSixtyItemLevels(
+      [{ id: "c1", sourceCompetencyId: "real-c1" }],
+      [{ competencyId: "real-c1", requiredLevel: "advanced" }]
+    );
+    expect(result.get("c1")).toBe("advanced");
+  });
+
+  it("falls back to practitioner when the job title has no required_level on record", () => {
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1" }], []);
+    expect(result.get("c1")).toBe("practitioner");
+  });
+
+  it("honors a custom fallback", () => {
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1" }], [], "basic");
+    expect(result.get("c1")).toBe("basic");
+  });
+
+  it("always falls back for a 360 competency with no source (no per-job-title data could ever apply)", () => {
+    const result = resolveThreeSixtyItemLevels(
+      [{ id: "c1", sourceCompetencyId: null }],
+      [{ competencyId: "real-c1", requiredLevel: "professional" }]
+    );
+    expect(result.get("c1")).toBe("practitioner");
+  });
+});
+
+describe("itemsForSubjectLevel", () => {
+  const resolvedLevels = new Map([
+    ["c1", "advanced" as const],
+    ["c2", "basic" as const],
+  ]);
+
+  it("keeps only items whose level matches the competency's resolved level", () => {
+    const items = [
+      item({ id: "a", competencyId: "c1", behavioralLevel: "advanced" }),
+      item({ id: "b", competencyId: "c1", behavioralLevel: "basic" }),
+      item({ id: "c", competencyId: "c2", behavioralLevel: "basic" }),
+    ];
+    expect(itemsForSubjectLevel(items, resolvedLevels).map((i) => i.id)).toEqual(["a", "c"]);
+  });
+
+  it("always keeps a level-agnostic item (behavioralLevel: null) regardless of resolved level", () => {
+    const items = [item({ id: "open", competencyId: "c1", behavioralLevel: null })];
+    expect(itemsForSubjectLevel(items, resolvedLevels).map((i) => i.id)).toEqual(["open"]);
+  });
+
+  it("excludes an item whose competency has no resolved level at all", () => {
+    const items = [item({ id: "orphan", competencyId: "unknown-competency", behavioralLevel: "basic" })];
+    expect(itemsForSubjectLevel(items, resolvedLevels)).toEqual([]);
   });
 });

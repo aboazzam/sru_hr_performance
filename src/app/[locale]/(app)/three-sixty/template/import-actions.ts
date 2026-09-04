@@ -41,6 +41,14 @@ function cellBool(value: ExcelJS.CellValue, fallback: boolean): boolean {
   return ["true", "1", "yes", "نعم", "صح"].includes(text.trim().toLowerCase());
 }
 
+const BEHAVIORAL_LEVELS = new Set(["basic", "practitioner", "advanced", "professional"]);
+
+/** Empty or anything not one of the four literal codes means "level-agnostic" (NULL, shown regardless of the subject's resolved level) rather than a rejected row -- an admin adding a general item (like the open-text one) shouldn't need a placeholder value. */
+function cellBehavioralLevel(value: ExcelJS.CellValue): string | null {
+  const text = cellText(value)?.trim().toLowerCase() ?? null;
+  return text && BEHAVIORAL_LEVELS.has(text) ? text : null;
+}
+
 function headerMap(sheet: ExcelJS.Worksheet): Map<string, number> {
   const map = new Map<string, number>();
   sheet.getRow(1).eachCell((cell, colNumber) => {
@@ -314,6 +322,7 @@ export async function importThreeSixtyTemplateExcel(
       if (writesField(options, "item.reverseScored")) patch.reverse_scored = cellBool(get(row, "reverse_scored"), false);
       if (writesField(options, "item.scaleCode")) patch.scale_code = itemType === "rating" ? scaleCode : null;
       if (writesField(options, "item.displayOrder")) patch.display_order = cellNumber(get(row, "display_order")) ?? 0;
+      if (writesField(options, "item.behavioralLevel")) patch.behavioral_level = cellBehavioralLevel(get(row, "behavioral_level"));
 
       const { error } = existingId
         ? await supabase.from("three_sixty_items").update(patch).eq("id", existingId)
