@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { GroupTabs } from "@/components/layout/GroupTabs";
 import { ThreeSixtyTemplateImportButton } from "@/components/ThreeSixtyTemplateImportButton";
+import { ThreeSixtyTemplateExportButtons } from "@/components/ThreeSixtyTemplateExportButtons";
 import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 
 export default async function ThreeSixtyTemplatePage() {
@@ -67,6 +68,7 @@ export default async function ThreeSixtyTemplatePage() {
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginTop: 4 }}>{t("subtitle")}</p>
         </div>
         <div className="sru-actionbar no-print">
+          <ThreeSixtyTemplateExportButtons />
           <ThreeSixtyTemplateImportButton />
         </div>
       </div>
