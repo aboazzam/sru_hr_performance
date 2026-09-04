@@ -3,11 +3,22 @@ import {
   itemsForRelationship,
   validateNominationCounts,
   reverseAdjustedValue,
-  aggregateCompetencyScores,
+  excludeByTenure,
+  meetsMinRatersGate,
+  combineWeighted,
+  computeItemGroupAverages,
+  computeCompetencyGroupScores,
+  computeCompetencyOfficialScores,
+  computeOverallScore,
+  computeSelfGaps,
+  rankItems,
+  shuffleOpenTextAnswers,
   groupCompletionStats,
   visibleGroupBreakdown,
   type ThreeSixtyItem,
   type ThreeSixtyRaterGroup,
+  type ThreeSixtyCompetency,
+  type PreparedResponse,
 } from "./threeSixty";
 
 function item(overrides: Partial<ThreeSixtyItem>): ThreeSixtyItem {
@@ -29,6 +40,7 @@ function raterGroup(overrides: Partial<ThreeSixtyRaterGroup>): ThreeSixtyRaterGr
   return {
     relationshipCode: "peer",
     nameAr: "زميل",
+    groupWeightPct: 50,
     minRatersInGroup: 0,
     maxRatersInGroup: null,
     shownSeparately: false,
@@ -151,26 +163,242 @@ describe("reverseAdjustedValue", () => {
   });
 });
 
-describe("aggregateCompetencyScores", () => {
-  it("averages counted responses per competency, applying reverse scoring first", () => {
-    const scores = aggregateCompetencyScores([
-      { competencyId: "c1", numericValue: 4, reverseScored: false, scaleMin: 1, scaleMax: 5, countedInScore: true },
-      { competencyId: "c1", numericValue: 2, reverseScored: true, scaleMin: 1, scaleMax: 5, countedInScore: true }, // adjusted to 4
-      { competencyId: "c2", numericValue: 3, reverseScored: false, scaleMin: 1, scaleMax: 5, countedInScore: true },
+describe("excludeByTenure", () => {
+  it("excludes an assignment whose real tenure is below the minimum", () => {
+    const result = excludeByTenure(
+      [
+        { id: "a", relationshipCode: "peer", status: "submitted", monthsWorkedTogether: 2 },
+        { id: "b", relationshipCode: "peer", status: "submitted", monthsWorkedTogether: 6 },
+      ],
+      3
+    );
+    expect(result.map((a) => a.id)).toEqual(["b"]);
+  });
+
+  it("does NOT exclude an assignment with unknown (null) tenure -- the rule only fires on a real below-threshold value", () => {
+    const result = excludeByTenure(
+      [{ id: "a", relationshipCode: "peer", status: "submitted", monthsWorkedTogether: null }],
+      3
+    );
+    expect(result.map((a) => a.id)).toEqual(["a"]);
+  });
+
+  it("keeps an assignment exactly at the minimum", () => {
+    const result = excludeByTenure(
+      [{ id: "a", relationshipCode: "peer", status: "submitted", monthsWorkedTogether: 3 }],
+      3
+    );
+    expect(result.map((a) => a.id)).toEqual(["a"]);
+  });
+});
+
+describe("meetsMinRatersGate", () => {
+  const raterGroups = [
+    { relationshipCode: "peer", groupWeightPct: 50 },
+    { relationshipCode: "subordinate", groupWeightPct: 50 },
+    { relationshipCode: "self", groupWeightPct: 0 },
+    { relationshipCode: "supervisor", groupWeightPct: 0 },
+  ];
+
+  it("counts only submitted assignments in scoring (weight > 0) groups", () => {
+    const gate = meetsMinRatersGate(
+      [
+        { relationshipCode: "peer", status: "submitted" },
+        { relationshipCode: "peer", status: "pending" },
+        { relationshipCode: "self", status: "submitted" }, // weight 0 -- never counted
+        { relationshipCode: "supervisor", status: "submitted" }, // weight 0 -- never counted
+        { relationshipCode: "subordinate", status: "submitted" },
+      ],
+      raterGroups,
+      2
+    );
+    expect(gate.completedCount).toBe(2);
+    expect(gate.ok).toBe(true);
+  });
+
+  it("fails when completed scoring raters are below the minimum", () => {
+    const gate = meetsMinRatersGate(
+      [{ relationshipCode: "peer", status: "submitted" }],
+      raterGroups,
+      3
+    );
+    expect(gate.ok).toBe(false);
+    expect(gate.completedCount).toBe(1);
+  });
+});
+
+describe("combineWeighted", () => {
+  it("computes the plain weighted average when every entry has data", () => {
+    expect(combineWeighted([{ score: 4, weightPct: 50 }, { score: 2, weightPct: 50 }])).toBe(3);
+  });
+
+  it("excludes a null-score entry from both numerator and denominator instead of treating it as zero", () => {
+    // If treated as zero: (4*50 + 0*50) / 100 = 2. Renormalized: 4.
+    const result = combineWeighted([{ score: 4, weightPct: 50 }, { score: null, weightPct: 50 }]);
+    expect(result).toBe(4);
+  });
+
+  it("returns null when no entry has any data", () => {
+    expect(combineWeighted([{ score: null, weightPct: 50 }, { score: null, weightPct: 30 }])).toBeNull();
+  });
+
+  it("returns null on an empty entry list", () => {
+    expect(combineWeighted([])).toBeNull();
+  });
+});
+
+describe("computeItemGroupAverages", () => {
+  it("averages adjusted values per (item, rater group) separately", () => {
+    const responses: PreparedResponse[] = [
+      { itemId: "i1", competencyId: "c1", relationshipCode: "peer", adjustedValue: 4 },
+      { itemId: "i1", competencyId: "c1", relationshipCode: "peer", adjustedValue: 2 },
+      { itemId: "i1", competencyId: "c1", relationshipCode: "subordinate", adjustedValue: 5 },
+    ];
+    const result = computeItemGroupAverages(responses);
+    expect(result.get("i1")?.get("peer")).toBe(3);
+    expect(result.get("i1")?.get("subordinate")).toBe(5);
+  });
+
+  it("excludes null (not-counted) responses from the average rather than treating them as zero", () => {
+    const responses: PreparedResponse[] = [
+      { itemId: "i1", competencyId: "c1", relationshipCode: "peer", adjustedValue: 4 },
+      { itemId: "i1", competencyId: "c1", relationshipCode: "peer", adjustedValue: null },
+    ];
+    expect(computeItemGroupAverages(responses).get("i1")?.get("peer")).toBe(4);
+  });
+
+  it("produces no entry at all for an item/group with zero countable responses", () => {
+    const responses: PreparedResponse[] = [
+      { itemId: "i1", competencyId: "c1", relationshipCode: "peer", adjustedValue: null },
+    ];
+    expect(computeItemGroupAverages(responses).has("i1")).toBe(false);
+  });
+});
+
+describe("computeCompetencyGroupScores", () => {
+  it("averages a competency's own items' averages, per group", () => {
+    const itemGroupAverages = new Map([
+      ["i1", new Map([["peer", 4]])],
+      ["i2", new Map([["peer", 2]])],
     ]);
+    const result = computeCompetencyGroupScores(itemGroupAverages, [
+      { id: "i1", competencyId: "c1" },
+      { id: "i2", competencyId: "c1" },
+    ]);
+    expect(result.get("c1")?.get("peer")).toBe(3);
+  });
+
+  it("gives a competency no score in a group with zero answered items -- an entirely 'لم ألاحظ' competency for that group", () => {
+    const itemGroupAverages = new Map<string, Map<string, number>>();
+    const result = computeCompetencyGroupScores(itemGroupAverages, [{ id: "i1", competencyId: "c1" }]);
+    expect(result.get("c1")).toBeUndefined();
+  });
+});
+
+describe("computeCompetencyOfficialScores", () => {
+  const raterGroups = [
+    { relationshipCode: "peer", groupWeightPct: 60 },
+    { relationshipCode: "subordinate", groupWeightPct: 40 },
+  ];
+
+  it("combines every group's competency score by group_weight_pct", () => {
+    const scores = computeCompetencyOfficialScores(
+      new Map([["c1", new Map([["peer", 4], ["subordinate", 2]])]]),
+      raterGroups
+    );
+    // (4*60 + 2*40) / 100 = 3.2
+    expect(scores.get("c1")).toBeCloseTo(3.2);
+  });
+
+  it("renormalizes when one scoring group has no data for the competency", () => {
+    const scores = computeCompetencyOfficialScores(new Map([["c1", new Map([["peer", 4]])]]), raterGroups);
     expect(scores.get("c1")).toBe(4);
-    expect(scores.get("c2")).toBe(3);
+  });
+});
+
+describe("computeOverallScore", () => {
+  it("combines competencies by weight_pct", () => {
+    const competencies: Pick<ThreeSixtyCompetency, "id" | "weightPct">[] = [
+      { id: "c1", weightPct: 70 },
+      { id: "c2", weightPct: 30 },
+    ];
+    const overall = computeOverallScore(new Map([["c1", 4], ["c2", 2]]), competencies);
+    expect(overall).toBeCloseTo(3.4);
   });
 
-  it("ignores responses not counted in the score", () => {
-    const scores = aggregateCompetencyScores([
-      { competencyId: "c1", numericValue: 1, reverseScored: false, scaleMin: 1, scaleMax: 5, countedInScore: false },
+  it("returns null when no competency has a score", () => {
+    const competencies: Pick<ThreeSixtyCompetency, "id" | "weightPct">[] = [{ id: "c1", weightPct: 100 }];
+    expect(computeOverallScore(new Map([["c1", null]]), competencies)).toBeNull();
+  });
+});
+
+describe("computeSelfGaps", () => {
+  const competencies: ThreeSixtyCompetency[] = [
+    { id: "c1", nameAr: "التواصل", weightPct: 40 },
+    { id: "c2", nameAr: "القيادة", weightPct: 30 },
+    { id: "c3", nameAr: "الجودة", weightPct: 30 },
+  ];
+
+  it("ranks by absolute gap descending and keeps only the top 3", () => {
+    const competencyGroupScores = new Map([
+      ["c1", new Map([["self", 5]])], // gap 5 - 3 = 2
+      ["c2", new Map([["self", 4]])], // gap 4 - 3.9 = 0.1
+      ["c3", new Map([["self", 1]])], // gap 1 - 4 = -3 (largest absolute)
     ]);
-    expect(scores.has("c1")).toBe(false);
+    const competencyOfficialScores = new Map([["c1", 3], ["c2", 3.9], ["c3", 4]]);
+    const gaps = computeSelfGaps(competencyGroupScores, competencyOfficialScores, competencies);
+    expect(gaps.map((g) => g.competencyId)).toEqual(["c3", "c1", "c2"]);
+    expect(gaps[0].gap).toBe(-3);
   });
 
-  it("returns an empty map for no responses", () => {
-    expect(aggregateCompetencyScores([]).size).toBe(0);
+  it("skips a competency missing either the self score or the official score", () => {
+    const competencyGroupScores = new Map([["c1", new Map([["self", 5]])]]);
+    const competencyOfficialScores = new Map([["c1", null]]);
+    expect(computeSelfGaps(competencyGroupScores, competencyOfficialScores, [competencies[0]])).toEqual([]);
+  });
+});
+
+describe("rankItems", () => {
+  const raterGroups = [{ relationshipCode: "peer", groupWeightPct: 100 }];
+
+  it("returns top 3 and bottom 3, without padding when fewer than 6 items have data", () => {
+    const itemGroupAverages = new Map([
+      ["i1", new Map([["peer", 5]])],
+      ["i2", new Map([["peer", 3]])],
+      ["i3", new Map([["peer", 1]])],
+    ]);
+    const items = [
+      { id: "i1", textAr: "أ", competencyId: "c1" },
+      { id: "i2", textAr: "ب", competencyId: "c1" },
+      { id: "i3", textAr: "ج", competencyId: "c1" },
+    ];
+    const { top, bottom } = rankItems(itemGroupAverages, items, raterGroups);
+    expect(top.map((i) => i.itemId)).toEqual(["i1", "i2", "i3"]);
+    expect(bottom.map((i) => i.itemId)).toEqual(["i3", "i2", "i1"]);
+  });
+
+  it("excludes an item with no countable data anywhere rather than padding with a fake zero", () => {
+    const itemGroupAverages = new Map<string, Map<string, number>>();
+    const items = [{ id: "i1", textAr: "أ", competencyId: "c1" }];
+    const { top, bottom } = rankItems(itemGroupAverages, items, raterGroups);
+    expect(top).toEqual([]);
+    expect(bottom).toEqual([]);
+  });
+});
+
+describe("shuffleOpenTextAnswers", () => {
+  it("returns every input text, just reordered, without mutating the input array", () => {
+    const input = ["a", "b", "c", "d"];
+    const result = shuffleOpenTextAnswers(input, () => 0);
+    expect(result.slice().sort()).toEqual(input.slice().sort());
+    expect(input).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("is deterministic for an injected rng", () => {
+    const rng = () => 0.999999; // pushes every swap to the last remaining index
+    const first = shuffleOpenTextAnswers(["a", "b", "c"], rng);
+    const second = shuffleOpenTextAnswers(["a", "b", "c"], rng);
+    expect(first).toEqual(second);
   });
 });
 

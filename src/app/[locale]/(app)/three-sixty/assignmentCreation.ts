@@ -4,6 +4,14 @@ export interface AssignmentCandidate {
   subjectEmployeeId: string;
   raterEmployeeId: string;
   relationshipCode: string;
+  /**
+   * Carried from the nomination (the nominating employee is the one who
+   * knows this) into the created assignment, for the scoring engine's
+   * tenure-exclusion rule. Left null for system-generated self/supervisor
+   * assignments -- harmless, since those groups carry group_weight_pct=0
+   * and never enter the official score regardless of tenure.
+   */
+  monthsWorkedTogether?: number | null;
 }
 
 /**
@@ -60,6 +68,7 @@ export async function createMissingThreeSixtyAssignments(
         subject_employee_id: c.subjectEmployeeId,
         rater_employee_id: c.raterEmployeeId,
         relationship_code: c.relationshipCode,
+        months_worked_together: c.monthsWorkedTogether ?? null,
       }))
     )
     .select("id");
