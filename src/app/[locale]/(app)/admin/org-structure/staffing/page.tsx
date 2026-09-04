@@ -45,10 +45,19 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 // simplification down to assign/unassign only). Gated on the same
 // employeeData>=approve bar /org-units' own drag UI uses (org_units_update's
 // real RLS), not orgStructure -- reordering writes org_units, a different
-// table from what this screen's assign/unassign already touches. A node's
-// own children are always one real sibling group and are all draggable; the
-// merged top-level list mixes "رئيس الجامعة"'s real children with unrelated
-// flat cards, so only the former get a grip -- see StaffingCardGroup.
+// table from what this screen's assign/unassign already touches.
+//
+// 2026-09-04 correction: the first version only ever let "رئيس الجامعة"'s
+// own direct children drag against each other in the top-level list,
+// leaving every other card without a grip -- reported live ("بعض الادارات
+// لا يوجد أمامها خاصية"). The real bug: the top-level list can hold SEVERAL
+// distinct real sibling groups at once, not just the anchor's -- e.g. the
+// "رئيس الجامعة" flat card itself, "إدارة المراجعة الداخلية", "أمانة مجلس
+// الجامعة" turned out to all be real children of "مجلس الجامعة", a second
+// group nobody had recognized. Every top-level card's OWN real parent_id is
+// now used as its drag group, whatever that parent is -- see
+// StaffingCardGroup for why a shared groupId (not a single shared parentId)
+// is what makes several simultaneous groups on one list possible.
 export default async function OrgStructureStaffingPage() {
   const t = await getTranslations("OrgStructureStaffingPage");
   const supabase = await createClient();
@@ -119,11 +128,6 @@ export default async function OrgStructureStaffingPage() {
   }));
   const orgUnitRefs = orgUnits.map((unit) => ({ id: unit.id, nameAr: unit.name_ar, parentId: unit.parent_id, sortOrder: unit.sort_order }));
   const { nestedRoots, flatGroups, unlinkedPositions } = buildStaffingGroups(staffingPositions, orgUnitRefs, "رئيس الجامعة");
-  const anchorUnit = orgUnits.find((unit) => unit.name_ar === "رئيس الجامعة");
-  // Every id buildStaffingGroups put in nestedRoots is, by definition, a
-  // direct child of the anchor -- the one real sibling group this merged
-  // top-level list can safely drag-reorder.
-  const nestedRootIds = new Set(nestedRoots.map((root) => root.id));
 
   const flatAsNodes: StaffingUnitNode[] = flatGroups.map((group) => ({
     id: group.id,
@@ -135,6 +139,18 @@ export default async function OrgStructureStaffingPage() {
   // Same tie-break rule buildStaffingGroups already applies within each of
   // these two arrays -- reused here to merge them into one ordered list.
   const topLevelCards = [...nestedRoots, ...flatAsNodes].sort(compareUnits);
+
+  // Every top-level card's real parent_id, whatever unit that is -- not
+  // just "رئيس الجامعة". Two cards drag against each other here only when
+  // they share this value AND at least one other visible card also does
+  // (a group of one has nothing to reorder against).
+  const realParentIdOf = new Map(orgUnits.map((unit) => [unit.id, unit.parent_id]));
+  const topLevelGroupSizes = new Map<string, number>();
+  for (const node of topLevelCards) {
+    const parentId = realParentIdOf.get(node.id);
+    if (!parentId) continue;
+    topLevelGroupSizes.set(parentId, (topLevelGroupSizes.get(parentId) ?? 0) + 1);
+  }
 
   const { data: permissionRows } = await supabase.rpc("get_my_permissions");
   const employeeDataLevel =
@@ -185,22 +201,25 @@ export default async function OrgStructureStaffingPage() {
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {canEdit && anchorUnit ? (
+          {canEdit ? (
             <StaffingCardGroup
-              parentId={anchorUnit.id}
-              items={topLevelCards.map((node) => ({
-                id: node.id,
-                draggable: nestedRootIds.has(node.id),
-                node: (
-                  <StaffingUnitCard
-                    node={node}
-                    depth={0}
-                    assignmentsByPositionId={assignmentsByPositionId}
-                    employees={employeeOptions}
-                    canEdit={canEdit}
-                  />
-                ),
-              }))}
+              items={topLevelCards.map((node) => {
+                const parentId = realParentIdOf.get(node.id) ?? null;
+                const groupId = parentId && (topLevelGroupSizes.get(parentId) ?? 0) > 1 ? parentId : null;
+                return {
+                  id: node.id,
+                  groupId,
+                  node: (
+                    <StaffingUnitCard
+                      node={node}
+                      depth={0}
+                      assignmentsByPositionId={assignmentsByPositionId}
+                      employees={employeeOptions}
+                      canEdit={canEdit}
+                    />
+                  ),
+                };
+              })}
             />
           ) : (
             topLevelCards.map((node) => (
