@@ -10,6 +10,13 @@ const createCycleSchema = z
   .object({
     cycleCode: z.string().trim().min(1).max(60),
     nameAr: z.string().trim().min(1).max(200),
+    // 2026-09-05: a 360 cycle now belongs to exactly one evaluation cycle
+    // (evaluation_cycles) -- this is what actually lets its result enter the
+    // employee's weighted evaluation record via weight_feedback_360 (see
+    // migration 20260905000002's header). The old, unused-by-anything
+    // `weightInTotalScore` field is gone; that weight lives on the
+    // evaluation cycle already.
+    evaluationCycleId: z.string().uuid(),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     minRaters: z.coerce.number().int().min(1),
@@ -18,7 +25,6 @@ const createCycleSchema = z
     includeSelfAssessment: z.coerce.boolean(),
     showManagerSeparately: z.coerce.boolean(),
     anonymityMode: z.enum(["anonymous", "identified"]),
-    weightInTotalScore: z.coerce.number().min(0).max(100).optional(),
     purpose: z.string().trim().max(2000).optional(),
     scaleCode: z.string().trim().min(1).max(60),
   })
@@ -51,6 +57,7 @@ export async function createThreeSixtyCycle(
   const parsed = createCycleSchema.safeParse({
     cycleCode: formData.get("cycleCode"),
     nameAr: formData.get("nameAr"),
+    evaluationCycleId: formData.get("evaluationCycleId"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
     minRaters: formData.get("minRaters"),
@@ -59,7 +66,6 @@ export async function createThreeSixtyCycle(
     includeSelfAssessment: formData.get("includeSelfAssessment") === "on",
     showManagerSeparately: formData.get("showManagerSeparately") === "on",
     anonymityMode: formData.get("anonymityMode"),
-    weightInTotalScore: formData.get("weightInTotalScore") || undefined,
     purpose: formData.get("purpose") || undefined,
     scaleCode: formData.get("scaleCode"),
   });
@@ -90,6 +96,7 @@ export async function createThreeSixtyCycle(
     .insert({
       cycle_code: d.cycleCode,
       name_ar: d.nameAr,
+      evaluation_cycle_id: d.evaluationCycleId,
       start_date: d.startDate,
       end_date: d.endDate,
       min_raters: d.minRaters,
@@ -98,7 +105,6 @@ export async function createThreeSixtyCycle(
       include_self_assessment: d.includeSelfAssessment,
       show_manager_separately: d.showManagerSeparately,
       anonymity_mode: d.anonymityMode,
-      weight_in_total_score: d.weightInTotalScore ?? null,
       purpose: d.purpose ?? null,
       scale_code: d.scaleCode,
       owner_id: myProfile.id,

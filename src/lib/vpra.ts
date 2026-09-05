@@ -52,7 +52,6 @@ export type ProcessArea =
   | "performanceReports"
   | "competencyReports"
   | "bauTasksReports"
-  | "feedback360Reports"
   | "recruitmentPlan"
   | "recruitmentBudget"
   | "recruitmentRequests"
@@ -83,7 +82,6 @@ export const processAreas: ProcessArea[] = [
   "performanceReports",
   "competencyReports",
   "bauTasksReports",
-  "feedback360Reports",
   "recruitmentPlan",
   "recruitmentBudget",
   "recruitmentRequests",
@@ -122,7 +120,6 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   performanceReports: "تقارير الأداء",
   competencyReports: "تقارير الجدارات",
   bauTasksReports: "تقارير الأعمال اليومية",
-  feedback360Reports: "تقارير تقييم 360",
   recruitmentPlan: "خطة التوظيف",
   recruitmentBudget: "مراجعة ميزانية التوظيف",
   recruitmentRequests: "طلب الاحتياج",
@@ -170,9 +167,13 @@ export interface ProcessAreaSection {
  * invariant) rather than adding a third redundant area — that area's own
  * `view`-vs-`approve` split already separates read-only strategic
  * reporting from full module management (see /reports's own code comment).
- * `bauTasksReports`/`feedback360Reports` (20260728000003/4) back two more
- * /reports tabs, same pattern, requested directly ("تاب خاص بالاعمال
- * اليومية وتاب آخر بتقييم 360"). `recruitmentPlan` (20260804000001) backs
+ * `bauTasksReports` (20260728000003) backs one more /reports tab, same
+ * pattern, requested directly ("تاب خاص بالاعمال اليومية"). The matching
+ * `feedback360Reports` tab/area (20260728000004) was retired 2026-09-05
+ * along with the old `feedback_360` table it read from — same abandoned-
+ * enum-value precedent noted above (`reports`, `kpiLibrary`): the Postgres
+ * enum value can't be removed, but nothing in the app references it
+ * anymore. `recruitmentPlan` (20260804000001) backs
  * the new "التوظيف" module's first tab and its own section below; the
  * module's other two tabs REUSE `promotions`/`vacancies` rather than
  * duplicating them, so those two areas MOVED here out of "الموارد البشرية
@@ -180,10 +181,12 @@ export interface ProcessAreaSection {
  * only be listed once). Known coupling, deliberate: `promotions` also
  * gates `rewards` and `recommendations`, so a grant made under this
  * section reaches those too — see that migration's header. `threeSixty`
- * (20260902) backs the standalone "التقييم الدائري" (360 Review) module —
- * its own cycles/rater-groups/competencies/items/assignments/responses
- * schema, independent of the older, simpler `feedback_360` table (which
- * stays on `evaluation`, unchanged).
+ * (20260902) backs the standalone "تقييم 360" module — its own cycles/
+ * rater-groups/competencies/items/assignments/responses schema. The older,
+ * simpler `feedback_360` table it was originally built independent of has
+ * since been retired (2026-09-05, migration 20260905000002): `three_sixty_
+ * cycles` now links 1:1 to `evaluation_cycles` and its report feeds
+ * `weight_feedback_360` directly (see src/lib/threeSixtyEvaluationLink.ts).
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -203,7 +206,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "التقارير",
-    areas: ["performanceReports", "competencyReports", "bauTasksReports", "feedback360Reports"],
+    areas: ["performanceReports", "competencyReports", "bauTasksReports"],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",

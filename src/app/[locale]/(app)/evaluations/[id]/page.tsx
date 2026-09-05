@@ -13,6 +13,7 @@ import { evaluationStateLabels, evalTypeLabels, type EvaluationState, type EvalT
 import { EvaluationStateAction } from "@/components/EvaluationStateAction";
 import { resolveEvaluationCompetencies, describeCompetenciesSource } from "@/lib/evaluationCompetencies";
 import { behavioralLevelLabels } from "@/lib/data/competencies";
+import { resolveThreeSixtyReportForEvaluationCycle } from "@/lib/threeSixtyEvaluationLink";
 
 // Auth is enforced centrally by (app)/layout.tsx — no per-page check needed.
 export default async function EvaluationDetailPage({
@@ -102,13 +103,7 @@ export default async function EvaluationDetailPage({
     .order("title_ar");
   const activities = (activityData ?? []) as Array<{ id: string; title_ar: string }>;
 
-  const { data: feedbackData } = await supabase
-    .from("feedback_360")
-    .select("id, evaluator_relation, comments, scores")
-    .eq("cycle_id", evaluation.cycle_id)
-    .eq("target_employee_id", evaluation.employee_id)
-    .is("deleted_at", null);
-  const feedback = (feedbackData ?? []) as Array<{ id: string; evaluator_relation: EvalType; comments: string | null }>;
+  const threeSixtyReport = await resolveThreeSixtyReportForEvaluationCycle(supabase, evaluation.cycle_id, evaluation.employee_id);
 
   const { data: scoreData } = await supabase
     .from("evaluation_scores")
@@ -171,16 +166,11 @@ export default async function EvaluationDetailPage({
     const real = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
     return real.length === 0 ? null : real.reduce((sum, value) => sum + value, 0) / real.length;
   };
-  const feedbackScores = feedback.map((row) => {
-    const raw = (row as { scores?: { overall_score?: unknown } | null }).scores;
-    const overall = raw && typeof raw === "object" ? (raw as { overall_score?: unknown }).overall_score : null;
-    return typeof overall === "number" ? overall : null;
-  });
   const weighted = weightedCycleScore(weights, {
     activities: average([...scoreByActivity.values()]),
     competencies: average([...scoreByCompetency.values()]),
     bau: average([...scoreByBauTask.values()]),
-    feedback360: average(feedbackScores),
+    feedback360: threeSixtyReport?.overallScorePercent ?? null,
   });
   const methodLabel: Record<EvaluationMethod, string> = {
     activities: t("methodActivities"),
@@ -291,10 +281,14 @@ export default async function EvaluationDetailPage({
       content: (
         <>
           <p style={{ color: "var(--sru-muted)", fontSize: 12, marginBottom: 12 }}>{t("feedbackNote")}</p>
-          {simpleTable(
-            [t("columnRelation"), t("columnComment")],
-            feedback.map((f) => [evalTypeLabels[f.evaluator_relation], f.comments]),
-            t("feedbackEmpty")
+          {threeSixtyReport?.insufficientData ? (
+            <p style={{ color: "var(--sru-muted)", fontSize: 12.5 }}>{t("feedbackInsufficientData")}</p>
+          ) : (
+            // Pooled and shuffled, with no evaluator/relation attached -- the
+            // three_sixty module's own anonymity design (see reportData.ts),
+            // unlike the old feedback_360 table's per-relation comment list
+            // this tab used to show.
+            simpleTable([t("columnComment")], (threeSixtyReport?.openTextAnswers ?? []).map((text) => [text]), t("feedbackEmpty"))
           )}
         </>
       ),

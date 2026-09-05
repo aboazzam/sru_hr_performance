@@ -28,8 +28,8 @@ export default async function ThreeSixtyNominatePage() {
     .is("deleted_at", null)
     .order("relationship_code");
 
-  // Same caveat as Feedback360Page's employee picker: profiles_select
-  // limits a plain `employee` role to seeing only themselves (no
+  // A familiar caveat from every other employee picker in this app:
+  // profiles_select limits a plain `employee` role to seeing only themselves (no
   // employeeData grant) -- this list is a practical "who can I pick" aid,
   // not the real authorization boundary (three_sixty_nominations_insert
   // doesn't require any employeeData grant at all).

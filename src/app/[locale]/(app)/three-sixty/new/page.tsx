@@ -23,6 +23,21 @@ export default async function NewThreeSixtyCyclePage() {
     .is("deleted_at", null);
   const scaleCodes = [...new Set((scaleRows ?? []).map((r) => r.scale_code))].sort();
 
+  // 2026-09-05: a 360 cycle now links 1:1 to an evaluation cycle
+  // (evaluation_cycles), so this form can only offer cycles that (a) the
+  // caller's own RLS lets them see (evaluation_cycles_select requires
+  // evaluation>=view -- a caller who holds threeSixty>=prepare but not that
+  // may see none, same honest-empty-state precedent as /calibration/new and
+  // /promotions/new) and (b) don't already have a linked 360 cycle.
+  const [{ data: evalCycleRows }, { data: linkedRows }] = await Promise.all([
+    supabase.from("evaluation_cycles").select("id, name_ar").is("deleted_at", null).order("start_date", { ascending: false }),
+    supabase.from("three_sixty_cycles").select("evaluation_cycle_id").is("deleted_at", null),
+  ]);
+  const linkedIds = new Set((linkedRows ?? []).map((r) => r.evaluation_cycle_id));
+  const evaluationCycles = (evalCycleRows ?? [])
+    .filter((c) => !linkedIds.has(c.id))
+    .map((c) => ({ id: c.id, nameAr: c.name_ar }));
+
   return (
     <div className="sru-container" style={{ padding: "32px 22px 60px", maxWidth: 720 }}>
       <GroupTabs groupKey="threeSixty" current="three-sixty" />
@@ -36,8 +51,10 @@ export default async function NewThreeSixtyCyclePage() {
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorForbidden")}</p>
       ) : scaleCodes.length === 0 ? (
         <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNoScale")}</p>
+      ) : evaluationCycles.length === 0 ? (
+        <p style={{ color: "var(--sru-muted)", fontSize: 13 }}>{t("errorNoEvaluationCycle")}</p>
       ) : (
-        <ThreeSixtyNewCycleForm scaleCodes={scaleCodes} />
+        <ThreeSixtyNewCycleForm scaleCodes={scaleCodes} evaluationCycles={evaluationCycles} />
       )}
     </div>
   );

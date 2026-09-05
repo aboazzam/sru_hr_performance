@@ -286,6 +286,26 @@ export function meetsMinRatersGate(
   return { ok: completedCount >= minRaters, completedCount };
 }
 
+/**
+ * 2026-09-05: the rich `three_sixty` module's own rating scale is whatever
+ * the template configures (this app's default is 0-5, "behavior_freq_5" --
+ * see 20260904000002's seed) -- not a 0-100 percentage like every other
+ * evaluation method (`evaluation_scores.score`, and the old `feedback_360`
+ * table's own `overall_score` before it). Feeding a raw 1-5 average
+ * straight into `weightedCycleScore` alongside 0-100 percentages (see
+ * `src/lib/threeSixtyEvaluationLink.ts`) would silently understate the 360
+ * leg's real contribution -- caught live while verifying that exact wiring,
+ * not assumed correct. `scaleMin`/`scaleMax` come from the counted rating
+ * options actually configured for the cycle (never hardcoded), so this
+ * works for any future scale, not just the current 0-5 one. Returns null
+ * only for a degenerate scale (max <= min), since a percentage has no
+ * meaning there.
+ */
+export function normalizeToPercent(value: number, scaleMin: number, scaleMax: number): number | null {
+  if (scaleMax <= scaleMin) return null;
+  return ((value - scaleMin) / (scaleMax - scaleMin)) * 100;
+}
+
 export interface WeightedEntry {
   score: number | null;
   weightPct: number;

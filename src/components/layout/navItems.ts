@@ -16,7 +16,6 @@ import {
   Award,
   BarChart3,
   ShieldCheck,
-  MessagesSquare,
   Briefcase,
   Network,
   UserCog,
@@ -84,7 +83,8 @@ export interface NavItem {
 // (top-level, ungrouped items) plus `navGroups` below for the three explicit
 // groups the project owner requested (الإدارة / طرق التقييم / نتائج
 // التقييم). Segments that moved into a group (admin, evaluations,
-// competencies, bau-tasks, feedback-360) are no longer here.
+// competencies, bau-tasks) are no longer here (feedback-360 was one of
+// these too, until it was retired outright 2026-09-05).
 export const navItems: NavItem[] = [
   { segment: "", labelKey: "home", icon: Home },
   // No `access` gate (2026-07-25): the dashboard itself is reachable by
@@ -254,7 +254,10 @@ export const navGroups: NavGroup[] = [
       { segment: "evaluations", labelKey: "performance", icon: ClipboardList, access: [{ processArea: "evaluation", minLevel: "view" }] },
       // "competencies" moved out to the top-level navItems above (2026-08-28).
       { segment: "bau-tasks", labelKey: "bauTasks", icon: ListChecks, access: [{ processArea: "bauTasks", minLevel: "prepare" }] },
-      { segment: "feedback-360", labelKey: "feedback360", icon: MessagesSquare, access: [{ processArea: "evaluation", minLevel: "prepare" }] },
+      // "feedback-360" (the old, simple system) was retired 2026-09-05 —
+      // superseded by the richer "تقييم 360" module under the "threeSixty"
+      // group, which now also feeds the weighted evaluation score directly
+      // (see src/lib/threeSixtyEvaluationLink.ts).
     ],
   },
   // "التوظيف" (2026-08-04): a new module bundling the hiring lifecycle —
@@ -293,10 +296,12 @@ export const navGroups: NavGroup[] = [
       { segment: "recruitment/portal/external", labelKey: "recruitmentPortalExternal", icon: Globe, access: [{ processArea: "recruitmentPortal", minLevel: "view" }] },
     ],
   },
-  // "التقييم الدائري" (360 Review, 2026-09-02): a standalone new module,
-  // independent of the older/simpler "feedback-360" page still living
-  // under evaluationMethods. Two tabs are HR-only (managing the cycle and
-  // its survey template) and gated on the new `threeSixty` area; the other
+  // "تقييم 360" (2026-09-02): a standalone module, originally independent of
+  // the older/simpler "feedback-360" page (retired outright 2026-09-05 —
+  // this module now feeds the weighted evaluation score directly instead,
+  // see src/lib/threeSixtyEvaluationLink.ts). Two tabs are HR-only (managing
+  // the cycle and its survey template) and gated on the new `threeSixty`
+  // area; the other
   // four are self-service (nominate my own raters, my supervisor approving
   // my team's nominations, rating the people I was assigned, and reading
   // my own/my team's report) and deliberately left ungated -- same "reports"/

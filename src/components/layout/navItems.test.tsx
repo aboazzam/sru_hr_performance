@@ -218,9 +218,9 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     ]);
   });
 
-  it("the evaluationMethods group has three children (competencies moved to the top-level sidebar 2026-08-28)", () => {
+  it("the evaluationMethods group has two children (competencies moved to the top-level sidebar 2026-08-28, feedback-360 retired 2026-09-05)", () => {
     const methods = navGroups.find((g) => g.groupKey === "evaluationMethods")!;
-    expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "bau-tasks", "feedback-360"]);
+    expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "bau-tasks"]);
   });
 
   it("the evaluationResults group has just recommendations (reports never returns to this group)", () => {
@@ -362,9 +362,8 @@ describe("visibleNavGroups", () => {
     const methods = groups.find((g) => g.groupKey === "evaluationMethods");
     expect(methods).toBeDefined();
     const segments = methods!.children.map((c) => c.segment);
-    // evaluation=prepare clears both "evaluations" (view) and "feedback-360" (prepare).
+    // evaluation=prepare clears "evaluations" (view); feedback-360 was retired 2026-09-05.
     expect(segments).toContain("evaluations");
-    expect(segments).toContain("feedback-360");
     expect(segments).toContain("bau-tasks");
     // "competencies" moved out of this group entirely (2026-08-28) -- its
     // own competencyFramework=view grant is asserted at the top level instead.

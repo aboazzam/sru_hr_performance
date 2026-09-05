@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, CheckCircle2, Gauge, Trash2 } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { AddFormDialog } from "@/components/AddFormDialog";
 import { createKpi, deleteKpi, setKpiAnnualTarget, type KpiActionState } from "@/app/[locale]/(app)/kpis/manage-kpis/actions";
 
@@ -144,11 +144,11 @@ export function ManageKpisPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleting] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Clear the add-KPI form after a successful submit, same pattern as
-  // AssignGoalForm/BauTaskForm/Feedback360Form -- otherwise the previously
+  // AssignGoalForm/BauTaskForm -- otherwise the previously
   // typed values (title, unit, plan target, weight) stay sitting in the
   // uncontrolled inputs, making it look like the KPI wasn't actually added
   // and risking an accidental duplicate resubmit.

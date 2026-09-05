@@ -6,6 +6,7 @@ import {
   excludeByTenure,
   meetsMinRatersGate,
   combineWeighted,
+  normalizeToPercent,
   computeItemGroupAverages,
   computeCompetencyGroupScores,
   computeCompetencyOfficialScores,
@@ -227,6 +228,22 @@ describe("meetsMinRatersGate", () => {
     );
     expect(gate.ok).toBe(false);
     expect(gate.completedCount).toBe(1);
+  });
+});
+
+describe("normalizeToPercent", () => {
+  it("maps the scale minimum to 0 and the maximum to 100", () => {
+    expect(normalizeToPercent(1, 1, 5)).toBe(0);
+    expect(normalizeToPercent(5, 1, 5)).toBe(100);
+  });
+
+  it("maps the midpoint of a 1-5 scale to 50%", () => {
+    expect(normalizeToPercent(3, 1, 5)).toBe(50);
+  });
+
+  it("returns null for a degenerate scale (max <= min)", () => {
+    expect(normalizeToPercent(3, 5, 5)).toBeNull();
+    expect(normalizeToPercent(3, 5, 1)).toBeNull();
   });
 });
 
