@@ -61,7 +61,7 @@ export default async function ThreeSixtyQuestionnairePage({
         .is("deleted_at", null)
         .order("numeric_value"),
       supabase.from("three_sixty_responses").select("item_id, option_id, numeric_value, text_value").eq("assignment_id", assignmentId),
-      supabase.from("three_sixty_competencies").select("id, source_competency_id").is("deleted_at", null),
+      supabase.from("three_sixty_competencies").select("id, source_competency_id, applies_to").is("deleted_at", null),
       // SECURITY DEFINER -- an ordinary rater has no RLS branch letting them
       // read the subject's job_title_id or job_title_competencies directly
       // (see migration 20260904000003's header).
@@ -81,7 +81,11 @@ export default async function ThreeSixtyQuestionnairePage({
     behavioralLevel: i.behavioral_level as BehavioralLevel | null,
   }));
   const resolvedLevels = resolveThreeSixtyItemLevels(
-    (competencyRows ?? []).map((c) => ({ id: c.id, sourceCompetencyId: c.source_competency_id })),
+    (competencyRows ?? []).map((c) => ({
+      id: c.id,
+      sourceCompetencyId: c.source_competency_id,
+      appliesTo: (c.applies_to as "all" | "specialized" | null) ?? "all",
+    })),
     ((levelRows ?? []) as { competency_id: string; required_level: BehavioralLevel }[]).map((r) => ({
       competencyId: r.competency_id,
       requiredLevel: r.required_level,

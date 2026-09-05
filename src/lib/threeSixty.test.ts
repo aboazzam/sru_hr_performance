@@ -451,28 +451,46 @@ describe("visibleGroupBreakdown", () => {
 describe("resolveThreeSixtyItemLevels", () => {
   it("uses the job title's own required_level for the competency's real counterpart", () => {
     const result = resolveThreeSixtyItemLevels(
-      [{ id: "c1", sourceCompetencyId: "real-c1" }],
+      [{ id: "c1", sourceCompetencyId: "real-c1", appliesTo: "all" }],
       [{ competencyId: "real-c1", requiredLevel: "advanced" }]
     );
     expect(result.get("c1")).toBe("advanced");
   });
 
-  it("falls back to practitioner when the job title has no required_level on record", () => {
-    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1" }], []);
+  it("falls back to practitioner for an 'all' competency when the job title has no required_level on record", () => {
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1", appliesTo: "all" }], []);
     expect(result.get("c1")).toBe("practitioner");
   });
 
   it("honors a custom fallback", () => {
-    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1" }], [], "basic");
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1", appliesTo: "all" }], [], "basic");
     expect(result.get("c1")).toBe("basic");
   });
 
-  it("always falls back for a 360 competency with no source (no per-job-title data could ever apply)", () => {
+  it("always falls back for an 'all' competency with no source (no per-job-title data could ever apply)", () => {
     const result = resolveThreeSixtyItemLevels(
-      [{ id: "c1", sourceCompetencyId: null }],
+      [{ id: "c1", sourceCompetencyId: null, appliesTo: "all" }],
       [{ competencyId: "real-c1", requiredLevel: "professional" }]
     );
     expect(result.get("c1")).toBe("practitioner");
+  });
+
+  it("includes a 'specialized' competency at its explicit required_level when the job title requires it", () => {
+    const result = resolveThreeSixtyItemLevels(
+      [{ id: "c1", sourceCompetencyId: "real-c1", appliesTo: "specialized" }],
+      [{ competencyId: "real-c1", requiredLevel: "advanced" }]
+    );
+    expect(result.get("c1")).toBe("advanced");
+  });
+
+  it("excludes a 'specialized' competency entirely when the job title has no required_level on record (no fallback)", () => {
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: "real-c1", appliesTo: "specialized" }], []);
+    expect(result.has("c1")).toBe(false);
+  });
+
+  it("excludes a 'specialized' competency with no source entirely (no per-job-title data could ever apply)", () => {
+    const result = resolveThreeSixtyItemLevels([{ id: "c1", sourceCompetencyId: null, appliesTo: "specialized" }], []);
+    expect(result.has("c1")).toBe(false);
   });
 });
 
