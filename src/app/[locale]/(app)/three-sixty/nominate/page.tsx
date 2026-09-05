@@ -28,19 +28,17 @@ export default async function ThreeSixtyNominatePage() {
     .is("deleted_at", null)
     .order("relationship_code");
 
-  // A familiar caveat from every other employee picker in this app:
-  // profiles_select limits a plain `employee` role to seeing only themselves (no
-  // employeeData grant) -- this list is a practical "who can I pick" aid,
-  // not the real authorization boundary (three_sixty_nominations_insert
-  // doesn't require any employeeData grant at all).
-  const { data: employees } = myProfile
-    ? await supabase
-        .from("profiles")
-        .select("id, employee_number, full_name_ar")
-        .neq("id", myProfile.id)
-        .is("deleted_at", null)
-        .order("full_name_ar")
-    : { data: null };
+  // SECURITY DEFINER -- most seeded roles (employee, employees_coordinator,
+  // finance_manager...) hold no employeeData grant at all, so a plain
+  // profiles_select query used to return just the caller's own row (excluded
+  // right below anyway), leaving this picker empty for almost everyone in
+  // production (confirmed live: a real "زميل"/"مستفيد" search returned zero
+  // matches). Nominating a rater for yourself needs no elevated permission
+  // in the first place (three_sixty_nominations_insert doesn't require any
+  // employeeData grant), so this bypass reveals nothing the action itself
+  // wasn't already going to allow -- see migration 20260906000001's header.
+  const { data: employeeRows } = myProfile ? await supabase.rpc("get_three_sixty_nominatable_employees") : { data: null };
+  const employees = employeeRows as { id: string; employee_number: string; full_name_ar: string }[] | null;
 
   const { data: existing } = cycle && myProfile
     ? await supabase
