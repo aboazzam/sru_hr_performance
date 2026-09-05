@@ -9,9 +9,11 @@ import {
   groupCompletionStats,
   meetsMinRatersGate,
   rankItems,
+  resolveThreeSixtyItemLevels,
   reverseAdjustedValue,
   shuffleOpenTextAnswers,
   visibleGroupBreakdown,
+  type BehavioralLevel,
   type CompetencyGap,
   type ItemScore,
   type PreparedResponse,
@@ -123,15 +125,37 @@ export async function getThreeSixtyReport(
     submitted: s.submitted,
   }));
 
-  const { data: competencyRows } = await supabase
-    .from("three_sixty_competencies")
-    .select("id, name_ar, weight_pct")
-    .is("deleted_at", null);
-  const competencies: ThreeSixtyCompetency[] = (competencyRows ?? []).map((c) => ({
-    id: c.id,
-    nameAr: c.name_ar,
-    weightPct: c.weight_pct,
-  }));
+  const [{ data: competencyRows }, { data: subjectLevelRows }] = await Promise.all([
+    supabase.from("three_sixty_competencies").select("id, name_ar, weight_pct, source_competency_id, applies_to").is("deleted_at", null),
+    // SECURITY DEFINER -- resolves which of the 16 "specialized" competencies
+    // actually apply to this employee's job title (see migration
+    // 20260905000001's header); this employee viewing their own report, or
+    // their manager viewing it, both already satisfy the RPC's own
+    // authorization check via the real assignment rows fetched above.
+    supabase.rpc("get_three_sixty_subject_levels", { p_subject_employee_id: employeeId }),
+  ]);
+  const resolvedCompetencyLevels = resolveThreeSixtyItemLevels(
+    (competencyRows ?? []).map((c) => ({
+      id: c.id,
+      sourceCompetencyId: c.source_competency_id,
+      appliesTo: (c.applies_to as "all" | "specialized" | null) ?? "all",
+    })),
+    ((subjectLevelRows ?? []) as { competency_id: string; required_level: BehavioralLevel }[]).map((r) => ({
+      competencyId: r.competency_id,
+      requiredLevel: r.required_level,
+    }))
+  );
+  // A "specialized" competency this employee's job title never required is
+  // excluded from the report entirely -- not shown as a row with no score,
+  // which would misleadingly read as "assessed but scoreless" rather than
+  // "does not apply to you".
+  const competencies: ThreeSixtyCompetency[] = (competencyRows ?? [])
+    .filter((c) => resolvedCompetencyLevels.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      nameAr: c.name_ar,
+      weightPct: c.weight_pct,
+    }));
 
   if (!gate.ok) {
     return {

@@ -89,10 +89,28 @@ export interface ThreeSixtyCompetency {
 export type BehavioralLevel = "basic" | "practitioner" | "advanced" | "professional";
 export const DEFAULT_BEHAVIORAL_LEVEL: BehavioralLevel = "practitioner";
 
+/**
+ * 2026-09-05: "أضف الجدارات التخصصية الـ16 أيضًا" -- a 360 competency now
+ * carries whether it applies to EVERYONE ("all", the 11 institutional ones)
+ * or ONLY to a subject whose job title explicitly requires it ("specialized",
+ * the 16 academic/innovation-track ones, see migration
+ * 20260905000001's header). This is the real distinction between the two:
+ * an "all" competency always resolves to a level (falling back to
+ * `DEFAULT_BEHAVIORAL_LEVEL` when the job title has no explicit
+ * requirement), while a "specialized" competency with no explicit
+ * requirement is EXCLUDED from the subject's survey entirely, not defaulted
+ * -- most job titles have no specialized-competency requirements at all
+ * (checked directly against production before building this), and showing
+ * every subject all 16 regardless of relevance would defeat the entire
+ * point of "specialized".
+ */
+export type ThreeSixtyCompetencyScope = "all" | "specialized";
+
 export interface ThreeSixtyCompetencySource {
   id: string;
-  /** The real institutional competency this 360 competency was seeded from, or null if it has none (no per-job-title level data can ever apply). */
+  /** The real institutional competency this 360 competency was seeded from, or null if it has none (no per-job-title level data can ever apply, so an "all" competency with no source always falls back). */
   sourceCompetencyId: string | null;
+  appliesTo: ThreeSixtyCompetencyScope;
 }
 
 export interface JobTitleCompetencyLevel {
@@ -102,12 +120,14 @@ export interface JobTitleCompetencyLevel {
 }
 
 /**
- * For each 360 competency, resolve which behavioral level applies to a given
- * subject employee's job title: the job title's own required_level for the
- * competency's real institutional counterpart if one is on record, else
- * `fallback`. A 360 competency with no `sourceCompetencyId` always resolves
- * to `fallback` -- there is no per-job-title data that could ever apply to
- * it.
+ * For each 360 competency, resolve whether it applies to a given subject
+ * employee's job title and, if so, at which behavioral level. Returns a map
+ * containing ONLY the competencies that apply -- an "all" competency always
+ * appears (the job title's own required_level for its real institutional
+ * counterpart if on record, else `fallback`), while a "specialized"
+ * competency appears only when the job title has an explicit
+ * `required_level` on record for it; otherwise it's simply absent from the
+ * result, not defaulted.
  */
 export function resolveThreeSixtyItemLevels(
   competencies: ThreeSixtyCompetencySource[],
@@ -117,8 +137,12 @@ export function resolveThreeSixtyItemLevels(
   const levelBySourceCompetencyId = new Map(jobTitleLevels.map((l) => [l.competencyId, l.requiredLevel]));
   const result = new Map<string, BehavioralLevel>();
   for (const c of competencies) {
-    const resolved = c.sourceCompetencyId ? levelBySourceCompetencyId.get(c.sourceCompetencyId) : undefined;
-    result.set(c.id, resolved ?? fallback);
+    const explicit = c.sourceCompetencyId ? levelBySourceCompetencyId.get(c.sourceCompetencyId) : undefined;
+    if (explicit) {
+      result.set(c.id, explicit);
+    } else if (c.appliesTo === "all") {
+      result.set(c.id, fallback);
+    }
   }
   return result;
 }
