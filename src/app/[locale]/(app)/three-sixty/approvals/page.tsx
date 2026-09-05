@@ -21,7 +21,15 @@ export default async function ThreeSixtyApprovalsPage() {
   type Subject = {
     subjectId: string;
     subjectName: string;
-    rows: { id: string; relationshipCode: string; raterEmployeeId: string; status: ThreeSixtyNominationStatus; reviewNotes: string | null }[];
+    rows: {
+      id: string;
+      relationshipCode: string;
+      raterEmployeeId: string | null;
+      externalRaterName: string | null;
+      externalRaterEmail: string | null;
+      status: ThreeSixtyNominationStatus;
+      reviewNotes: string | null;
+    }[];
     raterNames: Map<string, string>;
   };
   const subjects: Subject[] = [];
@@ -29,7 +37,9 @@ export default async function ThreeSixtyApprovalsPage() {
   if (cycle && reportList.length > 0) {
     const { data: nominationRows } = await supabase
       .from("three_sixty_nominations")
-      .select("id, subject_employee_id, relationship_code, rater_employee_id, status, review_notes")
+      .select(
+        "id, subject_employee_id, relationship_code, rater_employee_id, external_rater_name, external_rater_email, status, review_notes"
+      )
       .eq("cycle_id", cycle.id)
       .in(
         "subject_employee_id",
@@ -64,6 +74,8 @@ export default async function ThreeSixtyApprovalsPage() {
           id: r.id,
           relationshipCode: r.relationship_code,
           raterEmployeeId: r.rater_employee_id,
+          externalRaterName: r.external_rater_name,
+          externalRaterEmail: r.external_rater_email,
           status: r.status as ThreeSixtyNominationStatus,
           reviewNotes: r.review_notes,
         })),
@@ -96,7 +108,9 @@ export default async function ThreeSixtyApprovalsPage() {
             subjectName={subject.subjectName}
             rows={subject.rows.map((r) => ({
               ...r,
-              raterName: subject.raterNames.get(r.raterEmployeeId) ?? r.raterEmployeeId,
+              raterName: r.raterEmployeeId
+                ? (subject.raterNames.get(r.raterEmployeeId) ?? r.raterEmployeeId)
+                : t("externalRaterLabel", { name: r.externalRaterName ?? "", email: r.externalRaterEmail ?? "" }),
               statusLabel: threeSixtyNominationStatusLabels[r.status],
               status: r.status,
             }))}

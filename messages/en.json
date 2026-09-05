@@ -1802,7 +1802,15 @@
     "returnedNotePrefix": "Your list was returned for edits by your direct supervisor:",
     "errorLocked": "This list is already submitted or approved and can no longer be edited.",
     "errorInvalidInput": "Check the number of nominees against the required bounds:",
-    "submitButton": "Send List for Direct Supervisor's Approval"
+    "submitButton": "Send List for Direct Supervisor's Approval",
+    "externalHeading": "Raters from outside the organization",
+    "externalNamePlaceholder": "Rater's name",
+    "externalEmailPlaceholder": "Their email address",
+    "addExternalButton": "Add",
+    "removeExternalButton": "Remove",
+    "copyLinkButton": "Copy survey link",
+    "linkCopied": "Copied",
+    "linkPendingApproval": "The link appears once your direct supervisor approves"
   },
   "ThreeSixtyApprovalsPage": {
     "title": "Approve Nomination Lists",
@@ -1817,7 +1825,8 @@
     "notesPlaceholder": "Note when returning — optional",
     "approveButton": "Approve List",
     "returnButton": "Return for Edits",
-    "errorGeneric": "Could not perform this action."
+    "errorGeneric": "Could not perform this action.",
+    "externalRaterLabel": "{name} ({email}) — external rater"
   },
   "ThreeSixtyRateListPage": {
     "title": "My Required Ratings",
@@ -1840,7 +1849,14 @@
     "errorMissingRequired": "Answer every required item before submitting.",
     "errorGeneric": "Could not submit the survey.",
     "submitButton": "Submit Survey",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "externalSubmitSuccessTitle": "Your answers were submitted successfully",
+    "externalSubmitSuccessNote": "Thank you for taking part in this review. You may now close this page."
+  },
+  "ThreeSixtyExternalPage": {
+    "title": "360-Review Questionnaire",
+    "errorInvalidLink": "This link is invalid or has expired. Contact whoever sent it to you for a new one.",
+    "errorNoItems": "No items apply to this relationship."
   },
   "ThreeSixtyReportPage": {
     "title": "360-Review Report",

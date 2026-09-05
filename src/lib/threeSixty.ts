@@ -46,6 +46,30 @@ export const threeSixtyNominationStatusLabels: Record<ThreeSixtyNominationStatus
 /** The relationship_code this project's template always uses for self-assessment (see generateThreeSixtyFixedAssignments). */
 export const SELF_RELATIONSHIP_CODE = "self";
 
+/**
+ * 2026-09-06: a rater in `three_sixty_nominations`/`three_sixty_assignments`
+ * is now either a real employee (`raterEmployeeId`) or an external person
+ * with no profile at all (`externalRaterEmail`) -- "اسمح للخارجي بالإجابة
+ * على الاستبيان من خلال الايميل الخاص به من غير دخول على النظام"، scoped to
+ * the "مستفيد/عميل" group specifically (`allows_external_rater`, migration
+ * 20260906000002). `rater_employee_id` is NULL for every external row, and
+ * a plain `${code}::${raterEmployeeId}` reconciliation key (the shape
+ * `nominate/actions.ts`/`assignmentCreation.ts` already used) would
+ * silently collapse every external nominee in the same group onto one
+ * identical key -- caught while building this, not live, since NULL !== NULL
+ * for plain string comparison too, but string-templating NULL into a
+ * shared key is a distinct, easy-to-miss trap. Email (lowercased/trimmed)
+ * is the stable identity for an external row instead.
+ */
+export interface NominationIdentity {
+  raterEmployeeId: string | null;
+  externalRaterEmail: string | null;
+}
+
+export function nominationIdentityKey({ raterEmployeeId, externalRaterEmail }: NominationIdentity): string {
+  return raterEmployeeId ?? `external:${(externalRaterEmail ?? "").trim().toLowerCase()}`;
+}
+
 export interface ThreeSixtyRaterGroup {
   relationshipCode: string;
   nameAr: string;

@@ -12,6 +12,8 @@ interface RaterGroupOption {
   nameAr: string;
   minRatersInGroup: number;
   maxRatersInGroup: number | null;
+  /** "مستفيد/عميل" only today (migration 20260906000002) -- data-driven, not a hardcoded relationship_code check. */
+  allowsExternalRater: boolean;
 }
 
 interface EmployeeOption {
@@ -21,10 +23,21 @@ interface EmployeeOption {
 
 interface ExistingNomination {
   relationshipCode: string;
-  raterEmployeeId: string;
+  raterEmployeeId: string | null;
+  externalRaterName: string | null;
+  externalRaterEmail: string | null;
+  /** The real, copyable survey link -- set only once this nomination has been approved and its assignment (with a real access_token) exists. Built server-side; see nominate/page.tsx. */
+  externalLink: string | null;
   status: ThreeSixtyNominationStatus;
   reviewNotes: string | null;
   monthsWorkedTogether: number | null;
+}
+
+interface ExternalNominee {
+  name: string;
+  email: string;
+  /** Carried straight from the matching `existing` row when this nominee already exists -- null for one just added client-side, not yet submitted. */
+  externalLink: string | null;
 }
 
 export function ThreeSixtyNominateForm({
@@ -45,6 +58,7 @@ export function ThreeSixtyNominateForm({
     const init: Record<string, Set<string>> = {};
     for (const group of raterGroups) init[group.relationshipCode] = new Set();
     for (const row of existing) {
+      if (row.raterEmployeeId == null) continue; // external row -- see externalNominees below
       if (!init[row.relationshipCode]) init[row.relationshipCode] = new Set();
       init[row.relationshipCode].add(row.raterEmployeeId);
     }
@@ -54,11 +68,64 @@ export function ThreeSixtyNominateForm({
   const [months, setMonths] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const row of existing) {
-      if (row.monthsWorkedTogether != null) init[row.raterEmployeeId] = String(row.monthsWorkedTogether);
+      if (row.raterEmployeeId != null && row.monthsWorkedTogether != null) init[row.raterEmployeeId] = String(row.monthsWorkedTogether);
     }
     return init;
   });
   const employeeLabelById = useMemo(() => new Map(employees.map((e) => [e.id, e.label])), [employees]);
+
+  // "اسمح للخارجي بالإجابة على الاستبيان من خلال الايميل الخاص به من غير
+  // دخول على النظام" (2026-09-06) -- a parallel, non-employee-id-based
+  // selection track, only ever populated for groups with
+  // `allowsExternalRater` (the server independently re-validates this, see
+  // nominate/actions.ts -- this is a UX convenience, not the real gate).
+  const [externalNominees, setExternalNominees] = useState<Record<string, ExternalNominee[]>>(() => {
+    const init: Record<string, ExternalNominee[]> = {};
+    for (const group of raterGroups) init[group.relationshipCode] = [];
+    for (const row of existing) {
+      if (!row.externalRaterEmail) continue;
+      if (!init[row.relationshipCode]) init[row.relationshipCode] = [];
+      init[row.relationshipCode].push({
+        name: row.externalRaterName ?? "",
+        email: row.externalRaterEmail,
+        externalLink: row.externalLink,
+      });
+    }
+    return init;
+  });
+  const [externalDraft, setExternalDraft] = useState<Record<string, { name: string; email: string }>>({});
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
+  function addExternalNominee(relationshipCode: string) {
+    const draft = externalDraft[relationshipCode];
+    const name = draft?.name.trim() ?? "";
+    const email = draft?.email.trim() ?? "";
+    if (!name || !email) return;
+    setExternalNominees((prev) => {
+      const list = prev[relationshipCode] ?? [];
+      if (list.some((n) => n.email.toLowerCase() === email.toLowerCase())) return prev; // already added, ignore silently -- the input still clears below
+      return { ...prev, [relationshipCode]: [...list, { name, email, externalLink: null }] };
+    });
+    setExternalDraft((prev) => ({ ...prev, [relationshipCode]: { name: "", email: "" } }));
+  }
+
+  function removeExternalNominee(relationshipCode: string, email: string) {
+    setExternalNominees((prev) => ({
+      ...prev,
+      [relationshipCode]: (prev[relationshipCode] ?? []).filter((n) => n.email.toLowerCase() !== email.toLowerCase()),
+    }));
+  }
+
+  async function copyLink(link: string, email: string) {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedEmail(email);
+      window.setTimeout(() => setCopiedEmail((prev) => (prev === email ? null : prev)), 2000);
+    } catch {
+      // clipboard access can fail (permissions, insecure context) -- the
+      // link is still selectable/copyable by hand from the visible text.
+    }
+  }
 
   const locked = existing.some((e) => e.status === "submitted" || e.status === "approved");
   const returnedNote = existing.find((e) => e.status === "returned" && e.reviewNotes)?.reviewNotes;
@@ -85,8 +152,10 @@ export function ThreeSixtyNominateForm({
   }
 
   const totalSelected = useMemo(
-    () => Object.values(selections).reduce((sum, set) => sum + set.size, 0),
-    [selections]
+    () =>
+      Object.values(selections).reduce((sum, set) => sum + set.size, 0) +
+      Object.values(externalNominees).reduce((sum, list) => sum + list.length, 0),
+    [selections, externalNominees]
   );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -102,6 +171,11 @@ export function ThreeSixtyNominateForm({
       if (value.trim() !== "" && Number.isFinite(n)) monthsPayload[raterId] = n;
     }
     formData.set("monthsByRaterId", JSON.stringify(monthsPayload));
+    const externalPayload: Record<string, { name: string; email: string }[]> = {};
+    for (const [code, list] of Object.entries(externalNominees)) {
+      if (list.length > 0) externalPayload[code] = list.map((n) => ({ name: n.name, email: n.email }));
+    }
+    formData.set("externalByGroup", JSON.stringify(externalPayload));
     startTransition(() => formAction(formData));
   }
 
@@ -142,13 +216,19 @@ export function ThreeSixtyNominateForm({
           ? employees.filter((e) => includesIgnoringHamza(e.label, query))
           : employees;
         const selectedSet = selections[group.relationshipCode] ?? new Set<string>();
+        const externalList = externalNominees[group.relationshipCode] ?? [];
+        const draft = externalDraft[group.relationshipCode] ?? { name: "", email: "" };
         return (
           <section key={group.relationshipCode} className="sru-formsection">
             <div className="sru-formsection-head">
               <div>
                 <h3>{group.nameAr}</h3>
                 <span>
-                  {t("groupBoundsNote", { min: group.minRatersInGroup, max: group.maxRatersInGroup ?? "∞", selected: selectedSet.size })}
+                  {t("groupBoundsNote", {
+                    min: group.minRatersInGroup,
+                    max: group.maxRatersInGroup ?? "∞",
+                    selected: selectedSet.size + externalList.length,
+                  })}
                 </span>
               </div>
             </div>
@@ -194,6 +274,69 @@ export function ThreeSixtyNominateForm({
                     />
                   </div>
                 ))}
+              </div>
+            )}
+
+            {group.allowsExternalRater && (
+              <div style={{ marginTop: 14, borderTop: "1px solid var(--sru-border)", paddingTop: 10 }}>
+                <p style={{ fontSize: 11, color: "var(--sru-muted)", marginBottom: 6 }}>{t("externalHeading")}</p>
+                {externalList.map((nominee) => (
+                  <div
+                    key={nominee.email}
+                    style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}
+                  >
+                    <span style={{ fontSize: 12 }}>
+                      {nominee.name} ({nominee.email})
+                    </span>
+                    {nominee.externalLink ? (
+                      <button
+                        type="button"
+                        className="sru-btn sru-btn-slim"
+                        onClick={() => copyLink(nominee.externalLink!, nominee.email)}
+                      >
+                        {copiedEmail === nominee.email ? t("linkCopied") : t("copyLinkButton")}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 11, color: "var(--sru-muted)" }}>{t("linkPendingApproval")}</span>
+                    )}
+                    {!locked && (
+                      <button
+                        type="button"
+                        className="sru-icon-action danger"
+                        onClick={() => removeExternalNominee(group.relationshipCode, nominee.email)}
+                        aria-label={t("removeExternalButton")}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {!locked && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      placeholder={t("externalNamePlaceholder")}
+                      value={draft.name}
+                      onChange={(e) => setExternalDraft((prev) => ({ ...prev, [group.relationshipCode]: { ...draft, name: e.target.value } }))}
+                      style={{ flex: 1, minWidth: 140 }}
+                    />
+                    <input
+                      type="email"
+                      placeholder={t("externalEmailPlaceholder")}
+                      value={draft.email}
+                      onChange={(e) => setExternalDraft((prev) => ({ ...prev, [group.relationshipCode]: { ...draft, email: e.target.value } }))}
+                      style={{ flex: 1, minWidth: 180 }}
+                    />
+                    <button
+                      type="button"
+                      className="sru-btn sru-btn-slim"
+                      disabled={!draft.name.trim() || !draft.email.trim()}
+                      onClick={() => addExternalNominee(group.relationshipCode)}
+                    >
+                      {t("addExternalButton")}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </section>

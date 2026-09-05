@@ -1802,7 +1802,15 @@
     "returnedNotePrefix": "أُعيدت القائمة لتعديلها من رئيسك المباشر:",
     "errorLocked": "القائمة بانتظار الاعتماد أو معتمدة بالفعل ولا يمكن تعديلها الآن.",
     "errorInvalidInput": "تحقق من عدد المرشَّحين مقارنة بالحدود المطلوبة:",
-    "submitButton": "إرسال القائمة لاعتماد الرئيس المباشر"
+    "submitButton": "إرسال القائمة لاعتماد الرئيس المباشر",
+    "externalHeading": "مقيّمون من خارج المنظمة",
+    "externalNamePlaceholder": "اسم المقيّم",
+    "externalEmailPlaceholder": "بريده الإلكتروني",
+    "addExternalButton": "إضافة",
+    "removeExternalButton": "إزالة",
+    "copyLinkButton": "نسخ رابط الاستبانة",
+    "linkCopied": "تم النسخ",
+    "linkPendingApproval": "الرابط يظهر بعد اعتماد الرئيس المباشر"
   },
   "ThreeSixtyApprovalsPage": {
     "title": "اعتماد قوائم الترشيح",
@@ -1817,7 +1825,8 @@
     "notesPlaceholder": "ملاحظة عند الإعادة — اختياري",
     "approveButton": "اعتماد القائمة",
     "returnButton": "إعادة للتعديل",
-    "errorGeneric": "تعذر تنفيذ الإجراء."
+    "errorGeneric": "تعذر تنفيذ الإجراء.",
+    "externalRaterLabel": "{name} ({email}) — مقيّم خارجي"
   },
   "ThreeSixtyRateListPage": {
     "title": "تقييماتي المطلوبة",
@@ -1840,7 +1849,14 @@
     "errorMissingRequired": "أجب عن جميع العبارات الإلزامية قبل الإرسال.",
     "errorGeneric": "تعذر إرسال الاستبانة.",
     "submitButton": "إرسال الاستبانة",
-    "submitting": "جارٍ الإرسال..."
+    "submitting": "جارٍ الإرسال...",
+    "externalSubmitSuccessTitle": "تم إرسال إجاباتك بنجاح",
+    "externalSubmitSuccessNote": "شكرًا لمشاركتك في هذا التقييم. يمكنك إغلاق هذه الصفحة الآن."
+  },
+  "ThreeSixtyExternalPage": {
+    "title": "استبانة تقييم 360",
+    "errorInvalidLink": "هذا الرابط غير صالح أو انتهت صلاحيته. تواصل مع من أرسل لك الرابط للحصول على رابط جديد.",
+    "errorNoItems": "لا توجد عبارات لهذه العلاقة."
   },
   "ThreeSixtyReportPage": {
     "title": "تقرير تقييم 360",

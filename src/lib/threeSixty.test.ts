@@ -18,6 +18,7 @@ import {
   visibleGroupBreakdown,
   resolveThreeSixtyItemLevels,
   itemsForSubjectLevel,
+  nominationIdentityKey,
   type ThreeSixtyItem,
   type ThreeSixtyRaterGroup,
   type ThreeSixtyCompetency,
@@ -534,5 +535,23 @@ describe("itemsForSubjectLevel", () => {
   it("excludes an item whose competency has no resolved level at all", () => {
     const items = [item({ id: "orphan", competencyId: "unknown-competency", behavioralLevel: "basic" })];
     expect(itemsForSubjectLevel(items, resolvedLevels)).toEqual([]);
+  });
+});
+
+describe("nominationIdentityKey", () => {
+  it("keys an internal rater by their profile id", () => {
+    expect(nominationIdentityKey({ raterEmployeeId: "p1", externalRaterEmail: null })).toBe("p1");
+  });
+
+  it("keys an external rater by their lowercased, trimmed email", () => {
+    expect(nominationIdentityKey({ raterEmployeeId: null, externalRaterEmail: "  Ext@Example.com  " })).toBe(
+      "external:ext@example.com"
+    );
+  });
+
+  it("gives two different external raters distinct keys, unlike a raw rater_employee_id template would", () => {
+    const a = nominationIdentityKey({ raterEmployeeId: null, externalRaterEmail: "a@example.com" });
+    const b = nominationIdentityKey({ raterEmployeeId: null, externalRaterEmail: "b@example.com" });
+    expect(a).not.toBe(b);
   });
 });
