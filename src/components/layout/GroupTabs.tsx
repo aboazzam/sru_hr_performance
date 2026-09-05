@@ -14,9 +14,9 @@ import type { ProcessArea, VpraLevel } from "@/lib/vpra";
  *
  * A Server Component (like every other permission-fetching page in this
  * app) rather than a prop drilled from the layout -- these member pages
- * don't share a single layout.tsx (evaluations/competencies/bau-tasks/
- * feedback-360 are plain siblings under (app)/, not nested under one
- * folder), so each page includes <GroupTabs groupKey="..." current="..." />
+ * don't share a single layout.tsx (evaluations/competencies/bau-tasks
+ * are plain siblings under (app)/, not nested under one folder), so each
+ * page includes <GroupTabs groupKey="..." current="..." />
  * directly rather than inheriting it.
  */
 export async function GroupTabs({

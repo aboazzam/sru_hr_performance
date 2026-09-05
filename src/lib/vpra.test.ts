@@ -39,9 +39,9 @@ describe("hasVpraAccess", () => {
 });
 
 describe("static reference lists", () => {
-  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings/strategicPlanning/performanceReports/competencyReports/bauTasksReports/feedback360Reports/recruitmentPlan/recruitmentBudget/rewardsAndRecommendations/evaluationWeights/threeSixty (added 2026-07-22, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-08-04, 2026-08-07, 2026-08-20, 2026-08-28, and 2026-09-02)", () => {
-    expect(processAreas).toHaveLength(29);
-    expect(new Set(processAreas).size).toBe(29);
+  it("has the 12 process areas from CLAUDE.md section 4 plus orgStructure/staffing/identity/employeeDataSubordinates/systemSettings/strategicPlanning/performanceReports/competencyReports/bauTasksReports/recruitmentPlan/recruitmentBudget/rewardsAndRecommendations/evaluationWeights/threeSixty (added 2026-07-22, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-08-04, 2026-08-07, 2026-08-20, 2026-08-28, and 2026-09-02; feedback360Reports retired 2026-09-05)", () => {
+    expect(processAreas).toHaveLength(28);
+    expect(new Set(processAreas).size).toBe(28);
     // 2026-09-02: the standalone "التقييم الدائري" (360 Review) module.
     expect(processAreas).toContain("threeSixty");
     // 2026-08-20: rewards and recommendations were split off `promotions`,
@@ -56,7 +56,7 @@ describe("static reference lists", () => {
     expect(processAreas).toContain("performanceReports");
     expect(processAreas).toContain("competencyReports");
     expect(processAreas).toContain("bauTasksReports");
-    expect(processAreas).toContain("feedback360Reports");
+    expect(processAreas).not.toContain("feedback360Reports");
     expect(processAreas).toContain("recruitmentPlan");
     // 2026-08-07: the finance-review stage of the recruitment-plan workflow.
     // Gating on a process area (not a role_code) is what lets the owner

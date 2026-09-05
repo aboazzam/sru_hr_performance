@@ -50,7 +50,6 @@ export const cycleDependentTables = [
   "evaluations",
   "goals",
   "bau_tasks",
-  "feedback_360",
   "promotions",
   "rewards",
   "recommendations",
@@ -59,6 +58,14 @@ export const cycleDependentTables = [
   "kpi_annual_targets",
 ] as const;
 export type CycleDependentTable = (typeof cycleDependentTables)[number];
+
+/**
+ * `three_sixty_cycles` also depends on a cycle (2026-09-05, via
+ * `evaluation_cycle_id`, 1:1) but doesn't fit `cycleDependentTables`'
+ * uniform `cycle_id` column shape, so it's counted separately in
+ * `countEvaluationCycleUsage` rather than folded into that list.
+ */
+export const THREE_SIXTY_CYCLE_DEPENDENT_KEY = "three_sixty_cycles";
 
 /** Sums per-table dependent counts into one number per cycle id. */
 export function totalCycleUsage(counts: Partial<Record<CycleDependentTable, number>>): number {

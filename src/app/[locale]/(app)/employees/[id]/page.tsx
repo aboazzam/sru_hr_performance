@@ -22,7 +22,7 @@ import {
 import { computeAutoApplyClassificationIds } from "@/lib/competencyFramework";
 import { EmployeeCompetenciesPanel } from "@/components/EmployeeCompetenciesPanel";
 import { EmployeeBauTasksPanel } from "@/components/EmployeeBauTasksPanel";
-import { Employee360NominationsPanel } from "@/components/Employee360NominationsPanel";
+import { resolveThreeSixtyReportForEvaluationCycle } from "@/lib/threeSixtyEvaluationLink";
 import type { BehavioralLevel } from "@/lib/data/competencies";
 
 // Auth is enforced centrally by (app)/layout.tsx. Real row visibility is
@@ -114,7 +114,6 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   // stays the real gate either way — a write it refuses reports "forbidden".
   const isMyDirectReport = myProfile != null && employee.supervisor_id === myProfile.id;
   const canManageEmployee = canEdit || isMyDirectReport;
-  const canManage360 = hasVpraAccess(levelOf("evaluation"), "approve") || isMyDirectReport;
   const canAssignBau = hasVpraAccess(levelOf("bauTasks"), "approve") || employee.id === myProfile?.id;
 
   // ---- competencies -----------------------------------------------------
@@ -231,43 +230,6 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     scores.filter((s) => s.bau_task_id).map((s) => [s.bau_task_id as string, s.score])
   );
 
-  // ---- 360 nominations --------------------------------------------------
-  const { data: nominationData } = await supabase
-    .from("feedback_360_nominations")
-    .select("id, cycle_id, evaluator_id, evaluator_relation")
-    .eq("target_employee_id", employee.id)
-    .is("deleted_at", null);
-  const nominationRows = (nominationData ?? []) as Array<{
-    id: string;
-    cycle_id: string;
-    evaluator_id: string;
-    evaluator_relation: EvalType;
-  }>;
-
-  const { data: feedbackData } = await supabase
-    .from("feedback_360")
-    .select("id, cycle_id, evaluator_relation, scores")
-    .eq("target_employee_id", employee.id)
-    .is("deleted_at", null);
-  const feedbackRows = (feedbackData ?? []) as Array<{
-    id: string;
-    cycle_id: string;
-    evaluator_relation: EvalType;
-    scores: { overall_score?: unknown } | null;
-  }>;
-  // evaluator_id on feedback_360 is deliberately unreadable (its column-level
-  // grant protects evaluator anonymity), so "has this nominee submitted?" is
-  // matched on the pair the two tables genuinely share.
-  const submittedPairs = new Set(feedbackRows.map((row) => `${row.cycle_id}|${row.evaluator_relation}`));
-
-  const { data: peopleData } = await supabase
-    .from("profiles")
-    .select("id, full_name_ar, employee_number")
-    .is("deleted_at", null)
-    .order("full_name_ar");
-  const people = (peopleData ?? []) as Array<{ id: string; full_name_ar: string; employee_number: string }>;
-  const personNameById = new Map(people.map((p) => [p.id, p.full_name_ar]));
-
   // ---- performance report ------------------------------------------------
   const average = (values: Array<number | null | undefined>) => {
     const real = values.filter((v): v is number => typeof v === "number" && Number.isFinite(v));
@@ -300,33 +262,30 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
     ])
   );
 
-  const reportRows = evaluations.map((evaluation) => {
-    const cycle = cycles.find((c) => c.id === evaluation.cycle_id);
-    const cycleWeights: MethodWeights = {
-      activities: Number(cycle?.weight_activities ?? 0),
-      competencies: Number(cycle?.weight_competencies ?? 0),
-      bau: Number(cycle?.weight_bau ?? 0),
-      feedback360: Number(cycle?.weight_feedback_360 ?? 0),
-    };
-    const { weights, source: weightsSource } = resolveWeights(
-      cycleWeights,
-      unitWeightsByCycle.get(evaluation.cycle_id) ?? null
-    );
-    const own = scores.filter((s) => s.evaluation_id === evaluation.id);
-    const cycleFeedback = feedbackRows
-      .filter((row) => row.cycle_id === evaluation.cycle_id)
-      .map((row) => {
-        const overall = row.scores && typeof row.scores === "object" ? row.scores.overall_score : null;
-        return typeof overall === "number" ? overall : null;
+  const reportRows = await Promise.all(
+    evaluations.map(async (evaluation) => {
+      const cycle = cycles.find((c) => c.id === evaluation.cycle_id);
+      const cycleWeights: MethodWeights = {
+        activities: Number(cycle?.weight_activities ?? 0),
+        competencies: Number(cycle?.weight_competencies ?? 0),
+        bau: Number(cycle?.weight_bau ?? 0),
+        feedback360: Number(cycle?.weight_feedback_360 ?? 0),
+      };
+      const { weights, source: weightsSource } = resolveWeights(
+        cycleWeights,
+        unitWeightsByCycle.get(evaluation.cycle_id) ?? null
+      );
+      const own = scores.filter((s) => s.evaluation_id === evaluation.id);
+      const threeSixtyReport = await resolveThreeSixtyReportForEvaluationCycle(supabase, evaluation.cycle_id, employee.id);
+      const weighted = weightedCycleScore(weights, {
+        activities: average(own.filter((s) => s.activity_id).map((s) => s.score)),
+        competencies: average(own.filter((s) => s.competency_id).map((s) => s.score)),
+        bau: average(own.filter((s) => s.bau_task_id).map((s) => s.score)),
+        feedback360: threeSixtyReport?.overallScorePercent ?? null,
       });
-    const weighted = weightedCycleScore(weights, {
-      activities: average(own.filter((s) => s.activity_id).map((s) => s.score)),
-      competencies: average(own.filter((s) => s.competency_id).map((s) => s.score)),
-      bau: average(own.filter((s) => s.bau_task_id).map((s) => s.score)),
-      feedback360: average(cycleFeedback),
-    });
-    return { evaluation, cycle, weights, weighted, weightsSource };
-  });
+      return { evaluation, cycle, weights, weighted, weightsSource };
+    })
+  );
 
   const methodLabel: Record<EvaluationMethod, string> = {
     activities: tReport("methodActivities"),
@@ -454,27 +413,6 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
       ),
     },
     {
-      id: "feedback360",
-      label: t("tabFeedback360"),
-      content: (
-        <Employee360NominationsPanel
-          targetEmployeeId={employee.id}
-          cycles={cycles.map((c) => ({ id: c.id, name: c.name_ar }))}
-          employees={people.map((p) => ({ id: p.id, name: `${p.employee_number} — ${p.full_name_ar}` }))}
-          nominations={nominationRows.map((row) => ({
-            id: row.id,
-            cycleId: row.cycle_id,
-            cycleName: cycleNameById.get(row.cycle_id) ?? "—",
-            evaluatorId: row.evaluator_id,
-            evaluatorName: personNameById.get(row.evaluator_id) ?? "—",
-            relation: row.evaluator_relation,
-            submitted: submittedPairs.has(`${row.cycle_id}|${row.evaluator_relation}`),
-          }))}
-          canEdit={canManage360}
-        />
-      ),
-    },
-    {
       id: "report",
       label: t("tabReport"),
       content: (
@@ -492,12 +430,6 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
             <div className="sru-card" style={{ padding: "10px 14px" }}>
               <p style={{ color: "var(--sru-muted)", fontSize: 11, margin: 0 }}>{tReport("statActivities")}</p>
               <p style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{activities.length}</p>
-            </div>
-            <div className="sru-card" style={{ padding: "10px 14px" }}>
-              <p style={{ color: "var(--sru-muted)", fontSize: 11, margin: 0 }}>{tReport("statFeedback")}</p>
-              <p style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-                {feedbackRows.length}/{nominationRows.length}
-              </p>
             </div>
           </div>
           {reportRows.length === 0 ? (

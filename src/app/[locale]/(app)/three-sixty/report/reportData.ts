@@ -8,6 +8,7 @@ import {
   excludeByTenure,
   groupCompletionStats,
   meetsMinRatersGate,
+  normalizeToPercent,
   rankItems,
   resolveThreeSixtyItemLevels,
   reverseAdjustedValue,
@@ -39,6 +40,18 @@ export interface ThreeSixtyReportData {
   completedRaters: number;
   minRatersRequired: number;
   overallScore: number | null;
+  /**
+   * `overallScore` normalized to 0-100 using the cycle's own rating scale
+   * bounds (see `normalizeToPercent` in threeSixty.ts) -- for cross-system
+   * use, e.g. feeding `weight_feedback_360` on `evaluation_cycles`
+   * (src/lib/threeSixtyEvaluationLink.ts), where every other method's score
+   * is already a 0-100 percentage. `overallScore` itself is left as the raw
+   * scale value for this module's OWN screens (/three-sixty/report,
+   * /three-sixty/team-report), which display it alongside the scale's own
+   * qualitative labels (e.g. "نادرًا"/"غالبًا") -- converting it there would
+   * lose that direct connection.
+   */
+  overallScorePercent: number | null;
   competencies: CompetencyReportRow[];
   selfGaps: CompetencyGap[];
   topItems: ItemScore[];
@@ -73,7 +86,7 @@ export async function getThreeSixtyReport(
 ): Promise<ThreeSixtyReportData | null> {
   const cycleQuery = supabase
     .from("three_sixty_cycles")
-    .select("id, name_ar, anonymity_mode, min_raters, min_months_together")
+    .select("id, name_ar, anonymity_mode, min_raters, min_months_together, scale_code")
     .eq("status", "closed")
     .is("deleted_at", null);
   const { data: cycle } = cycleId
@@ -164,6 +177,7 @@ export async function getThreeSixtyReport(
       completedRaters: gate.completedCount,
       minRatersRequired: cycle.min_raters,
       overallScore: null,
+      overallScorePercent: null,
       competencies: [],
       selfGaps: [],
       topItems: [],
@@ -240,6 +254,9 @@ export async function getThreeSixtyReport(
   );
   const competencyOfficialScores = computeCompetencyOfficialScores(competencyGroupScores, raterGroups);
   const overallScore = computeOverallScore(competencyOfficialScores, competencies);
+  const cycleScaleBounds = scaleBoundsByCode.get(cycle.scale_code) ?? null;
+  const overallScorePercent =
+    overallScore != null && cycleScaleBounds ? normalizeToPercent(overallScore, cycleScaleBounds.min, cycleScaleBounds.max) : null;
   const selfGaps = computeSelfGaps(competencyGroupScores, competencyOfficialScores, competencies);
   const { top: topItems, bottom: bottomItems } = rankItems(
     itemGroupAverages,
@@ -273,6 +290,7 @@ export async function getThreeSixtyReport(
     completedRaters: gate.completedCount,
     minRatersRequired: cycle.min_raters,
     overallScore,
+    overallScorePercent,
     competencies: competencyReportRows,
     selfGaps,
     topItems,

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cycleDependentTables, isValidWeights } from "@/lib/evaluationCycle";
+import { cycleDependentTables, isValidWeights, THREE_SIXTY_CYCLE_DEPENDENT_KEY } from "@/lib/evaluationCycle";
 
 export type EvaluationCycleActionState =
   | { status: "success" }
@@ -118,12 +118,6 @@ export async function countEvaluationCycleUsage(
   let total = 0;
 
   for (const table of cycleDependentTables) {
-    // Counts `cycle_id`, never `*`: `feedback_360` deliberately has NO
-    // table-level SELECT grant (20260718000005 revoked it and re-granted an
-    // explicit column list omitting `evaluator_id`, to hide evaluator
-    // identity), so `select("*")` fails there — found live while verifying
-    // this guard, where it silently produced a zero count and would have
-    // let a cycle with real 360-feedback rows be soft-deleted.
     const { count, error } = await supabase
       .from(table)
       .select("cycle_id", { count: "exact", head: true })
@@ -136,6 +130,20 @@ export async function countEvaluationCycleUsage(
       counts[table] = count;
       total += count;
     }
+  }
+
+  // three_sixty_cycles doesn't fit the uniform cycle_id shape above (it
+  // links via evaluation_cycle_id, 1:1, added 2026-09-05) so it's counted
+  // separately here rather than folded into cycleDependentTables.
+  const { count: threeSixtyCount, error: threeSixtyError } = await supabase
+    .from("three_sixty_cycles")
+    .select("evaluation_cycle_id", { count: "exact", head: true })
+    .eq("evaluation_cycle_id", cycleId)
+    .is("deleted_at", null);
+  if (threeSixtyError) return { status: "error" };
+  if (threeSixtyCount && threeSixtyCount > 0) {
+    counts[THREE_SIXTY_CYCLE_DEPENDENT_KEY] = threeSixtyCount;
+    total += threeSixtyCount;
   }
 
   return { status: "success", counts, total };

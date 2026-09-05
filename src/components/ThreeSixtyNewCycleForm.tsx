@@ -18,7 +18,13 @@ const errorMessageKeys: Record<ErrorMessage, string> = {
   unknown: "errorUnknown",
 };
 
-export function ThreeSixtyNewCycleForm({ scaleCodes }: { scaleCodes: string[] }) {
+export function ThreeSixtyNewCycleForm({
+  scaleCodes,
+  evaluationCycles,
+}: {
+  scaleCodes: string[];
+  evaluationCycles: { id: string; nameAr: string }[];
+}) {
   const t = useTranslations("ThreeSixtyNewCyclePage");
   const router = useRouter();
   const [state, formAction, pending] = useActionState<CreateThreeSixtyCycleState, FormData>(
@@ -57,6 +63,19 @@ export function ThreeSixtyNewCycleForm({ scaleCodes }: { scaleCodes: string[] })
           <div className="sru-field">
             <label>{t("nameArLabel")}</label>
             <input type="text" name="nameAr" required dir="rtl" placeholder={t("nameArPlaceholder")} />
+          </div>
+          <div className="sru-field">
+            <label>{t("evaluationCycleLabel")}</label>
+            <select name="evaluationCycleId" required defaultValue="">
+              <option value="" disabled>
+                {t("evaluationCyclePlaceholder")}
+              </option>
+              {evaluationCycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nameAr}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
             <label>{t("purposeLabel")}</label>
@@ -127,10 +146,6 @@ export function ThreeSixtyNewCycleForm({ scaleCodes }: { scaleCodes: string[] })
               <option value="anonymous">{t("anonymityModeAnonymous")}</option>
               <option value="identified">{t("anonymityModeIdentified")}</option>
             </select>
-          </div>
-          <div className="sru-field">
-            <label>{t("weightInTotalScoreLabel")}</label>
-            <input type="number" name="weightInTotalScore" min={0} max={100} step="0.1" placeholder={t("weightInTotalScorePlaceholder")} />
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
             <input type="checkbox" name="includeSelfAssessment" defaultChecked />
