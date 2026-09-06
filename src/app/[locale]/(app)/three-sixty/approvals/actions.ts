@@ -55,7 +55,7 @@ export async function reviewThreeSixtyNominations(
 
   const { data: submittedRows, error: fetchError } = await supabase
     .from("three_sixty_nominations")
-    .select("id, relationship_code, rater_employee_id, months_worked_together")
+    .select("id, relationship_code, rater_employee_id, external_rater_name, external_rater_email, months_worked_together")
     .eq("cycle_id", cycleId)
     .eq("subject_employee_id", subjectEmployeeId)
     .eq("status", "submitted")
@@ -95,6 +95,8 @@ export async function reviewThreeSixtyNominations(
       submittedRows.map((r) => ({
         subjectEmployeeId,
         raterEmployeeId: r.rater_employee_id,
+        externalRaterName: r.external_rater_name,
+        externalRaterEmail: r.external_rater_email,
         relationshipCode: r.relationship_code,
         monthsWorkedTogether: r.months_worked_together,
       }))

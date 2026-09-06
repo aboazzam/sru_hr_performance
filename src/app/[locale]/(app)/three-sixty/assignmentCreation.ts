@@ -1,8 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nominationIdentityKey } from "@/lib/threeSixty";
 
 export interface AssignmentCandidate {
   subjectEmployeeId: string;
-  raterEmployeeId: string;
+  /** Exactly one of raterEmployeeId or (externalRaterName + externalRaterEmail) -- see migration 20260906000002. */
+  raterEmployeeId: string | null;
+  externalRaterName?: string | null;
+  externalRaterEmail?: string | null;
   relationshipCode: string;
   /**
    * Carried from the nomination (the nominating employee is the one who
@@ -40,19 +44,27 @@ export async function createMissingThreeSixtyAssignments(
   const relationshipCodes = [...new Set(candidates.map((c) => c.relationshipCode))];
   const { data: existingRows, error: fetchError } = await supabase
     .from("three_sixty_assignments")
-    .select("subject_employee_id, rater_employee_id, relationship_code")
+    .select("subject_employee_id, rater_employee_id, external_rater_email, relationship_code")
     .eq("cycle_id", cycleId)
     .in("relationship_code", relationshipCodes)
     .is("deleted_at", null);
   if (fetchError) return { created: 0, error: fetchError.message };
 
+  // rater_employee_id is always NULL for an external row, so it cannot be
+  // string-templated into the dedupe key directly -- every external
+  // candidate would collapse onto the same key (`${subject}::null::${code}`)
+  // and only the first would ever be inserted. nominationIdentityKey uses
+  // the (lowercased, trimmed) email instead for those rows.
   const existingKeys = new Set(
-    (existingRows ?? []).map((r) => `${r.subject_employee_id}::${r.rater_employee_id}::${r.relationship_code}`)
+    (existingRows ?? []).map(
+      (r) =>
+        `${r.subject_employee_id}::${nominationIdentityKey({ raterEmployeeId: r.rater_employee_id, externalRaterEmail: r.external_rater_email })}::${r.relationship_code}`
+    )
   );
 
   const seen = new Set<string>();
   const toInsert = candidates.filter((c) => {
-    const key = `${c.subjectEmployeeId}::${c.raterEmployeeId}::${c.relationshipCode}`;
+    const key = `${c.subjectEmployeeId}::${nominationIdentityKey({ raterEmployeeId: c.raterEmployeeId, externalRaterEmail: c.externalRaterEmail ?? null })}::${c.relationshipCode}`;
     if (existingKeys.has(key) || seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -67,6 +79,8 @@ export async function createMissingThreeSixtyAssignments(
         cycle_id: cycleId,
         subject_employee_id: c.subjectEmployeeId,
         rater_employee_id: c.raterEmployeeId,
+        external_rater_name: c.externalRaterName ?? null,
+        external_rater_email: c.externalRaterEmail ?? null,
         relationship_code: c.relationshipCode,
         months_worked_together: c.monthsWorkedTogether ?? null,
       }))

@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import type { BehavioralLevel } from "@/lib/threeSixty";
+import { resolveApplicableThreeSixtyItems } from "@/lib/threeSixtyAssignmentItems";
 
 const saveSchema = z.object({
   assignmentId: z.string().uuid(),
@@ -93,19 +95,31 @@ export async function submitThreeSixtyAssignment(
 
   const { data: assignment } = await supabase
     .from("three_sixty_assignments")
-    .select("id, relationship_code, status")
+    .select("id, relationship_code, subject_employee_id, status")
     .eq("id", assignmentId)
     .maybeSingle();
   if (!assignment) return { status: "error", message: "forbidden" };
   if (assignment.status !== "pending") return { status: "error", message: "invalid_input" };
 
-  const { data: items } = await supabase
-    .from("three_sixty_items")
-    .select("id, required, rater_groups")
-    .is("deleted_at", null);
-  const applicableRequired = (items ?? []).filter(
-    (item) => item.required && (item.rater_groups as string[]).includes(assignment.relationship_code)
+  // Bug found live 2026-09-06: this used to check ALL required items merely
+  // matching the rater group (~216 across every behavioral level and every
+  // competency), not the ~22 actually resolved for this subject and shown
+  // on screen 3 -- since the level split (20260904000003) and specialized-
+  // competency scoping (20260905000001) shipped, that meant "missing" could
+  // never reach zero and every submission was silently blocked. Sharing the
+  // exact same resolver the rendering page uses fixes both at once.
+  const { data: levelRows } = await supabase.rpc("get_three_sixty_subject_levels", {
+    p_subject_employee_id: assignment.subject_employee_id,
+  });
+  const applicableItems = await resolveApplicableThreeSixtyItems(
+    supabase,
+    assignment.relationship_code,
+    ((levelRows ?? []) as { competency_id: string; required_level: BehavioralLevel }[]).map((r) => ({
+      competencyId: r.competency_id,
+      requiredLevel: r.required_level,
+    }))
   );
+  const applicableRequired = applicableItems.filter((item) => item.required);
 
   const { data: responses } = await supabase
     .from("three_sixty_responses")
