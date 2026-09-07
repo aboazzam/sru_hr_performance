@@ -2213,6 +2213,7 @@
     "typeDevelopment": "Development",
     "typeSeparation": "Separation",
     "newRecommendationHeading": "New Recommendation (Development / Separation)",
+    "formSectionSubtitle": "Development and separation recommendations are assigned to one employee and reviewed by an authorized holder.",
     "employeeLabel": "Employee",
     "employeePlaceholder": "Select employee",
     "typeLabel": "Recommendation Type",

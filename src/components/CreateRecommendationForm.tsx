@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, startTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createRecommendation, type CreateRecommendationState } from "@/app/[locale]/(app)/recommendations/actions";
 
 interface EmployeeOption {
@@ -47,71 +48,81 @@ export function CreateRecommendationForm({ employees, cycles }: { employees: Emp
     });
   }
 
-  const inputClass =
-    "w-full px-4 py-2 border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
-
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4" style={{ maxWidth: 480 }}>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("employeeLabel")}</label>
-        <select name="employeeId" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            {t("employeePlaceholder")}
-          </option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.employee_number} — {e.full_name_ar}
-            </option>
-          ))}
-        </select>
-      </div>
+    <form method="post" ref={formRef} onSubmit={handleSubmit}>
+      <section className="sru-formsection">
+        <div className="sru-formsection-head">
+          <span className="sru-formsection-badge">
+            <Sparkles size={17} aria-hidden />
+          </span>
+          <div>
+            <h3>{t("newRecommendationHeading")}</h3>
+            <span>{t("formSectionSubtitle")}</span>
+          </div>
+        </div>
+        <div className="sru-formgrid">
+          <div className="sru-field">
+            <label>{t("employeeLabel")}</label>
+            <select name="employeeId" required defaultValue="">
+              <option value="" disabled>
+                {t("employeePlaceholder")}
+              </option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.employee_number} — {e.full_name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("typeLabel")}</label>
-        <select name="type" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            {t("typePlaceholder")}
-          </option>
-          <option value="development">{t("typeDevelopment")}</option>
-          <option value="separation">{t("typeSeparation")}</option>
-        </select>
-      </div>
+          <div className="sru-field">
+            <label>{t("typeLabel")}</label>
+            <select name="type" required defaultValue="">
+              <option value="" disabled>
+                {t("typePlaceholder")}
+              </option>
+              <option value="development">{t("typeDevelopment")}</option>
+              <option value="separation">{t("typeSeparation")}</option>
+            </select>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("cycleLabel")}</label>
-        <select name="cycleId" className={inputClass} defaultValue="">
-          <option value="">{t("cyclePlaceholder")}</option>
-          {cycles.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name_ar}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="sru-field">
+            <label>{t("cycleLabel")}</label>
+            <select name="cycleId" defaultValue="">
+              <option value="">{t("cyclePlaceholder")}</option>
+              {cycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name_ar}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("reasoningLabel")}</label>
-        <textarea name="reasoning" rows={3} dir="rtl" className={inputClass} placeholder={t("reasoningPlaceholder")} />
-      </div>
+          <div className="sru-field" style={{ gridColumn: "1 / -1" }}>
+            <label>{t("reasoningLabel")}</label>
+            <textarea name="reasoning" rows={3} dir="rtl" placeholder={t("reasoningPlaceholder")} />
+          </div>
+        </div>
+      </section>
 
       {state?.status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="sru-auth-alert error">
+          <AlertCircle size={15} aria-hidden />
           {t(errorMessageKeys[state.message])}
         </p>
       )}
       {state?.status === "success" && (
-        <p role="status" className="text-sm text-green-700">
+        <p role="status" className="sru-auth-alert success">
+          <CheckCircle2 size={15} aria-hidden />
           {t("successMessage")}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full py-2 bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
-        {pending ? t("submitting") : t("submit")}
-      </button>
+      <div className="sru-form-submitrow">
+        <button type="submit" disabled={pending} className="sru-btn sru-btn-primary">
+          {pending ? t("submitting") : t("submit")}
+        </button>
+      </div>
     </form>
   );
 }

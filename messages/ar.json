@@ -2213,6 +2213,7 @@
     "typeDevelopment": "تطوير",
     "typeSeparation": "استغناء",
     "newRecommendationHeading": "توصية جديدة (تطوير / استغناء)",
+    "formSectionSubtitle": "توصيات التطوير والاستغناء تُسند لموظف محدد وتُراجَع من صاحب الصلاحية.",
     "employeeLabel": "الموظف",
     "employeePlaceholder": "اختر الموظف",
     "typeLabel": "نوع التوصية",
