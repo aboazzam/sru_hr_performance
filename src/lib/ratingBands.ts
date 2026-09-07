@@ -3,12 +3,13 @@
  * presentational classification over the weighted score already computed by
  * `weightedCycleScore()` (evaluationCycle.ts), not a new stored fact.
  *
- * [استنتاج] No official rating-band scale exists anywhere in this project's
- * documented sources (CLAUDE.md, SRU_System_Design.md) — these five bands
- * are a preliminary proposal pending the project owner's approval, chosen as
- * clean round-number cutoffs with NO compensation/bonus/merit percentage
- * attached (that remains a separate, undecided HR policy matter this module
- * does not invent). Revising the bands later is a one-file edit — nothing
+ * No official rating-band scale existed anywhere in this project's
+ * documented sources (CLAUDE.md, SRU_System_Design.md) before this module —
+ * these five bands were proposed as clean round-number cutoffs with NO
+ * compensation/bonus/merit percentage attached (that remains a separate,
+ * undecided HR policy matter this module does not invent), and confirmed
+ * directly with the project owner (2026-09-08: "اعتمد فئات التقييم الخمس
+ * كما هي"). Revising the bands later is still a one-file edit — nothing
  * else in this module stores a band, everything re-derives it from the
  * score on read.
  */

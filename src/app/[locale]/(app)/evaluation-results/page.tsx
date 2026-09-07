@@ -6,7 +6,8 @@ import { hasVpraAccess, type ProcessArea, type VpraLevel } from "@/lib/vpra";
 import { cycleStatus, todayInTimezone, type MethodWeights } from "@/lib/evaluationCycle";
 import { getDisplayTimezone } from "@/lib/systemSettings";
 import { resolveEvaluationResultsForCycle, type EmployeeCycleResultRow } from "@/lib/evaluationResult";
-import { RATING_BANDS } from "@/lib/ratingBands";
+import { buildOrgUnitResultsTree, groupResultsByBand } from "@/lib/evaluationResultsBreakdown";
+import { EvaluationResultsBreakdown } from "@/components/EvaluationResultsBreakdown";
 
 interface CycleOption {
   id: string;
@@ -23,44 +24,12 @@ interface ResultsSummary {
   total: number;
   scoredCount: number;
   average: number | null;
-  bandCounts: Map<string, number>;
 }
 
 function summarize(rows: EmployeeCycleResultRow[]): ResultsSummary {
   const scored = rows.filter((row): row is EmployeeCycleResultRow & { score: number } => row.score != null);
   const average = scored.length > 0 ? scored.reduce((sum, row) => sum + row.score, 0) / scored.length : null;
-  const bandCounts = new Map<string, number>();
-  for (const row of scored) {
-    if (!row.band) continue;
-    bandCounts.set(row.band.id, (bandCounts.get(row.band.id) ?? 0) + 1);
-  }
-  return { total: rows.length, scoredCount: scored.length, average, bandCounts };
-}
-
-interface OrgUnitBreakdownRow {
-  key: string;
-  name: string;
-  count: number;
-  average: number;
-}
-
-function breakdownByOrgUnit(rows: EmployeeCycleResultRow[], unknownLabel: string): OrgUnitBreakdownRow[] {
-  const map = new Map<string, { name: string; scores: number[] }>();
-  for (const row of rows) {
-    if (row.score == null) continue;
-    const key = row.orgUnitId ?? "—";
-    const entry = map.get(key) ?? { name: row.orgUnitName ?? unknownLabel, scores: [] };
-    entry.scores.push(row.score);
-    map.set(key, entry);
-  }
-  return [...map.entries()]
-    .map(([key, entry]) => ({
-      key,
-      name: entry.name,
-      count: entry.scores.length,
-      average: entry.scores.reduce((sum, value) => sum + value, 0) / entry.scores.length,
-    }))
-    .sort((a, b) => b.average - a.average);
+  return { total: rows.length, scoredCount: scored.length, average };
 }
 
 // "نتائج التقييم" module (2026-09-07) — the dashboard tab. Aggregates the
@@ -144,7 +113,23 @@ export default async function EvaluationResultsDashboardPage({
 
   const broadSummary = summarize(broadRows);
   const teamSummary = summarize(teamRows);
-  const orgUnitBreakdown = breakdownByOrgUnit(broadRows, t("orgUnitUnknown"));
+
+  // Real org_units hierarchy for the "حسب الوحدة التنظيمية" tree view — a
+  // small, cheap table (a few dozen rows), fetched only when the broad
+  // section actually renders. org_units_select gained an
+  // evaluationResultsReports branch (migration 20260908000002) for exactly
+  // this — without it, a report-only holder would see zero units here, the
+  // same class of gap already fixed once for `profiles_select`.
+  const { data: orgUnitsData } = canViewBroad
+    ? await supabase.from("org_units").select("id, name_ar, parent_id").is("deleted_at", null)
+    : { data: [] };
+  const orgUnits = ((orgUnitsData ?? []) as Array<{ id: string; name_ar: string; parent_id: string | null }>).map((u) => ({
+    id: u.id,
+    name: u.name_ar,
+    parentId: u.parent_id,
+  }));
+  const orgUnitTree = buildOrgUnitResultsTree(orgUnits, broadRows, t("orgUnitUnknown"));
+  const bandGroups = groupResultsByBand(broadRows.map((row) => ({ ...row, bandId: row.band?.id ?? null })));
 
   const cardStyle: React.CSSProperties = { padding: 16, minWidth: 180 };
   const numberStyle: React.CSSProperties = { fontSize: 23, fontWeight: 800, color: "var(--sru-purple)" };
@@ -223,57 +208,9 @@ export default async function EvaluationResultsDashboardPage({
                       </div>
 
                       <h3 className="sru-title" style={{ fontSize: 14, marginBottom: 10 }}>
-                        {t("distributionHeading")}
+                        {t("breakdownHeading")}
                       </h3>
-                      <div className="sru-card" style={{ marginBottom: 24, padding: 16 }}>
-                        {broadSummary.scoredCount === 0 ? (
-                          <p style={{ color: "var(--sru-muted)", fontSize: 12.5, margin: 0 }}>{t("distributionEmpty")}</p>
-                        ) : (
-                          RATING_BANDS.map((band) => {
-                            const count = broadSummary.bandCounts.get(band.id) ?? 0;
-                            const pct = Math.round((count / broadSummary.scoredCount) * 100);
-                            return (
-                              <div key={band.id} style={{ marginBottom: 10 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 4 }}>
-                                  <span>{band.labelAr}</span>
-                                  <span style={{ color: "var(--sru-muted)" }}>
-                                    {count} ({pct}%)
-                                  </span>
-                                </div>
-                                <div style={{ background: "var(--sru-purple-light)", borderRadius: "var(--sru-radius)", height: 8, overflow: "hidden" }}>
-                                  <div className={`sru-rating-bar-fill is-${band.id}`} style={{ width: `${pct}%`, height: "100%" }} />
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-
-                      <h3 className="sru-title" style={{ fontSize: 14, marginBottom: 10 }}>
-                        {t("orgUnitBreakdownHeading")}
-                      </h3>
-                      <div className="sru-card">
-                        <div className="table-scroll">
-                          <table className="admin-matrix">
-                            <thead>
-                              <tr>
-                                <th>{t("orgUnitColumn")}</th>
-                                <th>{t("orgUnitCountColumn")}</th>
-                                <th>{t("orgUnitAvgColumn")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {orgUnitBreakdown.map((row) => (
-                                <tr key={row.key}>
-                                  <td>{row.name}</td>
-                                  <td>{row.count}</td>
-                                  <td>{row.average.toFixed(1)}%</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                      <EvaluationResultsBreakdown orgUnitTree={orgUnitTree} bandGroups={bandGroups} />
                     </>
                   )}
                 </section>
