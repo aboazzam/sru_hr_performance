@@ -56,7 +56,8 @@ export type ProcessArea =
   | "recruitmentBudget"
   | "recruitmentRequests"
   | "recruitmentPortal"
-  | "threeSixty";
+  | "threeSixty"
+  | "evaluationResultsReports";
 
 export const processAreas: ProcessArea[] = [
   "goalsLibrary",
@@ -87,6 +88,7 @@ export const processAreas: ProcessArea[] = [
   "recruitmentRequests",
   "recruitmentPortal",
   "threeSixty",
+  "evaluationResultsReports",
 ];
 
 /**
@@ -125,6 +127,7 @@ export const processAreaLabels: Record<ProcessArea, string> = {
   recruitmentRequests: "طلب الاحتياج",
   recruitmentPortal: "بوابة التوظيف",
   threeSixty: "تقييم 360",
+  evaluationResultsReports: "تقارير نتائج التقييم",
 };
 
 export interface ProcessAreaSection {
@@ -187,6 +190,11 @@ export interface ProcessAreaSection {
  * since been retired (2026-09-05, migration 20260905000002): `three_sixty_
  * cycles` now links 1:1 to `evaluation_cycles` and its report feeds
  * `weight_feedback_360` directly (see src/lib/threeSixtyEvaluationLink.ts).
+ * `evaluationResultsReports` (20260907) backs the "نتائج التقييم" module's
+ * dashboard/employee-results tabs, same tab-level-gate-only pattern as the
+ * other three "التقارير" areas below — it does not widen visibility on
+ * `evaluations`/`evaluation_scores`/etc., which keep their own existing RLS
+ * (`check_vpra('evaluation', ...)` / `is_my_direct_report()`).
  */
 export const processAreaSections: ProcessAreaSection[] = [
   {
@@ -206,7 +214,7 @@ export const processAreaSections: ProcessAreaSection[] = [
   },
   {
     titleAr: "التقارير",
-    areas: ["performanceReports", "competencyReports", "bauTasksReports"],
+    areas: ["performanceReports", "competencyReports", "bauTasksReports", "evaluationResultsReports"],
   },
   {
     titleAr: "الموارد البشرية والمسار الوظيفي",
