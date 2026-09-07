@@ -39,6 +39,9 @@ describe("computeEmployeeCycleResult", () => {
     expect(result.appliedWeight).toBe(100);
     expect(result.missing).toEqual([]);
     expect(result.weightsSource).toBe("cycle");
+    // Per-method averages, before weighting — feeds the employee-results table's
+    // mini breakdown.
+    expect(result.methodScores).toEqual({ activities: 85, competencies: 70, bau: 100, feedback360: 60 });
     expect(result.band?.id).toBe("good");
   });
 

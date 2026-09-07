@@ -47,6 +47,8 @@ export interface EmployeeCycleResult {
   appliedWeight: number;
   missing: EvaluationMethod[];
   band: RatingBand | null;
+  /** Per-method average, before weighting — the employee-results table's mini breakdown. */
+  methodScores: Partial<Record<EvaluationMethod, number | null>>;
 }
 
 /** Pure: no Supabase call, fully unit-testable. */
@@ -60,12 +62,13 @@ export function computeEmployeeCycleResult(params: {
 }): EmployeeCycleResult {
   const { employeeId, evaluationId, orgUnitId, cycleWeights, orgUnitWeights, inputs } = params;
   const { weights, source } = resolveWeights(cycleWeights, orgUnitWeights);
-  const weighted = weightedCycleScore(weights, {
+  const methodScores: Partial<Record<EvaluationMethod, number | null>> = {
     activities: averageScores(inputs.activityScores),
     competencies: averageScores(inputs.competencyScores),
     bau: averageScores(inputs.bauTaskScores),
     feedback360: inputs.feedback360Percent,
-  });
+  };
+  const weighted = weightedCycleScore(weights, methodScores);
   return {
     employeeId,
     evaluationId,
@@ -76,6 +79,7 @@ export function computeEmployeeCycleResult(params: {
     appliedWeight: weighted.appliedWeight,
     missing: weighted.missing,
     band: bandForScore(weighted.score),
+    methodScores,
   };
 }
 
