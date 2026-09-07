@@ -146,7 +146,7 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(visibleNavItems(recruitment.children, {})).toEqual([]);
   });
 
-  it("every child in every group declares an access requirement, except the three deliberately ungated plan tabs", () => {
+  it("every child in every group declares an access requirement, except the deliberately ungated self-service tabs", () => {
     // Two deliberate exceptions across all groups:
     //   "kpis" (الأهداف المسندة) — real access is entirely row-level via the
     //     strategic-goal cascade's own RLS, not a role_permissions grant.
@@ -173,6 +173,10 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
       "three-sixty/rate",
       "three-sixty/report",
       "three-sixty/team-report",
+      // "نتائج التقييم" (2026-09-07) -- see the dedicated evaluationResults
+      // test above for why these two are deliberately ungated.
+      "evaluation-results",
+      "evaluation-results/employees",
     ]);
     for (const group of navGroups) {
       for (const child of group.children) {
@@ -223,9 +227,20 @@ describe("navGroups (2026-07-24 grouped nav)", () => {
     expect(methods.children.map((c) => c.segment)).toEqual(["evaluations", "bau-tasks"]);
   });
 
-  it("the evaluationResults group has just recommendations (reports never returns to this group)", () => {
+  // "نتائج التقييم" (2026-09-07): dashboard + employee-results tabs added
+  // ahead of the existing recommendations tab, both deliberately ungated —
+  // same self-service precedent as threeSixty's own tabs (see that group's
+  // test above).
+  it("the evaluationResults group has the dashboard/employee-results tabs before recommendations", () => {
     const results = navGroups.find((g) => g.groupKey === "evaluationResults")!;
-    expect(results.children.map((c) => c.segment)).toEqual(["recommendations"]);
+    expect(results.children.map((c) => c.segment)).toEqual([
+      "evaluation-results",
+      "evaluation-results/employees",
+      "recommendations",
+    ]);
+    expect(results.children[0].access).toBeUndefined();
+    expect(results.children[1].access).toBeUndefined();
+    expect(results.children[2].access).toEqual([{ processArea: "rewardsAndRecommendations", minLevel: "view" }]);
   });
 });
 
@@ -322,7 +337,7 @@ describe("visibleNavItems", () => {
 });
 
 describe("visibleNavGroups", () => {
-  it("always shows both plan groups plus threeSixty's ungated tabs regardless of permissions", () => {
+  it("always shows both plan groups plus threeSixty's and evaluationResults' ungated tabs regardless of permissions", () => {
     // 2026-08-01: after removing the vision/mission, strategic-goals, and
     // goal-library tabs from this group, its only two remaining children
     // ("kpis/plans", "kpis") are both ungated -- so this group's visibility
@@ -330,8 +345,10 @@ describe("visibleNavGroups", () => {
     // 2026-09-02: threeSixty joins them -- five of its seven tabs are
     // ungated self-service pages, so the group (with just those five
     // children) is always visible too, even with zero grants.
+    // 2026-09-07: evaluationResults joins them too -- its dashboard/
+    // employee-results tabs are both ungated (recommendations stays gated).
     const groups = visibleNavGroups(navGroups, {});
-    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan", "threeSixty"]);
+    expect(groups.map((g) => g.groupKey)).toEqual(["strategicPlan", "executivePlan", "threeSixty", "evaluationResults"]);
     expect(groups[0].children.map((c) => c.segment)).toEqual(["kpis/plans"]);
     expect(groups[1].children.map((c) => c.segment)).toEqual(["operational-plans", "initiative-assignments"]);
     expect(groups[2].children.map((c) => c.segment)).toEqual([
@@ -341,6 +358,7 @@ describe("visibleNavGroups", () => {
       "three-sixty/report",
       "three-sixty/team-report",
     ]);
+    expect(groups[3].children.map((c) => c.segment)).toEqual(["evaluation-results", "evaluation-results/employees"]);
   });
 
   it("still shows both plan groups for a strategy_admin-level permission set", () => {

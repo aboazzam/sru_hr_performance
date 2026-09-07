@@ -323,11 +323,22 @@ export const navGroups: NavGroup[] = [
       { segment: "three-sixty/team-report", labelKey: "threeSixtyTeamReport", icon: Users },
     ],
   },
+  // "نتائج التقييم" (2026-09-07): the dashboard/employee-results tabs are
+  // deliberately ungated — same "real access is row-level, not a flat
+  // role_permissions grant most roles never hold" reasoning as threeSixty's
+  // own self-service tabs above. A holder of `evaluationResultsReports>=view`
+  // sees the broad, org-wide dashboard/table; a manager with real direct
+  // reports but no such grant still sees their own "my team's results"
+  // section via `is_my_direct_report()` on `evaluations_select` — gating the
+  // tab itself on the report area would hide it from that second, equally
+  // legitimate audience.
   {
     groupKey: "evaluationResults",
     labelKey: "evaluationResults",
     icon: FileBarChart,
     children: [
+      { segment: "evaluation-results", labelKey: "evaluationResultsDashboard", icon: BarChart3 },
+      { segment: "evaluation-results/employees", labelKey: "evaluationResultsEmployees", icon: Users },
       // 2026-08-20: moved off `promotions` onto its own area — the two were
       // coupled only because rewards/recommendations reused that area's
       // policies, which the split ended.

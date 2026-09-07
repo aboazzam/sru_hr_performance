@@ -3055,3 +3055,61 @@ table {
   font-size: 13px;
   color: var(--sru-purple-dark);
 }
+
+/* "نتائج التقييم" (Evaluation Results, 2026-09-07): rating-band badges and
+   distribution-bar fills over `bandForScore()` (src/lib/ratingBands.ts) --
+   [استنتاج] bands pending owner approval, same additive-only,
+   never-edit-sru-ui.css discipline as `.sru-initiative-chip`, whose
+   status-color convention this mirrors exactly. Colors stay inside the
+   identity palette: the two brand hues plus the shared success/warning/
+   danger tokens already used elsewhere in this app. */
+.sru-rating-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--sru-radius);
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+}
+.sru-rating-chip.is-excellent {
+  background: color-mix(in srgb, var(--sru-success, #15803d) 14%, #fff);
+  color: var(--sru-success, #15803d);
+}
+.sru-rating-chip.is-veryGood {
+  background: color-mix(in srgb, var(--sru-blue, #0a6eaa) 14%, #fff);
+  color: var(--sru-blue, #0a6eaa);
+}
+.sru-rating-chip.is-good {
+  background: var(--sru-purple-light);
+  color: var(--sru-purple);
+}
+.sru-rating-chip.is-satisfactory {
+  background: var(--sru-warning-bg, #fff7ed);
+  color: var(--sru-warning, #f59e0b);
+}
+.sru-rating-chip.is-needsImprovement {
+  background: color-mix(in srgb, var(--sru-danger, #b91c1c) 12%, #fff);
+  color: var(--sru-danger, #b91c1c);
+}
+/* Same five colors, used as a solid bar fill in the dashboard's
+   distribution breakdown instead of a text badge. */
+.sru-rating-bar-fill {
+  background: var(--sru-purple);
+}
+.sru-rating-bar-fill.is-excellent {
+  background: var(--sru-success, #15803d);
+}
+.sru-rating-bar-fill.is-veryGood {
+  background: var(--sru-blue, #0a6eaa);
+}
+.sru-rating-bar-fill.is-good {
+  background: var(--sru-purple);
+}
+.sru-rating-bar-fill.is-satisfactory {
+  background: var(--sru-warning, #f59e0b);
+}
+.sru-rating-bar-fill.is-needsImprovement {
+  background: var(--sru-danger, #b91c1c);
+}
